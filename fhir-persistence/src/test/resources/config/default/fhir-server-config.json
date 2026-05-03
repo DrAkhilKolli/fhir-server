@@ -1,0 +1,11 @@
+{
+	"fhirServer": {
+		"persistence": {
+			"factoryClassname": "org.linuxforhealth.fhir.persistence.test.MockPersistenceFactory"
+		}
+	},
+	"persistenceFactoryName": "org.linuxforhealth.fhir.persistence.test.MockPersistenceFactory",
+	"badFactoryName": "com.example.this.is.a.bad.factory.classname",
+	"notAFactoryName": "org.linuxforhealth.fhir.persistence.test.NotAPersistenceFactory",
+	"exceptionFactoryName": "org.linuxforhealth.fhir.persistence.test.MockExceptionPersistenceFactory"
+}

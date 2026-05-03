@@ -1,0 +1,80 @@
+{
+	"resourceType": "Bundle",
+	"id": "searchParams",
+	"meta": {
+		"lastUpdated": "2019-07-12T22:37:54.724+11:00"
+	},
+	"type": "collection",
+	"entry": [{
+		"fullUrl": "http://example.com/fhir/SearchParameter/Basic-measurement-type",
+		"resource": {
+			"resourceType": "SearchParameter",
+			"id": "Basic-measurement-type",
+			"url": "http://example.com/fhir/SearchParameter/Basic-measurement-type",
+			"version": "4.0.0",
+			"name": "measurement-type",
+			"status": "draft",
+			"experimental": false,
+			"date": "2018-12-27T22:37:54+11:00",
+			"publisher": "IBM FHIR Server Test",
+			"contact": [{
+				"telecom": [{
+					"system": "url",
+					"value": "http://example.com/fhir"
+				}]
+			},
+			{
+				"telecom": [{
+					"system": "url",
+					"value": "http://example.com/fhir"
+				}]
+			}],
+			"description": "the type of measurement",
+			"code": "measurement-type",
+			"base": ["Basic"],
+			"type": "string",
+			"xpathUsage": "normal",
+			"xpath": "f:Basic/f:extension[@url='http://example.com/fhir/extension/measurements']/f:extension[@url='_item']/f:extension[@url='http://example.com/fhir/extension/type']/f:valueString",
+			"expression" : "Basic.extension.where(url='http://example.com/fhir/extension/measurements').extension.where(url='_item').extension.where(url='http://example.com/fhir/extension/type').value",
+			"multipleOr": true,
+			"multipleAnd": true,
+			"modifier": []
+		}
+	},
+	{
+		"fullUrl": "http://hl7.org/fhir/SearchParameter/Observation-value-range",
+		"resource": {
+			"resourceType": "SearchParameter",
+			"id": "Observation-value-range",
+			"url": "http://hl7.org/fhir/SearchParameter/Observation-value-range",
+			"version": "4.0.0",
+			"name": "value-range",
+			"status": "draft",
+			"experimental": false,
+			"date": "2015-10-24T07:41:03+11:00",
+			"publisher": "Health Level Seven International (Orders and Observations)",
+			"contact": [{
+				"telecom": [{
+					"system": "url",
+					"value": "http://hl7.org/fhir"
+				}]
+			},
+			{
+				"telecom": [{
+					"system": "url",
+					"value": "http://www.hl7.org/Special/committees/orders/index.cfm"
+				}]
+			}],
+			"description": "The value of the component observation, if the value is a Quantity, or a SampledData (just search on the bounds of the values in sampled data)",
+			"code": "value-range",
+			"base": ["Observation"],
+			"type": "quantity",
+			"xpathUsage": "normal",
+			"xpath": "f:Observation/f:valueRange",
+			"expression" : "Observation.value",
+			"multipleOr": true,
+			"multipleAnd": true,
+			"modifier": []
+		}
+	}]
+}

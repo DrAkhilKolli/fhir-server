@@ -1,0 +1,60 @@
+{
+    "resourceType": "Parameters",
+    "meta": {
+        "versionId": "a0igMiJZPe",
+        "lastUpdated": "2022-05-13T14:23:02.043848-04:00",
+        "source": "KRmFdBQqh4",
+        "profile": [
+            "QDDjtAxZWn"
+        ],
+        "security": [
+            {
+                "system": "9L4ja34TXL",
+                "version": "a40t0QQlvN",
+                "code": "0Ld5bhlxvl",
+                "display": "JPGAB5cThW",
+                "userSelected": true
+            }
+        ],
+        "tag": [
+            {
+                "system": "xTEVexPpZP",
+                "version": "28mPE0B_aU",
+                "code": "5xIHR_as4q",
+                "display": "BACvIjgHJV",
+                "userSelected": true
+            },
+            {
+                "code": "ibm/complete-mock"
+            }
+        ]
+    },
+    "implicitRules": "0JuQaqIT2h",
+    "language": "en-US",
+    "parameter": [
+        {
+            "name": "UvpkgV_2QP",
+            "valueAddress": {
+                "use": "old",
+                "type": "postal",
+                "text": "zIez61Ji2i",
+                "line": [
+                    "13itsgXy9g"
+                ],
+                "city": "T0fFOXP2_c",
+                "district": "VVjAm9BqXo",
+                "state": "92BoiJjWY3",
+                "postalCode": "fE2dF4SuWu",
+                "country": "2JPqgsAaKT",
+                "period": {
+                    "extension": [
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                            "valueCode": "unknown"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

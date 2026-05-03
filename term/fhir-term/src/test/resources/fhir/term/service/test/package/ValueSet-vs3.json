@@ -1,0 +1,26 @@
+{
+    "resourceType": "ValueSet",
+    "id": "vs3",
+    "url": "http://example.com/fhir/ValueSet/vs3",
+    "version": "1.0.0",
+    "status": "active",
+    "compose": {
+        "include": [
+            {
+                "system": "http://example.com/fhir/CodeSystem/cs3"
+            }
+        ],
+        "exclude": [
+            {
+                "system": "http://example.com/fhir/CodeSystem/cs3",
+                "filter": [
+                    {
+                        "property": "concept",
+                        "op": "descendent-of",
+                        "value": "x"
+                    }
+                ]
+            }
+        ]
+    }
+}

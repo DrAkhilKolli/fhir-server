@@ -1,0 +1,85 @@
+<Linkage xmlns="http://hl7.org/fhir">
+  <meta>
+    <versionId value="bF0IFHEqAq"/>
+    <lastUpdated value="2022-05-13T14:23:07.291252-04:00"/>
+    <source value="T3V_bmYMMy"/>
+    <profile value="Le9xGJZH3P"/>
+    <security>
+      <system value="7Vdkkyc1L1"/>
+      <version value="YM4mSfgwfm"/>
+      <code value="CsjFwA92zm"/>
+      <display value="Kc81J_ZRH_"/>
+      <userSelected value="true"/>
+    </security>
+    <tag>
+      <system value="YDzTRHg90F"/>
+      <version value="z8tyPsmApH"/>
+      <code value="p9BK8YpbgO"/>
+      <display value="xy7g5RPTOi"/>
+      <userSelected value="true"/>
+    </tag>
+    <tag>
+      <code value="ibm/complete-mock"/>
+    </tag>
+  </meta>
+  <implicitRules value="LGoRe7hG1O"/>
+  <language value="en-US"/>
+  <text>
+    <status value="empty"/>
+    <div xmlns="http://www.w3.org/1999/xhtml"></div>
+  </text>
+  <active value="true"/>
+  <author>
+    <reference value="Practitioner/pAADJUqavg"/>
+    <type value="Practitioner"/>
+    <identifier>
+      <use value="old"/>
+      <type>
+        <coding>
+          <system value="6wlx1sZkOf"/>
+          <version value="uyRRCkYisD"/>
+          <code value="yNyp4C6CBo"/>
+          <display value="Lgzrdzpfqq"/>
+          <userSelected value="true"/>
+        </coding>
+        <text value="g9ZOhFQba2"/>
+      </type>
+      <system value="cws4_VFoMH"/>
+      <value value="zYMby6EprY"/>
+      <period>
+        <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+          <valueCode value="unknown"/>
+        </extension>
+      </period>
+    </identifier>
+    <display value="ZEL0raVhQZ"/>
+  </author>
+  <item>
+    <type value="alternate"/>
+    <resource>
+      <reference value="Basic/hUywlgYq2C"/>
+      <type value="Basic"/>
+      <identifier>
+        <use value="usual"/>
+        <type>
+          <coding>
+            <system value="7KY_uakKLU"/>
+            <version value="BjkklCuAdj"/>
+            <code value="juLcXFNPkI"/>
+            <display value="LQQMH5gMQa"/>
+            <userSelected value="true"/>
+          </coding>
+          <text value="usl6oYYbNM"/>
+        </type>
+        <system value="jZBCIyVgPP"/>
+        <value value="xDiR7qUiGY"/>
+        <period>
+          <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+            <valueCode value="unknown"/>
+          </extension>
+        </period>
+      </identifier>
+      <display value="91xwJ0WXzb"/>
+    </resource>
+  </item>
+</Linkage>

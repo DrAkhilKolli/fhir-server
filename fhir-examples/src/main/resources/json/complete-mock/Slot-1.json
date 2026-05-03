@@ -1,0 +1,154 @@
+{
+    "resourceType": "Slot",
+    "meta": {
+        "versionId": "Z2lU2hzxM6",
+        "lastUpdated": "2022-05-13T14:23:05.420887-04:00",
+        "source": "Rd9NJwlY6D",
+        "profile": [
+            "_baZTAjUaJ"
+        ],
+        "security": [
+            {
+                "system": "Wk5k3GId_w",
+                "version": "yYwo7ZCdt8",
+                "code": "UQgQgQeliQ",
+                "display": "lvKw3z_491",
+                "userSelected": true
+            }
+        ],
+        "tag": [
+            {
+                "system": "fiesWyCIc7",
+                "version": "F5DI2t32vk",
+                "code": "Sbw7WF7AOz",
+                "display": "ZsRUr6pOjC",
+                "userSelected": true
+            },
+            {
+                "code": "ibm/complete-mock"
+            }
+        ]
+    },
+    "implicitRules": "IFoGnS3uQW",
+    "language": "en-US",
+    "text": {
+        "status": "additional",
+        "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"></div>"
+    },
+    "identifier": [
+        {
+            "use": "official",
+            "type": {
+                "coding": [
+                    {
+                        "system": "HQ6axAMeA_",
+                        "version": "qJFbJ00zqL",
+                        "code": "TH2kbU3yeY",
+                        "display": "0SYUEgrVXM",
+                        "userSelected": true
+                    }
+                ],
+                "text": "13O6Z5M0vk"
+            },
+            "system": "R5NBIYmI6q",
+            "value": "AaG0lnFh6S",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        }
+    ],
+    "serviceCategory": [
+        {
+            "coding": [
+                {
+                    "system": "WRH0x4SGHH",
+                    "version": "uj3oc0ASIs",
+                    "code": "DjJsMH0QIz",
+                    "display": "YuFBe8GSFQ",
+                    "userSelected": true
+                }
+            ],
+            "text": "Vf3PtwKLrn"
+        }
+    ],
+    "serviceType": [
+        {
+            "coding": [
+                {
+                    "system": "I0Cw7sLHPh",
+                    "version": "Q1lLQL0LDG",
+                    "code": "2jJ2mH6xoB",
+                    "display": "eG6APTnsGb",
+                    "userSelected": true
+                }
+            ],
+            "text": "MXplnqz4IM"
+        }
+    ],
+    "specialty": [
+        {
+            "coding": [
+                {
+                    "system": "WKYUkuDTFY",
+                    "version": "cysKrp7MAf",
+                    "code": "wd6iLmPErH",
+                    "display": "RE_5hN3kF1",
+                    "userSelected": true
+                }
+            ],
+            "text": "JFaceKTdW8"
+        }
+    ],
+    "appointmentType": {
+        "coding": [
+            {
+                "system": "6ez0l0DsGO",
+                "version": "JsyT8joPh5",
+                "code": "wEMicQc3cE",
+                "display": "Yf6mihyPV4",
+                "userSelected": true
+            }
+        ],
+        "text": "j7yHtZhMhs"
+    },
+    "schedule": {
+        "reference": "Schedule/d-HHxnrWpy",
+        "type": "Schedule",
+        "identifier": {
+            "use": "temp",
+            "type": {
+                "coding": [
+                    {
+                        "system": "vAdbXZYTYg",
+                        "version": "4bQouv_BuW",
+                        "code": "dtus2ywm8w",
+                        "display": "C8q_UyMAwM",
+                        "userSelected": true
+                    }
+                ],
+                "text": "Nd1Aavq_v_"
+            },
+            "system": "0IohLkwZJm",
+            "value": "_gh3uRWjBc",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        },
+        "display": "IQWcLBYlOj"
+    },
+    "status": "busy-unavailable",
+    "start": "2022-05-13T14:23:05.425318-04:00",
+    "end": "2022-05-13T14:23:05.425478-04:00",
+    "overbooked": true,
+    "comment": "tNhu_QnFQt"
+}

@@ -1,0 +1,208 @@
+<ImplementationGuide xmlns="http://hl7.org/fhir">
+  <meta>
+    <versionId value="QnNtAkxWQm"/>
+    <lastUpdated value="2022-05-13T14:23:04.047138-04:00"/>
+    <source value="CBe8kDgE4f"/>
+    <profile value="jCz51x5bA7"/>
+    <security>
+      <system value="VE7FR2n3Xk"/>
+      <version value="p5DjvOYY41"/>
+      <code value="XXOGkUoL5w"/>
+      <display value="JiJSNJY8xo"/>
+      <userSelected value="true"/>
+    </security>
+    <tag>
+      <system value="MAhjYzFdAN"/>
+      <version value="iAfUEoJ4AJ"/>
+      <code value="NuIJadJUSV"/>
+      <display value="tABlN1agUk"/>
+      <userSelected value="true"/>
+    </tag>
+    <tag>
+      <code value="ibm/complete-mock"/>
+    </tag>
+  </meta>
+  <implicitRules value="Vo2ICZwI7h"/>
+  <language value="en-US"/>
+  <text>
+    <status value="additional"/>
+    <div xmlns="http://www.w3.org/1999/xhtml"></div>
+  </text>
+  <url value="HXbub70dHf"/>
+  <version value="qeE5UnWlp0"/>
+  <name value="8NKnoJ58RZ"/>
+  <title value="WIN7bDxLQI"/>
+  <status value="retired"/>
+  <experimental value="true"/>
+  <date value="2022-05-13T14:23:04.048986-04:00"/>
+  <publisher value="QgfeUqBWw8"/>
+  <contact>
+    <name value="Inf4zpVksY"/>
+    <telecom>
+      <system value="pager"/>
+      <value value="aEyEWrwty7"/>
+      <use value="work"/>
+      <rank value="1634684168"/>
+      <period>
+        <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+          <valueCode value="unknown"/>
+        </extension>
+      </period>
+    </telecom>
+  </contact>
+  <description value="NcTaiwUWEW"/>
+  <useContext>
+    <code>
+      <system value="FdKGL5SyDx"/>
+      <version value="PkDgoYSIoL"/>
+      <code value="nzxZIrSAI4"/>
+      <display value="RIXV4GFyKG"/>
+      <userSelected value="true"/>
+    </code>
+    <valueQuantity>
+      <value value="0.407426947767419445067815786387654952704906463623046875"/>
+      <comparator value="&gt;"/>
+      <unit value="dpIzJN_TpO"/>
+      <system value="LYnS4sHDcr"/>
+      <code value="DZSfRYHWiV"/>
+    </valueQuantity>
+  </useContext>
+  <jurisdiction>
+    <coding>
+      <system value="HZ9ja6sBdX"/>
+      <version value="gtmDSfRS4o"/>
+      <code value="OSL8LEBmsv"/>
+      <display value="DoE6rVV59g"/>
+      <userSelected value="true"/>
+    </coding>
+    <text value="ti4nObNg4F"/>
+  </jurisdiction>
+  <copyright value="ODlxfHmTpH"/>
+  <packageId value="Dw66EfmlII"/>
+  <license value="CECILL-1.1"/>
+  <fhirVersion value="1.0.2"/>
+  <dependsOn>
+    <uri value="JH3FzKUqFH"/>
+    <packageId value="0IMGjg1JeU"/>
+    <version value="0NIqFpslwV"/>
+  </dependsOn>
+  <global>
+    <type value="ExplanationOfBenefit"/>
+    <profile value="tsQKVOQLND"/>
+  </global>
+  <definition>
+    <grouping>
+      <name value="oWHlceGC9r"/>
+      <description value="otUzM49J8n"/>
+    </grouping>
+    <resource>
+      <reference>
+        <reference value="Basic/7I1KIj26Za"/>
+        <type value="Basic"/>
+        <identifier>
+          <use value="old"/>
+          <type>
+            <coding>
+              <system value="cJr0E__B4B"/>
+              <version value="FdRzq7Role"/>
+              <code value="HpsSxXzHpL"/>
+              <display value="eY7MM9QjFQ"/>
+              <userSelected value="true"/>
+            </coding>
+            <text value="YXlgRXCNGe"/>
+          </type>
+          <system value="uCTBmIKRsw"/>
+          <value value="fzxSOcWZPz"/>
+          <period>
+            <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+              <valueCode value="unknown"/>
+            </extension>
+          </period>
+        </identifier>
+        <display value="ts7FwuTM4Y"/>
+      </reference>
+      <fhirVersion value="1.0.0"/>
+      <name value="x2X1s1g5_r"/>
+      <description value="0DhzjE2_U9"/>
+      <exampleCanonical value="UBI4ImiYFd"/>
+      <groupingId value="Q9zKY2Rzwd"/>
+    </resource>
+    <page>
+      <nameReference>
+        <reference value="Binary/YlkszgH7EH"/>
+        <type value="Binary"/>
+        <identifier>
+          <use value="official"/>
+          <type>
+            <coding>
+              <system value="wi7nrNbNox"/>
+              <version value="0igqVRSS5U"/>
+              <code value="rQfK6lPYR_"/>
+              <display value="if0uQ2qzmO"/>
+              <userSelected value="true"/>
+            </coding>
+            <text value="xH8AjJb2ZC"/>
+          </type>
+          <system value="ZtVJ70kDY6"/>
+          <value value="AnvcW48SLC"/>
+          <period>
+            <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+              <valueCode value="unknown"/>
+            </extension>
+          </period>
+        </identifier>
+        <display value="nxU_jrn45s"/>
+      </nameReference>
+      <title value="Ice1LWIDn3"/>
+      <generation value="generated"/>
+    </page>
+    <parameter>
+      <code value="rule-broken-links"/>
+      <value value="s3o4bKw_KR"/>
+    </parameter>
+    <template>
+      <code value="OTo0JSx_su"/>
+      <source value="UrVw1M3Z1j"/>
+      <scope value="obq5vNuR2V"/>
+    </template>
+  </definition>
+  <manifest>
+    <rendering value="rFZRcKg8yU"/>
+    <resource>
+      <reference>
+        <reference value="Basic/8V3POC38CF"/>
+        <type value="Basic"/>
+        <identifier>
+          <use value="secondary"/>
+          <type>
+            <coding>
+              <system value="dPZTxALa6U"/>
+              <version value="OpOp7sALuN"/>
+              <code value="aQFNLvK19S"/>
+              <display value="iPCLPcaI6L"/>
+              <userSelected value="true"/>
+            </coding>
+            <text value="oKz2DFdkCd"/>
+          </type>
+          <system value="YAbkPtT1Dg"/>
+          <value value="cIQ6Af4Qib"/>
+          <period>
+            <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+              <valueCode value="unknown"/>
+            </extension>
+          </period>
+        </identifier>
+        <display value="98Gp6qchEb"/>
+      </reference>
+      <exampleCanonical value="NuGzGEka8Y"/>
+      <relativePath value="lWsnhp1MkF"/>
+    </resource>
+    <page>
+      <name value="sTqlogVxjA"/>
+      <title value="GLt0DGWMu3"/>
+      <anchor value="St6PPPGgvq"/>
+    </page>
+    <image value="BK4GasTeDs"/>
+    <other value="QpVmcjrEFt"/>
+  </manifest>
+</ImplementationGuide>

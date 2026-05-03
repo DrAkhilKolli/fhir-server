@@ -1,0 +1,51 @@
+{
+    "resourceType": "ValueSet",
+    "id": "vs5",
+    "url": "http://example.com/fhir/ValueSet/vs5",
+    "version": "1.0.0",
+    "status": "active",
+    "compose": {
+        "include": [
+            {
+                "system": "http://example.com/fhir/CodeSystem/cs5",
+                "filter": [
+                    {
+                        "property": "concept",
+                        "op": "generalizes",
+                        "value": "q"
+                    }
+                ]
+            },
+            {
+                "system": "http://example.com/fhir/CodeSystem/cs5",
+                "filter": [
+                    {
+                        "property": "parent",
+                        "op": "=",
+                        "value": "n"
+                    }
+                ]
+            },
+            {
+                "system": "http://example.com/fhir/CodeSystem/cs5",
+                "filter": [
+                    {
+                        "property": "label",
+                        "op": "regex",
+                        "value": "^concept label$"
+                    }
+                ]
+            },
+            {
+                "system": "http://example.com/fhir/CodeSystem/cs5",
+                "filter": [
+                    {
+                        "property": "concept",
+                        "op": "is-a",
+                        "value": "t"
+                    }
+                ]
+            }
+        ]
+    }
+}

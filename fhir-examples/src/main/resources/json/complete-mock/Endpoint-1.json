@@ -1,0 +1,149 @@
+{
+    "resourceType": "Endpoint",
+    "meta": {
+        "versionId": "IQRNOgczj0",
+        "lastUpdated": "2022-05-13T14:23:02.176255-04:00",
+        "source": "9FzhrWf7p9",
+        "profile": [
+            "wWzsD00oHy"
+        ],
+        "security": [
+            {
+                "system": "RURnM29B2K",
+                "version": "b6BQxk1R5I",
+                "code": "gOpB4gGMeJ",
+                "display": "xPgLRyTE0e",
+                "userSelected": true
+            }
+        ],
+        "tag": [
+            {
+                "system": "VGzpFWNJaN",
+                "version": "PizWtmgp8t",
+                "code": "7JZaUiRP11",
+                "display": "daV8DhOTsh",
+                "userSelected": true
+            },
+            {
+                "code": "ibm/complete-mock"
+            }
+        ]
+    },
+    "implicitRules": "2TQB8fio13",
+    "language": "en-US",
+    "text": {
+        "status": "empty",
+        "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"></div>"
+    },
+    "identifier": [
+        {
+            "use": "official",
+            "type": {
+                "coding": [
+                    {
+                        "system": "PwL518cWpY",
+                        "version": "o5zSVc4X_i",
+                        "code": "dh1vyAReYP",
+                        "display": "jN3CbSAUMp",
+                        "userSelected": true
+                    }
+                ],
+                "text": "QYE7frFkud"
+            },
+            "system": "7J4qzMeMYs",
+            "value": "NpAOIe9YWB",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        }
+    ],
+    "status": "entered-in-error",
+    "connectionType": {
+        "system": "q_H9iyvbKb",
+        "version": "ZDNdAcrCcx",
+        "code": "_N9Dt5nJHH",
+        "display": "YU_YD3Jggw",
+        "userSelected": true
+    },
+    "name": "B2xgg51VVv",
+    "managingOrganization": {
+        "reference": "Organization/JsIZchTznn",
+        "type": "Organization",
+        "identifier": {
+            "use": "temp",
+            "type": {
+                "coding": [
+                    {
+                        "system": "DwzrYJZ6Pn",
+                        "version": "5BVoU0Riig",
+                        "code": "thmpC1b25h",
+                        "display": "1uHvUs1Vmw",
+                        "userSelected": true
+                    }
+                ],
+                "text": "YCqTFV1FTO"
+            },
+            "system": "NHFnwOQ8E4",
+            "value": "4_SIj1mnKt",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        },
+        "display": "8m_IgzrW0E"
+    },
+    "contact": [
+        {
+            "system": "sms",
+            "value": "C7DXmvEov4",
+            "use": "old",
+            "rank": 413939913,
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        }
+    ],
+    "period": {
+        "extension": [
+            {
+                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                "valueCode": "unknown"
+            }
+        ]
+    },
+    "payloadType": [
+        {
+            "coding": [
+                {
+                    "system": "1lPJVuta79",
+                    "version": "nXblUYQNZS",
+                    "code": "1dizuhXAQR",
+                    "display": "pQNv2O9GQV",
+                    "userSelected": true
+                }
+            ],
+            "text": "6UjgoX_6Wh"
+        }
+    ],
+    "payloadMimeType": [
+        "OcCY8ztvBC"
+    ],
+    "address": "zrj7PRtul1",
+    "header": [
+        "dsEBPWh2F_"
+    ]
+}

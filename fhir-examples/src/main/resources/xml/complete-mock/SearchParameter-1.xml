@@ -1,0 +1,100 @@
+<SearchParameter xmlns="http://hl7.org/fhir">
+  <meta>
+    <versionId value="NIofnnqUFZ"/>
+    <lastUpdated value="2022-05-13T14:23:01.36952-04:00"/>
+    <source value="EHMbSdUBb0"/>
+    <profile value="WnWbaAhuXl"/>
+    <security>
+      <system value="bsveVfJd0y"/>
+      <version value="HvF9nCld6O"/>
+      <code value="qX7CVhAB9G"/>
+      <display value="tpmNKyHZEh"/>
+      <userSelected value="true"/>
+    </security>
+    <tag>
+      <system value="2AQRq08NrS"/>
+      <version value="fWatzJbDRL"/>
+      <code value="QNwD5XoUdK"/>
+      <display value="lymb7LlF2V"/>
+      <userSelected value="true"/>
+    </tag>
+    <tag>
+      <code value="ibm/complete-mock"/>
+    </tag>
+  </meta>
+  <implicitRules value="GbWnQPd3fh"/>
+  <language value="en-US"/>
+  <text>
+    <status value="generated"/>
+    <div xmlns="http://www.w3.org/1999/xhtml"></div>
+  </text>
+  <url value="kYx3WEa3oR"/>
+  <version value="5vGbQCAGi7"/>
+  <name value="F8fECBJhJF"/>
+  <derivedFrom value="S3cbEO82xY"/>
+  <status value="unknown"/>
+  <experimental value="true"/>
+  <date value="2022-05-13T14:23:01.371609-04:00"/>
+  <publisher value="WCFnO1g9YD"/>
+  <contact>
+    <name value="IOO_ud7oEy"/>
+    <telecom>
+      <system value="phone"/>
+      <value value="DTF5uvnAm8"/>
+      <use value="temp"/>
+      <rank value="1607517017"/>
+      <period>
+        <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+          <valueCode value="unknown"/>
+        </extension>
+      </period>
+    </telecom>
+  </contact>
+  <description value="6Wo7_Pggo0"/>
+  <useContext>
+    <code>
+      <system value="OixfnJPtPO"/>
+      <version value="gbZ7H1efJR"/>
+      <code value="aCPPhRi5ZO"/>
+      <display value="XtAwokwCN9"/>
+      <userSelected value="true"/>
+    </code>
+    <valueCodeableConcept>
+      <coding>
+        <system value="NSBDpPHRKK"/>
+        <version value="SVbrOS3oYy"/>
+        <code value="604CPn9efE"/>
+        <display value="EUl7xUvPO7"/>
+        <userSelected value="true"/>
+      </coding>
+      <text value="r2sSUUm8nV"/>
+    </valueCodeableConcept>
+  </useContext>
+  <jurisdiction>
+    <coding>
+      <system value="Kr6kgl7at2"/>
+      <version value="3S2cbETowI"/>
+      <code value="Ca8RNjor3e"/>
+      <display value="2RuCppnTwB"/>
+      <userSelected value="true"/>
+    </coding>
+    <text value="AYjEh4tvqk"/>
+  </jurisdiction>
+  <purpose value="ekOvER20ts"/>
+  <code value="osOISnVOlU"/>
+  <base value="Practitioner"/>
+  <type value="uri"/>
+  <expression value="U4Ut6NzWmh"/>
+  <xpath value="HTsi34u2mW"/>
+  <xpathUsage value="phonetic"/>
+  <target value="Basic"/>
+  <multipleOr value="true"/>
+  <multipleAnd value="true"/>
+  <comparator value="eb"/>
+  <modifier value="missing"/>
+  <chain value="RkrMNe32du"/>
+  <component>
+    <definition value="Z3DouP5e3d"/>
+    <expression value="vSVc5zDhuZ"/>
+  </component>
+</SearchParameter>

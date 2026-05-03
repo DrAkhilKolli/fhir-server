@@ -1,0 +1,53 @@
+<Subscription xmlns="http://hl7.org/fhir">
+  <meta>
+    <versionId value="U8lRV18e1H"/>
+    <lastUpdated value="2022-05-13T14:23:08.042806-04:00"/>
+    <source value="raChekFSzx"/>
+    <profile value="uaIOorYptI"/>
+    <security>
+      <system value="7fzk2EgvpH"/>
+      <version value="SJeyDsVWyq"/>
+      <code value="Rmc_nAqAA1"/>
+      <display value="QhXw4QhsZ4"/>
+      <userSelected value="true"/>
+    </security>
+    <tag>
+      <system value="t6l0Nd13sq"/>
+      <version value="8DFBhsQJpx"/>
+      <code value="oUWqaFHMUJ"/>
+      <display value="vW9Ejd8HHl"/>
+      <userSelected value="true"/>
+    </tag>
+    <tag>
+      <code value="ibm/complete-mock"/>
+    </tag>
+  </meta>
+  <implicitRules value="H9gMR3fvxF"/>
+  <language value="en-US"/>
+  <text>
+    <status value="generated"/>
+    <div xmlns="http://www.w3.org/1999/xhtml"></div>
+  </text>
+  <status value="active"/>
+  <contact>
+    <system value="pager"/>
+    <value value="f6WDWxZo1u"/>
+    <use value="mobile"/>
+    <rank value="328030457"/>
+    <period>
+      <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+        <valueCode value="unknown"/>
+      </extension>
+    </period>
+  </contact>
+  <end value="2022-05-13T14:23:08.044448-04:00"/>
+  <reason value="j_Rj4Dx_el"/>
+  <criteria value="zQAZusYLge"/>
+  <error value="YZPzXHOMDx"/>
+  <channel>
+    <type value="websocket"/>
+    <endpoint value="qcLvk1kG3D"/>
+    <payload value="sfZj2a1Hzd"/>
+    <header value="dWJ8nWItcs"/>
+  </channel>
+</Subscription>

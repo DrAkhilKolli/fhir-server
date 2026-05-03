@@ -1,0 +1,27 @@
+{
+    "resourceType": "ValueSet",
+    "id": "vs2",
+    "url": "http://example.com/fhir/ValueSet/vs2",
+    "version": "1.0.0",
+    "status": "active",
+    "compose": {
+        "include": [
+            {
+                "system": "http://example.com/fhir/CodeSystem/cs1"
+            },
+            {
+                "system": "http://example.com/fhir/CodeSystem/cs2"
+            }
+        ],
+        "exclude": [
+            {
+                "system": "http://example.com/fhir/CodeSystem/cs2",
+                "concept": [
+                    {
+                        "code": "f"
+                    }
+                ]
+            }
+        ]
+    }
+}

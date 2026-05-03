@@ -1,0 +1,434 @@
+{
+    "resourceType": "MolecularSequence",
+    "meta": {
+        "versionId": "tM8YO8HCyr",
+        "lastUpdated": "2022-05-13T14:23:05.429811-04:00",
+        "source": "NoYro8pvye",
+        "profile": [
+            "FnNSkLHIXh"
+        ],
+        "security": [
+            {
+                "system": "HiDYG4D37r",
+                "version": "98q0U2zuPT",
+                "code": "9u4eDH5P1d",
+                "display": "2cHz0OOfnK",
+                "userSelected": true
+            }
+        ],
+        "tag": [
+            {
+                "system": "jPO8SJ0sie",
+                "version": "y1mayjHdt5",
+                "code": "cEcOlhxwTZ",
+                "display": "jbp6uXEjkA",
+                "userSelected": true
+            },
+            {
+                "code": "ibm/complete-mock"
+            }
+        ]
+    },
+    "implicitRules": "lJEh2c1I_y",
+    "language": "en-US",
+    "text": {
+        "status": "additional",
+        "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"></div>"
+    },
+    "identifier": [
+        {
+            "use": "temp",
+            "type": {
+                "coding": [
+                    {
+                        "system": "uyEWse49Lj",
+                        "version": "2txGHyU4Kv",
+                        "code": "cCspJUNPEi",
+                        "display": "7jomplEp2X",
+                        "userSelected": true
+                    }
+                ],
+                "text": "Rbh5WIBCJh"
+            },
+            "system": "s7WqVIH2Rv",
+            "value": "1QZyYK0C78",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        }
+    ],
+    "type": "rna",
+    "coordinateSystem": 1344183278,
+    "patient": {
+        "reference": "Patient/ptxs9uEOK6",
+        "type": "Patient",
+        "identifier": {
+            "use": "temp",
+            "type": {
+                "coding": [
+                    {
+                        "system": "T7EdiSQc2x",
+                        "version": "AR8CeB4OTk",
+                        "code": "mbaYb4s8Gs",
+                        "display": "T5uAgvvtm2",
+                        "userSelected": true
+                    }
+                ],
+                "text": "HsG6aL69_a"
+            },
+            "system": "2bEF7FVhh7",
+            "value": "gs9Oq72zCC",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        },
+        "display": "BFOS8xcuJ8"
+    },
+    "specimen": {
+        "reference": "Specimen/eXcxb4Ax5G",
+        "type": "Specimen",
+        "identifier": {
+            "use": "official",
+            "type": {
+                "coding": [
+                    {
+                        "system": "F_q2PIy2SO",
+                        "version": "F56_2tRtMj",
+                        "code": "YQyUhAGX0F",
+                        "display": "1ALJxkdk1J",
+                        "userSelected": true
+                    }
+                ],
+                "text": "mItcIFwXf2"
+            },
+            "system": "D6KrN0oCDm",
+            "value": "634LtZcZqh",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        },
+        "display": "dU5C2TlDj5"
+    },
+    "device": {
+        "reference": "Device/TMxBLJwiA2",
+        "type": "Device",
+        "identifier": {
+            "use": "usual",
+            "type": {
+                "coding": [
+                    {
+                        "system": "HUYM0kaz6w",
+                        "version": "cM8YDpTeeJ",
+                        "code": "asA7sDY5_u",
+                        "display": "GU6MCRdr9W",
+                        "userSelected": true
+                    }
+                ],
+                "text": "RJ7movZEj3"
+            },
+            "system": "xh1pS7eUjX",
+            "value": "6wt2JZlTLX",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        },
+        "display": "oN156OsqR6"
+    },
+    "performer": {
+        "reference": "Organization/3n8iaadlkE",
+        "type": "Organization",
+        "identifier": {
+            "use": "old",
+            "type": {
+                "coding": [
+                    {
+                        "system": "klKDjA1OpV",
+                        "version": "kJJhFyvRpw",
+                        "code": "n59VeeZLgV",
+                        "display": "BS6tS5B5CB",
+                        "userSelected": true
+                    }
+                ],
+                "text": "uHLTESNOAt"
+            },
+            "system": "QBdKvNZPyd",
+            "value": "UFK7AQs1nL",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        },
+        "display": "yLExxEF2G5"
+    },
+    "quantity": {
+        "value": 0.64506062654144280532619859513943083584308624267578125,
+        "comparator": "<=",
+        "unit": "FVwqGxXuPE",
+        "system": "qGAcWusOlR",
+        "code": "hgfO9R0hvy"
+    },
+    "referenceSeq": {
+        "chromosome": {
+            "coding": [
+                {
+                    "system": "UHN8wfvSrV",
+                    "version": "bxoEwLug2u",
+                    "code": "FW2PwDFTTS",
+                    "display": "8NGpybmaBh",
+                    "userSelected": true
+                }
+            ],
+            "text": "uklF3nC9tB"
+        },
+        "genomeBuild": "xRMFLWL49u",
+        "orientation": "antisense",
+        "referenceSeqId": {
+            "coding": [
+                {
+                    "system": "Ho296D_keU",
+                    "version": "axkeP0ckco",
+                    "code": "H2wjgpfC2n",
+                    "display": "uTN9_Xjx3z",
+                    "userSelected": true
+                }
+            ],
+            "text": "yHIDZ1TpKg"
+        },
+        "referenceSeqPointer": {
+            "reference": "MolecularSequence/YHZgN4WkVP",
+            "type": "MolecularSequence",
+            "identifier": {
+                "use": "secondary",
+                "type": {
+                    "coding": [
+                        {
+                            "system": "m_JcLXyom3",
+                            "version": "UAPBlv52GQ",
+                            "code": "dgFaA2xnfl",
+                            "display": "gyXIgRdMmo",
+                            "userSelected": true
+                        }
+                    ],
+                    "text": "acoJrsbJqR"
+                },
+                "system": "1bqhat7uFh",
+                "value": "SQNiZB6XJ0",
+                "period": {
+                    "extension": [
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                            "valueCode": "unknown"
+                        }
+                    ]
+                }
+            },
+            "display": "STF3n45Xso"
+        },
+        "referenceSeqString": "VdV36rjpmb",
+        "strand": "watson",
+        "windowStart": 1796482853,
+        "windowEnd": 1550472072
+    },
+    "variant": [
+        {
+            "start": 123223741,
+            "end": 2131355685,
+            "observedAllele": "T5gM_n9AJt",
+            "referenceAllele": "a0IWmKMwab",
+            "cigar": "TTRERQg_14",
+            "variantPointer": {
+                "reference": "Observation/bMQiMIRZ3p",
+                "type": "Observation",
+                "identifier": {
+                    "use": "usual",
+                    "type": {
+                        "coding": [
+                            {
+                                "system": "Udm_0JYRWn",
+                                "version": "KxFB_VRYJi",
+                                "code": "v8pcvTy1aX",
+                                "display": "b5x9l8dReI",
+                                "userSelected": true
+                            }
+                        ],
+                        "text": "OjXQY_B1hX"
+                    },
+                    "system": "NWa0lALGm0",
+                    "value": "8ra2texIXY",
+                    "period": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                                "valueCode": "unknown"
+                            }
+                        ]
+                    }
+                },
+                "display": "reFx3jyrt0"
+            }
+        }
+    ],
+    "observedSeq": "T1FTeMKmxo",
+    "quality": [
+        {
+            "type": "snp",
+            "standardSequence": {
+                "coding": [
+                    {
+                        "system": "qAIzXLNecm",
+                        "version": "zHlJBPeJQY",
+                        "code": "kbrVftCocy",
+                        "display": "Ml4BWSNjjm",
+                        "userSelected": true
+                    }
+                ],
+                "text": "RqR6cEKtpv"
+            },
+            "start": 723290041,
+            "end": 1739670292,
+            "score": {
+                "value": 0.082036871732246663402321473768097348511219024658203125,
+                "comparator": "<=",
+                "unit": "iUbFAMCSwf",
+                "system": "GzbkvPF52j",
+                "code": "eUsnAnaXgP"
+            },
+            "method": {
+                "coding": [
+                    {
+                        "system": "XgP4X5amr9",
+                        "version": "zQtxDeZBmm",
+                        "code": "W9FFcoCN_A",
+                        "display": "UVq0l14jHM",
+                        "userSelected": true
+                    }
+                ],
+                "text": "ciqWSWHagk"
+            },
+            "truthTP": 0.578929803490062955262374089215882122516632080078125,
+            "queryTP": 0.94536543027322295085212999765644781291484832763671875,
+            "truthFN": 0.003384376482561246742009064547573871095664799213409423828125,
+            "queryFP": 0.43323162045323915236849643406458199024200439453125,
+            "gtFP": 0.6121012303461645931434986778185702860355377197265625,
+            "precision": 0.67656233848492874916047412625630386173725128173828125,
+            "recall": 0.269450777794207951831850778035004623234272003173828125,
+            "fScore": 0.97324911961038507168808564529172144830226898193359375,
+            "roc": {
+                "score": [
+                    359914671
+                ],
+                "numTP": [
+                    1316089259
+                ],
+                "numFP": [
+                    339797626
+                ],
+                "numFN": [
+                    1020336168
+                ],
+                "precision": [
+                    0.2063250510793658010211260034338920377194881439208984375
+                ],
+                "sensitivity": [
+                    0.96573922049170324299893763964064419269561767578125
+                ],
+                "fMeasure": [
+                    0.397319605071674464280562233398086391389369964599609375
+                ]
+            }
+        }
+    ],
+    "readCoverage": 468301774,
+    "repository": [
+        {
+            "type": "login",
+            "url": "rowW2AiGFE",
+            "name": "lw5dKcS6_d",
+            "datasetId": "SdEt5RGqjf",
+            "variantsetId": "uTz9oeToLJ",
+            "readsetId": "wjVGjwxAAc"
+        }
+    ],
+    "pointer": [
+        {
+            "reference": "MolecularSequence/OeW4I1baWq",
+            "type": "MolecularSequence",
+            "identifier": {
+                "use": "secondary",
+                "type": {
+                    "coding": [
+                        {
+                            "system": "4YN4kvferJ",
+                            "version": "NcZiLDiYRV",
+                            "code": "oVogG6epEV",
+                            "display": "rhXU9wuF0b",
+                            "userSelected": true
+                        }
+                    ],
+                    "text": "0lx2srwEo5"
+                },
+                "system": "2trIk4fN1Q",
+                "value": "XNx2KVqV5L",
+                "period": {
+                    "extension": [
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                            "valueCode": "unknown"
+                        }
+                    ]
+                }
+            },
+            "display": "LljN4c4zLV"
+        }
+    ],
+    "structureVariant": [
+        {
+            "variantType": {
+                "coding": [
+                    {
+                        "system": "http://loinc.org",
+                        "version": "2.67",
+                        "code": "LA9658-1",
+                        "display": "LA9658-1",
+                        "userSelected": false
+                    }
+                ],
+                "text": "LA9658-1"
+            },
+            "exact": true,
+            "length": 793162426,
+            "outer": {
+                "start": 1346324120,
+                "end": 390775030
+            },
+            "inner": {
+                "start": 1859912636,
+                "end": 345097560
+            }
+        }
+    ]
+}

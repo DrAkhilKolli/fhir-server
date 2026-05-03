@@ -1,0 +1,109 @@
+{
+    "resourceType": "CompartmentDefinition",
+    "meta": {
+        "versionId": "6yTPI623FQ",
+        "lastUpdated": "2022-05-13T14:23:03.856542-04:00",
+        "source": "Lwr_YusKTK",
+        "profile": [
+            "giUpGJnuHF"
+        ],
+        "security": [
+            {
+                "system": "njfiPL5a1g",
+                "version": "LcTPniLYAJ",
+                "code": "GmqBZ1Alx5",
+                "display": "whechRJgeG",
+                "userSelected": true
+            }
+        ],
+        "tag": [
+            {
+                "system": "00K6unkLNU",
+                "version": "AmMedbDyuD",
+                "code": "ZpcCYH06SA",
+                "display": "4J1gTGXmz8",
+                "userSelected": true
+            },
+            {
+                "code": "ibm/complete-mock"
+            }
+        ]
+    },
+    "implicitRules": "ZhB_wsBFYe",
+    "language": "en-US",
+    "text": {
+        "status": "generated",
+        "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"></div>"
+    },
+    "url": "VvM1jlnXxs",
+    "version": "qYJxBW014v",
+    "name": "dY4lXiuaeE",
+    "status": "retired",
+    "experimental": true,
+    "date": "2022-05-13T14:23:03.85846-04:00",
+    "publisher": "7JaZGRxYnb",
+    "contact": [
+        {
+            "name": "vj_ruuvYq8",
+            "telecom": [
+                {
+                    "system": "fax",
+                    "value": "35ssOzDXLI",
+                    "use": "temp",
+                    "rank": 325474612,
+                    "period": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                                "valueCode": "unknown"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "description": "blhLCr2oY0",
+    "useContext": [
+        {
+            "code": {
+                "system": "eFy3Uqy3DO",
+                "version": "g6awzgULQk",
+                "code": "LL7bTOpXFV",
+                "display": "vZYd3dN5B6",
+                "userSelected": true
+            },
+            "valueCodeableConcept": {
+                "coding": [
+                    {
+                        "system": "Ziqb4T5OoQ",
+                        "version": "PLvINPi786",
+                        "code": "FrTZIQAolw",
+                        "display": "tZKWUV5hlA",
+                        "userSelected": true
+                    }
+                ],
+                "text": "_rThplnqec"
+            }
+        }
+    ],
+    "purpose": "mD6nDMOvJR",
+    "_code": {
+        "extension": [
+            {
+                "url": "http://fhir.linuxforhealth.org/extension/custom-compartment-type",
+                "valueCode": "Bogus"
+            }
+        ]
+    },
+    "search": true,
+    "resource": [
+        {
+            "code": "SearchParameter",
+            "param": [
+                "qEF6zE52TQ"
+            ],
+            "documentation": "OdQrRuyv_0"
+        }
+    ]
+}

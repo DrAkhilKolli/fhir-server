@@ -1,0 +1,166 @@
+{
+    "resourceType": "TerminologyCapabilities",
+    "meta": {
+        "versionId": "SxFU4jNMFu",
+        "lastUpdated": "2022-05-13T14:23:03.946086-04:00",
+        "source": "a42uYf5F_2",
+        "profile": [
+            "AYIQnY_tmQ"
+        ],
+        "security": [
+            {
+                "system": "374aXx4S84",
+                "version": "EVWkFFEmzX",
+                "code": "aLOWFwvW8j",
+                "display": "0lsO08wjRp",
+                "userSelected": true
+            }
+        ],
+        "tag": [
+            {
+                "system": "BEcN7ax5Rd",
+                "version": "cdRh3w4gG2",
+                "code": "Llowkve5jS",
+                "display": "QbHPH_iFch",
+                "userSelected": true
+            },
+            {
+                "code": "ibm/complete-mock"
+            }
+        ]
+    },
+    "implicitRules": "vsqMqa5IKb",
+    "language": "en-US",
+    "text": {
+        "status": "empty",
+        "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"></div>"
+    },
+    "url": "xEVL38jENg",
+    "version": "t6M1JH6GjN",
+    "name": "aGvnQZE44O",
+    "title": "InNSeYnXZp",
+    "status": "retired",
+    "experimental": true,
+    "date": "2022-05-13T14:23:03.948064-04:00",
+    "publisher": "YNPZXRBrvt",
+    "contact": [
+        {
+            "name": "qqiS3q1HmU",
+            "telecom": [
+                {
+                    "system": "email",
+                    "value": "HJ9TrbhgD5",
+                    "use": "mobile",
+                    "rank": 2062280504,
+                    "period": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                                "valueCode": "unknown"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "description": "W9K9_qvcUM",
+    "useContext": [
+        {
+            "code": {
+                "system": "SJQDG48Qk7",
+                "version": "Bl8t8Hdkc2",
+                "code": "A3DvI8MHea",
+                "display": "jmxAq054Rp",
+                "userSelected": true
+            },
+            "valueCodeableConcept": {
+                "coding": [
+                    {
+                        "system": "9swugiSbPL",
+                        "version": "MrwYLgmH9Z",
+                        "code": "pR82Q40L92",
+                        "display": "gtMKXH1BpU",
+                        "userSelected": true
+                    }
+                ],
+                "text": "cNRgvjt9cD"
+            }
+        }
+    ],
+    "jurisdiction": [
+        {
+            "coding": [
+                {
+                    "system": "NS5CADpiQb",
+                    "version": "tngf9z2yih",
+                    "code": "_UZWFxJ1UQ",
+                    "display": "SRJkw_Wfvg",
+                    "userSelected": true
+                }
+            ],
+            "text": "gVhg75UBg5"
+        }
+    ],
+    "purpose": "nCJyrbZPpz",
+    "copyright": "OpxGcLHO_o",
+    "kind": "instance",
+    "software": {
+        "name": "8o48zigluM",
+        "version": "rOvbtipUeB"
+    },
+    "implementation": {
+        "description": "1Ijh42qrhc",
+        "url": "YYwFjmGOgx"
+    },
+    "lockedDate": true,
+    "codeSystem": [
+        {
+            "uri": "6Ct3OhXfZW",
+            "version": [
+                {
+                    "code": "EmoyFbVUqS",
+                    "isDefault": true,
+                    "compositional": true,
+                    "language": [
+                        "0rCjTsu1Tw"
+                    ],
+                    "filter": [
+                        {
+                            "code": "Ut6cP4hjp2",
+                            "op": [
+                                "rHRWllb5_t"
+                            ]
+                        }
+                    ],
+                    "property": [
+                        "AsogjQtRXs"
+                    ]
+                }
+            ],
+            "subsumption": true
+        }
+    ],
+    "expansion": {
+        "hierarchical": true,
+        "paging": true,
+        "incomplete": true,
+        "parameter": [
+            {
+                "name": "rdTOlfVwXV",
+                "documentation": "FxjSop__yg"
+            }
+        ],
+        "textFilter": "5OWpBCTYTB"
+    },
+    "codeSearch": "explicit",
+    "validateCode": {
+        "translations": true
+    },
+    "translation": {
+        "needsMap": true
+    },
+    "closure": {
+        "translation": true
+    }
+}

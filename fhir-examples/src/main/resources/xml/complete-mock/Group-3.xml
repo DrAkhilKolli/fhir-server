@@ -1,0 +1,143 @@
+<Group xmlns="http://hl7.org/fhir">
+  <meta>
+    <versionId value="eqyUGVlZfB"/>
+    <lastUpdated value="2022-05-13T14:23:01.93225-04:00"/>
+    <source value="xJQakqn2Kj"/>
+    <profile value="6lsHjVhL6F"/>
+    <security>
+      <system value="xyNTPvQVFV"/>
+      <version value="0pcnnMF1jv"/>
+      <code value="pFv5E_OJcQ"/>
+      <display value="1ZJGqL_2Fo"/>
+      <userSelected value="true"/>
+    </security>
+    <tag>
+      <system value="Km9Tllv_UM"/>
+      <version value="umXfVg8ZNz"/>
+      <code value="DLSwM6rjLk"/>
+      <display value="e4AI0TfQ8t"/>
+      <userSelected value="true"/>
+    </tag>
+    <tag>
+      <code value="ibm/complete-mock"/>
+    </tag>
+  </meta>
+  <implicitRules value="YliYqha06T"/>
+  <language value="en-US"/>
+  <text>
+    <status value="empty"/>
+    <div xmlns="http://www.w3.org/1999/xhtml"></div>
+  </text>
+  <identifier>
+    <use value="old"/>
+    <type>
+      <coding>
+        <system value="REtE19VJGE"/>
+        <version value="YHw51JM2im"/>
+        <code value="La7tVp1Ed_"/>
+        <display value="0mTcz9l4rK"/>
+        <userSelected value="true"/>
+      </coding>
+      <text value="N27_FQ29Wr"/>
+    </type>
+    <system value="1IxWewRkOU"/>
+    <value value="U6k6nLjq57"/>
+    <period>
+      <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+        <valueCode value="unknown"/>
+      </extension>
+    </period>
+  </identifier>
+  <active value="true"/>
+  <type value="medication"/>
+  <actual value="true"/>
+  <code>
+    <coding>
+      <system value="aKUaVW0PEo"/>
+      <version value="w9J1ZRiBsb"/>
+      <code value="ABBk9HqxlR"/>
+      <display value="we940udx1i"/>
+      <userSelected value="true"/>
+    </coding>
+    <text value="dhJ7mF3D2i"/>
+  </code>
+  <name value="l3rGpYdvNY"/>
+  <quantity value="334134739"/>
+  <managingEntity>
+    <reference value="Organization/QJKV6CeAhN"/>
+    <type value="Organization"/>
+    <identifier>
+      <use value="usual"/>
+      <type>
+        <coding>
+          <system value="DTsxyuC8J6"/>
+          <version value="Ns9fBs8WAK"/>
+          <code value="4cS4Otn9kE"/>
+          <display value="nBbaqCuVG4"/>
+          <userSelected value="true"/>
+        </coding>
+        <text value="MN36qTNgt0"/>
+      </type>
+      <system value="3jLG1ZjDTb"/>
+      <value value="rMge75ke7Q"/>
+      <period>
+        <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+          <valueCode value="unknown"/>
+        </extension>
+      </period>
+    </identifier>
+    <display value="3cXd5sYqVR"/>
+  </managingEntity>
+  <characteristic>
+    <code>
+      <coding>
+        <system value="ZCFXIPHL8y"/>
+        <version value="PsUWxxV0Eo"/>
+        <code value="9gjHp4DGgi"/>
+        <display value="oPqJid12lz"/>
+        <userSelected value="true"/>
+      </coding>
+      <text value="B05bCkeTku"/>
+    </code>
+    <valueBoolean value="true"/>
+    <exclude value="true"/>
+    <period>
+      <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+        <valueCode value="unknown"/>
+      </extension>
+    </period>
+  </characteristic>
+  <member>
+    <entity>
+      <reference value="RelatedPerson/QGkxxhE35L"/>
+      <type value="RelatedPerson"/>
+      <identifier>
+        <use value="secondary"/>
+        <type>
+          <coding>
+            <system value="_5_p0iF0KM"/>
+            <version value="Hx102VeQeE"/>
+            <code value="ua0fokcg6O"/>
+            <display value="4jWiuhMvSo"/>
+            <userSelected value="true"/>
+          </coding>
+          <text value="5BpS_Xw5eR"/>
+        </type>
+        <system value="GdDwvdBuwg"/>
+        <value value="WjyFqygi60"/>
+        <period>
+          <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+            <valueCode value="unknown"/>
+          </extension>
+        </period>
+      </identifier>
+      <display value="1o2yzmglCm"/>
+    </entity>
+    <period>
+      <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+        <valueCode value="unknown"/>
+      </extension>
+    </period>
+    <inactive value="true"/>
+  </member>
+</Group>

@@ -1,0 +1,206 @@
+{
+    "resourceType": "Questionnaire",
+    "meta": {
+        "versionId": "fIday0S5rc",
+        "lastUpdated": "2022-05-13T14:23:07.93743-04:00",
+        "source": "llGa9xqMp2",
+        "profile": [
+            "M28rB5Ysrg"
+        ],
+        "security": [
+            {
+                "system": "lCBSx1JxQ9",
+                "version": "gJGnQXDWYk",
+                "code": "iafwhyfB1G",
+                "display": "GXhXKlrgTY",
+                "userSelected": true
+            }
+        ],
+        "tag": [
+            {
+                "system": "c_GB2A7kUZ",
+                "version": "7hPiXkA4Qs",
+                "code": "MgnONQT_94",
+                "display": "Fc1abPOU4T",
+                "userSelected": true
+            },
+            {
+                "code": "ibm/complete-mock"
+            }
+        ]
+    },
+    "implicitRules": "9BIZDIfpk9",
+    "language": "en-US",
+    "text": {
+        "status": "extensions",
+        "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"></div>"
+    },
+    "url": "pYfMVttUn9",
+    "identifier": [
+        {
+            "use": "official",
+            "type": {
+                "coding": [
+                    {
+                        "system": "j4GIkdTvXH",
+                        "version": "HFMOREIWju",
+                        "code": "0YMKC2y5Rh",
+                        "display": "1un6H2Hr1V",
+                        "userSelected": true
+                    }
+                ],
+                "text": "5QHjgHL_UI"
+            },
+            "system": "0oDiTIrJww",
+            "value": "_AuTKMF4ov",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        }
+    ],
+    "version": "1bKX_mgCQU",
+    "name": "rtq2MaGxvs",
+    "title": "EIgYbE5tUi",
+    "derivedFrom": [
+        "0zPF0xgidX"
+    ],
+    "status": "unknown",
+    "experimental": true,
+    "subjectType": [
+        "Subscription"
+    ],
+    "date": "2022-05-13T14:23:07.939929-04:00",
+    "publisher": "5Z59QfHeaq",
+    "contact": [
+        {
+            "name": "BO2swHHvfk",
+            "telecom": [
+                {
+                    "system": "phone",
+                    "value": "uYQUzDIqpx",
+                    "use": "old",
+                    "rank": 305457847,
+                    "period": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                                "valueCode": "unknown"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "description": "C67JFjR0NQ",
+    "useContext": [
+        {
+            "code": {
+                "system": "a5a9mkqhSi",
+                "version": "nQCuGo2Cvk",
+                "code": "faA2km_mjA",
+                "display": "fggyQf0ZAM",
+                "userSelected": true
+            },
+            "valueReference": {
+                "reference": "InsurancePlan/NbK4mNFYnz",
+                "type": "InsurancePlan",
+                "identifier": {
+                    "use": "usual",
+                    "type": {
+                        "coding": [
+                            {
+                                "system": "lubm9R7rZb",
+                                "version": "NQ_a6An26Q",
+                                "code": "qP0JthYr58",
+                                "display": "HFX9fWd5IE",
+                                "userSelected": true
+                            }
+                        ],
+                        "text": "LloNQxideH"
+                    },
+                    "system": "sAFjXIuMjR",
+                    "value": "PE4ZmQGBAG",
+                    "period": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                                "valueCode": "unknown"
+                            }
+                        ]
+                    }
+                },
+                "display": "ES6ZSu80Rz"
+            }
+        }
+    ],
+    "jurisdiction": [
+        {
+            "coding": [
+                {
+                    "system": "mCiBD0bsoE",
+                    "version": "u0kmZ9jI36",
+                    "code": "7AjbzGV1LP",
+                    "display": "TuxHFuBgLg",
+                    "userSelected": true
+                }
+            ],
+            "text": "6tF_MTjnq5"
+        }
+    ],
+    "purpose": "4gMnnUM969",
+    "copyright": "ubVAggvf_1",
+    "approvalDate": "2022-05-13",
+    "lastReviewDate": "2022-05-13",
+    "effectivePeriod": {
+        "extension": [
+            {
+                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                "valueCode": "unknown"
+            }
+        ]
+    },
+    "code": [
+        {
+            "system": "0q7IEYE0ab",
+            "version": "3ph6BUUjqG",
+            "code": "wQCS8tm1Nb",
+            "display": "3rEAekvMEH",
+            "userSelected": true
+        }
+    ],
+    "item": [
+        {
+            "linkId": "NVzNpkHIEU",
+            "definition": "DPUc54owzJ",
+            "code": [
+                {
+                    "system": "dh2gjPIELC",
+                    "version": "Ui7s8x4iNo",
+                    "code": "MFnT9TGBuF",
+                    "display": "6aZO094TMe",
+                    "userSelected": true
+                }
+            ],
+            "prefix": "eKLKNYmvWv",
+            "text": "bhGI0U20lu",
+            "type": "reference",
+            "enableWhen": [
+                {
+                    "question": "OdZes8gyuJ",
+                    "operator": "<",
+                    "answerDecimal": 0.83521281854997686533437217804021202027797698974609375
+                }
+            ],
+            "enableBehavior": "any",
+            "required": true,
+            "repeats": true,
+            "readOnly": true
+        }
+    ]
+}

@@ -1,0 +1,61 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd" >
+<suite name="JDBCUnitTestsSuite">
+    <test name="ParameterTests">
+        <classes>
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.test.util.CacheUtilTest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.test.util.ParameterExtractionTest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.test.util.UriModifierUtilTest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.test.util.NumberParmBehaviorUtilTest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.test.util.QuantityParmBehaviorUtilTest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.test.util.DateParmBehaviorUtilTest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.test.util.LastUpdatedParmBehaviorUtilTest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.test.util.LocationParmBehaviorUtilTest" />
+        </classes>
+    </test>
+    <test name="JDBCSpecTest">
+        <groups>
+            <run>
+                <include name="jdbc-seed"></include>
+            </run>
+        </groups>
+        <classes>
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.test.spec.R4JDBCExamplesTest" />
+        </classes>
+    </test>
+    <test name="JDBCTests">
+        <classes>
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.test.FHIRDbDAOTest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.test.JDBCDeleteTest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.test.JDBCCompartmentTest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.test.JDBCMultiResourceTest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.test.JDBCSortTest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.test.JDBCPagingTest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.test.JDBCIncludeRevincludeTest"/>
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.test.JDBCReverseChainTest"/>
+        </classes>
+    </test>
+    <test name="JDBCSearchTests">
+        <classes>
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.search.test.JDBCSearchCompartmentTest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.search.test.JDBCSearchCompositeTest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.search.test.JDBCSearchDateTest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.search.test.JDBCSearchNumberTest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.search.test.JDBCSearchQuantityTest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.search.test.JDBCSearchReferenceTest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.search.test.JDBCSearchStringTest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.search.test.JDBCSearchTokenTest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.search.test.JDBCSearchURITest" />
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.search.test.JDBCWholeSystemSearchTest" />
+        </classes>
+    </test>
+    <test name="JDBCChangesTests">
+        <groups>
+            <run>
+                <include name="persistence-changes"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="org.linuxforhealth.fhir.persistence.jdbc.test.JDBCChangesTest" />
+        </classes>
+    </test>
+</suite>

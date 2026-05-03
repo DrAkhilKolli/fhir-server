@@ -1,0 +1,206 @@
+{
+    "resourceType": "Questionnaire",
+    "meta": {
+        "versionId": "Ovcs28rZzO",
+        "lastUpdated": "2022-05-13T14:23:07.975897-04:00",
+        "source": "3AnNhO2rpV",
+        "profile": [
+            "azSsidbMVG"
+        ],
+        "security": [
+            {
+                "system": "GQ8I8lDYk3",
+                "version": "I4mF7smxPx",
+                "code": "5qWbJ0fd_g",
+                "display": "laqMeswwnm",
+                "userSelected": true
+            }
+        ],
+        "tag": [
+            {
+                "system": "JO8nUmkcAW",
+                "version": "qu04HZgcfS",
+                "code": "215bI__0Io",
+                "display": "aULdPfn7J7",
+                "userSelected": true
+            },
+            {
+                "code": "ibm/complete-mock"
+            }
+        ]
+    },
+    "implicitRules": "nq0_e3__4Y",
+    "language": "en-US",
+    "text": {
+        "status": "additional",
+        "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"></div>"
+    },
+    "url": "XiNnhrmNPb",
+    "identifier": [
+        {
+            "use": "secondary",
+            "type": {
+                "coding": [
+                    {
+                        "system": "LiEo1f63RY",
+                        "version": "P8eRzXkL0l",
+                        "code": "3eBQRcj2mm",
+                        "display": "qbmMgDPEZu",
+                        "userSelected": true
+                    }
+                ],
+                "text": "JEY8hXlchY"
+            },
+            "system": "Ekupan2Gau",
+            "value": "_74NNqdPGw",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        }
+    ],
+    "version": "PE6Wvqa25S",
+    "name": "wATN1u1zBJ",
+    "title": "H558zPLx_Q",
+    "derivedFrom": [
+        "_edWrduD9l"
+    ],
+    "status": "draft",
+    "experimental": true,
+    "subjectType": [
+        "MedicationDispense"
+    ],
+    "date": "2022-05-13T14:23:07.978517-04:00",
+    "publisher": "qtCoKcFz1t",
+    "contact": [
+        {
+            "name": "0NF5I_cHHl",
+            "telecom": [
+                {
+                    "system": "sms",
+                    "value": "OF5ny7KXF3",
+                    "use": "temp",
+                    "rank": 427998118,
+                    "period": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                                "valueCode": "unknown"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "description": "NEAecAvG03",
+    "useContext": [
+        {
+            "code": {
+                "system": "k3ffEhDf8p",
+                "version": "M6Y1CRpAXc",
+                "code": "T7YIFa6ipU",
+                "display": "H2RA6KPAWh",
+                "userSelected": true
+            },
+            "valueReference": {
+                "reference": "Organization/IMM-OD2mjC",
+                "type": "Organization",
+                "identifier": {
+                    "use": "old",
+                    "type": {
+                        "coding": [
+                            {
+                                "system": "alUeKmBEPj",
+                                "version": "BzIerpBb2w",
+                                "code": "tK1tlvGX1s",
+                                "display": "4G4mfGXKUk",
+                                "userSelected": true
+                            }
+                        ],
+                        "text": "Ryvzyp4zDC"
+                    },
+                    "system": "dm1NGpqoXg",
+                    "value": "b3hUz6rO2q",
+                    "period": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                                "valueCode": "unknown"
+                            }
+                        ]
+                    }
+                },
+                "display": "H2VFiBL2mv"
+            }
+        }
+    ],
+    "jurisdiction": [
+        {
+            "coding": [
+                {
+                    "system": "fMtk58fKEQ",
+                    "version": "_GIkJbdGpk",
+                    "code": "WHWnLI_wm8",
+                    "display": "PcecQZIzkT",
+                    "userSelected": true
+                }
+            ],
+            "text": "pg3I_tUSGU"
+        }
+    ],
+    "purpose": "W19xl7g6ro",
+    "copyright": "D47iVeHPdB",
+    "approvalDate": "2022-05-13",
+    "lastReviewDate": "2022-05-13",
+    "effectivePeriod": {
+        "extension": [
+            {
+                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                "valueCode": "unknown"
+            }
+        ]
+    },
+    "code": [
+        {
+            "system": "AGo0hj96IU",
+            "version": "W9RJn2ysYx",
+            "code": "1gZg1jbMub",
+            "display": "p1sUJGtXWF",
+            "userSelected": true
+        }
+    ],
+    "item": [
+        {
+            "linkId": "Y0kN4bW9W9",
+            "definition": "yb7ca9ix8g",
+            "code": [
+                {
+                    "system": "QWhISy2K1t",
+                    "version": "xwNLbxD6aK",
+                    "code": "Ome5XXo_W1",
+                    "display": "Kco9HFfHot",
+                    "userSelected": true
+                }
+            ],
+            "prefix": "Kf9BrH7TKi",
+            "text": "WUuv9vAlrZ",
+            "type": "url",
+            "enableWhen": [
+                {
+                    "question": "8T4p4pKtYT",
+                    "operator": "!=",
+                    "answerBoolean": true
+                }
+            ],
+            "enableBehavior": "any",
+            "required": true,
+            "repeats": true,
+            "readOnly": true
+        }
+    ]
+}

@@ -1,0 +1,126 @@
+<TestReport xmlns="http://hl7.org/fhir">
+  <meta>
+    <versionId value="6i5lvWptTx"/>
+    <lastUpdated value="2022-05-13T14:23:00.78607-04:00"/>
+    <source value="_HIp4CtnwY"/>
+    <profile value="cYMkdlwJDr"/>
+    <security>
+      <system value="Rw5xolzGqE"/>
+      <version value="hIbZcSoQLC"/>
+      <code value="JFib40mcrD"/>
+      <display value="Io00JyZcm1"/>
+      <userSelected value="true"/>
+    </security>
+    <tag>
+      <system value="dm_0Z5OEg_"/>
+      <version value="3riYkpFk90"/>
+      <code value="kslgL7k6Id"/>
+      <display value="AvL95zE3eK"/>
+      <userSelected value="true"/>
+    </tag>
+    <tag>
+      <code value="ibm/complete-mock"/>
+    </tag>
+  </meta>
+  <implicitRules value="wC_31tVzZi"/>
+  <language value="en-US"/>
+  <text>
+    <status value="additional"/>
+    <div xmlns="http://www.w3.org/1999/xhtml"></div>
+  </text>
+  <identifier>
+    <use value="official"/>
+    <type>
+      <coding>
+        <system value="HOqmnAh4_0"/>
+        <version value="qRMNgWrm2A"/>
+        <code value="YByavd92F0"/>
+        <display value="TyJ7f7e6hn"/>
+        <userSelected value="true"/>
+      </coding>
+      <text value="2o9qzIqb6Q"/>
+    </type>
+    <system value="0yBXhybR2U"/>
+    <value value="NHbfzctYMc"/>
+    <period>
+      <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+        <valueCode value="unknown"/>
+      </extension>
+    </period>
+  </identifier>
+  <name value="2ik_we_YLA"/>
+  <status value="stopped"/>
+  <testScript>
+    <reference value="TestScript/2xvHFPJ1FN"/>
+    <type value="TestScript"/>
+    <identifier>
+      <use value="secondary"/>
+      <type>
+        <coding>
+          <system value="r2q8n5OKYi"/>
+          <version value="KYe45GD7aV"/>
+          <code value="v5nBfthZX4"/>
+          <display value="EkTgs7PDOW"/>
+          <userSelected value="true"/>
+        </coding>
+        <text value="Ne28FSikeJ"/>
+      </type>
+      <system value="GsboQjqABa"/>
+      <value value="29Uvt4n6dg"/>
+      <period>
+        <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+          <valueCode value="unknown"/>
+        </extension>
+      </period>
+    </identifier>
+    <display value="wWy8yk49JB"/>
+  </testScript>
+  <result value="pass"/>
+  <score value="0.497031558138385010092719085150747559964656829833984375"/>
+  <tester value="eZoUR1r_1M"/>
+  <issued value="2022-05-13T14:23:00.789572-04:00"/>
+  <participant>
+    <type value="client"/>
+    <uri value="l5slDY3AGi"/>
+    <display value="mpbHYcpCyg"/>
+  </participant>
+  <setup>
+    <action>
+      <operation>
+        <result value="pass"/>
+        <message value="rcqkQl3zoE"/>
+        <detail value="jTtiJy18eF"/>
+      </operation>
+      <assert>
+        <result value="warning"/>
+        <message value="NaQ3rxPQIa"/>
+        <detail value="nwRTdjmH3X"/>
+      </assert>
+    </action>
+  </setup>
+  <test>
+    <name value="knZbUvc14f"/>
+    <description value="ZDPoN4L1KN"/>
+    <action>
+      <operation>
+        <result value="pass"/>
+        <message value="CdKZPpLtZn"/>
+        <detail value="mqHd98Ag19"/>
+      </operation>
+      <assert>
+        <result value="skip"/>
+        <message value="Xd872PoJW9"/>
+        <detail value="P20KC1mVXV"/>
+      </assert>
+    </action>
+  </test>
+  <teardown>
+    <action>
+      <operation>
+        <result value="skip"/>
+        <message value="VgrfUgvcg1"/>
+        <detail value="U_3W5K_Hop"/>
+      </operation>
+    </action>
+  </teardown>
+</TestReport>

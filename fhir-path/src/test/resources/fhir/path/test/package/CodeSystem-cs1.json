@@ -1,0 +1,22 @@
+{
+    "resourceType": "CodeSystem",
+    "id": "cs1",
+    "name": "Code System 5",
+    "url": "http://example.com/fhir/CodeSystem/cs1",
+    "version": "1.0.0",
+    "status": "active",
+    "hierarchyMeaning": "is-a",
+    "content": "complete",
+    "concept": [
+        {
+            "code": "a",
+            "display": "concept a"
+        },
+        {
+            "code": "b"
+        },
+        {
+            "code": "c"
+        }
+    ]
+}

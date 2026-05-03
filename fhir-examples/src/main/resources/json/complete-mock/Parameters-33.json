@@ -1,0 +1,40 @@
+{
+    "resourceType": "Parameters",
+    "meta": {
+        "versionId": "e7IID-YEyz",
+        "lastUpdated": "2022-05-13T14:23:02.051482-04:00",
+        "source": "brVBbfuabX",
+        "profile": [
+            "NNYpoJxgy8"
+        ],
+        "security": [
+            {
+                "system": "yrb8r8HYkW",
+                "version": "VjKh41sNc1",
+                "code": "oyWsdzMP0m",
+                "display": "5c3De2HI5B",
+                "userSelected": true
+            }
+        ],
+        "tag": [
+            {
+                "system": "H7rmTVCA4m",
+                "version": "OssoKdGWjv",
+                "code": "knFPibFAaW",
+                "display": "fLIWafpqQE",
+                "userSelected": true
+            },
+            {
+                "code": "ibm/complete-mock"
+            }
+        ]
+    },
+    "implicitRules": "52mzI06SbC",
+    "language": "en-US",
+    "parameter": [
+        {
+            "name": "6b5cvIdYSx",
+            "valueUri": "x0XmCEN8Xq"
+        }
+    ]
+}

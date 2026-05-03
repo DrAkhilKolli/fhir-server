@@ -1,0 +1,142 @@
+<CodeSystem xmlns="http://hl7.org/fhir">
+  <meta>
+    <versionId value="OKnComkZos"/>
+    <lastUpdated value="2022-05-13T14:23:00.883277-04:00"/>
+    <source value="KAY_E2wk_C"/>
+    <profile value="i0DaKXaMJ0"/>
+    <security>
+      <system value="QyrDfRfC0E"/>
+      <version value="Vj9svHxSzT"/>
+      <code value="rDojYdTR9s"/>
+      <display value="g94YazckVK"/>
+      <userSelected value="true"/>
+    </security>
+    <tag>
+      <system value="irB26CnVwH"/>
+      <version value="1QrNwTpMxz"/>
+      <code value="HXQnA6LEtp"/>
+      <display value="UU7LNYKkKB"/>
+      <userSelected value="true"/>
+    </tag>
+    <tag>
+      <code value="ibm/complete-mock"/>
+    </tag>
+  </meta>
+  <implicitRules value="64EYleifI2"/>
+  <language value="en-US"/>
+  <text>
+    <status value="extensions"/>
+    <div xmlns="http://www.w3.org/1999/xhtml"></div>
+  </text>
+  <url value="bxL6k0Jl6T"/>
+  <identifier>
+    <use value="official"/>
+    <type>
+      <coding>
+        <system value="UEDNAyGQGH"/>
+        <version value="Wxot4KpAks"/>
+        <code value="L3oJk_ZYj7"/>
+        <display value="ZJsweddDFC"/>
+        <userSelected value="true"/>
+      </coding>
+      <text value="JE4ozU5Xcz"/>
+    </type>
+    <system value="_dEV6atu92"/>
+    <value value="3LTTfiEcQU"/>
+    <period>
+      <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+        <valueCode value="unknown"/>
+      </extension>
+    </period>
+  </identifier>
+  <version value="xre4LSPBep"/>
+  <name value="Xq9W7J03lD"/>
+  <title value="iMA5DO9MC4"/>
+  <status value="draft"/>
+  <experimental value="true"/>
+  <date value="2022-05-13T14:23:00.885879-04:00"/>
+  <publisher value="e3khaz1zva"/>
+  <contact>
+    <name value="sjYPThFv4i"/>
+    <telecom>
+      <system value="other"/>
+      <value value="AwSG8Y8V7z"/>
+      <use value="work"/>
+      <rank value="1448042759"/>
+      <period>
+        <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+          <valueCode value="unknown"/>
+        </extension>
+      </period>
+    </telecom>
+  </contact>
+  <description value="_s9MbU4NFR"/>
+  <useContext>
+    <code>
+      <system value="oXUCpS4MP6"/>
+      <version value="SoZj01Llaj"/>
+      <code value="_WxuZ8Zumb"/>
+      <display value="3hFZXLGmFp"/>
+      <userSelected value="true"/>
+    </code>
+    <valueQuantity>
+      <value value="0.95582961275331423944834341455134563148021697998046875"/>
+      <comparator value="&gt;="/>
+      <unit value="Es0oYS_eYM"/>
+      <system value="W8v0SASfq_"/>
+      <code value="Bj0IokqVcu"/>
+    </valueQuantity>
+  </useContext>
+  <jurisdiction>
+    <coding>
+      <system value="aU7X8uXSpy"/>
+      <version value="cVOavMgfo1"/>
+      <code value="Mr4Wh3scfP"/>
+      <display value="RDKfapIgSL"/>
+      <userSelected value="true"/>
+    </coding>
+    <text value="ztAhIWZK5A"/>
+  </jurisdiction>
+  <purpose value="43fwV2kwZL"/>
+  <copyright value="ARrZ6DwMnv"/>
+  <caseSensitive value="true"/>
+  <valueSet value="4DpBRthvEK"/>
+  <hierarchyMeaning value="part-of"/>
+  <compositional value="true"/>
+  <versionNeeded value="true"/>
+  <content value="supplement"/>
+  <supplements value="YBy0niPyhf"/>
+  <count value="1830855534"/>
+  <filter>
+    <code value="3UQDfqg_ui"/>
+    <description value="Gmmuwm1PDS"/>
+    <operator value="regex"/>
+    <value value="_GRvTsLrdB"/>
+  </filter>
+  <property>
+    <code value="trNHeTMld1"/>
+    <uri value="v8jgPbdh2K"/>
+    <description value="ZVq5JbveiM"/>
+    <type value="decimal"/>
+  </property>
+  <concept>
+    <code value="6QdnQ0dSwt"/>
+    <display value="Wk3EvdLJG_"/>
+    <definition value="UucjrFTP4z"/>
+    <designation>
+      <language value="en-US"/>
+      <use>
+        <system value="Kxx4FwieLQ"/>
+        <version value="9S_1jp7YbK"/>
+        <code value="rHLVnO3TzY"/>
+        <display value="2ycMtg0G3g"/>
+        <userSelected value="true"/>
+      </use>
+      <value value="qm9PeDcCa5"/>
+    </designation>
+    <property>
+      <code value="EEVi74ho70"/>
+      <valueCode value="UC9FKVNx3U"/>
+    </property>
+  </concept>
+</CodeSystem>

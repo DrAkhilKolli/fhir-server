@@ -1,0 +1,96 @@
+{
+    "__comment": "FHIR Server configuration",
+    "fhirServer": {
+        "core": {
+            "tenantIdHeaderName": "X-FHIR-TENANT-ID",
+            "datastoreIdHeaderName": "X-FHIR-DSID",
+            "checkReferenceTypes": true,
+            "conditionalDeleteMaxNumber": 10,
+            "serverRegistryResourceProviderEnabled": true
+        },
+        "resources": {
+            "open": true,
+            "CarePlan": {
+                "profiles": {
+                    "atLeastOne": [
+                    ],
+                    "notAllowed": [
+                        "profile8",
+                        "profile6|1"
+                    ],
+                    "allowUnknown": true
+                }
+            },
+            "Condition": {
+                "profiles": {
+                    "atLeastOne": [
+                    ],
+                    "notAllowed": [
+                    ],
+                    "allowUnknown": false,
+                    "defaultVersions": {
+                        "profile4":"2"
+                    }
+                }
+            },
+            "Device": {
+                "profiles": {
+                    "atLeastOne": [
+                        "profile10|1"
+                    ],
+                    "notAllowed": [
+                        "profile11|1"
+                    ],
+                    "defaultVersions": {
+                        "profile10":"1",
+                        "profile11":"1"
+                    },
+                    "allowUnknown": true
+                }
+            },
+           "Encounter": {
+                "profiles": {
+                    "allowUnknown": true
+                }
+            },
+            "Patient": {
+                "profiles": {
+                    "atLeastOne": [
+                        "profile1",
+                        "profile2|1",
+                        "profile3"
+                    ],
+                    "notAllowed": [
+                        "profile5"
+                    ],
+                    "allowUnknown": true,
+                    "defaultVersions": {
+                        "profile3":"2"
+                    }
+                }
+            },
+            "Procedure": {
+                "profiles": {
+                    "atLeastOne": [
+                    ]
+                }
+            },
+            "Resource": {
+                "profiles": {
+                    "atLeastOne": [
+                        "profile4"
+                    ],
+                    "notAllowed": [
+                        "profile7"
+                    ],
+                    "allowUnknown": false
+                }
+            }
+        },
+        "audit": {
+            "serviceClassName" : "org.linuxforhealth.fhir.audit.impl.NopService",
+            "serviceProperties" : {
+            }
+        }
+    }
+}

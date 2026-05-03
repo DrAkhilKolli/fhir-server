@@ -1,0 +1,76 @@
+version: '3.7'
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    shm_size: 256MB
+    tty: true
+    stdin_open: true
+    hostname: postgres-db
+    volumes:
+      - type: bind
+        source: ./db
+        target: /db/data
+    # Stop Grace Period - 2 minutes (very intentional)
+    stop_grace_period: 2m
+    sysctls:
+      net.core.somaxconn: 256
+      net.ipv4.tcp_syncookies: 0
+      # To use all of 2 gigabytes
+      kernel.shmmax: 1055092736
+      kernel.shmall: 257591
+    privileged: true
+    command: tail -f /dev/null
+    environment:
+      PG_TRUST_LOCALNET: 'true'
+    networks:
+      - fhir
+    ports:
+      - "5432:5432"
+  fhir-server:
+    image: linuxforhealth/fhir-server:latest
+    hostname: fhir
+    volumes:
+      - type: bind
+        source: ./workarea/volumes/dist/config
+        target: /opt/ol/wlp/usr/servers/defaultServer/config
+        read_only: true
+      - type: bind
+        source: ./workarea/volumes/dist/overrides
+        target: /opt/ol/wlp/usr/servers/defaultServer/configDropins/overrides
+        read_only: true
+      - type: bind
+        source: ./workarea/volumes/dist/userlib/
+        target: /opt/ol/wlp/usr/servers/defaultServer/userlib
+        read_only: true
+    command: bash -c "
+      java -jar /opt/fhir-server/tools/fhir-persistence-schema-*-cli.jar
+        --db-type derby --prop db.database=/output/derby/profile --prop db.create=Y
+        --prop resourceTypes=${TENANT1_PROFILE_RESOURCE_TYPES}
+        --update-schema &&
+      java -jar /opt/fhir-server/tools/fhir-persistence-schema-*-cli.jar
+        --db-type derby --prop db.database=/output/derby/reference --prop db.create=Y
+        --prop resourceTypes=${TENANT1_REFERENCE_RESOURCE_TYPES}
+        --update-schema &&
+      java -jar /opt/fhir-server/tools/fhir-persistence-schema-*-cli.jar
+        --db-type derby --prop db.database=/output/derby/study1 --prop db.create=Y
+        --prop resourceTypes=${TENANT1_STUDY1_RESOURCE_TYPES}
+        --update-schema &&
+      /opt/ol/wlp/bin/server run"
+    healthcheck:
+      start_period: 60s
+      interval: 10s
+      timeout: 10s
+      retries: 2
+      # https://docs.docker.com/compose/compose-file/#variable-substitution
+      test: curl --max-time 5 -v -f -k -u 'fhiruser:change-password' 'https://localhost:9443/fhir-server/api/v4/$$healthcheck'
+    ports:
+      - 9443:9443
+    depends_on:
+      - postgres
+    networks:
+      - fhir
+networks:
+  fhir:
+    driver: bridge

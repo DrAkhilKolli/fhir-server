@@ -1,0 +1,188 @@
+{
+    "resourceType": "Questionnaire",
+    "meta": {
+        "versionId": "ms0oDmJZxZ",
+        "lastUpdated": "2022-05-13T14:23:07.912229-04:00",
+        "source": "x4T71CZnYJ",
+        "profile": [
+            "ty3pXJGUNu"
+        ],
+        "security": [
+            {
+                "system": "ZbrjfNNsLr",
+                "version": "Tf1BPlggDe",
+                "code": "wa038_NwPN",
+                "display": "I0yoAK3c82",
+                "userSelected": true
+            }
+        ],
+        "tag": [
+            {
+                "system": "8psB_5qiX7",
+                "version": "ItArfeb1ll",
+                "code": "eGVCFWzisK",
+                "display": "Ii2b4GAyD3",
+                "userSelected": true
+            },
+            {
+                "code": "ibm/complete-mock"
+            }
+        ]
+    },
+    "implicitRules": "lwV2hRTj9E",
+    "language": "en-US",
+    "text": {
+        "status": "empty",
+        "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"></div>"
+    },
+    "url": "xsdgCFV7_C",
+    "identifier": [
+        {
+            "use": "usual",
+            "type": {
+                "coding": [
+                    {
+                        "system": "JTuBPeALDf",
+                        "version": "yi6NUmG79H",
+                        "code": "OTCLu5EP58",
+                        "display": "SEMurFbRr0",
+                        "userSelected": true
+                    }
+                ],
+                "text": "MiKkdUdBuo"
+            },
+            "system": "CIrzIPj8su",
+            "value": "Yw7c9X8QUY",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        }
+    ],
+    "version": "ATh44oosTh",
+    "name": "Wb2frhSCeb",
+    "title": "H3IelLB2hO",
+    "derivedFrom": [
+        "oEKXKR6XTy"
+    ],
+    "status": "draft",
+    "experimental": true,
+    "subjectType": [
+        "PlanDefinition"
+    ],
+    "date": "2022-05-13T14:23:07.914806-04:00",
+    "publisher": "uzGX_ioRBo",
+    "contact": [
+        {
+            "name": "9uABjWmJbp",
+            "telecom": [
+                {
+                    "system": "fax",
+                    "value": "JD3EB2iFIj",
+                    "use": "old",
+                    "rank": 2041689234,
+                    "period": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                                "valueCode": "unknown"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "description": "VUhpRS6rfh",
+    "useContext": [
+        {
+            "code": {
+                "system": "232hBSgpyX",
+                "version": "tLnk6OziEq",
+                "code": "evIzlsuAar",
+                "display": "GCF2Q1uiin",
+                "userSelected": true
+            },
+            "valueCodeableConcept": {
+                "coding": [
+                    {
+                        "system": "EKQHa7WXKI",
+                        "version": "4xoxHBCw60",
+                        "code": "oxRRxF_8mG",
+                        "display": "GN_T94f_gv",
+                        "userSelected": true
+                    }
+                ],
+                "text": "WAfJM83zLm"
+            }
+        }
+    ],
+    "jurisdiction": [
+        {
+            "coding": [
+                {
+                    "system": "DIU77BIuSP",
+                    "version": "grKr9iCir9",
+                    "code": "7yZsTEbGwE",
+                    "display": "e3HegqLCIr",
+                    "userSelected": true
+                }
+            ],
+            "text": "tWUucJZBzx"
+        }
+    ],
+    "purpose": "TjnaVSr2vo",
+    "copyright": "kcm7nr4dQA",
+    "approvalDate": "2022-05-13",
+    "lastReviewDate": "2022-05-13",
+    "effectivePeriod": {
+        "extension": [
+            {
+                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                "valueCode": "unknown"
+            }
+        ]
+    },
+    "code": [
+        {
+            "system": "tTW8gVLBKz",
+            "version": "U4eMrEDiTB",
+            "code": "JU42KWVjnh",
+            "display": "klGWhB7MTh",
+            "userSelected": true
+        }
+    ],
+    "item": [
+        {
+            "linkId": "75BztdUp4p",
+            "definition": "JU8Gwx49UL",
+            "code": [
+                {
+                    "system": "qaax66odqw",
+                    "version": "bnglXwBCrw",
+                    "code": "2nkngjKmVD",
+                    "display": "p9kQzwwhuf",
+                    "userSelected": true
+                }
+            ],
+            "prefix": "J9r6mUJeTO",
+            "text": "jOxV9D_IeS",
+            "type": "reference",
+            "enableWhen": [
+                {
+                    "question": "8K729oxStk",
+                    "operator": "!=",
+                    "answerBoolean": true
+                }
+            ],
+            "enableBehavior": "all",
+            "required": true,
+            "repeats": true,
+            "readOnly": true
+        }
+    ]
+}

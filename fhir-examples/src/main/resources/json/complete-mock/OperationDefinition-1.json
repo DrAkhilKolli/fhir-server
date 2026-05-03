@@ -1,0 +1,151 @@
+{
+    "resourceType": "OperationDefinition",
+    "meta": {
+        "versionId": "C35q0wbGOA",
+        "lastUpdated": "2022-05-13T14:23:01.861814-04:00",
+        "source": "GNkdxO7JGa",
+        "profile": [
+            "nNeL2XlgDw"
+        ],
+        "security": [
+            {
+                "system": "494Pu2Ok9p",
+                "version": "IeUvDVwu20",
+                "code": "Ls5mHbqegn",
+                "display": "b4CtEKGNMI",
+                "userSelected": true
+            }
+        ],
+        "tag": [
+            {
+                "system": "spsVZTPSli",
+                "version": "HzkzsTTM2j",
+                "code": "NAHPGw4N4j",
+                "display": "ZH29L5Il_r",
+                "userSelected": true
+            },
+            {
+                "code": "ibm/complete-mock"
+            }
+        ]
+    },
+    "implicitRules": "nVpgeY7yqt",
+    "language": "en-US",
+    "text": {
+        "status": "extensions",
+        "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"></div>"
+    },
+    "url": "4uqFGMwYYk",
+    "version": "uZsGnRlvvm",
+    "name": "8j9QWH1fTj",
+    "title": "LvTP_yzyH7",
+    "status": "retired",
+    "kind": "query",
+    "experimental": true,
+    "date": "2022-05-13T14:23:01.866758-04:00",
+    "publisher": "UEM4sGs6hY",
+    "contact": [
+        {
+            "name": "xNi7in3rwd",
+            "telecom": [
+                {
+                    "system": "sms",
+                    "value": "ijw_5bMrYS",
+                    "use": "work",
+                    "rank": 1447575346,
+                    "period": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                                "valueCode": "unknown"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "description": "5qxI3sZkWi",
+    "useContext": [
+        {
+            "code": {
+                "system": "y2LrDdpkAX",
+                "version": "Um0Iq5zRUE",
+                "code": "hCYBy3D2Vx",
+                "display": "PXly2zTP0k",
+                "userSelected": true
+            },
+            "valueCodeableConcept": {
+                "coding": [
+                    {
+                        "system": "0i1AJntQwd",
+                        "version": "PwpblhUHRT",
+                        "code": "gdbhh4wR8T",
+                        "display": "a82unMea9y",
+                        "userSelected": true
+                    }
+                ],
+                "text": "qXmske2BUJ"
+            }
+        }
+    ],
+    "jurisdiction": [
+        {
+            "coding": [
+                {
+                    "system": "MuT3j9Zvf0",
+                    "version": "vHCDyAn552",
+                    "code": "Cg0CNhLXq4",
+                    "display": "bgCoQswhY0",
+                    "userSelected": true
+                }
+            ],
+            "text": "06K2Z81fKC"
+        }
+    ],
+    "purpose": "p52_Lx29ND",
+    "affectsState": true,
+    "code": "j9F_NHsYQG",
+    "comment": "9ubE8tU6TV",
+    "base": "RhSzv7EYuu",
+    "resource": [
+        "Basic"
+    ],
+    "system": true,
+    "type": true,
+    "instance": true,
+    "inputProfile": "PBpjKX195F",
+    "outputProfile": "BNy3ey7YHn",
+    "parameter": [
+        {
+            "name": "GUpcpkV7j_",
+            "use": "out",
+            "min": 538281098,
+            "max": "iWR8RGOYPo",
+            "documentation": "e8lRdMXPuR",
+            "type": "ResearchDefinition",
+            "targetProfile": [
+                "bDpq78VKks"
+            ],
+            "searchType": "date",
+            "binding": {
+                "strength": "example",
+                "valueSet": "uXP208vgSr"
+            },
+            "referencedFrom": [
+                {
+                    "source": "NSsx9Xc2aA",
+                    "sourceId": "QNVBILb5Fk"
+                }
+            ]
+        }
+    ],
+    "overload": [
+        {
+            "parameterName": [
+                "zQuzQl0zVR"
+            ],
+            "comment": "cXe_vJymPp"
+        }
+    ]
+}

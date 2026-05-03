@@ -1,0 +1,20 @@
+{
+	"resourceType": "Practitioner",
+	"active": true,
+	"name": [{
+		"family": "Strangelove, MD",
+		"given": ["James"]
+	}],
+	"telecom": [{
+		"system": "phone",
+		"value": "512-111-2345",
+		"use": "mobile"
+	}],
+	"address": [{
+		"use": "work",
+		"city": "Acmeville",
+		"state": "Tejas",
+		"postalCode": "12345",
+		"country": "USA"
+	}]
+}

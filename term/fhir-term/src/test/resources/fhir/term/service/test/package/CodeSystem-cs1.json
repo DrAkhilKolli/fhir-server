@@ -1,0 +1,27 @@
+{
+    "resourceType": "CodeSystem",
+    "id": "cs1",
+    "url": "http://example.com/fhir/CodeSystem/cs1",
+    "version": "1.0.0",
+    "status": "active",
+    "caseSensitive": true,
+    "hierarchyMeaning": "is-a",
+    "content": "complete",
+    "concept": [
+        {
+            "code": "a",
+            "display": "Concept a",
+            "designation": [{
+                "value": "a"
+            }]
+        },
+        {
+            "code": "b",
+            "display": "Concept b"
+        },
+        {
+            "code": "c",
+            "display": "Concept c"
+        }
+    ]
+}

@@ -1,0 +1,80 @@
+{
+	"resourceType": "Bundle",
+	"id": "searchParams",
+	"meta": {
+		"lastUpdated": "2019-07-12T22:37:54.724+11:00"
+	},
+	"type": "collection",
+	"entry": [{
+		"fullUrl": "http://example.com/fhir/SearchParameter/Patient-favorite-mlb-team",
+		"resource": {
+			"resourceType": "SearchParameter",
+			"id": "Patient-favorite-mlb-team",
+			"url": "http://example.com/fhir/SearchParameter/Patient-favorite-mlb-team",
+			"version": "4.0.0",
+			"name": "favorite-mlb-team",
+			"status": "draft",
+			"experimental": false,
+			"date": "2018-12-27T22:37:54+11:00",
+			"publisher": "IBM Server for HL7 FHIR Test",
+			"contact": [{
+				"telecom": [{
+					"system": "url",
+					"value": "http://example.com/fhir"
+				}]
+			},
+			{
+				"telecom": [{
+					"system": "url",
+					"value": "http://example.com/fhir"
+				}]
+			}],
+			"description": "the measurement value",
+			"code": "favorite-mlb-team",
+			"base": ["Patient"],
+			"type": "string",
+			"xpathUsage": "normal",
+			"xpath": "f:Patient/f:extension[@url='http://example.com/fhir/extension/Patient/favorite-mlb-team']/valueString",
+			"expression" : "Patient.extension.where(url='http://example.com/fhir/extension/Patient/favorite-mlb-team').value",
+			"multipleOr": true,
+			"multipleAnd": true,
+			"modifier": []
+		}
+	},
+	{
+		"fullUrl": "http://example.com/fhir/SearchParameter/Patient-favorite-nfl-team",
+		"resource": {
+			"resourceType": "SearchParameter",
+			"id": "Patient-favorite-nfl-team",
+			"url": "http://example.com/fhir/SearchParameter/Patient-favorite-nfl-team",
+			"version": "4.0.0",
+			"name": "favorite-nfl-team",
+			"status": "draft",
+			"experimental": false,
+			"date": "2018-12-27T22:37:54+11:00",
+			"publisher": "IBM Server for HL7 FHIR Test",
+			"contact": [{
+				"telecom": [{
+					"system": "url",
+					"value": "http://example.com/fhir"
+				}]
+			},
+			{
+				"telecom": [{
+					"system": "url",
+					"value": "http://example.com/fhir"
+				}]
+			}],
+			"description": "the measurement value",
+			"code": "favorite-nfl-team",
+			"base": ["Patient"],
+			"type": "string",
+			"xpathUsage": "normal",
+			"xpath": "f:Patient/f:extension[@url='http://example.com/fhir/extension/Patient/favorite-nfl-team']/valueString",
+			"expression" : "Patient.extension.where(url='http://example.com/fhir/extension/Patient/favorite-nfl-team').value",
+			"multipleOr": true,
+			"multipleAnd": true,
+			"modifier": []
+		}
+	}]
+}

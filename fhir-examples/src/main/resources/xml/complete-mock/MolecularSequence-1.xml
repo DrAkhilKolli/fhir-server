@@ -1,0 +1,351 @@
+<MolecularSequence xmlns="http://hl7.org/fhir">
+  <meta>
+    <versionId value="tM8YO8HCyr"/>
+    <lastUpdated value="2022-05-13T14:23:05.429811-04:00"/>
+    <source value="NoYro8pvye"/>
+    <profile value="FnNSkLHIXh"/>
+    <security>
+      <system value="HiDYG4D37r"/>
+      <version value="98q0U2zuPT"/>
+      <code value="9u4eDH5P1d"/>
+      <display value="2cHz0OOfnK"/>
+      <userSelected value="true"/>
+    </security>
+    <tag>
+      <system value="jPO8SJ0sie"/>
+      <version value="y1mayjHdt5"/>
+      <code value="cEcOlhxwTZ"/>
+      <display value="jbp6uXEjkA"/>
+      <userSelected value="true"/>
+    </tag>
+    <tag>
+      <code value="ibm/complete-mock"/>
+    </tag>
+  </meta>
+  <implicitRules value="lJEh2c1I_y"/>
+  <language value="en-US"/>
+  <text>
+    <status value="additional"/>
+    <div xmlns="http://www.w3.org/1999/xhtml"></div>
+  </text>
+  <identifier>
+    <use value="temp"/>
+    <type>
+      <coding>
+        <system value="uyEWse49Lj"/>
+        <version value="2txGHyU4Kv"/>
+        <code value="cCspJUNPEi"/>
+        <display value="7jomplEp2X"/>
+        <userSelected value="true"/>
+      </coding>
+      <text value="Rbh5WIBCJh"/>
+    </type>
+    <system value="s7WqVIH2Rv"/>
+    <value value="1QZyYK0C78"/>
+    <period>
+      <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+        <valueCode value="unknown"/>
+      </extension>
+    </period>
+  </identifier>
+  <type value="rna"/>
+  <coordinateSystem value="1344183278"/>
+  <patient>
+    <reference value="Patient/ptxs9uEOK6"/>
+    <type value="Patient"/>
+    <identifier>
+      <use value="temp"/>
+      <type>
+        <coding>
+          <system value="T7EdiSQc2x"/>
+          <version value="AR8CeB4OTk"/>
+          <code value="mbaYb4s8Gs"/>
+          <display value="T5uAgvvtm2"/>
+          <userSelected value="true"/>
+        </coding>
+        <text value="HsG6aL69_a"/>
+      </type>
+      <system value="2bEF7FVhh7"/>
+      <value value="gs9Oq72zCC"/>
+      <period>
+        <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+          <valueCode value="unknown"/>
+        </extension>
+      </period>
+    </identifier>
+    <display value="BFOS8xcuJ8"/>
+  </patient>
+  <specimen>
+    <reference value="Specimen/eXcxb4Ax5G"/>
+    <type value="Specimen"/>
+    <identifier>
+      <use value="official"/>
+      <type>
+        <coding>
+          <system value="F_q2PIy2SO"/>
+          <version value="F56_2tRtMj"/>
+          <code value="YQyUhAGX0F"/>
+          <display value="1ALJxkdk1J"/>
+          <userSelected value="true"/>
+        </coding>
+        <text value="mItcIFwXf2"/>
+      </type>
+      <system value="D6KrN0oCDm"/>
+      <value value="634LtZcZqh"/>
+      <period>
+        <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+          <valueCode value="unknown"/>
+        </extension>
+      </period>
+    </identifier>
+    <display value="dU5C2TlDj5"/>
+  </specimen>
+  <device>
+    <reference value="Device/TMxBLJwiA2"/>
+    <type value="Device"/>
+    <identifier>
+      <use value="usual"/>
+      <type>
+        <coding>
+          <system value="HUYM0kaz6w"/>
+          <version value="cM8YDpTeeJ"/>
+          <code value="asA7sDY5_u"/>
+          <display value="GU6MCRdr9W"/>
+          <userSelected value="true"/>
+        </coding>
+        <text value="RJ7movZEj3"/>
+      </type>
+      <system value="xh1pS7eUjX"/>
+      <value value="6wt2JZlTLX"/>
+      <period>
+        <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+          <valueCode value="unknown"/>
+        </extension>
+      </period>
+    </identifier>
+    <display value="oN156OsqR6"/>
+  </device>
+  <performer>
+    <reference value="Organization/3n8iaadlkE"/>
+    <type value="Organization"/>
+    <identifier>
+      <use value="old"/>
+      <type>
+        <coding>
+          <system value="klKDjA1OpV"/>
+          <version value="kJJhFyvRpw"/>
+          <code value="n59VeeZLgV"/>
+          <display value="BS6tS5B5CB"/>
+          <userSelected value="true"/>
+        </coding>
+        <text value="uHLTESNOAt"/>
+      </type>
+      <system value="QBdKvNZPyd"/>
+      <value value="UFK7AQs1nL"/>
+      <period>
+        <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+          <valueCode value="unknown"/>
+        </extension>
+      </period>
+    </identifier>
+    <display value="yLExxEF2G5"/>
+  </performer>
+  <quantity>
+    <value value="0.64506062654144280532619859513943083584308624267578125"/>
+    <comparator value="&lt;="/>
+    <unit value="FVwqGxXuPE"/>
+    <system value="qGAcWusOlR"/>
+    <code value="hgfO9R0hvy"/>
+  </quantity>
+  <referenceSeq>
+    <chromosome>
+      <coding>
+        <system value="UHN8wfvSrV"/>
+        <version value="bxoEwLug2u"/>
+        <code value="FW2PwDFTTS"/>
+        <display value="8NGpybmaBh"/>
+        <userSelected value="true"/>
+      </coding>
+      <text value="uklF3nC9tB"/>
+    </chromosome>
+    <genomeBuild value="xRMFLWL49u"/>
+    <orientation value="antisense"/>
+    <referenceSeqId>
+      <coding>
+        <system value="Ho296D_keU"/>
+        <version value="axkeP0ckco"/>
+        <code value="H2wjgpfC2n"/>
+        <display value="uTN9_Xjx3z"/>
+        <userSelected value="true"/>
+      </coding>
+      <text value="yHIDZ1TpKg"/>
+    </referenceSeqId>
+    <referenceSeqPointer>
+      <reference value="MolecularSequence/YHZgN4WkVP"/>
+      <type value="MolecularSequence"/>
+      <identifier>
+        <use value="secondary"/>
+        <type>
+          <coding>
+            <system value="m_JcLXyom3"/>
+            <version value="UAPBlv52GQ"/>
+            <code value="dgFaA2xnfl"/>
+            <display value="gyXIgRdMmo"/>
+            <userSelected value="true"/>
+          </coding>
+          <text value="acoJrsbJqR"/>
+        </type>
+        <system value="1bqhat7uFh"/>
+        <value value="SQNiZB6XJ0"/>
+        <period>
+          <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+            <valueCode value="unknown"/>
+          </extension>
+        </period>
+      </identifier>
+      <display value="STF3n45Xso"/>
+    </referenceSeqPointer>
+    <referenceSeqString value="VdV36rjpmb"/>
+    <strand value="watson"/>
+    <windowStart value="1796482853"/>
+    <windowEnd value="1550472072"/>
+  </referenceSeq>
+  <variant>
+    <start value="123223741"/>
+    <end value="2131355685"/>
+    <observedAllele value="T5gM_n9AJt"/>
+    <referenceAllele value="a0IWmKMwab"/>
+    <cigar value="TTRERQg_14"/>
+    <variantPointer>
+      <reference value="Observation/bMQiMIRZ3p"/>
+      <type value="Observation"/>
+      <identifier>
+        <use value="usual"/>
+        <type>
+          <coding>
+            <system value="Udm_0JYRWn"/>
+            <version value="KxFB_VRYJi"/>
+            <code value="v8pcvTy1aX"/>
+            <display value="b5x9l8dReI"/>
+            <userSelected value="true"/>
+          </coding>
+          <text value="OjXQY_B1hX"/>
+        </type>
+        <system value="NWa0lALGm0"/>
+        <value value="8ra2texIXY"/>
+        <period>
+          <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+            <valueCode value="unknown"/>
+          </extension>
+        </period>
+      </identifier>
+      <display value="reFx3jyrt0"/>
+    </variantPointer>
+  </variant>
+  <observedSeq value="T1FTeMKmxo"/>
+  <quality>
+    <type value="snp"/>
+    <standardSequence>
+      <coding>
+        <system value="qAIzXLNecm"/>
+        <version value="zHlJBPeJQY"/>
+        <code value="kbrVftCocy"/>
+        <display value="Ml4BWSNjjm"/>
+        <userSelected value="true"/>
+      </coding>
+      <text value="RqR6cEKtpv"/>
+    </standardSequence>
+    <start value="723290041"/>
+    <end value="1739670292"/>
+    <score>
+      <value value="0.082036871732246663402321473768097348511219024658203125"/>
+      <comparator value="&lt;="/>
+      <unit value="iUbFAMCSwf"/>
+      <system value="GzbkvPF52j"/>
+      <code value="eUsnAnaXgP"/>
+    </score>
+    <method>
+      <coding>
+        <system value="XgP4X5amr9"/>
+        <version value="zQtxDeZBmm"/>
+        <code value="W9FFcoCN_A"/>
+        <display value="UVq0l14jHM"/>
+        <userSelected value="true"/>
+      </coding>
+      <text value="ciqWSWHagk"/>
+    </method>
+    <truthTP value="0.578929803490062955262374089215882122516632080078125"/>
+    <queryTP value="0.94536543027322295085212999765644781291484832763671875"/>
+    <truthFN value="0.003384376482561246742009064547573871095664799213409423828125"/>
+    <queryFP value="0.43323162045323915236849643406458199024200439453125"/>
+    <gtFP value="0.6121012303461645931434986778185702860355377197265625"/>
+    <precision value="0.67656233848492874916047412625630386173725128173828125"/>
+    <recall value="0.269450777794207951831850778035004623234272003173828125"/>
+    <fScore value="0.97324911961038507168808564529172144830226898193359375"/>
+    <roc>
+      <score value="359914671"/>
+      <numTP value="1316089259"/>
+      <numFP value="339797626"/>
+      <numFN value="1020336168"/>
+      <precision value="0.2063250510793658010211260034338920377194881439208984375"/>
+      <sensitivity value="0.96573922049170324299893763964064419269561767578125"/>
+      <fMeasure value="0.397319605071674464280562233398086391389369964599609375"/>
+    </roc>
+  </quality>
+  <readCoverage value="468301774"/>
+  <repository>
+    <type value="login"/>
+    <url value="rowW2AiGFE"/>
+    <name value="lw5dKcS6_d"/>
+    <datasetId value="SdEt5RGqjf"/>
+    <variantsetId value="uTz9oeToLJ"/>
+    <readsetId value="wjVGjwxAAc"/>
+  </repository>
+  <pointer>
+    <reference value="MolecularSequence/OeW4I1baWq"/>
+    <type value="MolecularSequence"/>
+    <identifier>
+      <use value="secondary"/>
+      <type>
+        <coding>
+          <system value="4YN4kvferJ"/>
+          <version value="NcZiLDiYRV"/>
+          <code value="oVogG6epEV"/>
+          <display value="rhXU9wuF0b"/>
+          <userSelected value="true"/>
+        </coding>
+        <text value="0lx2srwEo5"/>
+      </type>
+      <system value="2trIk4fN1Q"/>
+      <value value="XNx2KVqV5L"/>
+      <period>
+        <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+          <valueCode value="unknown"/>
+        </extension>
+      </period>
+    </identifier>
+    <display value="LljN4c4zLV"/>
+  </pointer>
+  <structureVariant>
+    <variantType>
+      <coding>
+        <system value="http://loinc.org"/>
+        <version value="2.67"/>
+        <code value="LA9658-1"/>
+        <display value="LA9658-1"/>
+        <userSelected value="false"/>
+      </coding>
+      <text value="LA9658-1"/>
+    </variantType>
+    <exact value="true"/>
+    <length value="793162426"/>
+    <outer>
+      <start value="1346324120"/>
+      <end value="390775030"/>
+    </outer>
+    <inner>
+      <start value="1859912636"/>
+      <end value="345097560"/>
+    </inner>
+  </structureVariant>
+</MolecularSequence>

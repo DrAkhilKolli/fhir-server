@@ -1,0 +1,46 @@
+# Eclipse
+.project
+.settings/
+.classpath
+ibm-web-ext.xml
+
+## Annotation processing
+.apt_generated/
+.apt_generated_tests/
+.factorypath
+
+# IntelliJ IDEA
+*.iml
+.idea/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Mac OS X
+.DS_Store
+
+# Output folders
+target/
+test-output/
+
+# Test DB and schematool logs
+/derby/
+derby.log
+fhirschema.log
+
+# Integration tests
+/SIT/
+/pre-it-logs/
+/pre-it-logs.zip
+/server-logs/
+/integration-test-results/
+/integration-test-results.zip
+/health.json
+
+# Don't import pom backups
+**/pom.xml.versionsBackup
+dependency-reduced-pom.xml
+
+# Maven config
+.mvn/
