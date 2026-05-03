@@ -1,0 +1,31 @@
+{
+	"resourceType": "Device",
+	"patient": {
+		"reference": "Patient/SIT1"
+	},
+	"identifier": [{
+		"system": "http://goodcare.org/devices/id",
+		"value": "345675"
+	}, {
+		"type": {
+			"coding": [{
+				"system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+				"code": "SNO"
+			}],
+			"text": "Serial Number"
+		},
+		"value": "AMID-342135-8464"
+	}],
+	"type": {
+		"coding": [{
+			"system": "http://snomed.info/sct",
+			"code": "86184003",
+			"display": "Electrocardiographic monitor and recorder"
+		}],
+		"text": "ECG"
+	},
+	"status": "active",
+	"manufacturer": "Acme Devices, Inc",
+	"lotNumber": "43453424",
+	"url": "http://example.com/SIT1"
+}

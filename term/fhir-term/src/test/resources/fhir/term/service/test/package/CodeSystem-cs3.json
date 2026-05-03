@@ -1,0 +1,33 @@
+{
+    "resourceType": "CodeSystem",
+    "id": "cs3",
+    "url": "http://example.com/fhir/CodeSystem/cs3",
+    "version": "1.0.0",
+    "status": "active",
+    "hierarchyMeaning": "is-a",
+    "content": "complete",
+    "concept": [
+        {
+            "code": "g",
+            "concept": [
+                {
+                    "code": "x",
+                    "concept": [
+                        {
+                            "code": "y"
+                        },
+                        {
+                            "code": "z"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "code": "h"
+        },
+        {
+            "code": "i"
+        }
+    ]
+}

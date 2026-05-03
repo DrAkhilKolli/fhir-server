@@ -1,0 +1,7 @@
+logs/
+*/fhir-server/
+deploy.sh
+*.jar
+*.zip
+*.log
+*.lck

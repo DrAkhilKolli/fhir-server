@@ -1,0 +1,201 @@
+{
+    "resourceType": "DeviceMetric",
+    "meta": {
+        "versionId": "-jyimUUNct",
+        "lastUpdated": "2022-05-13T14:23:06.648901-04:00",
+        "source": "zKIz8JXpAF",
+        "profile": [
+            "S277N0MAhB"
+        ],
+        "security": [
+            {
+                "system": "esxlBjHAZT",
+                "version": "g9yBVGyJlT",
+                "code": "fS5fGAYAeT",
+                "display": "n1EGjt8e2h",
+                "userSelected": true
+            }
+        ],
+        "tag": [
+            {
+                "system": "zCtsTU7GvI",
+                "version": "rJRR4VFXn4",
+                "code": "aB2f0pkGxh",
+                "display": "CYTSoXDMYV",
+                "userSelected": true
+            },
+            {
+                "code": "ibm/complete-mock"
+            }
+        ]
+    },
+    "implicitRules": "brgAgPCGsy",
+    "language": "en-US",
+    "text": {
+        "status": "generated",
+        "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"></div>"
+    },
+    "identifier": [
+        {
+            "use": "usual",
+            "type": {
+                "coding": [
+                    {
+                        "system": "KonqpqKF4T",
+                        "version": "znR8DBA6uy",
+                        "code": "tVDQ6B06R6",
+                        "display": "DDHkvQRJNh",
+                        "userSelected": true
+                    }
+                ],
+                "text": "zLbePwPQ5a"
+            },
+            "system": "PjsC7ilhye",
+            "value": "I5mm0UsZH2",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        }
+    ],
+    "type": {
+        "coding": [
+            {
+                "system": "Ffqcrsl245",
+                "version": "52vvuyRuTc",
+                "code": "t4yyUSenYl",
+                "display": "WE5sXIBIWo",
+                "userSelected": true
+            }
+        ],
+        "text": "QWeFkn8Gro"
+    },
+    "unit": {
+        "coding": [
+            {
+                "system": "ryIChWgn_s",
+                "version": "xlbr33Vz38",
+                "code": "bpKtd3E47T",
+                "display": "lnaHLlZ7Mc",
+                "userSelected": true
+            }
+        ],
+        "text": "zRJ1my1VCS"
+    },
+    "source": {
+        "reference": "Device/GBQ5Zgxo0-",
+        "type": "Device",
+        "identifier": {
+            "use": "old",
+            "type": {
+                "coding": [
+                    {
+                        "system": "_SltjHV8ie",
+                        "version": "JVwt354zR1",
+                        "code": "bHlrQ0NQKj",
+                        "display": "OULc9DVa9f",
+                        "userSelected": true
+                    }
+                ],
+                "text": "GowQHm0nOX"
+            },
+            "system": "DaFdfcOTEh",
+            "value": "w9gKd1DHFB",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        },
+        "display": "Pxrgo16ya8"
+    },
+    "parent": {
+        "reference": "Device/O4QY49mWSe",
+        "type": "Device",
+        "identifier": {
+            "use": "official",
+            "type": {
+                "coding": [
+                    {
+                        "system": "08BCKFmq0u",
+                        "version": "gjhNvlIPOF",
+                        "code": "LgkB9yJqKs",
+                        "display": "nCR10vSdzj",
+                        "userSelected": true
+                    }
+                ],
+                "text": "EkmUkjhWyi"
+            },
+            "system": "ZVrwbZIvg4",
+            "value": "SYEg_RKxqQ",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        },
+        "display": "C1vICSH2RJ"
+    },
+    "operationalStatus": "entered-in-error",
+    "color": "red",
+    "category": "measurement",
+    "measurementPeriod": {
+        "event": [
+            "2022-05-13T14:23:06.655226-04:00"
+        ],
+        "repeat": {
+            "boundsDuration": {
+                "value": 0.5602616809267570996411222949973307549953460693359375,
+                "comparator": "<=",
+                "unit": "JZwiRSQxUU",
+                "system": "http://unitsofmeasure.org",
+                "code": "h"
+            },
+            "count": 172919662,
+            "countMax": 1383862894,
+            "duration": 0.4729679048587731582387050366378389298915863037109375,
+            "durationMax": 0.826376184682463321706791248288936913013458251953125,
+            "durationUnit": "mo",
+            "frequency": 493480677,
+            "frequencyMax": 1154802018,
+            "period": 0.350742541020610143487346022084238938987255096435546875,
+            "periodMax": 0.9310315178800607771592012795736081898212432861328125,
+            "periodUnit": "wk",
+            "dayOfWeek": [
+                "sat"
+            ],
+            "when": [
+                "PCM"
+            ]
+        },
+        "code": {
+            "coding": [
+                {
+                    "system": "FOmtaOWlcO",
+                    "version": "W8dcmqpCSg",
+                    "code": "KLwHjkvX2K",
+                    "display": "Z51NjkEEIc",
+                    "userSelected": true
+                }
+            ],
+            "text": "WlAUnBKQSJ"
+        }
+    },
+    "calibration": [
+        {
+            "type": "gain",
+            "state": "calibration-required",
+            "time": "2022-05-13T14:23:06.658548-04:00"
+        }
+    ]
+}

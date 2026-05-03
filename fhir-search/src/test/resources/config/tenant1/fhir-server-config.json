@@ -1,0 +1,31 @@
+{
+    "__comment": "FHIR Server configuration",
+    "fhirServer": {
+        "resources": {
+            "open": true,
+            "Device": {
+                "searchParameters": {
+                    "patient": "http://hl7.org/fhir/SearchParameter/Device-patient",
+                    "organization": "http://hl7.org/fhir/SearchParameter/Device-organization"
+                }
+            },
+            "Observation": {
+                "searchParameters": {
+                    "code": "http://hl7.org/fhir/SearchParameter/clinical-code",
+                    "value-range": "http://hl7.org/fhir/SearchParameter/Observation-value-range"
+                }
+            },
+            "Patient": {
+                "searchParameters": {
+                    "active": "http://hl7.org/fhir/SearchParameter/Patient-active",
+                    "address": "http://hl7.org/fhir/SearchParameter/individual-address",
+                    "birthdate": "http://hl7.org/fhir/SearchParameter/individual-birthdate",
+                    "name": "http://hl7.org/fhir/SearchParameter/Patient-name"
+                }
+            }
+        },
+        "core": {
+            "defaultPageSize": 500
+        }
+    }
+}

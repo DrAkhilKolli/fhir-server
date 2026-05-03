@@ -1,0 +1,156 @@
+{
+    "resourceType": "MessageDefinition",
+    "meta": {
+        "versionId": "dw2OYNkZN8",
+        "lastUpdated": "2022-05-13T14:23:08.0591-04:00",
+        "source": "TBAAp1WPuP",
+        "profile": [
+            "3Ta3HT1gKe"
+        ],
+        "security": [
+            {
+                "system": "8IYE2QsGJ4",
+                "version": "oSEFeTojHL",
+                "code": "5h1aaqFcKO",
+                "display": "8PjOeTSvHY",
+                "userSelected": true
+            }
+        ],
+        "tag": [
+            {
+                "system": "mCmkkXy5lv",
+                "version": "4DD1QLAqVL",
+                "code": "4sEaLZiGn_",
+                "display": "nnsbvTSjuo",
+                "userSelected": true
+            },
+            {
+                "code": "ibm/complete-mock"
+            }
+        ]
+    },
+    "implicitRules": "cu94Ey9NTY",
+    "language": "en-US",
+    "text": {
+        "status": "generated",
+        "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"></div>"
+    },
+    "url": "GjHrSNLSdG",
+    "identifier": [
+        {
+            "use": "temp",
+            "type": {
+                "coding": [
+                    {
+                        "system": "1ojwxO7Z4v",
+                        "version": "DFk4wyDPh9",
+                        "code": "2ZJNcJDic6",
+                        "display": "WG1ab9Bdyi",
+                        "userSelected": true
+                    }
+                ],
+                "text": "UaAXiRuDUQ"
+            },
+            "system": "cUdl2NDp_T",
+            "value": "h6li7YSWU_",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        }
+    ],
+    "version": "eRka_BfmsR",
+    "name": "IbrLNZR6Sp",
+    "title": "bFXNPoKBwT",
+    "replaces": [
+        "QuqQ7KBU9A"
+    ],
+    "status": "draft",
+    "experimental": true,
+    "date": "2022-05-13T14:23:08.061636-04:00",
+    "publisher": "0u49AtAaMG",
+    "contact": [
+        {
+            "name": "Utqdvn16j4",
+            "telecom": [
+                {
+                    "system": "fax",
+                    "value": "8fTItSJo2i",
+                    "use": "work",
+                    "rank": 1323309325,
+                    "period": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                                "valueCode": "unknown"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "description": "5VzthuirZo",
+    "useContext": [
+        {
+            "code": {
+                "system": "XoUw9I_8st",
+                "version": "xBbUdyaXmc",
+                "code": "39hj1NMZJu",
+                "display": "XsJGs_ZoQj",
+                "userSelected": true
+            },
+            "valueQuantity": {
+                "value": 0.5068578479447116702516495934105478227138519287109375,
+                "comparator": "<",
+                "unit": "vlfo9DTKxY",
+                "system": "qk2yt3ussO",
+                "code": "3ISa1ktBs2"
+            }
+        }
+    ],
+    "jurisdiction": [
+        {
+            "coding": [
+                {
+                    "system": "4IqLdcrVyI",
+                    "version": "i1qYUCfZp8",
+                    "code": "2V2IsG5Dfg",
+                    "display": "J8FxsI7Gy9",
+                    "userSelected": true
+                }
+            ],
+            "text": "dN7M6lfIA5"
+        }
+    ],
+    "purpose": "rg4fzZtsmV",
+    "copyright": "Gj6Hm76on0",
+    "base": "n2DPrQtCOx",
+    "parent": [
+        "laNYpfn4Mz"
+    ],
+    "eventUri": "wHvlc6WicQ",
+    "category": "notification",
+    "focus": [
+        {
+            "code": "DiagnosticReport",
+            "profile": "FbQ4TUM31K",
+            "min": 1468141381,
+            "max": "*"
+        }
+    ],
+    "responseRequired": "on-success",
+    "allowedResponse": [
+        {
+            "message": "wcvlPl48KU",
+            "situation": "esKT78w9j_"
+        }
+    ],
+    "graph": [
+        "ZAQCBiXe4x"
+    ]
+}

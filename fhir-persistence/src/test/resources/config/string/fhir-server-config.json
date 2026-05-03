@@ -1,0 +1,13 @@
+{
+    "__comment": "FHIR Server configuration extension for the string test tenant",
+    "fhirServer": {
+        "resources": {
+            "Basic": {
+                "searchParameters": {
+                    "code": "http://example.com/fhir/SearchParameter/Basic-code",
+                    "*": "*"
+                }
+            }
+        }
+    }
+}

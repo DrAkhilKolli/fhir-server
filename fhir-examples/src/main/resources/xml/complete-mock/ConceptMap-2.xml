@@ -1,0 +1,138 @@
+<ConceptMap xmlns="http://hl7.org/fhir">
+  <meta>
+    <versionId value="055e2tGcuV"/>
+    <lastUpdated value="2022-05-13T14:23:07.410129-04:00"/>
+    <source value="bcITaTjMQy"/>
+    <profile value="o_7XmvQ5Au"/>
+    <security>
+      <system value="RYaDLqrfyJ"/>
+      <version value="YkV6BIOrRI"/>
+      <code value="zWkxtdWhAj"/>
+      <display value="d8vNxlw1en"/>
+      <userSelected value="true"/>
+    </security>
+    <tag>
+      <system value="0fEkxUSRjx"/>
+      <version value="Ikg_nf_DZn"/>
+      <code value="3KhoVEKcOH"/>
+      <display value="FTqiDOp4we"/>
+      <userSelected value="true"/>
+    </tag>
+    <tag>
+      <code value="ibm/complete-mock"/>
+    </tag>
+  </meta>
+  <implicitRules value="FAaeqwOxXi"/>
+  <language value="en-US"/>
+  <text>
+    <status value="additional"/>
+    <div xmlns="http://www.w3.org/1999/xhtml"></div>
+  </text>
+  <url value="ymVbvCC18R"/>
+  <identifier>
+    <use value="secondary"/>
+    <type>
+      <coding>
+        <system value="vT_rL72gxm"/>
+        <version value="87zgNGhNhb"/>
+        <code value="zK0qupKqNx"/>
+        <display value="4eJuvqxWiQ"/>
+        <userSelected value="true"/>
+      </coding>
+      <text value="heD9MWU6Le"/>
+    </type>
+    <system value="lcqKZKyYKX"/>
+    <value value="89_M4kQEcO"/>
+    <period>
+      <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+        <valueCode value="unknown"/>
+      </extension>
+    </period>
+  </identifier>
+  <version value="0VkZU8t_88"/>
+  <name value="RPZHX8SPnE"/>
+  <title value="w4JQ3bvLCM"/>
+  <status value="draft"/>
+  <experimental value="true"/>
+  <date value="2022-05-13T14:23:07.413154-04:00"/>
+  <publisher value="nS25sinxqW"/>
+  <contact>
+    <name value="F4y5GvgRT5"/>
+    <telecom>
+      <system value="pager"/>
+      <value value="pKgmcYY6lD"/>
+      <use value="old"/>
+      <rank value="1689682375"/>
+      <period>
+        <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+          <valueCode value="unknown"/>
+        </extension>
+      </period>
+    </telecom>
+  </contact>
+  <description value="HoXrLdNHsn"/>
+  <useContext>
+    <code>
+      <system value="fGWAToWY2Q"/>
+      <version value="4IKoubNwEb"/>
+      <code value="EnFluOsFog"/>
+      <display value="A6FFqzc1E8"/>
+      <userSelected value="true"/>
+    </code>
+    <valueQuantity>
+      <value value="0.06951444141018547906440971928532235324382781982421875"/>
+      <comparator value="&lt;"/>
+      <unit value="ETeS7wqnla"/>
+      <system value="j4iaq0ULWt"/>
+      <code value="5sHiCqAeum"/>
+    </valueQuantity>
+  </useContext>
+  <jurisdiction>
+    <coding>
+      <system value="Up0cGzPrGG"/>
+      <version value="QAwwTIeeE8"/>
+      <code value="JPm85kopKR"/>
+      <display value="SOnpkQMdVg"/>
+      <userSelected value="true"/>
+    </coding>
+    <text value="H4vsQP1Jlv"/>
+  </jurisdiction>
+  <purpose value="NMbWNmZTTP"/>
+  <copyright value="oIj2YhUjWm"/>
+  <sourceCanonical value="MoopdxH6Dl"/>
+  <targetCanonical value="ykzuVa5Sje"/>
+  <group>
+    <source value="SpVoMTgygg"/>
+    <sourceVersion value="EEuFVdRTzD"/>
+    <target value="J2dWLxv95a"/>
+    <targetVersion value="zBcl1jYKLF"/>
+    <element>
+      <code value="lthdm9YhD3"/>
+      <display value="_hbcLbentH"/>
+      <target>
+        <code value="5QoxOXZooO"/>
+        <display value="8pF9mXprgh"/>
+        <equivalence value="relatedto"/>
+        <comment value="bgOS0eCWqo"/>
+        <dependsOn>
+          <property value="ywOGBkRZdf"/>
+          <system value="cHiVbry4MI"/>
+          <value value="QqbAqZpLby"/>
+          <display value="hP07Uo33Zc"/>
+        </dependsOn>
+        <product>
+          <property value="jmL7S5stTd"/>
+          <system value="u3igQ3mZn1"/>
+          <value value="XJa_nah8yz"/>
+          <display value="li5detg5j5"/>
+        </product>
+      </target>
+    </element>
+    <unmapped>
+      <mode value="fixed"/>
+      <code value="qLk9Sx1Fv_"/>
+      <display value="wZO_m8vRRJ"/>
+      <url value="SugZCkTCBp"/>
+    </unmapped>
+  </group>
+</ConceptMap>

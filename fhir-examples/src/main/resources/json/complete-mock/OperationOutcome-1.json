@@ -1,0 +1,63 @@
+{
+    "resourceType": "OperationOutcome",
+    "meta": {
+        "versionId": "2GQ6U3Qtup",
+        "lastUpdated": "2022-05-13T14:23:01.418491-04:00",
+        "source": "X7xdVOX4sg",
+        "profile": [
+            "kQbqBDPz1v"
+        ],
+        "security": [
+            {
+                "system": "FDWP5CifF6",
+                "version": "jQsvbib4LN",
+                "code": "3ajTAJ1FQB",
+                "display": "2tw2rBdXnd",
+                "userSelected": true
+            }
+        ],
+        "tag": [
+            {
+                "system": "xoCDc55GfF",
+                "version": "vLuCm0bPmY",
+                "code": "2nKxOF5zDZ",
+                "display": "3PclWsPCcT",
+                "userSelected": true
+            },
+            {
+                "code": "ibm/complete-mock"
+            }
+        ]
+    },
+    "implicitRules": "u8FRhO65SY",
+    "language": "en-US",
+    "text": {
+        "status": "extensions",
+        "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"></div>"
+    },
+    "issue": [
+        {
+            "severity": "information",
+            "code": "multiple-matches",
+            "details": {
+                "coding": [
+                    {
+                        "system": "QcxVFgO7A4",
+                        "version": "2RY5Nq2c75",
+                        "code": "SkdwotlQrW",
+                        "display": "A7qXNTViAD",
+                        "userSelected": true
+                    }
+                ],
+                "text": "8M3a9Zl4LF"
+            },
+            "diagnostics": "SmGNMGMoC0",
+            "location": [
+                "dLTek3HKCo"
+            ],
+            "expression": [
+                "PwZGR4LCfQ"
+            ]
+        }
+    ]
+}

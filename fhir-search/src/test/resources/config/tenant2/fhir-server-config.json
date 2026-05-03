@@ -1,0 +1,8 @@
+{
+    "__comment": "FHIR Server configuration",
+    "fhirServer": {
+        "core": {
+            "defaultPageSize": 5000
+        }
+    }
+}

@@ -1,0 +1,57 @@
+{
+    "__comment": "FHIR Server configuration",
+    "fhirServer": {
+        "resources": {
+            "open": true,
+            "CarePlan": {
+                "searchParameterCombinations": ["patient+category+status+date",
+                    "patient+category+status",
+                    "patient+category",
+                    "patient+category+date"]
+            },
+            "ExplanationOfBenefit": {
+                "interactions": [
+                    "read",
+                    "vread",
+                    "history",
+                    "search"],
+                "searchIncludes": [
+                    "ExplanationOfBenefit:patient",
+                    "ExplanationOfBenefit:provider",
+                    "ExplanationOfBenefit:care-team:Practitioner",
+                    "ExplanationOfBenefit:coverage",
+                    "ExplanationOfBenefit:insurer",
+                    "ExplanationOfBenefit:*"],
+                "searchRevIncludes": [],
+                "searchParameters": {
+                    "_id": "http://hl7.org/fhir/SearchParameter/Resource-id",
+                    "_lastUpdated": "http://hl7.org/fhir/SearchParameter/Resource-lastUpdated",
+                    "patient": "http://hl7.org/fhir/us/carin-bb/SearchParameter/explanationofbenefit-patient",
+                    "care-team": "http://hl7.org/fhir/SearchParameter/ExplanationOfBenefit-care-team",
+                    "payee": "http://hl7.org/fhir/SearchParameter/ExplanationOfBenefit-payee",
+                    "type": "http://hl7.org/fhir/us/carin-bb/SearchParameter/explanationofbenefit-type",
+                    "identifier": "http://hl7.org/fhir/us/carin-bb/SearchParameter/explanationofbenefit-identifier",
+                    "service-date": "http://hl7.org/fhir/us/carin-bb/SearchParameter/explanationofbenefit-service-date"
+                }
+            },
+            "Patient": {
+                "searchIncludes": ["Patient:general-practitioner"],
+                "searchRevIncludes": [
+                    "ExplanationOfBenefit:payee:Patient",
+                    "MedicationRequest:intended-performer"],
+                "searchParameterCombinations": ["","_id",
+                    "multiple-birth-count",
+                    "multiple-birth-count-basic"]
+            },
+            "RelatedPerson": {
+                "searchParameterCombinations": ["*"]
+            },
+            "Resource": {
+                "searchIncludes": ["MedicationRequest:patient"],
+                "searchRevIncludes": ["Provenance:target"],
+                "searchParameterCombinations": ["",
+                    "_id"]
+            }
+        }
+    }
+}

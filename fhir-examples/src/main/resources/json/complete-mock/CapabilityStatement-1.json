@@ -1,0 +1,289 @@
+{
+    "resourceType": "CapabilityStatement",
+    "meta": {
+        "versionId": "E7SALeTnD3",
+        "lastUpdated": "2022-05-13T14:23:01.635125-04:00",
+        "source": "882j_o6dFL",
+        "profile": [
+            "V0GEN9cr72"
+        ],
+        "security": [
+            {
+                "system": "5p1Qkhm7fT",
+                "version": "Mw8oCKQ3wX",
+                "code": "lu87j5NBht",
+                "display": "Jwk0eRNeSt",
+                "userSelected": true
+            }
+        ],
+        "tag": [
+            {
+                "system": "1QRnZzMN_V",
+                "version": "6CcRKloZ_f",
+                "code": "hlA2YgBxwP",
+                "display": "tEE1AqTLhf",
+                "userSelected": true
+            },
+            {
+                "code": "ibm/complete-mock"
+            }
+        ]
+    },
+    "implicitRules": "Y3EyZvHvKd",
+    "language": "en-US",
+    "text": {
+        "status": "additional",
+        "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"></div>"
+    },
+    "url": "S5dLmDxVBi",
+    "version": "DkXCLtowQc",
+    "name": "WxT1miSTqY",
+    "title": "AkNg4OytXT",
+    "status": "unknown",
+    "experimental": true,
+    "date": "2022-05-13T14:23:01.637004-04:00",
+    "publisher": "Fpk8A8CEj6",
+    "contact": [
+        {
+            "name": "ZwSMCuXUds",
+            "telecom": [
+                {
+                    "system": "email",
+                    "value": "THcqO5Rj06",
+                    "use": "temp",
+                    "rank": 144449912,
+                    "period": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                                "valueCode": "unknown"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "description": "cfkAGiBWWk",
+    "useContext": [
+        {
+            "code": {
+                "system": "H1U7PlS5ek",
+                "version": "1epkOxrdLq",
+                "code": "6zcmgVrBDD",
+                "display": "f6ytCSbqVE",
+                "userSelected": true
+            },
+            "valueCodeableConcept": {
+                "coding": [
+                    {
+                        "system": "avrgYYQS8x",
+                        "version": "b9BiTv8Ru7",
+                        "code": "imHa1Kz4oI",
+                        "display": "WeU74E9NEe",
+                        "userSelected": true
+                    }
+                ],
+                "text": "xY4M5j0Oqo"
+            }
+        }
+    ],
+    "jurisdiction": [
+        {
+            "coding": [
+                {
+                    "system": "fpOEJtA6sd",
+                    "version": "RPWBUUEJ3V",
+                    "code": "1Hb4cKu4Jd",
+                    "display": "K3T6ireSZC",
+                    "userSelected": true
+                }
+            ],
+            "text": "nXMkqngCuK"
+        }
+    ],
+    "purpose": "S0i58EWBke",
+    "copyright": "Irn_WQx6qV",
+    "kind": "instance",
+    "instantiates": [
+        "9cXIW8JvwM"
+    ],
+    "imports": [
+        "eWewHeiTwo"
+    ],
+    "software": {
+        "name": "JOWPu3Oh9o",
+        "version": "YZ0Aux1pLU",
+        "releaseDate": "2022-05-13T14:23:01.639533-04:00"
+    },
+    "implementation": {
+        "description": "4JDhKF5NNU",
+        "url": "qsffO9reX6",
+        "custodian": {
+            "reference": "Organization/Voyi0fSJzJ",
+            "type": "Organization",
+            "identifier": {
+                "use": "usual",
+                "type": {
+                    "coding": [
+                        {
+                            "system": "_prMMTJ0tR",
+                            "version": "okg9Ku2FDp",
+                            "code": "dtgwnHdNnM",
+                            "display": "Z_bxMkRP6h",
+                            "userSelected": true
+                        }
+                    ],
+                    "text": "XJ6vEftDfM"
+                },
+                "system": "Iy6gJg5GR5",
+                "value": "J7TJk3mfOR",
+                "period": {
+                    "extension": [
+                        {
+                            "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                            "valueCode": "unknown"
+                        }
+                    ]
+                }
+            },
+            "display": "iEvVC8p7bt"
+        }
+    },
+    "fhirVersion": "4.0.0",
+    "format": [
+        "y8H_Z8bnCy"
+    ],
+    "patchFormat": [
+        "xcdyWgc1Fc"
+    ],
+    "implementationGuide": [
+        "gR53xDvva0"
+    ],
+    "rest": [
+        {
+            "mode": "server",
+            "documentation": "2dxaC4dWEM",
+            "security": {
+                "cors": true,
+                "service": [
+                    {
+                        "coding": [
+                            {
+                                "system": "hCtF3s1MMZ",
+                                "version": "MOvUNqhjMC",
+                                "code": "2IJKWj9zI0",
+                                "display": "5J1i1KAiM3",
+                                "userSelected": true
+                            }
+                        ],
+                        "text": "bpnw_05Bt3"
+                    }
+                ],
+                "description": "Jm6JQQCaEI"
+            },
+            "resource": [
+                {
+                    "type": "Substance",
+                    "profile": "SkyOja0HKt",
+                    "supportedProfile": [
+                        "rPurXZ2Zpg"
+                    ],
+                    "documentation": "uDrkkrvFXc",
+                    "interaction": [
+                        {
+                            "code": "history-instance",
+                            "documentation": "O4EGy6g9fd"
+                        }
+                    ],
+                    "versioning": "versioned-update",
+                    "readHistory": true,
+                    "updateCreate": true,
+                    "conditionalCreate": true,
+                    "conditionalRead": "full-support",
+                    "conditionalUpdate": true,
+                    "conditionalDelete": "not-supported",
+                    "referencePolicy": [
+                        "literal"
+                    ],
+                    "searchInclude": [
+                        "RLiRje46GF"
+                    ],
+                    "searchRevInclude": [
+                        "AY7vzwkQRa"
+                    ],
+                    "searchParam": [
+                        {
+                            "name": "63BPwiDPkW",
+                            "definition": "tmmyaritdE",
+                            "type": "token",
+                            "documentation": "wjPwmmQTdE"
+                        }
+                    ],
+                    "operation": [
+                        {
+                            "name": "kaDVGb628W",
+                            "definition": "2_uySNUDFX",
+                            "documentation": "57uu5s4qCN"
+                        }
+                    ]
+                }
+            ],
+            "interaction": [
+                {
+                    "code": "batch",
+                    "documentation": "1H113BNRzQ"
+                }
+            ],
+            "searchParam": [
+                {
+                    "name": "QnpQ1toeAy",
+                    "definition": "73HEG2IWcg",
+                    "type": "number",
+                    "documentation": "la4fCgmBRs"
+                }
+            ],
+            "operation": [
+                {
+                    "name": "Nvro313MXb",
+                    "definition": "3NxFWLy8BH",
+                    "documentation": "Y0j5JPBItA"
+                }
+            ],
+            "compartment": [
+                "dGLbIlK5sv"
+            ]
+        }
+    ],
+    "messaging": [
+        {
+            "endpoint": [
+                {
+                    "protocol": {
+                        "system": "uKgK9v_DTw",
+                        "version": "PLm2qh10el",
+                        "code": "hMc1dD2Pql",
+                        "display": "ENq98eAjKL",
+                        "userSelected": true
+                    },
+                    "address": "HpkHR0jryB"
+                }
+            ],
+            "reliableCache": 431564385,
+            "documentation": "tjKiA02CeL",
+            "supportedMessage": [
+                {
+                    "mode": "sender",
+                    "definition": "3wfpSXhN67"
+                }
+            ]
+        }
+    ],
+    "document": [
+        {
+            "mode": "consumer",
+            "documentation": "z1ZF_F64UQ",
+            "profile": "yeBD542F6A"
+        }
+    ]
+}

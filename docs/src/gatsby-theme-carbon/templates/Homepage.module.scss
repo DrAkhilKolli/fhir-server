@@ -1,0 +1,33 @@
+.callout-link {
+  @include carbon--type-style('body-long-02');
+  margin-top: $spacing-06;
+  display: block;
+}
+
+[class*='bx--side-nav__submenu'] {
+  color: #c6c6c6;
+}
+
+// Remove the Hero Banner Image 
+[class*='Banner-module--grid--1aCPQ'] {
+  height: 0;
+}
+
+// Remove the Slide Out 
+[class*='Header-module--switcher-button'] {
+  visibility: hidden;
+}
+
+// Remove the Slide Out 
+[class*='Switcher-module--nav--3_jdA'] {
+  visibility: hidden;
+}
+
+// Expand visibile area
+[class*='bx--grid'] {
+  max-width: 80%;
+}
+
+[class*='bx--col-lg-12'] {
+  max-width: 80%;
+}

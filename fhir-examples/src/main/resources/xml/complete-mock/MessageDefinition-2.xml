@@ -1,0 +1,119 @@
+<MessageDefinition xmlns="http://hl7.org/fhir">
+  <meta>
+    <versionId value="dw2OYNkZN8"/>
+    <lastUpdated value="2022-05-13T14:23:08.0591-04:00"/>
+    <source value="TBAAp1WPuP"/>
+    <profile value="3Ta3HT1gKe"/>
+    <security>
+      <system value="8IYE2QsGJ4"/>
+      <version value="oSEFeTojHL"/>
+      <code value="5h1aaqFcKO"/>
+      <display value="8PjOeTSvHY"/>
+      <userSelected value="true"/>
+    </security>
+    <tag>
+      <system value="mCmkkXy5lv"/>
+      <version value="4DD1QLAqVL"/>
+      <code value="4sEaLZiGn_"/>
+      <display value="nnsbvTSjuo"/>
+      <userSelected value="true"/>
+    </tag>
+    <tag>
+      <code value="ibm/complete-mock"/>
+    </tag>
+  </meta>
+  <implicitRules value="cu94Ey9NTY"/>
+  <language value="en-US"/>
+  <text>
+    <status value="generated"/>
+    <div xmlns="http://www.w3.org/1999/xhtml"></div>
+  </text>
+  <url value="GjHrSNLSdG"/>
+  <identifier>
+    <use value="temp"/>
+    <type>
+      <coding>
+        <system value="1ojwxO7Z4v"/>
+        <version value="DFk4wyDPh9"/>
+        <code value="2ZJNcJDic6"/>
+        <display value="WG1ab9Bdyi"/>
+        <userSelected value="true"/>
+      </coding>
+      <text value="UaAXiRuDUQ"/>
+    </type>
+    <system value="cUdl2NDp_T"/>
+    <value value="h6li7YSWU_"/>
+    <period>
+      <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+        <valueCode value="unknown"/>
+      </extension>
+    </period>
+  </identifier>
+  <version value="eRka_BfmsR"/>
+  <name value="IbrLNZR6Sp"/>
+  <title value="bFXNPoKBwT"/>
+  <replaces value="QuqQ7KBU9A"/>
+  <status value="draft"/>
+  <experimental value="true"/>
+  <date value="2022-05-13T14:23:08.061636-04:00"/>
+  <publisher value="0u49AtAaMG"/>
+  <contact>
+    <name value="Utqdvn16j4"/>
+    <telecom>
+      <system value="fax"/>
+      <value value="8fTItSJo2i"/>
+      <use value="work"/>
+      <rank value="1323309325"/>
+      <period>
+        <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+          <valueCode value="unknown"/>
+        </extension>
+      </period>
+    </telecom>
+  </contact>
+  <description value="5VzthuirZo"/>
+  <useContext>
+    <code>
+      <system value="XoUw9I_8st"/>
+      <version value="xBbUdyaXmc"/>
+      <code value="39hj1NMZJu"/>
+      <display value="XsJGs_ZoQj"/>
+      <userSelected value="true"/>
+    </code>
+    <valueQuantity>
+      <value value="0.5068578479447116702516495934105478227138519287109375"/>
+      <comparator value="&lt;"/>
+      <unit value="vlfo9DTKxY"/>
+      <system value="qk2yt3ussO"/>
+      <code value="3ISa1ktBs2"/>
+    </valueQuantity>
+  </useContext>
+  <jurisdiction>
+    <coding>
+      <system value="4IqLdcrVyI"/>
+      <version value="i1qYUCfZp8"/>
+      <code value="2V2IsG5Dfg"/>
+      <display value="J8FxsI7Gy9"/>
+      <userSelected value="true"/>
+    </coding>
+    <text value="dN7M6lfIA5"/>
+  </jurisdiction>
+  <purpose value="rg4fzZtsmV"/>
+  <copyright value="Gj6Hm76on0"/>
+  <base value="n2DPrQtCOx"/>
+  <parent value="laNYpfn4Mz"/>
+  <eventUri value="wHvlc6WicQ"/>
+  <category value="notification"/>
+  <focus>
+    <code value="DiagnosticReport"/>
+    <profile value="FbQ4TUM31K"/>
+    <min value="1468141381"/>
+    <max value="*"/>
+  </focus>
+  <responseRequired value="on-success"/>
+  <allowedResponse>
+    <message value="wcvlPl48KU"/>
+    <situation value="esKT78w9j_"/>
+  </allowedResponse>
+  <graph value="ZAQCBiXe4x"/>
+</MessageDefinition>

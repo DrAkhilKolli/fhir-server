@@ -1,0 +1,54 @@
+<Binary xmlns="http://hl7.org/fhir">
+  <meta>
+    <versionId value="qbSdNviKeV"/>
+    <lastUpdated value="2022-05-13T14:22:58.622889-04:00"/>
+    <source value="5EC3OcGUUo"/>
+    <profile value="SHMS2llAyH"/>
+    <security>
+      <system value="Xt3j6pprOE"/>
+      <version value="cxn5VWw467"/>
+      <code value="VVY2OtjEjn"/>
+      <display value="9eWHV3OReG"/>
+      <userSelected value="true"/>
+    </security>
+    <tag>
+      <system value="t10OqKSJmw"/>
+      <version value="aTnR0SfsnL"/>
+      <code value="UVKBHQxzgW"/>
+      <display value="BkJM4W5lQY"/>
+      <userSelected value="true"/>
+    </tag>
+    <tag>
+      <code value="ibm/complete-mock"/>
+    </tag>
+  </meta>
+  <implicitRules value="JcQ92ZxTNQ"/>
+  <language value="en-US"/>
+  <contentType value="U089c3YvM3"/>
+  <securityContext>
+    <reference value="Basic/wtdApRk6ud"/>
+    <type value="Basic"/>
+    <identifier>
+      <use value="official"/>
+      <type>
+        <coding>
+          <system value="BIZvcp99Ti"/>
+          <version value="qiJwB6PFA7"/>
+          <code value="27xkqMOEGk"/>
+          <display value="1JOtplQRva"/>
+          <userSelected value="true"/>
+        </coding>
+        <text value="sgCYxh3lQZ"/>
+      </type>
+      <system value="iwDrzVCxBv"/>
+      <value value="vcE4GGreJy"/>
+      <period>
+        <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+          <valueCode value="unknown"/>
+        </extension>
+      </period>
+    </identifier>
+    <display value="YaYMNcJSrD"/>
+  </securityContext>
+  <data value="XD0fL2I="/>
+</Binary>

@@ -1,0 +1,66 @@
+{
+    "resourceType": "Binary",
+    "meta": {
+        "versionId": "qbSdNviKeV",
+        "lastUpdated": "2022-05-13T14:22:58.622889-04:00",
+        "source": "5EC3OcGUUo",
+        "profile": [
+            "SHMS2llAyH"
+        ],
+        "security": [
+            {
+                "system": "Xt3j6pprOE",
+                "version": "cxn5VWw467",
+                "code": "VVY2OtjEjn",
+                "display": "9eWHV3OReG",
+                "userSelected": true
+            }
+        ],
+        "tag": [
+            {
+                "system": "t10OqKSJmw",
+                "version": "aTnR0SfsnL",
+                "code": "UVKBHQxzgW",
+                "display": "BkJM4W5lQY",
+                "userSelected": true
+            },
+            {
+                "code": "ibm/complete-mock"
+            }
+        ]
+    },
+    "implicitRules": "JcQ92ZxTNQ",
+    "language": "en-US",
+    "contentType": "U089c3YvM3",
+    "securityContext": {
+        "reference": "Basic/wtdApRk6ud",
+        "type": "Basic",
+        "identifier": {
+            "use": "official",
+            "type": {
+                "coding": [
+                    {
+                        "system": "BIZvcp99Ti",
+                        "version": "qiJwB6PFA7",
+                        "code": "27xkqMOEGk",
+                        "display": "1JOtplQRva",
+                        "userSelected": true
+                    }
+                ],
+                "text": "sgCYxh3lQZ"
+            },
+            "system": "iwDrzVCxBv",
+            "value": "vcE4GGreJy",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        },
+        "display": "YaYMNcJSrD"
+    },
+    "data": "XD0fL2I="
+}

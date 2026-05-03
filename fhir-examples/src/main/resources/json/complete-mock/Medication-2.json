@@ -1,0 +1,191 @@
+{
+    "resourceType": "Medication",
+    "meta": {
+        "versionId": "Uppn4x6CxZ",
+        "lastUpdated": "2022-05-13T14:23:04.511064-04:00",
+        "source": "cHFXFTKtbT",
+        "profile": [
+            "mHq9Kc05yT"
+        ],
+        "security": [
+            {
+                "system": "Sq6fAiegER",
+                "version": "5d9xJzorwX",
+                "code": "IHgoxEpTiT",
+                "display": "btKsWizkyt",
+                "userSelected": true
+            }
+        ],
+        "tag": [
+            {
+                "system": "GDFavrPpZL",
+                "version": "dwXfRXJWUA",
+                "code": "QRCL18edUd",
+                "display": "FF1mBoVkXL",
+                "userSelected": true
+            },
+            {
+                "code": "ibm/complete-mock"
+            }
+        ]
+    },
+    "implicitRules": "jpEpIFljyQ",
+    "language": "en-US",
+    "text": {
+        "status": "extensions",
+        "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"></div>"
+    },
+    "identifier": [
+        {
+            "use": "secondary",
+            "type": {
+                "coding": [
+                    {
+                        "system": "hPE1l2DR_4",
+                        "version": "TrRvdXbT2n",
+                        "code": "DLPtbtxOkB",
+                        "display": "QHOB0xCUEG",
+                        "userSelected": true
+                    }
+                ],
+                "text": "8sDbbu6mMq"
+            },
+            "system": "xNI_jWtS5e",
+            "value": "MlQtRVUeAU",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        }
+    ],
+    "code": {
+        "coding": [
+            {
+                "system": "nfLtESaSt_",
+                "version": "YeB8X0agaS",
+                "code": "PxIENCAbEd",
+                "display": "UqyVGM8cjx",
+                "userSelected": true
+            }
+        ],
+        "text": "9pFBNa3y3R"
+    },
+    "status": "inactive",
+    "manufacturer": {
+        "reference": "Organization/Cs7CSub9XP",
+        "type": "Organization",
+        "identifier": {
+            "use": "secondary",
+            "type": {
+                "coding": [
+                    {
+                        "system": "Fwd0uxK9jw",
+                        "version": "YjsFVpCNkM",
+                        "code": "wA1sno9HuG",
+                        "display": "fFR6D1lnga",
+                        "userSelected": true
+                    }
+                ],
+                "text": "K1iXkhzIqC"
+            },
+            "system": "ymyCRdRiuV",
+            "value": "QUkdkzoo3b",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        },
+        "display": "kLUbXcHkwz"
+    },
+    "form": {
+        "coding": [
+            {
+                "system": "p8IV7b_wDN",
+                "version": "dtQtcwhPbp",
+                "code": "Qup2unbSVN",
+                "display": "oGP3qvQykT",
+                "userSelected": true
+            }
+        ],
+        "text": "fFExvGrVn5"
+    },
+    "amount": {
+        "numerator": {
+            "value": 0.78210108808712419659059378318488597869873046875,
+            "comparator": "<",
+            "unit": "poA_Ygj4my",
+            "system": "f37hRZ4TXz",
+            "code": "1sofHxMqFH"
+        },
+        "denominator": {
+            "value": 0.109254891015914623597637955754180438816547393798828125,
+            "comparator": "<",
+            "unit": "njOk8uB_0U",
+            "system": "pkskVQYAmA",
+            "code": "k4Nl1HZcnp"
+        }
+    },
+    "ingredient": [
+        {
+            "itemReference": {
+                "reference": "Medication/xV0gfceD9M",
+                "type": "Medication",
+                "identifier": {
+                    "use": "temp",
+                    "type": {
+                        "coding": [
+                            {
+                                "system": "kBbNw5NF2d",
+                                "version": "EVlUk5o7kY",
+                                "code": "9uvmtopljO",
+                                "display": "AuZL3o7KTU",
+                                "userSelected": true
+                            }
+                        ],
+                        "text": "TAQd8lxo4n"
+                    },
+                    "system": "4tlgC7WExC",
+                    "value": "AdH6Cn_Qd_",
+                    "period": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                                "valueCode": "unknown"
+                            }
+                        ]
+                    }
+                },
+                "display": "KAo5d_XUyx"
+            },
+            "isActive": true,
+            "strength": {
+                "numerator": {
+                    "value": 0.8246953153209022335801137160160578787326812744140625,
+                    "comparator": ">",
+                    "unit": "4Bl_PZR4CG",
+                    "system": "6iO2oRUr3D",
+                    "code": "5kJuyDQd6H"
+                },
+                "denominator": {
+                    "value": 0.79117298760486409747727520880289375782012939453125,
+                    "comparator": "<",
+                    "unit": "wWPgpYHhoP",
+                    "system": "JWU01aLv8E",
+                    "code": "yIZM2JgtoQ"
+                }
+            }
+        }
+    ],
+    "batch": {
+        "lotNumber": "g9gO3_IKje",
+        "expirationDate": "2022-05-13T14:23:04.517223-04:00"
+    }
+}

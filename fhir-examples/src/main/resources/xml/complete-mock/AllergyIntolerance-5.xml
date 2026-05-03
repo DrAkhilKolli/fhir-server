@@ -1,0 +1,232 @@
+<AllergyIntolerance xmlns="http://hl7.org/fhir">
+  <meta>
+    <versionId value="ga8WJitIRE"/>
+    <lastUpdated value="2022-05-13T14:23:04.003681-04:00"/>
+    <source value="ITkNvJN0B_"/>
+    <profile value="MjQCs8RRaV"/>
+    <security>
+      <system value="QxjPnyYPsI"/>
+      <version value="t2U1JDitCG"/>
+      <code value="8OhMA8NGSG"/>
+      <display value="fsb_KlQ2aa"/>
+      <userSelected value="true"/>
+    </security>
+    <tag>
+      <system value="bQytWIyGvg"/>
+      <version value="BmQe2teJ3k"/>
+      <code value="ATRZpQz3bv"/>
+      <display value="S9dcMMWRem"/>
+      <userSelected value="true"/>
+    </tag>
+    <tag>
+      <code value="ibm/complete-mock"/>
+    </tag>
+  </meta>
+  <implicitRules value="vK2X0qHjGl"/>
+  <language value="en-US"/>
+  <text>
+    <status value="generated"/>
+    <div xmlns="http://www.w3.org/1999/xhtml"></div>
+  </text>
+  <identifier>
+    <use value="temp"/>
+    <type>
+      <coding>
+        <system value="nXUu9P3HKc"/>
+        <version value="nyhW9rtpmt"/>
+        <code value="TV5n056JQi"/>
+        <display value="FhsrJsSAEs"/>
+        <userSelected value="true"/>
+      </coding>
+      <text value="Sa6Uz2p7ej"/>
+    </type>
+    <system value="oIx5HzMejJ"/>
+    <value value="EBfc3exPgV"/>
+    <period>
+      <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+        <valueCode value="unknown"/>
+      </extension>
+    </period>
+  </identifier>
+  <clinicalStatus>
+    <coding>
+      <system value="http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical"/>
+      <version value="4.0.1"/>
+      <code value="active"/>
+      <display value="Active"/>
+      <userSelected value="false"/>
+    </coding>
+    <text value="active"/>
+  </clinicalStatus>
+  <verificationStatus>
+    <coding>
+      <system value="http://terminology.hl7.org/CodeSystem/allergyintolerance-verification"/>
+      <version value="4.0.1"/>
+      <code value="unconfirmed"/>
+      <display value="Unconfirmed"/>
+      <userSelected value="false"/>
+    </coding>
+    <text value="unconfirmed"/>
+  </verificationStatus>
+  <type value="allergy"/>
+  <category value="medication"/>
+  <criticality value="unable-to-assess"/>
+  <code>
+    <coding>
+      <system value="IwJDnpsJdJ"/>
+      <version value="63iwY5zdgB"/>
+      <code value="a4o_RkWt8V"/>
+      <display value="x337Eb55UZ"/>
+      <userSelected value="true"/>
+    </coding>
+    <text value="QWh27xG1Ru"/>
+  </code>
+  <patient>
+    <reference value="Patient/Zf3AGDGPQ7"/>
+    <type value="Patient"/>
+    <identifier>
+      <use value="usual"/>
+      <type>
+        <coding>
+          <system value="yIatmDgByJ"/>
+          <version value="NDei5d9CPj"/>
+          <code value="kin_i5ebVz"/>
+          <display value="K_7tmfJSEZ"/>
+          <userSelected value="true"/>
+        </coding>
+        <text value="QxUAoCjl8G"/>
+      </type>
+      <system value="yi_rM7p_rT"/>
+      <value value="IUH86txtn1"/>
+      <period>
+        <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+          <valueCode value="unknown"/>
+        </extension>
+      </period>
+    </identifier>
+    <display value="eAFlb2mZKi"/>
+  </patient>
+  <encounter>
+    <reference value="Encounter/6b-UBqdKpa"/>
+    <type value="Encounter"/>
+    <identifier>
+      <use value="secondary"/>
+      <type>
+        <coding>
+          <system value="_isuEKGmvY"/>
+          <version value="mXXI2YP16x"/>
+          <code value="iTamBJKNxv"/>
+          <display value="GySBe_D320"/>
+          <userSelected value="true"/>
+        </coding>
+        <text value="KYnCc0Z3lL"/>
+      </type>
+      <system value="Ap7H4m3nVE"/>
+      <value value="CVeUzrVDix"/>
+      <period>
+        <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+          <valueCode value="unknown"/>
+        </extension>
+      </period>
+    </identifier>
+    <display value="aybNuegc9U"/>
+  </encounter>
+  <onsetString value="15nd9dd57k"/>
+  <recordedDate value="2022-05-13T14:23:04.007641-04:00"/>
+  <recorder>
+    <reference value="RelatedPerson/Xv2aHhGzz5"/>
+    <type value="RelatedPerson"/>
+    <identifier>
+      <use value="old"/>
+      <type>
+        <coding>
+          <system value="PJKdSdBSkT"/>
+          <version value="QlVzny83uR"/>
+          <code value="tM9vdClbse"/>
+          <display value="BXZVwR43Jf"/>
+          <userSelected value="true"/>
+        </coding>
+        <text value="92p3tA34Eq"/>
+      </type>
+      <system value="bJ7_L4UOym"/>
+      <value value="xj7adVy8lt"/>
+      <period>
+        <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+          <valueCode value="unknown"/>
+        </extension>
+      </period>
+    </identifier>
+    <display value="x_VVZEIvK2"/>
+  </recorder>
+  <asserter>
+    <reference value="PractitionerRole/QqMM85bRrF"/>
+    <type value="PractitionerRole"/>
+    <identifier>
+      <use value="usual"/>
+      <type>
+        <coding>
+          <system value="TflbSuIBHW"/>
+          <version value="a1DJvMAHL2"/>
+          <code value="WkOlD8DD5u"/>
+          <display value="Z_RVRtxIt9"/>
+          <userSelected value="true"/>
+        </coding>
+        <text value="_yXaynT8HX"/>
+      </type>
+      <system value="rUGscRRHUW"/>
+      <value value="TqSxjuLWVY"/>
+      <period>
+        <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+          <valueCode value="unknown"/>
+        </extension>
+      </period>
+    </identifier>
+    <display value="FeC1NMyvc2"/>
+  </asserter>
+  <lastOccurrence value="2022-05-13T14:23:04.009168-04:00"/>
+  <note>
+    <authorString value="95htrGtvvf"/>
+    <time value="2022-05-13T14:23:04.009367-04:00"/>
+    <text value="3FE1nQaY5J"/>
+  </note>
+  <reaction>
+    <substance>
+      <coding>
+        <system value="SPzP5TYwT8"/>
+        <version value="cej8E8VlN2"/>
+        <code value="rh1j2GGaCz"/>
+        <display value="HEOUQ3Ko7Y"/>
+        <userSelected value="true"/>
+      </coding>
+      <text value="SWAfFz1qyM"/>
+    </substance>
+    <manifestation>
+      <coding>
+        <system value="CrdiFfdCG8"/>
+        <version value="3V_wgAyVod"/>
+        <code value="H09mCBdReQ"/>
+        <display value="2iQjCRVypS"/>
+        <userSelected value="true"/>
+      </coding>
+      <text value="BCvR_W2pHx"/>
+    </manifestation>
+    <description value="FOJu2RGg5P"/>
+    <onset value="2022-05-13T14:23:04.010375-04:00"/>
+    <severity value="severe"/>
+    <exposureRoute>
+      <coding>
+        <system value="sa50vNpSxr"/>
+        <version value="DqGr0XGr9T"/>
+        <code value="InaP6LrGJw"/>
+        <display value="0_phpoHGrO"/>
+        <userSelected value="true"/>
+      </coding>
+      <text value="7VWX4esO7x"/>
+    </exposureRoute>
+    <note>
+      <authorString value="vCcxx8wCN1"/>
+      <time value="2022-05-13T14:23:04.010958-04:00"/>
+      <text value="FCTq6U8m1W"/>
+    </note>
+  </reaction>
+</AllergyIntolerance>

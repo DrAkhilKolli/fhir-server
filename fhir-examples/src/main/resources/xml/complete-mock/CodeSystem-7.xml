@@ -1,0 +1,160 @@
+<CodeSystem xmlns="http://hl7.org/fhir">
+  <meta>
+    <versionId value="sjRqwYSeVD"/>
+    <lastUpdated value="2022-05-13T14:23:00.924268-04:00"/>
+    <source value="maQPL2iiPN"/>
+    <profile value="6laMOgnMaZ"/>
+    <security>
+      <system value="oERwX_wZUu"/>
+      <version value="qz2dm5lia2"/>
+      <code value="yL2qzDitUs"/>
+      <display value="oqn73a5Ll2"/>
+      <userSelected value="true"/>
+    </security>
+    <tag>
+      <system value="HdPqdQOp6J"/>
+      <version value="2oniuHGciK"/>
+      <code value="wzZalci_AF"/>
+      <display value="1bDIApvUw2"/>
+      <userSelected value="true"/>
+    </tag>
+    <tag>
+      <code value="ibm/complete-mock"/>
+    </tag>
+  </meta>
+  <implicitRules value="5EcJMfQyhY"/>
+  <language value="en-US"/>
+  <text>
+    <status value="generated"/>
+    <div xmlns="http://www.w3.org/1999/xhtml"></div>
+  </text>
+  <url value="Oq9AZ2QqrA"/>
+  <identifier>
+    <use value="official"/>
+    <type>
+      <coding>
+        <system value="t_8cIGXw76"/>
+        <version value="tqKP6K45yr"/>
+        <code value="hgblD8beaM"/>
+        <display value="zQExHtLgrY"/>
+        <userSelected value="true"/>
+      </coding>
+      <text value="WFdzBwB_Yn"/>
+    </type>
+    <system value="MWtJQtikr4"/>
+    <value value="4CyjbHXySB"/>
+    <period>
+      <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+        <valueCode value="unknown"/>
+      </extension>
+    </period>
+  </identifier>
+  <version value="Ai1woaafkS"/>
+  <name value="475MWd6WlB"/>
+  <title value="BDbFayRqqf"/>
+  <status value="unknown"/>
+  <experimental value="true"/>
+  <date value="2022-05-13T14:23:00.926878-04:00"/>
+  <publisher value="JrXf2Os7sq"/>
+  <contact>
+    <name value="cAPEp93_Hn"/>
+    <telecom>
+      <system value="phone"/>
+      <value value="0aTSZkSEGH"/>
+      <use value="temp"/>
+      <rank value="1911934021"/>
+      <period>
+        <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+          <valueCode value="unknown"/>
+        </extension>
+      </period>
+    </telecom>
+  </contact>
+  <description value="VCm8Qv6UWB"/>
+  <useContext>
+    <code>
+      <system value="9hAag1l4y1"/>
+      <version value="d4BZ3NU_jo"/>
+      <code value="4tZhxw9pWM"/>
+      <display value="ce6tVnXzJm"/>
+      <userSelected value="true"/>
+    </code>
+    <valueReference>
+      <reference value="Organization/1fjhfmDKGR"/>
+      <type value="Organization"/>
+      <identifier>
+        <use value="old"/>
+        <type>
+          <coding>
+            <system value="6_Wrn7AnCF"/>
+            <version value="u_imXJmE2U"/>
+            <code value="WIjuJMXhxA"/>
+            <display value="bhxNtT4uDg"/>
+            <userSelected value="true"/>
+          </coding>
+          <text value="n1B1CXUxN3"/>
+        </type>
+        <system value="FqspsUSbUS"/>
+        <value value="VnMlgMLbim"/>
+        <period>
+          <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
+            <valueCode value="unknown"/>
+          </extension>
+        </period>
+      </identifier>
+      <display value="_Pr93E0j6t"/>
+    </valueReference>
+  </useContext>
+  <jurisdiction>
+    <coding>
+      <system value="crlkoytQbB"/>
+      <version value="OM0cndFAsx"/>
+      <code value="g93IJzyoQw"/>
+      <display value="3a545bpUtr"/>
+      <userSelected value="true"/>
+    </coding>
+    <text value="BaADC8aU36"/>
+  </jurisdiction>
+  <purpose value="bBiLB06NYt"/>
+  <copyright value="KqAaggJW78"/>
+  <caseSensitive value="true"/>
+  <valueSet value="liOak9cW8K"/>
+  <hierarchyMeaning value="part-of"/>
+  <compositional value="true"/>
+  <versionNeeded value="true"/>
+  <content value="fragment"/>
+  <supplements value="yU6zCYReWv"/>
+  <count value="1471651463"/>
+  <filter>
+    <code value="tPhraCWor6"/>
+    <description value="RQW6LfqAVx"/>
+    <operator value="exists"/>
+    <value value="gWW9Hsyjhz"/>
+  </filter>
+  <property>
+    <code value="_n3IIbFplp"/>
+    <uri value="oSvyUDtlAH"/>
+    <description value="ZRyM8J3ahF"/>
+    <type value="code"/>
+  </property>
+  <concept>
+    <code value="MBI8LEll8E"/>
+    <display value="XKDC16IKiI"/>
+    <definition value="MfNweI2XQb"/>
+    <designation>
+      <language value="en-US"/>
+      <use>
+        <system value="0xEUR1Fwvd"/>
+        <version value="91vnAoa0tG"/>
+        <code value="OgkU_iLP9T"/>
+        <display value="xrvi_fSEdc"/>
+        <userSelected value="true"/>
+      </use>
+      <value value="CEBlNUVkFt"/>
+    </designation>
+    <property>
+      <code value="GChIH05jxm"/>
+      <valueDecimal value="0.2401782262840905790568513111793436110019683837890625"/>
+    </property>
+  </concept>
+</CodeSystem>

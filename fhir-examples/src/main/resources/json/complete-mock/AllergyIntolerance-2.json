@@ -1,0 +1,288 @@
+{
+    "resourceType": "AllergyIntolerance",
+    "meta": {
+        "versionId": "CKjjoMG6NN",
+        "lastUpdated": "2022-05-13T14:23:03.97387-04:00",
+        "source": "u_1juzzLQT",
+        "profile": [
+            "uVe7aXicu6"
+        ],
+        "security": [
+            {
+                "system": "VEmYmRZgue",
+                "version": "sZ4HeLOZYe",
+                "code": "EUDGFEgqL5",
+                "display": "kButZzfhMV",
+                "userSelected": true
+            }
+        ],
+        "tag": [
+            {
+                "system": "1FKUJ0vGlS",
+                "version": "i2neiG1qQA",
+                "code": "t1LERXjRcI",
+                "display": "aPtJ3roVeG",
+                "userSelected": true
+            },
+            {
+                "code": "ibm/complete-mock"
+            }
+        ]
+    },
+    "implicitRules": "yvVI2xJ2ws",
+    "language": "en-US",
+    "text": {
+        "status": "empty",
+        "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"></div>"
+    },
+    "identifier": [
+        {
+            "use": "old",
+            "type": {
+                "coding": [
+                    {
+                        "system": "ITX8ne_1F1",
+                        "version": "rMT4d8n692",
+                        "code": "OguVD90WwM",
+                        "display": "FV6xv6Chab",
+                        "userSelected": true
+                    }
+                ],
+                "text": "Tw3Eca_55D"
+            },
+            "system": "n2e4JD0o2K",
+            "value": "5RhSMZ_gHl",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        }
+    ],
+    "clinicalStatus": {
+        "coding": [
+            {
+                "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical",
+                "version": "4.0.1",
+                "code": "active",
+                "display": "Active",
+                "userSelected": false
+            }
+        ],
+        "text": "active"
+    },
+    "verificationStatus": {
+        "coding": [
+            {
+                "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-verification",
+                "version": "4.0.1",
+                "code": "unconfirmed",
+                "display": "Unconfirmed",
+                "userSelected": false
+            }
+        ],
+        "text": "unconfirmed"
+    },
+    "type": "intolerance",
+    "category": [
+        "biologic"
+    ],
+    "criticality": "unable-to-assess",
+    "code": {
+        "coding": [
+            {
+                "system": "eQpnrqMq_f",
+                "version": "AUJBaWIzF4",
+                "code": "6_UesS1JY9",
+                "display": "pTUHSOlBer",
+                "userSelected": true
+            }
+        ],
+        "text": "WZQ21GxZxu"
+    },
+    "patient": {
+        "reference": "Patient/gxk9Lm6efE",
+        "type": "Patient",
+        "identifier": {
+            "use": "secondary",
+            "type": {
+                "coding": [
+                    {
+                        "system": "R0bS4rFaeg",
+                        "version": "yStlxkMpuk",
+                        "code": "4bHa6s9oba",
+                        "display": "E7j3aegEwL",
+                        "userSelected": true
+                    }
+                ],
+                "text": "iLn7leWB8W"
+            },
+            "system": "sQa2Y8Snnu",
+            "value": "sVKFze7tCd",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        },
+        "display": "lEmi4qfM70"
+    },
+    "encounter": {
+        "reference": "Encounter/Ey9EBz4dmO",
+        "type": "Encounter",
+        "identifier": {
+            "use": "temp",
+            "type": {
+                "coding": [
+                    {
+                        "system": "Uxf_kXjEO5",
+                        "version": "8O2jeduWmC",
+                        "code": "GuJgpjvytR",
+                        "display": "cSOJXO78ZM",
+                        "userSelected": true
+                    }
+                ],
+                "text": "eH_yySQdL7"
+            },
+            "system": "kZ9_YlnESH",
+            "value": "y93uMSQNns",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        },
+        "display": "nKQIBzgGiF"
+    },
+    "onsetDateTime": "2022-05-13T14:23:03.977786-04:00",
+    "recordedDate": "2022-05-13T14:23:03.977927-04:00",
+    "recorder": {
+        "reference": "PractitionerRole/9CcPhZaIDR",
+        "type": "PractitionerRole",
+        "identifier": {
+            "use": "old",
+            "type": {
+                "coding": [
+                    {
+                        "system": "Le50lOdIqL",
+                        "version": "0MYYT4rGEs",
+                        "code": "PUKkFWYXLS",
+                        "display": "alUAkQnAn0",
+                        "userSelected": true
+                    }
+                ],
+                "text": "ZLnkC3rdOF"
+            },
+            "system": "NMR2BPnJ5i",
+            "value": "iQjjfiSUrR",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        },
+        "display": "VvFWpQHRVg"
+    },
+    "asserter": {
+        "reference": "RelatedPerson/3EXcwpHh6t",
+        "type": "RelatedPerson",
+        "identifier": {
+            "use": "old",
+            "type": {
+                "coding": [
+                    {
+                        "system": "6sVHyzvoxL",
+                        "version": "54qEEwF5Ws",
+                        "code": "KzS7xjgGYf",
+                        "display": "sICDPq0Xhj",
+                        "userSelected": true
+                    }
+                ],
+                "text": "6ubh5pHjQ4"
+            },
+            "system": "zCHfmsLUo9",
+            "value": "V_COFVLekW",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        },
+        "display": "Te6SlTfMZK"
+    },
+    "lastOccurrence": "2022-05-13T14:23:03.979446-04:00",
+    "note": [
+        {
+            "authorString": "5Nu7cZidGE",
+            "time": "2022-05-13T14:23:03.979648-04:00",
+            "text": "yiu6Ri02pm"
+        }
+    ],
+    "reaction": [
+        {
+            "substance": {
+                "coding": [
+                    {
+                        "system": "34Gq7WyBw6",
+                        "version": "lqVetdgAnA",
+                        "code": "AEJSCBK7fa",
+                        "display": "GEeg2PB9O_",
+                        "userSelected": true
+                    }
+                ],
+                "text": "hB7oOewD5U"
+            },
+            "manifestation": [
+                {
+                    "coding": [
+                        {
+                            "system": "_IawnYoUkQ",
+                            "version": "IcJ8MajSRm",
+                            "code": "_HIOwPElLs",
+                            "display": "NdHUs86Ukj",
+                            "userSelected": true
+                        }
+                    ],
+                    "text": "txsWopD0CT"
+                }
+            ],
+            "description": "E9tvz_n9U0",
+            "onset": "2022-05-13T14:23:03.980638-04:00",
+            "severity": "severe",
+            "exposureRoute": {
+                "coding": [
+                    {
+                        "system": "bokhr8djgQ",
+                        "version": "4RhTaO1es_",
+                        "code": "WZoTcPzFTC",
+                        "display": "Gt3Z28BFee",
+                        "userSelected": true
+                    }
+                ],
+                "text": "F8tY3a0pkB"
+            },
+            "note": [
+                {
+                    "authorString": "J2ouS8LuU6",
+                    "time": "2022-05-13T14:23:03.981221-04:00",
+                    "text": "wdUXNqv6L0"
+                }
+            ]
+        }
+    ]
+}

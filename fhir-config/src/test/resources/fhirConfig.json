@@ -1,0 +1,49 @@
+{
+    "fhirServer":{
+        "__comment":"FHIR Server configuration",
+        "server-core":{
+            "__comment":"Configuration properties for the core server"
+        },
+        "notifications":{
+            "count-time-1" : 11.0,
+            "count-time-2" : "12.0",
+            "common":{
+                "includeResourceTypes":[
+                    "QuestionnaireResponse",
+                    "CarePlan",
+                    "MedicationAdministration",
+                    "Device",
+                    "DeviceComponent",
+                    "DeviceMetric",
+                    "MedicationOrder",
+                    "Observation"
+                ]
+            },
+            "websocket":{
+                "enabled":true
+            },
+            "kafka":{
+                "enabled":false,
+                "topicName":"fhirNotifications",
+                "kafkaProperties":{
+                    "group.id":"securing-kafka-group",
+                    "bootstrap.servers":"localhost:9093",
+                    "security.protocol":"SSL",
+                    "ssl.truststore.location":"resources/security/kafka.client.truststore.p12",
+                    "ssl.truststore.password":"change-password",
+                    "ssl.keystore.location":"resources/security/kafka.client.keystore.p12",
+                    "ssl.keystore.password":"change-password",
+                    "ssl.key.password":"change-password",
+                    "ssl.truststore.type":"PKCS12",
+                    "ssl.keystore.type":"PKCS12"
+                }
+            }
+        },
+        "oauth": {
+            "enabled":"${oauth.enabled}",
+            "regUrl":"${oauth.base.url}${oauth.url.path}reg",
+            "authUrl":"${oauth.base.url}${oauth.url.path}auth",
+            "tokenUrl":"${oauth.base.url}${oauth.url.path}token"
+        }
+    }
+}

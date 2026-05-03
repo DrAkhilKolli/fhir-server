@@ -1,0 +1,15 @@
+{
+    "fhirServer":{
+        "__comment":"FHIR Server configuration",
+        "audit":{
+            "enabled":true,
+            "logPath":"${server.config.dir}/logs/",
+            "tenantId": "blank",
+            "serviceProperties":{
+                "kafkaServers":"blank",
+            	"kafkaApiKey":"blank",
+            	"auditTopic":"fhir"
+            }
+        }
+    }
+}

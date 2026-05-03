@@ -1,0 +1,468 @@
+{
+    "resourceType": "CoverageEligibilityRequest",
+    "meta": {
+        "versionId": "pFILskZzKF",
+        "lastUpdated": "2022-05-13T14:23:02.430585-04:00",
+        "source": "TKVYfsBUO4",
+        "profile": [
+            "MeUaPmkAt1"
+        ],
+        "security": [
+            {
+                "system": "eOEXyoDeQq",
+                "version": "ESHy3NHjwP",
+                "code": "I0mt6JK4ej",
+                "display": "WHGSebrKin",
+                "userSelected": true
+            }
+        ],
+        "tag": [
+            {
+                "system": "u2HXpYIe5X",
+                "version": "ZWFA4vvAxu",
+                "code": "lOdluLNMhs",
+                "display": "6ndhqler6X",
+                "userSelected": true
+            },
+            {
+                "code": "ibm/complete-mock"
+            }
+        ]
+    },
+    "implicitRules": "sqnDvAbX_O",
+    "language": "en-US",
+    "text": {
+        "status": "extensions",
+        "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"></div>"
+    },
+    "identifier": [
+        {
+            "use": "temp",
+            "type": {
+                "coding": [
+                    {
+                        "system": "AL1ok4dBeI",
+                        "version": "TUv0HUmfjY",
+                        "code": "0_1zuy53kS",
+                        "display": "glKt4Sgbsy",
+                        "userSelected": true
+                    }
+                ],
+                "text": "tUpGluwn2c"
+            },
+            "system": "KpUidhOvdE",
+            "value": "5v4qyYqFJ6",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        }
+    ],
+    "status": "draft",
+    "priority": {
+        "coding": [
+            {
+                "system": "q3ZGluwHh5",
+                "version": "PBGhb4sHoy",
+                "code": "PphdMgS0KS",
+                "display": "tuMszAV6Mp",
+                "userSelected": true
+            }
+        ],
+        "text": "upDE5_FFAQ"
+    },
+    "purpose": [
+        "benefits"
+    ],
+    "patient": {
+        "reference": "Patient/rCUY8XxIGz",
+        "type": "Patient",
+        "identifier": {
+            "use": "usual",
+            "type": {
+                "coding": [
+                    {
+                        "system": "UfRntbh0m6",
+                        "version": "SMUEAkG49g",
+                        "code": "AKHh_EVYUr",
+                        "display": "bHWnpamcYx",
+                        "userSelected": true
+                    }
+                ],
+                "text": "YQE7YC2Qio"
+            },
+            "system": "uNuVPxIv5_",
+            "value": "sdBmyHwyRJ",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        },
+        "display": "yj6RL5vxNe"
+    },
+    "servicedDate": "2022-05-13",
+    "created": "2022-05-13T14:23:02.434034-04:00",
+    "enterer": {
+        "reference": "Practitioner/PvWBoDD4-h",
+        "type": "Practitioner",
+        "identifier": {
+            "use": "old",
+            "type": {
+                "coding": [
+                    {
+                        "system": "yhGNivcOTe",
+                        "version": "VjHNprORkB",
+                        "code": "ZWMRgD2YT4",
+                        "display": "DURzry7cMo",
+                        "userSelected": true
+                    }
+                ],
+                "text": "Gz2S1h5JJq"
+            },
+            "system": "7AtRDksgvc",
+            "value": "55BwdEka_o",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        },
+        "display": "W6oOjPWXcu"
+    },
+    "provider": {
+        "reference": "Practitioner/08Z25b0gqz",
+        "type": "Practitioner",
+        "identifier": {
+            "use": "secondary",
+            "type": {
+                "coding": [
+                    {
+                        "system": "kgeCKbWyuE",
+                        "version": "fiuqDWQvae",
+                        "code": "k7Urp9qy0L",
+                        "display": "BGxbWV1pEr",
+                        "userSelected": true
+                    }
+                ],
+                "text": "L8lQTqOkFJ"
+            },
+            "system": "tuhcpOpqc4",
+            "value": "sH45n8MKSK",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        },
+        "display": "mV5SCn2kF5"
+    },
+    "insurer": {
+        "reference": "Organization/saxKeRGGHe",
+        "type": "Organization",
+        "identifier": {
+            "use": "old",
+            "type": {
+                "coding": [
+                    {
+                        "system": "Ykk3M1jGdJ",
+                        "version": "ozQcXqErBm",
+                        "code": "8loB6cWgXX",
+                        "display": "RECg9ZoEDL",
+                        "userSelected": true
+                    }
+                ],
+                "text": "3GZo17Xofl"
+            },
+            "system": "vec1JjJI_k",
+            "value": "9Wgsq5JPuP",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        },
+        "display": "dHLIBJk7VZ"
+    },
+    "facility": {
+        "reference": "Location/T9c3uoCbDp",
+        "type": "Location",
+        "identifier": {
+            "use": "old",
+            "type": {
+                "coding": [
+                    {
+                        "system": "6ZsM2D53Jz",
+                        "version": "_odlwek6Pa",
+                        "code": "rs6lvd9rGd",
+                        "display": "mwM2Wwnv9k",
+                        "userSelected": true
+                    }
+                ],
+                "text": "smXn59XRF1"
+            },
+            "system": "xgT08FuFxt",
+            "value": "hurdSgPrjv",
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        },
+        "display": "m6hHKGRPxN"
+    },
+    "supportingInfo": [
+        {
+            "sequence": 414784444,
+            "information": {
+                "reference": "Basic/BIuPnZY4LV",
+                "type": "Basic",
+                "identifier": {
+                    "use": "official",
+                    "type": {
+                        "coding": [
+                            {
+                                "system": "6varpeTJVk",
+                                "version": "Wig7johogS",
+                                "code": "nPldw8Grcz",
+                                "display": "pn2USlNXXV",
+                                "userSelected": true
+                            }
+                        ],
+                        "text": "xmQKWIS855"
+                    },
+                    "system": "j6iHqTsUo8",
+                    "value": "r0XLiwGHHT",
+                    "period": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                                "valueCode": "unknown"
+                            }
+                        ]
+                    }
+                },
+                "display": "7uXIownJJY"
+            },
+            "appliesToAll": true
+        }
+    ],
+    "insurance": [
+        {
+            "focal": true,
+            "coverage": {
+                "reference": "Coverage/CRZgj7JCzd",
+                "type": "Coverage",
+                "identifier": {
+                    "use": "old",
+                    "type": {
+                        "coding": [
+                            {
+                                "system": "XPwoKl8Mtv",
+                                "version": "zTWhGAkW09",
+                                "code": "NGaQQpOYeJ",
+                                "display": "MP2ZZ8zdy6",
+                                "userSelected": true
+                            }
+                        ],
+                        "text": "r7wSiZGUKT"
+                    },
+                    "system": "ZJaAvtE4tY",
+                    "value": "qEB01FvowD",
+                    "period": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                                "valueCode": "unknown"
+                            }
+                        ]
+                    }
+                },
+                "display": "W5elKsH1eV"
+            },
+            "businessArrangement": "4iXr46XMOS"
+        }
+    ],
+    "item": [
+        {
+            "supportingInfoSequence": [
+                1753555421
+            ],
+            "category": {
+                "coding": [
+                    {
+                        "system": "zf4AFLPBp6",
+                        "version": "_QtbpM9GRA",
+                        "code": "InnzJLDpMP",
+                        "display": "H7t_ca620u",
+                        "userSelected": true
+                    }
+                ],
+                "text": "JsYZGpio0C"
+            },
+            "productOrService": {
+                "coding": [
+                    {
+                        "system": "EPTeqnTa1Q",
+                        "version": "mEsOrHfAUN",
+                        "code": "TP95XpKDAc",
+                        "display": "hZe3_LZQLF",
+                        "userSelected": true
+                    }
+                ],
+                "text": "yC7i9rJ3Ww"
+            },
+            "modifier": [
+                {
+                    "coding": [
+                        {
+                            "system": "Ok9NlAMIVK",
+                            "version": "2Je3pjbqKx",
+                            "code": "MzhsPqBeji",
+                            "display": "1UaVpFTJsH",
+                            "userSelected": true
+                        }
+                    ],
+                    "text": "yewIEpglnp"
+                }
+            ],
+            "provider": {
+                "reference": "Practitioner/W46dnW18EW",
+                "type": "Practitioner",
+                "identifier": {
+                    "use": "temp",
+                    "type": {
+                        "coding": [
+                            {
+                                "system": "qh6oJfAP_b",
+                                "version": "VFh8EIFx_o",
+                                "code": "P9YvXlNdHY",
+                                "display": "3M7X4V3UVZ",
+                                "userSelected": true
+                            }
+                        ],
+                        "text": "gyIK07rqVK"
+                    },
+                    "system": "pr718n0DkB",
+                    "value": "RowEx42koO",
+                    "period": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                                "valueCode": "unknown"
+                            }
+                        ]
+                    }
+                },
+                "display": "W31axJqBPm"
+            },
+            "quantity": {
+                "value": 0.6268276517060524799518361760419793426990509033203125,
+                "unit": "AWHvTYNZni",
+                "system": "Ldu01JbfDE",
+                "code": "ExG5WtzR9X"
+            },
+            "unitPrice": {
+                "value": 0.065329646584687706134531026691547594964504241943359375,
+                "currency": "sKf6h75rk6"
+            },
+            "facility": {
+                "reference": "Location/k2eeSqe6Y9",
+                "type": "Location",
+                "identifier": {
+                    "use": "temp",
+                    "type": {
+                        "coding": [
+                            {
+                                "system": "m01MAOkgG0",
+                                "version": "qLgPDPPK0X",
+                                "code": "PnjOsYg_jk",
+                                "display": "atG0RLHcvS",
+                                "userSelected": true
+                            }
+                        ],
+                        "text": "I6a0h2R9dk"
+                    },
+                    "system": "0Wzidz8DMx",
+                    "value": "r6n483cWxv",
+                    "period": {
+                        "extension": [
+                            {
+                                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                                "valueCode": "unknown"
+                            }
+                        ]
+                    }
+                },
+                "display": "xOYE2dJWYY"
+            },
+            "diagnosis": [
+                {
+                    "diagnosisCodeableConcept": {
+                        "coding": [
+                            {
+                                "system": "foewzgUaNG",
+                                "version": "2XenmaPj1d",
+                                "code": "I0DoYHnWdF",
+                                "display": "_rG35RuQt8",
+                                "userSelected": true
+                            }
+                        ],
+                        "text": "lLLtLJmrCn"
+                    }
+                }
+            ],
+            "detail": [
+                {
+                    "reference": "Basic/ggBn6oYuo2",
+                    "type": "Basic",
+                    "identifier": {
+                        "use": "usual",
+                        "type": {
+                            "coding": [
+                                {
+                                    "system": "VsH4vv49tz",
+                                    "version": "XaQFiWSXGa",
+                                    "code": "u0Sy5SUM6K",
+                                    "display": "PXD9lkyQMF",
+                                    "userSelected": true
+                                }
+                            ],
+                            "text": "uZm8RB9Wer"
+                        },
+                        "system": "h1vj3NE0NR",
+                        "value": "StLp6YrRxx",
+                        "period": {
+                            "extension": [
+                                {
+                                    "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                                    "valueCode": "unknown"
+                                }
+                            ]
+                        }
+                    },
+                    "display": "dDxn5CJ6E3"
+                }
+            ]
+        }
+    ]
+}

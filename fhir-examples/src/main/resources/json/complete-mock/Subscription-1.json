@@ -1,0 +1,67 @@
+{
+    "resourceType": "Subscription",
+    "meta": {
+        "versionId": "U8lRV18e1H",
+        "lastUpdated": "2022-05-13T14:23:08.042806-04:00",
+        "source": "raChekFSzx",
+        "profile": [
+            "uaIOorYptI"
+        ],
+        "security": [
+            {
+                "system": "7fzk2EgvpH",
+                "version": "SJeyDsVWyq",
+                "code": "Rmc_nAqAA1",
+                "display": "QhXw4QhsZ4",
+                "userSelected": true
+            }
+        ],
+        "tag": [
+            {
+                "system": "t6l0Nd13sq",
+                "version": "8DFBhsQJpx",
+                "code": "oUWqaFHMUJ",
+                "display": "vW9Ejd8HHl",
+                "userSelected": true
+            },
+            {
+                "code": "ibm/complete-mock"
+            }
+        ]
+    },
+    "implicitRules": "H9gMR3fvxF",
+    "language": "en-US",
+    "text": {
+        "status": "generated",
+        "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"></div>"
+    },
+    "status": "active",
+    "contact": [
+        {
+            "system": "pager",
+            "value": "f6WDWxZo1u",
+            "use": "mobile",
+            "rank": 328030457,
+            "period": {
+                "extension": [
+                    {
+                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                        "valueCode": "unknown"
+                    }
+                ]
+            }
+        }
+    ],
+    "end": "2022-05-13T14:23:08.044448-04:00",
+    "reason": "j_Rj4Dx_el",
+    "criteria": "zQAZusYLge",
+    "error": "YZPzXHOMDx",
+    "channel": {
+        "type": "websocket",
+        "endpoint": "qcLvk1kG3D",
+        "payload": "sfZj2a1Hzd",
+        "header": [
+            "dWJ8nWItcs"
+        ]
+    }
+}

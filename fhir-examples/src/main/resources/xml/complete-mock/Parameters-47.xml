@@ -1,0 +1,31 @@
+<Parameters xmlns="http://hl7.org/fhir">
+  <meta>
+    <versionId value="OtQz9U7HrV"/>
+    <lastUpdated value="2022-05-13T14:23:02.085594-04:00"/>
+    <source value="6EQMXkktSz"/>
+    <profile value="GE16ogCrpY"/>
+    <security>
+      <system value="dMET8PtN8t"/>
+      <version value="KeYv3_KKKo"/>
+      <code value="KKBX8w6v08"/>
+      <display value="lFi9T5YT8v"/>
+      <userSelected value="true"/>
+    </security>
+    <tag>
+      <system value="mzZ81umTsF"/>
+      <version value="dBYRP7vgJP"/>
+      <code value="Ox3jy3e5KQ"/>
+      <display value="3Gdjrx8A2T"/>
+      <userSelected value="true"/>
+    </tag>
+    <tag>
+      <code value="ibm/complete-mock"/>
+    </tag>
+  </meta>
+  <implicitRules value="o8BuRx9UEb"/>
+  <language value="en-US"/>
+  <parameter>
+    <name value="dxPy1rJksx"/>
+    <valueCanonical value="VZrWDnqjOZ"/>
+  </parameter>
+</Parameters>
