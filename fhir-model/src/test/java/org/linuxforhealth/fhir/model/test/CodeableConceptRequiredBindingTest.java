@@ -28,17 +28,13 @@ public class CodeableConceptRequiredBindingTest {
             AllergyIntolerance allergyIntolerance = FHIRParser.parser(Format.JSON).parse(reader);
             
             // valid
-            try {
-                allergyIntolerance.toBuilder().clinicalStatus(CodeableConcept.builder()
-                    .coding(Coding.builder()
-                        .system(Uri.of("http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical"))
-                        .code(Code.of("active"))
-                            .build())
+            allergyIntolerance.toBuilder().clinicalStatus(CodeableConcept.builder()
+                .coding(Coding.builder()
+                    .system(Uri.of("http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical"))
+                    .code(Code.of("active"))
                         .build())
-                    .build();
-            } catch (IllegalStateException e) {
-                fail();
-            }
+                    .build())
+                .build();
             
             // invalid
             try {
@@ -51,21 +47,17 @@ public class CodeableConceptRequiredBindingTest {
                     .build();
                 fail();
             } catch (IllegalStateException e) {
-                
+                // success
             }
             
             // valid
-            try {
-                allergyIntolerance.toBuilder().verificationStatus(CodeableConcept.builder()
-                    .coding(Coding.builder()
-                        .system(Uri.of("http://terminology.hl7.org/CodeSystem/allergyintolerance-verification"))
-                        .code(Code.of("confirmed"))
-                            .build())
+            allergyIntolerance.toBuilder().verificationStatus(CodeableConcept.builder()
+                .coding(Coding.builder()
+                    .system(Uri.of("http://terminology.hl7.org/CodeSystem/allergyintolerance-verification"))
+                    .code(Code.of("confirmed"))
                         .build())
-                    .build();
-            } catch (IllegalStateException e) {
-                fail();
-            }
+                    .build())
+                .build();
             
             // invalid
             try {
@@ -78,7 +70,7 @@ public class CodeableConceptRequiredBindingTest {
                     .build();
                 fail();
             } catch (IllegalStateException e) {
-                
+                // success
             }
         }
     }

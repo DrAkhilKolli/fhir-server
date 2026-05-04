@@ -23,6 +23,8 @@ import org.linuxforhealth.fhir.database.utils.model.OrderedColumnDef;
 public class DataDefinitionUtil {
     private static final String NAME_PATTERN_RGX = "[a-zA-Z_][-\\w]*$";
     private static final Pattern NAME_PATTERN = Pattern.compile(NAME_PATTERN_RGX);
+    // Reject SQL comment sequence which could be used for injection
+    private static final Pattern SQL_COMMENT_PATTERN = Pattern.compile("--");
 
     /**
      *
@@ -138,7 +140,7 @@ public class DataDefinitionUtil {
      */
     public static boolean isValidName(String name) {
         Matcher m = NAME_PATTERN.matcher(name);
-        return m.matches() && name.length() <= 128;
+        return m.matches() && name.length() <= 128 && !SQL_COMMENT_PATTERN.matcher(name).find();
     }
 
     /**

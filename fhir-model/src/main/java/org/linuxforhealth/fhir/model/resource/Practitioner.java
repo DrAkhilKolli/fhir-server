@@ -15,7 +15,7 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
-import org.linuxforhealth.fhir.model.annotation.Constraint;
+import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
@@ -28,6 +28,8 @@ import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
 import org.linuxforhealth.fhir.model.type.ContactPoint;
 import org.linuxforhealth.fhir.model.type.Date;
+import org.linuxforhealth.fhir.model.type.DateTime;
+import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.HumanName;
 import org.linuxforhealth.fhir.model.type.Identifier;
@@ -43,22 +45,13 @@ import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
- * A person who is directly or indirectly involved in the provisioning of healthcare.
+ * A person who is directly or indirectly involved in the provisioning of healthcare or related services.
  * 
- * <p>Maturity level: FMM3 (Trial Use)
+ * <p>Maturity level: FMM5 (Trial Use)
  */
 @Maturity(
-    level = 3,
+    level = 5,
     status = StandardsStatus.Value.TRIAL_USE
-)
-@Constraint(
-    id = "practitioner-0",
-    level = "Warning",
-    location = "(base)",
-    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/languages",
-    expression = "communication.exists() implies (communication.all(memberOf('http://hl7.org/fhir/ValueSet/languages', 'preferred')))",
-    source = "http://hl7.org/fhir/StructureDefinition/Practitioner",
-    generated = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class Practitioner extends DomainResource {
@@ -71,27 +64,23 @@ public class Practitioner extends DomainResource {
     @Summary
     private final List<ContactPoint> telecom;
     @Summary
-    private final List<Address> address;
-    @Summary
     @Binding(
         bindingName = "AdministrativeGender",
         strength = BindingStrength.Value.REQUIRED,
         description = "The gender of a person used for administrative purposes.",
-        valueSet = "http://hl7.org/fhir/ValueSet/administrative-gender|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/administrative-gender|5.0.0"
     )
     private final AdministrativeGender gender;
     @Summary
     private final Date birthDate;
+    @Summary
+    @Choice({ Boolean.class, DateTime.class })
+    private final org.linuxforhealth.fhir.model.type.Element deceased;
+    @Summary
+    private final List<Address> address;
     private final List<Attachment> photo;
     private final List<Qualification> qualification;
-    @Binding(
-        bindingName = "Language",
-        strength = BindingStrength.Value.PREFERRED,
-        description = "IETF language tag",
-        valueSet = "http://hl7.org/fhir/ValueSet/languages",
-        maxValueSet = "http://hl7.org/fhir/ValueSet/all-languages"
-    )
-    private final List<CodeableConcept> communication;
+    private final List<Communication> communication;
 
     private Practitioner(Builder builder) {
         super(builder);
@@ -99,9 +88,10 @@ public class Practitioner extends DomainResource {
         active = builder.active;
         name = Collections.unmodifiableList(builder.name);
         telecom = Collections.unmodifiableList(builder.telecom);
-        address = Collections.unmodifiableList(builder.address);
         gender = builder.gender;
         birthDate = builder.birthDate;
+        deceased = builder.deceased;
+        address = Collections.unmodifiableList(builder.address);
         photo = Collections.unmodifiableList(builder.photo);
         qualification = Collections.unmodifiableList(builder.qualification);
         communication = Collections.unmodifiableList(builder.communication);
@@ -148,18 +138,6 @@ public class Practitioner extends DomainResource {
     }
 
     /**
-     * Address(es) of the practitioner that are not role specific (typically home address). 
-Work addresses are not typically 
-     * entered in this property as they are usually role dependent.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Address} that may be empty.
-     */
-    public List<Address> getAddress() {
-        return address;
-    }
-
-    /**
      * Administrative Gender - the gender that the person is considered to have for administration and record keeping 
      * purposes.
      * 
@@ -181,6 +159,27 @@ Work addresses are not typically
     }
 
     /**
+     * Indicates if the practitioner is deceased or not.
+     * 
+     * @return
+     *     An immutable object of type {@link Boolean} or {@link DateTime} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getDeceased() {
+        return deceased;
+    }
+
+    /**
+     * Address(es) of the practitioner that are not role specific (typically home address). Work addresses are not typically 
+     * entered in this property as they are usually role dependent.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Address} that may be empty.
+     */
+    public List<Address> getAddress() {
+        return address;
+    }
+
+    /**
      * Image of the person.
      * 
      * @return
@@ -191,9 +190,10 @@ Work addresses are not typically
     }
 
     /**
-     * The official certifications, training, and licenses that authorize or otherwise pertain to the provision of care by 
-     * the practitioner. For example, a medical license issued by a medical board authorizing the practitioner to practice 
-     * medicine within a certian locality.
+     * The official qualifications, certifications, accreditations, training, licenses (and other types of 
+     * educations/skills/capabilities) that authorize or otherwise pertain to the provision of care by the practitioner.For 
+     * example, a medical license issued by a medical board of licensure authorizing the practitioner to practice medicine 
+     * within a certain locality.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Qualification} that may be empty.
@@ -203,12 +203,14 @@ Work addresses are not typically
     }
 
     /**
-     * A language the practitioner can use in patient communication.
+     * A language which may be used to communicate with the practitioner, often for correspondence/administrative purposes.
+     * The `PractitionerRole.communication` property should be used for publishing the languages that a practitioner is able 
+     * to communicate with patients (on a per Organization/Role basis).
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link Communication} that may be empty.
      */
-    public List<CodeableConcept> getCommunication() {
+    public List<Communication> getCommunication() {
         return communication;
     }
 
@@ -219,9 +221,10 @@ Work addresses are not typically
             (active != null) || 
             !name.isEmpty() || 
             !telecom.isEmpty() || 
-            !address.isEmpty() || 
             (gender != null) || 
             (birthDate != null) || 
+            (deceased != null) || 
+            !address.isEmpty() || 
             !photo.isEmpty() || 
             !qualification.isEmpty() || 
             !communication.isEmpty();
@@ -245,12 +248,13 @@ Work addresses are not typically
                 accept(active, "active", visitor);
                 accept(name, "name", visitor, HumanName.class);
                 accept(telecom, "telecom", visitor, ContactPoint.class);
-                accept(address, "address", visitor, Address.class);
                 accept(gender, "gender", visitor);
                 accept(birthDate, "birthDate", visitor);
+                accept(deceased, "deceased", visitor);
+                accept(address, "address", visitor, Address.class);
                 accept(photo, "photo", visitor, Attachment.class);
                 accept(qualification, "qualification", visitor, Qualification.class);
-                accept(communication, "communication", visitor, CodeableConcept.class);
+                accept(communication, "communication", visitor, Communication.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
             visitor.postVisit(this);
@@ -281,9 +285,10 @@ Work addresses are not typically
             Objects.equals(active, other.active) && 
             Objects.equals(name, other.name) && 
             Objects.equals(telecom, other.telecom) && 
-            Objects.equals(address, other.address) && 
             Objects.equals(gender, other.gender) && 
             Objects.equals(birthDate, other.birthDate) && 
+            Objects.equals(deceased, other.deceased) && 
+            Objects.equals(address, other.address) && 
             Objects.equals(photo, other.photo) && 
             Objects.equals(qualification, other.qualification) && 
             Objects.equals(communication, other.communication);
@@ -305,9 +310,10 @@ Work addresses are not typically
                 active, 
                 name, 
                 telecom, 
-                address, 
                 gender, 
                 birthDate, 
+                deceased, 
+                address, 
                 photo, 
                 qualification, 
                 communication);
@@ -330,12 +336,13 @@ Work addresses are not typically
         private Boolean active;
         private List<HumanName> name = new ArrayList<>();
         private List<ContactPoint> telecom = new ArrayList<>();
-        private List<Address> address = new ArrayList<>();
         private AdministrativeGender gender;
         private Date birthDate;
+        private org.linuxforhealth.fhir.model.type.Element deceased;
+        private List<Address> address = new ArrayList<>();
         private List<Attachment> photo = new ArrayList<>();
         private List<Qualification> qualification = new ArrayList<>();
-        private List<CodeableConcept> communication = new ArrayList<>();
+        private List<Communication> communication = new ArrayList<>();
 
         private Builder() {
             super();
@@ -419,7 +426,8 @@ Work addresses are not typically
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -437,7 +445,8 @@ Work addresses are not typically
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -458,7 +467,7 @@ Work addresses are not typically
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -478,7 +487,7 @@ Work addresses are not typically
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -503,9 +512,9 @@ Work addresses are not typically
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -528,9 +537,9 @@ Work addresses are not typically
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -599,7 +608,7 @@ Work addresses are not typically
          * 
          * @return
          *     A reference to this Builder instance
-         * org.linuxforhealth.fhir
+         * 
          * @see #active(org.linuxforhealth.fhir.model.type.Boolean)
          */
         public Builder active(java.lang.Boolean active) {
@@ -700,49 +709,6 @@ Work addresses are not typically
         }
 
         /**
-         * Address(es) of the practitioner that are not role specific (typically home address). 
-Work addresses are not typically 
-         * entered in this property as they are usually role dependent.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param address
-         *     Address(es) of the practitioner that are not role specific (typically home address)
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder address(Address... address) {
-            for (Address value : address) {
-                this.address.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Address(es) of the practitioner that are not role specific (typically home address). 
-Work addresses are not typically 
-         * entered in this property as they are usually role dependent.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param address
-         *     Address(es) of the practitioner that are not role specific (typically home address)
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder address(Collection<Address> address) {
-            this.address = new ArrayList<>(address);
-            return this;
-        }
-
-        /**
          * Administrative Gender - the gender that the person is considered to have for administration and record keeping 
          * purposes.
          * 
@@ -763,7 +729,7 @@ Work addresses are not typically
          * @param birthDate
          *     The date on which the practitioner was born
          * 
-         * @returnorg.linuxforhealth.fhir
+         * @return
          *     A reference to this Builder instance
          * 
          * @see #birthDate(org.linuxforhealth.fhir.model.type.Date)
@@ -784,6 +750,83 @@ Work addresses are not typically
          */
         public Builder birthDate(Date birthDate) {
             this.birthDate = birthDate;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code deceased} with choice type Boolean.
+         * 
+         * @param deceased
+         *     Indicates if the practitioner is deceased or not
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #deceased(Element)
+         */
+        public Builder deceased(java.lang.Boolean deceased) {
+            this.deceased = (deceased == null) ? null : Boolean.of(deceased);
+            return this;
+        }
+
+        /**
+         * Indicates if the practitioner is deceased or not.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link Boolean}</li>
+         * <li>{@link DateTime}</li>
+         * </ul>
+         * 
+         * @param deceased
+         *     Indicates if the practitioner is deceased or not
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder deceased(org.linuxforhealth.fhir.model.type.Element deceased) {
+            this.deceased = deceased;
+            return this;
+        }
+
+        /**
+         * Address(es) of the practitioner that are not role specific (typically home address). Work addresses are not typically 
+         * entered in this property as they are usually role dependent.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param address
+         *     Address(es) of the practitioner that are not role specific (typically home address)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder address(Address... address) {
+            for (Address value : address) {
+                this.address.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Address(es) of the practitioner that are not role specific (typically home address). Work addresses are not typically 
+         * entered in this property as they are usually role dependent.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param address
+         *     Address(es) of the practitioner that are not role specific (typically home address)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder address(Collection<Address> address) {
+            this.address = new ArrayList<>(address);
             return this;
         }
 
@@ -827,15 +870,16 @@ Work addresses are not typically
         }
 
         /**
-         * The official certifications, training, and licenses that authorize or otherwise pertain to the provision of care by 
-         * the practitioner. For example, a medical license issued by a medical board authorizing the practitioner to practice 
-         * medicine within a certian locality.
+         * The official qualifications, certifications, accreditations, training, licenses (and other types of 
+         * educations/skills/capabilities) that authorize or otherwise pertain to the provision of care by the practitioner.For 
+         * example, a medical license issued by a medical board of licensure authorizing the practitioner to practice medicine 
+         * within a certain locality.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param qualification
-         *     Certification, licenses, or training pertaining to the provision of care
+         *     Qualifications, certifications, accreditations, licenses, training, etc. pertaining to the provision of care
          * 
          * @return
          *     A reference to this Builder instance
@@ -848,15 +892,16 @@ Work addresses are not typically
         }
 
         /**
-         * The official certifications, training, and licenses that authorize or otherwise pertain to the provision of care by 
-         * the practitioner. For example, a medical license issued by a medical board authorizing the practitioner to practice 
-         * medicine within a certian locality.
+         * The official qualifications, certifications, accreditations, training, licenses (and other types of 
+         * educations/skills/capabilities) that authorize or otherwise pertain to the provision of care by the practitioner.For 
+         * example, a medical license issued by a medical board of licensure authorizing the practitioner to practice medicine 
+         * within a certain locality.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param qualification
-         *     Certification, licenses, or training pertaining to the provision of care
+         *     Qualifications, certifications, accreditations, licenses, training, etc. pertaining to the provision of care
          * 
          * @return
          *     A reference to this Builder instance
@@ -870,32 +915,36 @@ Work addresses are not typically
         }
 
         /**
-         * A language the practitioner can use in patient communication.
+         * A language which may be used to communicate with the practitioner, often for correspondence/administrative purposes.
+         * The `PractitionerRole.communication` property should be used for publishing the languages that a practitioner is able 
+         * to communicate with patients (on a per Organization/Role basis).
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param communication
-         *     A language the practitioner can use in patient communication
+         *     A language which may be used to communicate with the practitioner
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder communication(CodeableConcept... communication) {
-            for (CodeableConcept value : communication) {
+        public Builder communication(Communication... communication) {
+            for (Communication value : communication) {
                 this.communication.add(value);
             }
             return this;
         }
 
         /**
-         * A language the practitioner can use in patient communication.
+         * A language which may be used to communicate with the practitioner, often for correspondence/administrative purposes.
+         * The `PractitionerRole.communication` property should be used for publishing the languages that a practitioner is able 
+         * to communicate with patients (on a per Organization/Role basis).
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param communication
-         *     A language the practitioner can use in patient communication
+         *     A language which may be used to communicate with the practitioner
          * 
          * @return
          *     A reference to this Builder instance
@@ -903,7 +952,7 @@ Work addresses are not typically
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder communication(Collection<CodeableConcept> communication) {
+        public Builder communication(Collection<Communication> communication) {
             this.communication = new ArrayList<>(communication);
             return this;
         }
@@ -930,11 +979,11 @@ Work addresses are not typically
             ValidationSupport.checkList(practitioner.identifier, "identifier", Identifier.class);
             ValidationSupport.checkList(practitioner.name, "name", HumanName.class);
             ValidationSupport.checkList(practitioner.telecom, "telecom", ContactPoint.class);
+            ValidationSupport.choiceElement(practitioner.deceased, "deceased", Boolean.class, DateTime.class);
             ValidationSupport.checkList(practitioner.address, "address", Address.class);
             ValidationSupport.checkList(practitioner.photo, "photo", Attachment.class);
             ValidationSupport.checkList(practitioner.qualification, "qualification", Qualification.class);
-            ValidationSupport.checkList(practitioner.communication, "communication", CodeableConcept.class);
-            ValidationSupport.checkValueSetBinding(practitioner.communication, "communication", "http://hl7.org/fhir/ValueSet/all-languages", "urn:ietf:bcp:47");
+            ValidationSupport.checkList(practitioner.communication, "communication", Communication.class);
         }
 
         protected Builder from(Practitioner practitioner) {
@@ -943,9 +992,10 @@ Work addresses are not typically
             active = practitioner.active;
             name.addAll(practitioner.name);
             telecom.addAll(practitioner.telecom);
-            address.addAll(practitioner.address);
             gender = practitioner.gender;
             birthDate = practitioner.birthDate;
+            deceased = practitioner.deceased;
+            address.addAll(practitioner.address);
             photo.addAll(practitioner.photo);
             qualification.addAll(practitioner.qualification);
             communication.addAll(practitioner.communication);
@@ -954,9 +1004,10 @@ Work addresses are not typically
     }
 
     /**
-     * The official certifications, training, and licenses that authorize or otherwise pertain to the provision of care by 
-     * the practitioner. For example, a medical license issued by a medical board authorizing the practitioner to practice 
-     * medicine within a certian locality.
+     * The official qualifications, certifications, accreditations, training, licenses (and other types of 
+     * educations/skills/capabilities) that authorize or otherwise pertain to the provision of care by the practitioner.For 
+     * example, a medical license issued by a medical board of licensure authorizing the practitioner to practice medicine 
+     * within a certain locality.
      */
     public static class Qualification extends BackboneElement {
         private final List<Identifier> identifier;
@@ -964,7 +1015,7 @@ Work addresses are not typically
             bindingName = "Qualification",
             strength = BindingStrength.Value.EXAMPLE,
             description = "Specific qualification the practitioner has to provide a service.",
-            valueSet = "http://terminology.hl7.org/ValueSet/v2-2.7-0360"
+            valueSet = "http://terminology.hl7.org/ValueSet/v2-0360"
         )
         @Required
         private final CodeableConcept code;
@@ -981,7 +1032,7 @@ Work addresses are not typically
         }
 
         /**
-         * An identifier that applies to this person's qualification in this role.
+         * An identifier that applies to this person's qualification.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
@@ -1121,7 +1172,7 @@ Work addresses are not typically
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1141,7 +1192,7 @@ Work addresses are not typically
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1166,7 +1217,7 @@ Work addresses are not typically
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1191,7 +1242,7 @@ Work addresses are not typically
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1216,7 +1267,7 @@ Work addresses are not typically
             }
 
             /**
-             * An identifier that applies to this person's qualification in this role.
+             * An identifier that applies to this person's qualification.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -1235,7 +1286,7 @@ Work addresses are not typically
             }
 
             /**
-             * An identifier that applies to this person's qualification in this role.
+             * An identifier that applies to this person's qualification.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -1339,6 +1390,321 @@ Work addresses are not typically
                 code = qualification.code;
                 period = qualification.period;
                 issuer = qualification.issuer;
+                return this;
+            }
+        }
+    }
+
+    /**
+     * A language which may be used to communicate with the practitioner, often for correspondence/administrative purposes.
+     * The `PractitionerRole.communication` property should be used for publishing the languages that a practitioner is able 
+     * to communicate with patients (on a per Organization/Role basis).
+     */
+    public static class Communication extends BackboneElement {
+        @Binding(
+            bindingName = "Language",
+            strength = BindingStrength.Value.REQUIRED,
+            description = "IETF language tag for a human language",
+            valueSet = "http://hl7.org/fhir/ValueSet/all-languages|5.0.0"
+        )
+        @Required
+        private final CodeableConcept language;
+        private final Boolean preferred;
+
+        private Communication(Builder builder) {
+            super(builder);
+            language = builder.language;
+            preferred = builder.preferred;
+        }
+
+        /**
+         * The ISO-639-1 alpha 2 code in lower case for the language, optionally followed by a hyphen and the ISO-3166-1 alpha 2 
+         * code for the region in upper case; e.g. "en" for English, or "en-US" for American English versus "en-AU" for 
+         * Australian English.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that is non-null.
+         */
+        public CodeableConcept getLanguage() {
+            return language;
+        }
+
+        /**
+         * Indicates whether or not the person prefers this language (over other languages he masters up a certain level).
+         * 
+         * @return
+         *     An immutable object of type {@link Boolean} that may be null.
+         */
+        public Boolean getPreferred() {
+            return preferred;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (language != null) || 
+                (preferred != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(language, "language", visitor);
+                    accept(preferred, "preferred", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Communication other = (Communication) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(language, other.language) && 
+                Objects.equals(preferred, other.preferred);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    language, 
+                    preferred);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private CodeableConcept language;
+            private Boolean preferred;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * The ISO-639-1 alpha 2 code in lower case for the language, optionally followed by a hyphen and the ISO-3166-1 alpha 2 
+             * code for the region in upper case; e.g. "en" for English, or "en-US" for American English versus "en-AU" for 
+             * Australian English.
+             * 
+             * <p>This element is required.
+             * 
+             * @param language
+             *     The language code used to communicate with the practitioner
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder language(CodeableConcept language) {
+                this.language = language;
+                return this;
+            }
+
+            /**
+             * Convenience method for setting {@code preferred}.
+             * 
+             * @param preferred
+             *     Language preference indicator
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #preferred(org.linuxforhealth.fhir.model.type.Boolean)
+             */
+            public Builder preferred(java.lang.Boolean preferred) {
+                this.preferred = (preferred == null) ? null : Boolean.of(preferred);
+                return this;
+            }
+
+            /**
+             * Indicates whether or not the person prefers this language (over other languages he masters up a certain level).
+             * 
+             * @param preferred
+             *     Language preference indicator
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder preferred(Boolean preferred) {
+                this.preferred = preferred;
+                return this;
+            }
+
+            /**
+             * Build the {@link Communication}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>language</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link Communication}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Communication per the base specification
+             */
+            @Override
+            public Communication build() {
+                Communication communication = new Communication(this);
+                if (validating) {
+                    validate(communication);
+                }
+                return communication;
+            }
+
+            protected void validate(Communication communication) {
+                super.validate(communication);
+                ValidationSupport.requireNonNull(communication.language, "language");
+                ValidationSupport.checkValueSetBinding(communication.language, "language", "http://hl7.org/fhir/ValueSet/all-languages", "urn:ietf:bcp:47");
+                ValidationSupport.requireValueOrChildren(communication);
+            }
+
+            protected Builder from(Communication communication) {
+                super.from(communication);
+                language = communication.language;
+                preferred = communication.preferred;
                 return this;
             }
         }

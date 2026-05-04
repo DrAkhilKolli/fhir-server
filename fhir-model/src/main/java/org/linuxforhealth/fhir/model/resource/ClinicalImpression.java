@@ -24,6 +24,7 @@ import org.linuxforhealth.fhir.model.type.Annotation;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
@@ -47,10 +48,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * called "ClinicalImpression" rather than "ClinicalAssessment" to avoid confusion with the recording of assessment tools 
  * such as Apgar score.
  * 
- * <p>Maturity level: FMM0 (Trial Use)
+ * <p>Maturity level: FMM1 (Trial Use)
  */
 @Maturity(
-    level = 0,
+    level = 1,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
@@ -62,23 +63,17 @@ public class ClinicalImpression extends DomainResource {
         bindingName = "ClinicalImpressionStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The workflow state of a clinical impression.",
-        valueSet = "http://hl7.org/fhir/ValueSet/clinicalimpression-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/event-status|5.0.0"
     )
     @Required
     private final ClinicalImpressionStatus status;
     @Binding(
         bindingName = "ClinicalImpressionStatusReason",
         strength = BindingStrength.Value.EXAMPLE,
-        description = "Codes identifying the reason for the current state of a clinical impression."
+        description = "Codes identifying the reason for the current state of a clinical impression.",
+        valueSet = "http://hl7.org/fhir/ValueSet/clinicalimpression-status-reason"
     )
     private final CodeableConcept statusReason;
-    @Summary
-    @Binding(
-        bindingName = "ClinicalImpressionCode",
-        strength = BindingStrength.Value.EXAMPLE,
-        description = "Identifies categories of clinical impressions.  This is a place-holder only.  It may be removed."
-    )
-    private final CodeableConcept code;
     @Summary
     private final String description;
     @Summary
@@ -90,18 +85,23 @@ public class ClinicalImpression extends DomainResource {
     private final Reference encounter;
     @Summary
     @Choice({ DateTime.class, Period.class })
-    private final Element effective;
+    private final org.linuxforhealth.fhir.model.type.Element effective;
     @Summary
     private final DateTime date;
     @Summary
     @ReferenceTarget({ "Practitioner", "PractitionerRole" })
-    private final Reference assessor;
+    private final Reference performer;
     @ReferenceTarget({ "ClinicalImpression" })
     private final Reference previous;
     @Summary
     @ReferenceTarget({ "Condition", "AllergyIntolerance" })
     private final List<Reference> problem;
-    private final List<Investigation> investigation;
+    @Binding(
+        bindingName = "ClinicalImpressionChangePattern",
+        strength = BindingStrength.Value.EXAMPLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/clinicalimpression-change-pattern"
+    )
+    private final CodeableConcept changePattern;
     private final List<Uri> protocol;
     private final String summary;
     private final List<Finding> finding;
@@ -122,16 +122,15 @@ public class ClinicalImpression extends DomainResource {
         identifier = Collections.unmodifiableList(builder.identifier);
         status = builder.status;
         statusReason = builder.statusReason;
-        code = builder.code;
         description = builder.description;
         subject = builder.subject;
         encounter = builder.encounter;
         effective = builder.effective;
         date = builder.date;
-        assessor = builder.assessor;
+        performer = builder.performer;
         previous = builder.previous;
         problem = Collections.unmodifiableList(builder.problem);
-        investigation = Collections.unmodifiableList(builder.investigation);
+        changePattern = builder.changePattern;
         protocol = Collections.unmodifiableList(builder.protocol);
         summary = builder.summary;
         finding = Collections.unmodifiableList(builder.finding);
@@ -173,16 +172,6 @@ public class ClinicalImpression extends DomainResource {
     }
 
     /**
-     * Categorizes the type of clinical assessment performed.
-     * 
-     * @return
-     *     An immutable object of type {@link CodeableConcept} that may be null.
-     */
-    public CodeableConcept getCode() {
-        return code;
-    }
-
-    /**
      * A summary of the context and/or cause of the assessment - why / where it was performed, and what patient events/status 
      * prompted it.
      * 
@@ -220,7 +209,7 @@ public class ClinicalImpression extends DomainResource {
      * @return
      *     An immutable object of type {@link DateTime} or {@link Period} that may be null.
      */
-    public Element getEffective() {
+    public org.linuxforhealth.fhir.model.type.Element getEffective() {
         return effective;
     }
 
@@ -240,8 +229,8 @@ public class ClinicalImpression extends DomainResource {
      * @return
      *     An immutable object of type {@link Reference} that may be null.
      */
-    public Reference getAssessor() {
-        return assessor;
+    public Reference getPerformer() {
+        return performer;
     }
 
     /**
@@ -267,15 +256,14 @@ public class ClinicalImpression extends DomainResource {
     }
 
     /**
-     * One or more sets of investigations (signs, symptoms, etc.). The actual grouping of investigations varies greatly 
-     * depending on the type and context of the assessment. These investigations may include data generated during the 
-     * assessment process, or data previously generated and recorded that is pertinent to the outcomes.
+     * Change in the status/pattern of a subject's condition since previously assessed, such as worsening, improving, or no 
+     * change. It is a subjective assessment of the direction of the change.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Investigation} that may be empty.
+     *     An immutable object of type {@link CodeableConcept} that may be null.
      */
-    public List<Investigation> getInvestigation() {
-        return investigation;
+    public CodeableConcept getChangePattern() {
+        return changePattern;
     }
 
     /**
@@ -330,7 +318,7 @@ public class ClinicalImpression extends DomainResource {
     }
 
     /**
-     * Information supporting the clinical impression.
+     * Information supporting the clinical impression, which can contain investigation results.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
@@ -356,16 +344,15 @@ public class ClinicalImpression extends DomainResource {
             !identifier.isEmpty() || 
             (status != null) || 
             (statusReason != null) || 
-            (code != null) || 
             (description != null) || 
             (subject != null) || 
             (encounter != null) || 
             (effective != null) || 
             (date != null) || 
-            (assessor != null) || 
+            (performer != null) || 
             (previous != null) || 
             !problem.isEmpty() || 
-            !investigation.isEmpty() || 
+            (changePattern != null) || 
             !protocol.isEmpty() || 
             (summary != null) || 
             !finding.isEmpty() || 
@@ -392,16 +379,15 @@ public class ClinicalImpression extends DomainResource {
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(status, "status", visitor);
                 accept(statusReason, "statusReason", visitor);
-                accept(code, "code", visitor);
                 accept(description, "description", visitor);
                 accept(subject, "subject", visitor);
                 accept(encounter, "encounter", visitor);
                 accept(effective, "effective", visitor);
                 accept(date, "date", visitor);
-                accept(assessor, "assessor", visitor);
+                accept(performer, "performer", visitor);
                 accept(previous, "previous", visitor);
                 accept(problem, "problem", visitor, Reference.class);
-                accept(investigation, "investigation", visitor, Investigation.class);
+                accept(changePattern, "changePattern", visitor);
                 accept(protocol, "protocol", visitor, Uri.class);
                 accept(summary, "summary", visitor);
                 accept(finding, "finding", visitor, Finding.class);
@@ -438,16 +424,15 @@ public class ClinicalImpression extends DomainResource {
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(status, other.status) && 
             Objects.equals(statusReason, other.statusReason) && 
-            Objects.equals(code, other.code) && 
             Objects.equals(description, other.description) && 
             Objects.equals(subject, other.subject) && 
             Objects.equals(encounter, other.encounter) && 
             Objects.equals(effective, other.effective) && 
             Objects.equals(date, other.date) && 
-            Objects.equals(assessor, other.assessor) && 
+            Objects.equals(performer, other.performer) && 
             Objects.equals(previous, other.previous) && 
             Objects.equals(problem, other.problem) && 
-            Objects.equals(investigation, other.investigation) && 
+            Objects.equals(changePattern, other.changePattern) && 
             Objects.equals(protocol, other.protocol) && 
             Objects.equals(summary, other.summary) && 
             Objects.equals(finding, other.finding) && 
@@ -472,16 +457,15 @@ public class ClinicalImpression extends DomainResource {
                 identifier, 
                 status, 
                 statusReason, 
-                code, 
                 description, 
                 subject, 
                 encounter, 
                 effective, 
                 date, 
-                assessor, 
+                performer, 
                 previous, 
                 problem, 
-                investigation, 
+                changePattern, 
                 protocol, 
                 summary, 
                 finding, 
@@ -507,16 +491,15 @@ public class ClinicalImpression extends DomainResource {
         private List<Identifier> identifier = new ArrayList<>();
         private ClinicalImpressionStatus status;
         private CodeableConcept statusReason;
-        private CodeableConcept code;
         private String description;
         private Reference subject;
         private Reference encounter;
-        private Element effective;
+        private org.linuxforhealth.fhir.model.type.Element effective;
         private DateTime date;
-        private Reference assessor;
+        private Reference performer;
         private Reference previous;
         private List<Reference> problem = new ArrayList<>();
-        private List<Investigation> investigation = new ArrayList<>();
+        private CodeableConcept changePattern;
         private List<Uri> protocol = new ArrayList<>();
         private String summary;
         private List<Finding> finding = new ArrayList<>();
@@ -607,7 +590,8 @@ public class ClinicalImpression extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -625,7 +609,8 @@ public class ClinicalImpression extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -646,7 +631,7 @@ public class ClinicalImpression extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -666,7 +651,7 @@ public class ClinicalImpression extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -691,9 +676,9 @@ public class ClinicalImpression extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -716,9 +701,9 @@ public class ClinicalImpression extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -787,7 +772,7 @@ public class ClinicalImpression extends DomainResource {
          * <p>This element is required.
          * 
          * @param status
-         *     in-progress | completed | entered-in-error
+         *     preparation | in-progress | not-done | on-hold | stopped | completed | entered-in-error | unknown
          * 
          * @return
          *     A reference to this Builder instance
@@ -808,20 +793,6 @@ public class ClinicalImpression extends DomainResource {
          */
         public Builder statusReason(CodeableConcept statusReason) {
             this.statusReason = statusReason;
-            return this;
-        }
-
-        /**
-         * Categorizes the type of clinical assessment performed.
-         * 
-         * @param code
-         *     Kind of assessment performed
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder code(CodeableConcept code) {
-            this.code = code;
             return this;
         }
 
@@ -888,7 +859,7 @@ public class ClinicalImpression extends DomainResource {
          * </ul>
          * 
          * @param encounter
-         *     Encounter created as part of
+         *     The Encounter during which this ClinicalImpression was created
          * 
          * @return
          *     A reference to this Builder instance
@@ -913,7 +884,7 @@ public class ClinicalImpression extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder effective(Element effective) {
+        public Builder effective(org.linuxforhealth.fhir.model.type.Element effective) {
             this.effective = effective;
             return this;
         }
@@ -941,14 +912,14 @@ public class ClinicalImpression extends DomainResource {
          * <li>{@link PractitionerRole}</li>
          * </ul>
          * 
-         * @param assessor
+         * @param performer
          *     The clinician performing the assessment
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder assessor(Reference assessor) {
-            this.assessor = assessor;
+        public Builder performer(Reference performer) {
+            this.performer = performer;
             return this;
         }
 
@@ -1025,45 +996,18 @@ public class ClinicalImpression extends DomainResource {
         }
 
         /**
-         * One or more sets of investigations (signs, symptoms, etc.). The actual grouping of investigations varies greatly 
-         * depending on the type and context of the assessment. These investigations may include data generated during the 
-         * assessment process, or data previously generated and recorded that is pertinent to the outcomes.
+         * Change in the status/pattern of a subject's condition since previously assessed, such as worsening, improving, or no 
+         * change. It is a subjective assessment of the direction of the change.
          * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param investigation
-         *     One or more sets of investigations (signs, symptoms, etc.)
+         * @param changePattern
+         *     Change in the status/pattern of a subject's condition since previously assessed, such as worsening, improving, or no 
+         *     change
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder investigation(Investigation... investigation) {
-            for (Investigation value : investigation) {
-                this.investigation.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * One or more sets of investigations (signs, symptoms, etc.). The actual grouping of investigations varies greatly 
-         * depending on the type and context of the assessment. These investigations may include data generated during the 
-         * assessment process, or data previously generated and recorded that is pertinent to the outcomes.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param investigation
-         *     One or more sets of investigations (signs, symptoms, etc.)
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder investigation(Collection<Investigation> investigation) {
-            this.investigation = new ArrayList<>(investigation);
+        public Builder changePattern(CodeableConcept changePattern) {
+            this.changePattern = changePattern;
             return this;
         }
 
@@ -1266,7 +1210,7 @@ public class ClinicalImpression extends DomainResource {
         }
 
         /**
-         * Information supporting the clinical impression.
+         * Information supporting the clinical impression, which can contain investigation results.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1285,7 +1229,7 @@ public class ClinicalImpression extends DomainResource {
         }
 
         /**
-         * Information supporting the clinical impression.
+         * Information supporting the clinical impression, which can contain investigation results.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1375,7 +1319,6 @@ public class ClinicalImpression extends DomainResource {
             ValidationSupport.requireNonNull(clinicalImpression.subject, "subject");
             ValidationSupport.choiceElement(clinicalImpression.effective, "effective", DateTime.class, Period.class);
             ValidationSupport.checkList(clinicalImpression.problem, "problem", Reference.class);
-            ValidationSupport.checkList(clinicalImpression.investigation, "investigation", Investigation.class);
             ValidationSupport.checkList(clinicalImpression.protocol, "protocol", Uri.class);
             ValidationSupport.checkList(clinicalImpression.finding, "finding", Finding.class);
             ValidationSupport.checkList(clinicalImpression.prognosisCodeableConcept, "prognosisCodeableConcept", CodeableConcept.class);
@@ -1384,7 +1327,7 @@ public class ClinicalImpression extends DomainResource {
             ValidationSupport.checkList(clinicalImpression.note, "note", Annotation.class);
             ValidationSupport.checkReferenceType(clinicalImpression.subject, "subject", "Patient", "Group");
             ValidationSupport.checkReferenceType(clinicalImpression.encounter, "encounter", "Encounter");
-            ValidationSupport.checkReferenceType(clinicalImpression.assessor, "assessor", "Practitioner", "PractitionerRole");
+            ValidationSupport.checkReferenceType(clinicalImpression.performer, "performer", "Practitioner", "PractitionerRole");
             ValidationSupport.checkReferenceType(clinicalImpression.previous, "previous", "ClinicalImpression");
             ValidationSupport.checkReferenceType(clinicalImpression.problem, "problem", "Condition", "AllergyIntolerance");
             ValidationSupport.checkReferenceType(clinicalImpression.prognosisReference, "prognosisReference", "RiskAssessment");
@@ -1395,16 +1338,15 @@ public class ClinicalImpression extends DomainResource {
             identifier.addAll(clinicalImpression.identifier);
             status = clinicalImpression.status;
             statusReason = clinicalImpression.statusReason;
-            code = clinicalImpression.code;
             description = clinicalImpression.description;
             subject = clinicalImpression.subject;
             encounter = clinicalImpression.encounter;
             effective = clinicalImpression.effective;
             date = clinicalImpression.date;
-            assessor = clinicalImpression.assessor;
+            performer = clinicalImpression.performer;
             previous = clinicalImpression.previous;
             problem.addAll(clinicalImpression.problem);
-            investigation.addAll(clinicalImpression.investigation);
+            changePattern = clinicalImpression.changePattern;
             protocol.addAll(clinicalImpression.protocol);
             summary = clinicalImpression.summary;
             finding.addAll(clinicalImpression.finding);
@@ -1413,354 +1355,6 @@ public class ClinicalImpression extends DomainResource {
             supportingInfo.addAll(clinicalImpression.supportingInfo);
             note.addAll(clinicalImpression.note);
             return this;
-        }
-    }
-
-    /**
-     * One or more sets of investigations (signs, symptoms, etc.). The actual grouping of investigations varies greatly 
-     * depending on the type and context of the assessment. These investigations may include data generated during the 
-     * assessment process, or data previously generated and recorded that is pertinent to the outcomes.
-     */
-    public static class Investigation extends BackboneElement {
-        @Binding(
-            bindingName = "InvestigationGroupType",
-            strength = BindingStrength.Value.EXAMPLE,
-            description = "A name/code for a set of investigations.",
-            valueSet = "http://hl7.org/fhir/ValueSet/investigation-sets"
-        )
-        @Required
-        private final CodeableConcept code;
-        @ReferenceTarget({ "Observation", "QuestionnaireResponse", "FamilyMemberHistory", "DiagnosticReport", "RiskAssessment", "ImagingStudy", "Media" })
-        private final List<Reference> item;
-
-        private Investigation(Builder builder) {
-            super(builder);
-            code = builder.code;
-            item = Collections.unmodifiableList(builder.item);
-        }
-
-        /**
-         * A name/code for the group ("set") of investigations. Typically, this will be something like "signs", "symptoms", 
-         * "clinical", "diagnostic", but the list is not constrained, and others such groups such as 
-         * (exposure|family|travel|nutritional) history may be used.
-         * 
-         * @return
-         *     An immutable object of type {@link CodeableConcept} that is non-null.
-         */
-        public CodeableConcept getCode() {
-            return code;
-        }
-
-        /**
-         * A record of a specific investigation that was undertaken.
-         * 
-         * @return
-         *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-         */
-        public List<Reference> getItem() {
-            return item;
-        }
-
-        @Override
-        public boolean hasChildren() {
-            return super.hasChildren() || 
-                (code != null) || 
-                !item.isEmpty();
-        }
-
-        @Override
-        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-            if (visitor.preVisit(this)) {
-                visitor.visitStart(elementName, elementIndex, this);
-                if (visitor.visit(elementName, elementIndex, this)) {
-                    // visit children
-                    accept(id, "id", visitor);
-                    accept(extension, "extension", visitor, Extension.class);
-                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(code, "code", visitor);
-                    accept(item, "item", visitor, Reference.class);
-                }
-                visitor.visitEnd(elementName, elementIndex, this);
-                visitor.postVisit(this);
-            }
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            Investigation other = (Investigation) obj;
-            return Objects.equals(id, other.id) && 
-                Objects.equals(extension, other.extension) && 
-                Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(code, other.code) && 
-                Objects.equals(item, other.item);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = hashCode;
-            if (result == 0) {
-                result = Objects.hash(id, 
-                    extension, 
-                    modifierExtension, 
-                    code, 
-                    item);
-                hashCode = result;
-            }
-            return result;
-        }
-
-        @Override
-        public Builder toBuilder() {
-            return new Builder().from(this);
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public static class Builder extends BackboneElement.Builder {
-            private CodeableConcept code;
-            private List<Reference> item = new ArrayList<>();
-
-            private Builder() {
-                super();
-            }
-
-            /**
-             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-             * contain spaces.
-             * 
-             * @param id
-             *     Unique id for inter-element referencing
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder id(java.lang.String id) {
-                return (Builder) super.id(id);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder extension(Extension... extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder extension(Collection<Extension> extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder modifierExtension(Extension... modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * A name/code for the group ("set") of investigations. Typically, this will be something like "signs", "symptoms", 
-             * "clinical", "diagnostic", but the list is not constrained, and others such groups such as 
-             * (exposure|family|travel|nutritional) history may be used.
-             * 
-             * <p>This element is required.
-             * 
-             * @param code
-             *     A name/code for the set
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder code(CodeableConcept code) {
-                this.code = code;
-                return this;
-            }
-
-            /**
-             * A record of a specific investigation that was undertaken.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * <p>Allowed resource types for the references:
-             * <ul>
-             * <li>{@link Observation}</li>
-             * <li>{@link QuestionnaireResponse}</li>
-             * <li>{@link FamilyMemberHistory}</li>
-             * <li>{@link DiagnosticReport}</li>
-             * <li>{@link RiskAssessment}</li>
-             * <li>{@link ImagingStudy}</li>
-             * <li>{@link Media}</li>
-             * </ul>
-             * 
-             * @param item
-             *     Record of a specific investigation
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder item(Reference... item) {
-                for (Reference value : item) {
-                    this.item.add(value);
-                }
-                return this;
-            }
-
-            /**
-             * A record of a specific investigation that was undertaken.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * <p>Allowed resource types for the references:
-             * <ul>
-             * <li>{@link Observation}</li>
-             * <li>{@link QuestionnaireResponse}</li>
-             * <li>{@link FamilyMemberHistory}</li>
-             * <li>{@link DiagnosticReport}</li>
-             * <li>{@link RiskAssessment}</li>
-             * <li>{@link ImagingStudy}</li>
-             * <li>{@link Media}</li>
-             * </ul>
-             * 
-             * @param item
-             *     Record of a specific investigation
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            public Builder item(Collection<Reference> item) {
-                this.item = new ArrayList<>(item);
-                return this;
-            }
-
-            /**
-             * Build the {@link Investigation}
-             * 
-             * <p>Required elements:
-             * <ul>
-             * <li>code</li>
-             * </ul>
-             * 
-             * @return
-             *     An immutable object of type {@link Investigation}
-             * @throws IllegalStateException
-             *     if the current state cannot be built into a valid Investigation per the base specification
-             */
-            @Override
-            public Investigation build() {
-                Investigation investigation = new Investigation(this);
-                if (validating) {
-                    validate(investigation);
-                }
-                return investigation;
-            }
-
-            protected void validate(Investigation investigation) {
-                super.validate(investigation);
-                ValidationSupport.requireNonNull(investigation.code, "code");
-                ValidationSupport.checkList(investigation.item, "item", Reference.class);
-                ValidationSupport.checkReferenceType(investigation.item, "item", "Observation", "QuestionnaireResponse", "FamilyMemberHistory", "DiagnosticReport", "RiskAssessment", "ImagingStudy", "Media");
-                ValidationSupport.requireValueOrChildren(investigation);
-            }
-
-            protected Builder from(Investigation investigation) {
-                super.from(investigation);
-                code = investigation.code;
-                item.addAll(investigation.item);
-                return this;
-            }
         }
     }
 
@@ -1774,36 +1368,23 @@ public class ClinicalImpression extends DomainResource {
             description = "Identification of the Condition or diagnosis.",
             valueSet = "http://hl7.org/fhir/ValueSet/condition-code"
         )
-        private final CodeableConcept itemCodeableConcept;
-        @ReferenceTarget({ "Condition", "Observation", "Media" })
-        private final Reference itemReference;
+        private final CodeableReference item;
         private final String basis;
 
         private Finding(Builder builder) {
             super(builder);
-            itemCodeableConcept = builder.itemCodeableConcept;
-            itemReference = builder.itemReference;
+            item = builder.item;
             basis = builder.basis;
         }
 
         /**
-         * Specific text or code for finding or diagnosis, which may include ruled-out or resolved conditions.
+         * Specific text, code or reference for finding or diagnosis, which may include ruled-out or resolved conditions.
          * 
          * @return
-         *     An immutable object of type {@link CodeableConcept} that may be null.
+         *     An immutable object of type {@link CodeableReference} that may be null.
          */
-        public CodeableConcept getItemCodeableConcept() {
-            return itemCodeableConcept;
-        }
-
-        /**
-         * Specific reference for finding or diagnosis, which may include ruled-out or resolved conditions.
-         * 
-         * @return
-         *     An immutable object of type {@link Reference} that may be null.
-         */
-        public Reference getItemReference() {
-            return itemReference;
+        public CodeableReference getItem() {
+            return item;
         }
 
         /**
@@ -1819,8 +1400,7 @@ public class ClinicalImpression extends DomainResource {
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                (itemCodeableConcept != null) || 
-                (itemReference != null) || 
+                (item != null) || 
                 (basis != null);
         }
 
@@ -1833,8 +1413,7 @@ public class ClinicalImpression extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(itemCodeableConcept, "itemCodeableConcept", visitor);
-                    accept(itemReference, "itemReference", visitor);
+                    accept(item, "item", visitor);
                     accept(basis, "basis", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
@@ -1857,8 +1436,7 @@ public class ClinicalImpression extends DomainResource {
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(itemCodeableConcept, other.itemCodeableConcept) && 
-                Objects.equals(itemReference, other.itemReference) && 
+                Objects.equals(item, other.item) && 
                 Objects.equals(basis, other.basis);
         }
 
@@ -1869,8 +1447,7 @@ public class ClinicalImpression extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    itemCodeableConcept, 
-                    itemReference, 
+                    item, 
                     basis);
                 hashCode = result;
             }
@@ -1887,8 +1464,7 @@ public class ClinicalImpression extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private CodeableConcept itemCodeableConcept;
-            private Reference itemReference;
+            private CodeableReference item;
             private String basis;
 
             private Builder() {
@@ -1912,7 +1488,7 @@ public class ClinicalImpression extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1932,7 +1508,7 @@ public class ClinicalImpression extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1957,7 +1533,7 @@ public class ClinicalImpression extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1982,7 +1558,7 @@ public class ClinicalImpression extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2007,37 +1583,16 @@ public class ClinicalImpression extends DomainResource {
             }
 
             /**
-             * Specific text or code for finding or diagnosis, which may include ruled-out or resolved conditions.
+             * Specific text, code or reference for finding or diagnosis, which may include ruled-out or resolved conditions.
              * 
-             * @param itemCodeableConcept
+             * @param item
              *     What was found
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder itemCodeableConcept(CodeableConcept itemCodeableConcept) {
-                this.itemCodeableConcept = itemCodeableConcept;
-                return this;
-            }
-
-            /**
-             * Specific reference for finding or diagnosis, which may include ruled-out or resolved conditions.
-             * 
-             * <p>Allowed resource types for this reference:
-             * <ul>
-             * <li>{@link Condition}</li>
-             * <li>{@link Observation}</li>
-             * <li>{@link Media}</li>
-             * </ul>
-             * 
-             * @param itemReference
-             *     What was found
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder itemReference(Reference itemReference) {
-                this.itemReference = itemReference;
+            public Builder item(CodeableReference item) {
+                this.item = item;
                 return this;
             }
 
@@ -2090,14 +1645,12 @@ public class ClinicalImpression extends DomainResource {
 
             protected void validate(Finding finding) {
                 super.validate(finding);
-                ValidationSupport.checkReferenceType(finding.itemReference, "itemReference", "Condition", "Observation", "Media");
                 ValidationSupport.requireValueOrChildren(finding);
             }
 
             protected Builder from(Finding finding) {
                 super.from(finding);
-                itemCodeableConcept = finding.itemCodeableConcept;
-                itemReference = finding.itemReference;
+                item = finding.item;
                 basis = finding.basis;
                 return this;
             }

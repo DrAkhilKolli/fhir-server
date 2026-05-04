@@ -15,7 +15,6 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
-import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
@@ -25,12 +24,11 @@ import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
 import org.linuxforhealth.fhir.model.type.DateTime;
-import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
+import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
-import org.linuxforhealth.fhir.model.type.PositiveInt;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
@@ -315,7 +313,8 @@ public class ImmunizationRecommendation extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -333,7 +332,8 @@ public class ImmunizationRecommendation extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -354,7 +354,7 @@ public class ImmunizationRecommendation extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -374,7 +374,7 @@ public class ImmunizationRecommendation extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -399,9 +399,9 @@ public class ImmunizationRecommendation extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -424,9 +424,9 @@ public class ImmunizationRecommendation extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -648,9 +648,9 @@ public class ImmunizationRecommendation extends DomainResource {
             bindingName = "TargetDisease",
             strength = BindingStrength.Value.EXAMPLE,
             description = "The disease that the recommended vaccination targets.",
-            valueSet = "http://hl7.org/fhir/ValueSet/immunization-recommendation-target-disease"
+            valueSet = "http://hl7.org/fhir/ValueSet/immunization-target-disease"
         )
-        private final CodeableConcept targetDisease;
+        private final List<CodeableConcept> targetDisease;
         @Summary
         @Binding(
             bindingName = "VaccineCode",
@@ -677,13 +677,11 @@ public class ImmunizationRecommendation extends DomainResource {
         )
         private final List<CodeableConcept> forecastReason;
         private final List<DateCriterion> dateCriterion;
-        private final String description;
+        private final Markdown description;
         private final String series;
         @Summary
-        @Choice({ PositiveInt.class, String.class })
-        private final Element doseNumber;
-        @Choice({ PositiveInt.class, String.class })
-        private final Element seriesDoses;
+        private final String doseNumber;
+        private final String seriesDoses;
         @ReferenceTarget({ "Immunization", "ImmunizationEvaluation" })
         private final List<Reference> supportingImmunization;
         private final List<Reference> supportingPatientInformation;
@@ -691,7 +689,7 @@ public class ImmunizationRecommendation extends DomainResource {
         private Recommendation(Builder builder) {
             super(builder);
             vaccineCode = Collections.unmodifiableList(builder.vaccineCode);
-            targetDisease = builder.targetDisease;
+            targetDisease = Collections.unmodifiableList(builder.targetDisease);
             contraindicatedVaccineCode = Collections.unmodifiableList(builder.contraindicatedVaccineCode);
             forecastStatus = builder.forecastStatus;
             forecastReason = Collections.unmodifiableList(builder.forecastReason);
@@ -718,9 +716,9 @@ public class ImmunizationRecommendation extends DomainResource {
          * The targeted disease for the recommendation.
          * 
          * @return
-         *     An immutable object of type {@link CodeableConcept} that may be null.
+         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
          */
-        public CodeableConcept getTargetDisease() {
+        public List<CodeableConcept> getTargetDisease() {
             return targetDisease;
         }
 
@@ -768,9 +766,9 @@ public class ImmunizationRecommendation extends DomainResource {
          * Contains the description about the protocol under which the vaccine was administered.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link Markdown} that may be null.
          */
-        public String getDescription() {
+        public Markdown getDescription() {
             return description;
         }
 
@@ -785,22 +783,23 @@ public class ImmunizationRecommendation extends DomainResource {
         }
 
         /**
-         * Nominal position of the recommended dose in a series (e.g. dose 2 is the next recommended dose).
+         * Nominal position of the recommended dose in a series as determined by the evaluation and forecasting process (e.g. 
+         * dose 2 is the next recommended dose).
          * 
          * @return
-         *     An immutable object of type {@link PositiveInt} or {@link String} that may be null.
+         *     An immutable object of type {@link String} that may be null.
          */
-        public Element getDoseNumber() {
+        public String getDoseNumber() {
             return doseNumber;
         }
 
         /**
-         * The recommended number of doses to achieve immunity.
+         * The recommended number of doses to achieve immunity as determined by the evaluation and forecasting process.
          * 
          * @return
-         *     An immutable object of type {@link PositiveInt} or {@link String} that may be null.
+         *     An immutable object of type {@link String} that may be null.
          */
-        public Element getSeriesDoses() {
+        public String getSeriesDoses() {
             return seriesDoses;
         }
 
@@ -829,7 +828,7 @@ public class ImmunizationRecommendation extends DomainResource {
         public boolean hasChildren() {
             return super.hasChildren() || 
                 !vaccineCode.isEmpty() || 
-                (targetDisease != null) || 
+                !targetDisease.isEmpty() || 
                 !contraindicatedVaccineCode.isEmpty() || 
                 (forecastStatus != null) || 
                 !forecastReason.isEmpty() || 
@@ -852,7 +851,7 @@ public class ImmunizationRecommendation extends DomainResource {
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(vaccineCode, "vaccineCode", visitor, CodeableConcept.class);
-                    accept(targetDisease, "targetDisease", visitor);
+                    accept(targetDisease, "targetDisease", visitor, CodeableConcept.class);
                     accept(contraindicatedVaccineCode, "contraindicatedVaccineCode", visitor, CodeableConcept.class);
                     accept(forecastStatus, "forecastStatus", visitor);
                     accept(forecastReason, "forecastReason", visitor, CodeableConcept.class);
@@ -933,15 +932,15 @@ public class ImmunizationRecommendation extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private List<CodeableConcept> vaccineCode = new ArrayList<>();
-            private CodeableConcept targetDisease;
+            private List<CodeableConcept> targetDisease = new ArrayList<>();
             private List<CodeableConcept> contraindicatedVaccineCode = new ArrayList<>();
             private CodeableConcept forecastStatus;
             private List<CodeableConcept> forecastReason = new ArrayList<>();
             private List<DateCriterion> dateCriterion = new ArrayList<>();
-            private String description;
+            private Markdown description;
             private String series;
-            private Element doseNumber;
-            private Element seriesDoses;
+            private String doseNumber;
+            private String seriesDoses;
             private List<Reference> supportingImmunization = new ArrayList<>();
             private List<Reference> supportingPatientInformation = new ArrayList<>();
 
@@ -966,7 +965,7 @@ public class ImmunizationRecommendation extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -986,7 +985,7 @@ public class ImmunizationRecommendation extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1011,7 +1010,7 @@ public class ImmunizationRecommendation extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1036,7 +1035,7 @@ public class ImmunizationRecommendation extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1102,14 +1101,39 @@ public class ImmunizationRecommendation extends DomainResource {
             /**
              * The targeted disease for the recommendation.
              * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
              * @param targetDisease
              *     Disease to be immunized against
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder targetDisease(CodeableConcept targetDisease) {
-                this.targetDisease = targetDisease;
+            public Builder targetDisease(CodeableConcept... targetDisease) {
+                for (CodeableConcept value : targetDisease) {
+                    this.targetDisease.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * The targeted disease for the recommendation.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param targetDisease
+             *     Disease to be immunized against
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder targetDisease(Collection<CodeableConcept> targetDisease) {
+                this.targetDisease = new ArrayList<>(targetDisease);
                 return this;
             }
 
@@ -1247,22 +1271,6 @@ public class ImmunizationRecommendation extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code description}.
-             * 
-             * @param description
-             *     Protocol details
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #description(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder description(java.lang.String description) {
-                this.description = (description == null) ? null : String.of(description);
-                return this;
-            }
-
-            /**
              * Contains the description about the protocol under which the vaccine was administered.
              * 
              * @param description
@@ -1271,7 +1279,7 @@ public class ImmunizationRecommendation extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder description(String description) {
+            public Builder description(Markdown description) {
                 this.description = description;
                 return this;
             }
@@ -1307,7 +1315,7 @@ public class ImmunizationRecommendation extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code doseNumber} with choice type String.
+             * Convenience method for setting {@code doseNumber}.
              * 
              * @param doseNumber
              *     Recommended dose number within series
@@ -1315,7 +1323,7 @@ public class ImmunizationRecommendation extends DomainResource {
              * @return
              *     A reference to this Builder instance
              * 
-             * @see #doseNumber(Element)
+             * @see #doseNumber(org.linuxforhealth.fhir.model.type.String)
              */
             public Builder doseNumber(java.lang.String doseNumber) {
                 this.doseNumber = (doseNumber == null) ? null : String.of(doseNumber);
@@ -1323,13 +1331,8 @@ public class ImmunizationRecommendation extends DomainResource {
             }
 
             /**
-             * Nominal position of the recommended dose in a series (e.g. dose 2 is the next recommended dose).
-             * 
-             * <p>This is a choice element with the following allowed types:
-             * <ul>
-             * <li>{@link PositiveInt}</li>
-             * <li>{@link String}</li>
-             * </ul>
+             * Nominal position of the recommended dose in a series as determined by the evaluation and forecasting process (e.g. 
+             * dose 2 is the next recommended dose).
              * 
              * @param doseNumber
              *     Recommended dose number within series
@@ -1337,13 +1340,13 @@ public class ImmunizationRecommendation extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder doseNumber(Element doseNumber) {
+            public Builder doseNumber(String doseNumber) {
                 this.doseNumber = doseNumber;
                 return this;
             }
 
             /**
-             * Convenience method for setting {@code seriesDoses} with choice type String.
+             * Convenience method for setting {@code seriesDoses}.
              * 
              * @param seriesDoses
              *     Recommended number of doses for immunity
@@ -1351,7 +1354,7 @@ public class ImmunizationRecommendation extends DomainResource {
              * @return
              *     A reference to this Builder instance
              * 
-             * @see #seriesDoses(Element)
+             * @see #seriesDoses(org.linuxforhealth.fhir.model.type.String)
              */
             public Builder seriesDoses(java.lang.String seriesDoses) {
                 this.seriesDoses = (seriesDoses == null) ? null : String.of(seriesDoses);
@@ -1359,13 +1362,7 @@ public class ImmunizationRecommendation extends DomainResource {
             }
 
             /**
-             * The recommended number of doses to achieve immunity.
-             * 
-             * <p>This is a choice element with the following allowed types:
-             * <ul>
-             * <li>{@link PositiveInt}</li>
-             * <li>{@link String}</li>
-             * </ul>
+             * The recommended number of doses to achieve immunity as determined by the evaluation and forecasting process.
              * 
              * @param seriesDoses
              *     Recommended number of doses for immunity
@@ -1373,7 +1370,7 @@ public class ImmunizationRecommendation extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder seriesDoses(Element seriesDoses) {
+            public Builder seriesDoses(String seriesDoses) {
                 this.seriesDoses = seriesDoses;
                 return this;
             }
@@ -1495,12 +1492,11 @@ public class ImmunizationRecommendation extends DomainResource {
             protected void validate(Recommendation recommendation) {
                 super.validate(recommendation);
                 ValidationSupport.checkList(recommendation.vaccineCode, "vaccineCode", CodeableConcept.class);
+                ValidationSupport.checkList(recommendation.targetDisease, "targetDisease", CodeableConcept.class);
                 ValidationSupport.checkList(recommendation.contraindicatedVaccineCode, "contraindicatedVaccineCode", CodeableConcept.class);
                 ValidationSupport.requireNonNull(recommendation.forecastStatus, "forecastStatus");
                 ValidationSupport.checkList(recommendation.forecastReason, "forecastReason", CodeableConcept.class);
                 ValidationSupport.checkList(recommendation.dateCriterion, "dateCriterion", DateCriterion.class);
-                ValidationSupport.choiceElement(recommendation.doseNumber, "doseNumber", PositiveInt.class, String.class);
-                ValidationSupport.choiceElement(recommendation.seriesDoses, "seriesDoses", PositiveInt.class, String.class);
                 ValidationSupport.checkList(recommendation.supportingImmunization, "supportingImmunization", Reference.class);
                 ValidationSupport.checkList(recommendation.supportingPatientInformation, "supportingPatientInformation", Reference.class);
                 ValidationSupport.checkReferenceType(recommendation.supportingImmunization, "supportingImmunization", "Immunization", "ImmunizationEvaluation");
@@ -1510,7 +1506,7 @@ public class ImmunizationRecommendation extends DomainResource {
             protected Builder from(Recommendation recommendation) {
                 super.from(recommendation);
                 vaccineCode.addAll(recommendation.vaccineCode);
-                targetDisease = recommendation.targetDisease;
+                targetDisease.addAll(recommendation.targetDisease);
                 contraindicatedVaccineCode.addAll(recommendation.contraindicatedVaccineCode);
                 forecastStatus = recommendation.forecastStatus;
                 forecastReason.addAll(recommendation.forecastReason);
@@ -1657,7 +1653,7 @@ public class ImmunizationRecommendation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1677,7 +1673,7 @@ public class ImmunizationRecommendation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1702,7 +1698,7 @@ public class ImmunizationRecommendation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -1727,7 +1723,7 @@ public class ImmunizationRecommendation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 

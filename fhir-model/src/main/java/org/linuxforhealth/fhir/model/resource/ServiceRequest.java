@@ -22,14 +22,17 @@ import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.Annotation;
+import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
+import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
@@ -51,11 +54,19 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 /**
  * A record of a request for service such as diagnostic investigations, treatments, or operations to be performed.
  * 
- * <p>Maturity level: FMM2 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 2,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
+)
+@Constraint(
+    id = "bdystr-1",
+    level = "Rule",
+    location = "(base)",
+    description = "bodyStructure SHALL only be present if bodySite is not present",
+    expression = "bodySite.exists() implies bodyStructure.empty()",
+    source = "http://hl7.org/fhir/StructureDefinition/ServiceRequest"
 )
 @Constraint(
     id = "prr-1",
@@ -86,7 +97,7 @@ public class ServiceRequest extends DomainResource {
         bindingName = "ServiceRequestStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The status of a service order.",
-        valueSet = "http://hl7.org/fhir/ValueSet/request-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/request-status|5.0.0"
     )
     @Required
     private final ServiceRequestStatus status;
@@ -95,7 +106,7 @@ public class ServiceRequest extends DomainResource {
         bindingName = "ServiceRequestIntent",
         strength = BindingStrength.Value.REQUIRED,
         description = "The kind of service request.",
-        valueSet = "http://hl7.org/fhir/ValueSet/request-intent|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/request-intent|5.0.0"
     )
     @Required
     private final ServiceRequestIntent intent;
@@ -112,7 +123,7 @@ public class ServiceRequest extends DomainResource {
         bindingName = "ServiceRequestPriority",
         strength = BindingStrength.Value.REQUIRED,
         description = "Identifies the level of importance to be assigned to actioning the request.",
-        valueSet = "http://hl7.org/fhir/ValueSet/request-priority|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/request-priority|5.0.0"
     )
     private final ServiceRequestPriority priority;
     @Summary
@@ -121,31 +132,27 @@ public class ServiceRequest extends DomainResource {
     @Binding(
         bindingName = "ServiceRequestCode",
         strength = BindingStrength.Value.EXAMPLE,
-        description = "Codes for tests or services that can be carried out by a designated individual, organization or healthcare service.  For laboratory, LOINC is  (preferred)[http://build.fhir.org/terminologies.html#preferred] and a valueset using LOINC Order codes is available.",
+        description = "Codes for tests or services that can be carried out by a designated individual, organization or healthcare service.  For laboratory, LOINC is  [preferred](terminologies.html#preferred) and a valueset using LOINC Order codes is available [here](valueset-diagnostic-requests.html).",
         valueSet = "http://hl7.org/fhir/ValueSet/procedure-code"
     )
-    private final CodeableConcept code;
+    private final CodeableReference code;
     @Summary
-    @Binding(
-        bindingName = "OrderDetail",
-        strength = BindingStrength.Value.EXAMPLE,
-        description = "Codified order entry details which are based on order context.",
-        valueSet = "http://hl7.org/fhir/ValueSet/servicerequest-orderdetail"
-    )
-    private final List<CodeableConcept> orderDetail;
+    private final List<OrderDetail> orderDetail;
     @Summary
     @Choice({ Quantity.class, Ratio.class, Range.class })
-    private final Element quantity;
+    private final org.linuxforhealth.fhir.model.type.Element quantity;
     @Summary
     @ReferenceTarget({ "Patient", "Group", "Location", "Device" })
     @Required
     private final Reference subject;
     @Summary
+    private final List<Reference> focus;
+    @Summary
     @ReferenceTarget({ "Encounter" })
     private final Reference encounter;
     @Summary
     @Choice({ DateTime.class, Period.class, Timing.class })
-    private final Element occurrence;
+    private final org.linuxforhealth.fhir.model.type.Element occurrence;
     @Summary
     @Choice({ Boolean.class, CodeableConcept.class })
     @Binding(
@@ -154,7 +161,7 @@ public class ServiceRequest extends DomainResource {
         description = "A coded concept identifying the pre-condition that should hold prior to performing a procedure.  For example \"pain\", \"on flare-up\", etc.",
         valueSet = "http://hl7.org/fhir/ValueSet/medication-as-needed-reason"
     )
-    private final Element asNeeded;
+    private final org.linuxforhealth.fhir.model.type.Element asNeeded;
     @Summary
     private final DateTime authoredOn;
     @Summary
@@ -165,7 +172,7 @@ public class ServiceRequest extends DomainResource {
         bindingName = "ServiceRequestParticipantRole",
         strength = BindingStrength.Value.EXAMPLE,
         description = "Indicates specific responsibility of an individual within the care team, such as \"Primary physician\", \"Team coordinator\", \"Caregiver\", etc.",
-        valueSet = "http://terminology.hl7.org/ValueSet/action-participant-role"
+        valueSet = "http://hl7.org/fhir/ValueSet/participant-role"
     )
     private final CodeableConcept performerType;
     @Summary
@@ -178,10 +185,7 @@ public class ServiceRequest extends DomainResource {
         description = "A location type where services are delivered.",
         valueSet = "http://terminology.hl7.org/ValueSet/v3-ServiceDeliveryLocationRoleType"
     )
-    private final List<CodeableConcept> locationCode;
-    @Summary
-    @ReferenceTarget({ "Location" })
-    private final List<Reference> locationReference;
+    private final List<CodeableReference> location;
     @Summary
     @Binding(
         bindingName = "ServiceRequestReason",
@@ -189,13 +193,10 @@ public class ServiceRequest extends DomainResource {
         description = "SNOMED CT Condition/Problem/Diagnosis Codes",
         valueSet = "http://hl7.org/fhir/ValueSet/procedure-reason"
     )
-    private final List<CodeableConcept> reasonCode;
-    @Summary
-    @ReferenceTarget({ "Condition", "Observation", "DiagnosticReport", "DocumentReference" })
-    private final List<Reference> reasonReference;
+    private final List<CodeableReference> reason;
     @ReferenceTarget({ "Coverage", "ClaimResponse" })
     private final List<Reference> insurance;
-    private final List<Reference> supportingInfo;
+    private final List<CodeableReference> supportingInfo;
     @Summary
     @ReferenceTarget({ "Specimen" })
     private final List<Reference> specimen;
@@ -207,9 +208,11 @@ public class ServiceRequest extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/body-site"
     )
     private final List<CodeableConcept> bodySite;
-    private final List<Annotation> note;
     @Summary
-    private final String patientInstruction;
+    @ReferenceTarget({ "BodyStructure" })
+    private final Reference bodyStructure;
+    private final List<Annotation> note;
+    private final List<PatientInstruction> patientInstruction;
     @ReferenceTarget({ "Provenance" })
     private final List<Reference> relevantHistory;
 
@@ -230,6 +233,7 @@ public class ServiceRequest extends DomainResource {
         orderDetail = Collections.unmodifiableList(builder.orderDetail);
         quantity = builder.quantity;
         subject = builder.subject;
+        focus = Collections.unmodifiableList(builder.focus);
         encounter = builder.encounter;
         occurrence = builder.occurrence;
         asNeeded = builder.asNeeded;
@@ -237,16 +241,15 @@ public class ServiceRequest extends DomainResource {
         requester = builder.requester;
         performerType = builder.performerType;
         performer = Collections.unmodifiableList(builder.performer);
-        locationCode = Collections.unmodifiableList(builder.locationCode);
-        locationReference = Collections.unmodifiableList(builder.locationReference);
-        reasonCode = Collections.unmodifiableList(builder.reasonCode);
-        reasonReference = Collections.unmodifiableList(builder.reasonReference);
+        location = Collections.unmodifiableList(builder.location);
+        reason = Collections.unmodifiableList(builder.reason);
         insurance = Collections.unmodifiableList(builder.insurance);
         supportingInfo = Collections.unmodifiableList(builder.supportingInfo);
         specimen = Collections.unmodifiableList(builder.specimen);
         bodySite = Collections.unmodifiableList(builder.bodySite);
+        bodyStructure = builder.bodyStructure;
         note = Collections.unmodifiableList(builder.note);
-        patientInstruction = builder.patientInstruction;
+        patientInstruction = Collections.unmodifiableList(builder.patientInstruction);
         relevantHistory = Collections.unmodifiableList(builder.relevantHistory);
     }
 
@@ -364,13 +367,13 @@ public class ServiceRequest extends DomainResource {
     }
 
     /**
-     * A code that identifies a particular service (i.e., procedure, diagnostic investigation, or panel of investigations) 
-     * that have been requested.
+     * A code or reference that identifies a particular service (i.e., procedure, diagnostic investigation, or panel of 
+     * investigations) that have been requested.
      * 
      * @return
-     *     An immutable object of type {@link CodeableConcept} that may be null.
+     *     An immutable object of type {@link CodeableReference} that may be null.
      */
-    public CodeableConcept getCode() {
+    public CodeableReference getCode() {
         return code;
     }
 
@@ -380,9 +383,9 @@ public class ServiceRequest extends DomainResource {
      * require additional instructions specifying how the bandage should be applied.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link OrderDetail} that may be empty.
      */
-    public List<CodeableConcept> getOrderDetail() {
+    public List<OrderDetail> getOrderDetail() {
         return orderDetail;
     }
 
@@ -393,7 +396,7 @@ public class ServiceRequest extends DomainResource {
      * @return
      *     An immutable object of type {@link Quantity}, {@link Ratio} or {@link Range} that may be null.
      */
-    public Element getQuantity() {
+    public org.linuxforhealth.fhir.model.type.Element getQuantity() {
         return quantity;
     }
 
@@ -406,6 +409,19 @@ public class ServiceRequest extends DomainResource {
      */
     public Reference getSubject() {
         return subject;
+    }
+
+    /**
+     * The actual focus of a service request when it is not the subject of record representing something or someone 
+     * associated with the subject such as a spouse, parent, fetus, or donor. The focus of a service request could also be an 
+     * existing condition, an intervention, the subject's diet, another service request on the subject, or a body structure 
+     * such as tumor or implanted device.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getFocus() {
+        return focus;
     }
 
     /**
@@ -424,7 +440,7 @@ public class ServiceRequest extends DomainResource {
      * @return
      *     An immutable object of type {@link DateTime}, {@link Period} or {@link Timing} that may be null.
      */
-    public Element getOccurrence() {
+    public org.linuxforhealth.fhir.model.type.Element getOccurrence() {
         return occurrence;
     }
 
@@ -435,7 +451,7 @@ public class ServiceRequest extends DomainResource {
      * @return
      *     An immutable object of type {@link Boolean} or {@link CodeableConcept} that may be null.
      */
-    public Element getAsNeeded() {
+    public org.linuxforhealth.fhir.model.type.Element getAsNeeded() {
         return asNeeded;
     }
 
@@ -484,21 +500,10 @@ public class ServiceRequest extends DomainResource {
      * nursing day care center.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<CodeableConcept> getLocationCode() {
-        return locationCode;
-    }
-
-    /**
-     * A reference to the the preferred location(s) where the procedure should actually happen. E.g. at home or nursing day 
-     * care center.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-     */
-    public List<Reference> getLocationReference() {
-        return locationReference;
+    public List<CodeableReference> getLocation() {
+        return location;
     }
 
     /**
@@ -506,21 +511,10 @@ public class ServiceRequest extends DomainResource {
      * billing purposes. May relate to the resources referred to in `supportingInfo`.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<CodeableConcept> getReasonCode() {
-        return reasonCode;
-    }
-
-    /**
-     * Indicates another resource that provides a justification for why this service is being requested. May relate to the 
-     * resources referred to in `supportingInfo`.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-     */
-    public List<Reference> getReasonReference() {
-        return reasonReference;
+    public List<CodeableReference> getReason() {
+        return reason;
     }
 
     /**
@@ -542,9 +536,9 @@ public class ServiceRequest extends DomainResource {
      * example, reporting the amount of inspired oxygen for blood gas measurements.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<Reference> getSupportingInfo() {
+    public List<CodeableReference> getSupportingInfo() {
         return supportingInfo;
     }
 
@@ -569,6 +563,16 @@ public class ServiceRequest extends DomainResource {
     }
 
     /**
+     * Anatomic location where the procedure should be performed. This is the target site.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getBodyStructure() {
+        return bodyStructure;
+    }
+
+    /**
      * Any other notes and comments made about the service request. For example, internal billing notes.
      * 
      * @return
@@ -582,9 +586,9 @@ public class ServiceRequest extends DomainResource {
      * Instructions in terms that are understood by the patient or consumer.
      * 
      * @return
-     *     An immutable object of type {@link String} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link PatientInstruction} that may be empty.
      */
-    public String getPatientInstruction() {
+    public List<PatientInstruction> getPatientInstruction() {
         return patientInstruction;
     }
 
@@ -616,6 +620,7 @@ public class ServiceRequest extends DomainResource {
             !orderDetail.isEmpty() || 
             (quantity != null) || 
             (subject != null) || 
+            !focus.isEmpty() || 
             (encounter != null) || 
             (occurrence != null) || 
             (asNeeded != null) || 
@@ -623,16 +628,15 @@ public class ServiceRequest extends DomainResource {
             (requester != null) || 
             (performerType != null) || 
             !performer.isEmpty() || 
-            !locationCode.isEmpty() || 
-            !locationReference.isEmpty() || 
-            !reasonCode.isEmpty() || 
-            !reasonReference.isEmpty() || 
+            !location.isEmpty() || 
+            !reason.isEmpty() || 
             !insurance.isEmpty() || 
             !supportingInfo.isEmpty() || 
             !specimen.isEmpty() || 
             !bodySite.isEmpty() || 
+            (bodyStructure != null) || 
             !note.isEmpty() || 
-            (patientInstruction != null) || 
+            !patientInstruction.isEmpty() || 
             !relevantHistory.isEmpty();
     }
 
@@ -662,9 +666,10 @@ public class ServiceRequest extends DomainResource {
                 accept(priority, "priority", visitor);
                 accept(doNotPerform, "doNotPerform", visitor);
                 accept(code, "code", visitor);
-                accept(orderDetail, "orderDetail", visitor, CodeableConcept.class);
+                accept(orderDetail, "orderDetail", visitor, OrderDetail.class);
                 accept(quantity, "quantity", visitor);
                 accept(subject, "subject", visitor);
+                accept(focus, "focus", visitor, Reference.class);
                 accept(encounter, "encounter", visitor);
                 accept(occurrence, "occurrence", visitor);
                 accept(asNeeded, "asNeeded", visitor);
@@ -672,16 +677,15 @@ public class ServiceRequest extends DomainResource {
                 accept(requester, "requester", visitor);
                 accept(performerType, "performerType", visitor);
                 accept(performer, "performer", visitor, Reference.class);
-                accept(locationCode, "locationCode", visitor, CodeableConcept.class);
-                accept(locationReference, "locationReference", visitor, Reference.class);
-                accept(reasonCode, "reasonCode", visitor, CodeableConcept.class);
-                accept(reasonReference, "reasonReference", visitor, Reference.class);
+                accept(location, "location", visitor, CodeableReference.class);
+                accept(reason, "reason", visitor, CodeableReference.class);
                 accept(insurance, "insurance", visitor, Reference.class);
-                accept(supportingInfo, "supportingInfo", visitor, Reference.class);
+                accept(supportingInfo, "supportingInfo", visitor, CodeableReference.class);
                 accept(specimen, "specimen", visitor, Reference.class);
                 accept(bodySite, "bodySite", visitor, CodeableConcept.class);
+                accept(bodyStructure, "bodyStructure", visitor);
                 accept(note, "note", visitor, Annotation.class);
-                accept(patientInstruction, "patientInstruction", visitor);
+                accept(patientInstruction, "patientInstruction", visitor, PatientInstruction.class);
                 accept(relevantHistory, "relevantHistory", visitor, Reference.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
@@ -724,6 +728,7 @@ public class ServiceRequest extends DomainResource {
             Objects.equals(orderDetail, other.orderDetail) && 
             Objects.equals(quantity, other.quantity) && 
             Objects.equals(subject, other.subject) && 
+            Objects.equals(focus, other.focus) && 
             Objects.equals(encounter, other.encounter) && 
             Objects.equals(occurrence, other.occurrence) && 
             Objects.equals(asNeeded, other.asNeeded) && 
@@ -731,14 +736,13 @@ public class ServiceRequest extends DomainResource {
             Objects.equals(requester, other.requester) && 
             Objects.equals(performerType, other.performerType) && 
             Objects.equals(performer, other.performer) && 
-            Objects.equals(locationCode, other.locationCode) && 
-            Objects.equals(locationReference, other.locationReference) && 
-            Objects.equals(reasonCode, other.reasonCode) && 
-            Objects.equals(reasonReference, other.reasonReference) && 
+            Objects.equals(location, other.location) && 
+            Objects.equals(reason, other.reason) && 
             Objects.equals(insurance, other.insurance) && 
             Objects.equals(supportingInfo, other.supportingInfo) && 
             Objects.equals(specimen, other.specimen) && 
             Objects.equals(bodySite, other.bodySite) && 
+            Objects.equals(bodyStructure, other.bodyStructure) && 
             Objects.equals(note, other.note) && 
             Objects.equals(patientInstruction, other.patientInstruction) && 
             Objects.equals(relevantHistory, other.relevantHistory);
@@ -771,6 +775,7 @@ public class ServiceRequest extends DomainResource {
                 orderDetail, 
                 quantity, 
                 subject, 
+                focus, 
                 encounter, 
                 occurrence, 
                 asNeeded, 
@@ -778,14 +783,13 @@ public class ServiceRequest extends DomainResource {
                 requester, 
                 performerType, 
                 performer, 
-                locationCode, 
-                locationReference, 
-                reasonCode, 
-                reasonReference, 
+                location, 
+                reason, 
                 insurance, 
                 supportingInfo, 
                 specimen, 
                 bodySite, 
+                bodyStructure, 
                 note, 
                 patientInstruction, 
                 relevantHistory);
@@ -815,27 +819,27 @@ public class ServiceRequest extends DomainResource {
         private List<CodeableConcept> category = new ArrayList<>();
         private ServiceRequestPriority priority;
         private Boolean doNotPerform;
-        private CodeableConcept code;
-        private List<CodeableConcept> orderDetail = new ArrayList<>();
-        private Element quantity;
+        private CodeableReference code;
+        private List<OrderDetail> orderDetail = new ArrayList<>();
+        private org.linuxforhealth.fhir.model.type.Element quantity;
         private Reference subject;
+        private List<Reference> focus = new ArrayList<>();
         private Reference encounter;
-        private Element occurrence;
-        private Element asNeeded;
+        private org.linuxforhealth.fhir.model.type.Element occurrence;
+        private org.linuxforhealth.fhir.model.type.Element asNeeded;
         private DateTime authoredOn;
         private Reference requester;
         private CodeableConcept performerType;
         private List<Reference> performer = new ArrayList<>();
-        private List<CodeableConcept> locationCode = new ArrayList<>();
-        private List<Reference> locationReference = new ArrayList<>();
-        private List<CodeableConcept> reasonCode = new ArrayList<>();
-        private List<Reference> reasonReference = new ArrayList<>();
+        private List<CodeableReference> location = new ArrayList<>();
+        private List<CodeableReference> reason = new ArrayList<>();
         private List<Reference> insurance = new ArrayList<>();
-        private List<Reference> supportingInfo = new ArrayList<>();
+        private List<CodeableReference> supportingInfo = new ArrayList<>();
         private List<Reference> specimen = new ArrayList<>();
         private List<CodeableConcept> bodySite = new ArrayList<>();
+        private Reference bodyStructure;
         private List<Annotation> note = new ArrayList<>();
-        private String patientInstruction;
+        private List<PatientInstruction> patientInstruction = new ArrayList<>();
         private List<Reference> relevantHistory = new ArrayList<>();
 
         private Builder() {
@@ -920,7 +924,8 @@ public class ServiceRequest extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -938,7 +943,8 @@ public class ServiceRequest extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -959,7 +965,7 @@ public class ServiceRequest extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -979,7 +985,7 @@ public class ServiceRequest extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -1004,9 +1010,9 @@ public class ServiceRequest extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1029,9 +1035,9 @@ public class ServiceRequest extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1313,7 +1319,7 @@ public class ServiceRequest extends DomainResource {
          * <p>This element is required.
          * 
          * @param intent
-         *     proposal | plan | directive | order | original-order | reflex-order | filler-order | instance-order | option
+         *     proposal | plan | directive | order +
          * 
          * @return
          *     A reference to this Builder instance
@@ -1407,8 +1413,8 @@ public class ServiceRequest extends DomainResource {
         }
 
         /**
-         * A code that identifies a particular service (i.e., procedure, diagnostic investigation, or panel of investigations) 
-         * that have been requested.
+         * A code or reference that identifies a particular service (i.e., procedure, diagnostic investigation, or panel of 
+         * investigations) that have been requested.
          * 
          * @param code
          *     What is being requested/ordered
@@ -1416,7 +1422,7 @@ public class ServiceRequest extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder code(CodeableConcept code) {
+        public Builder code(CodeableReference code) {
             this.code = code;
             return this;
         }
@@ -1435,8 +1441,8 @@ public class ServiceRequest extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder orderDetail(CodeableConcept... orderDetail) {
-            for (CodeableConcept value : orderDetail) {
+        public Builder orderDetail(OrderDetail... orderDetail) {
+            for (OrderDetail value : orderDetail) {
                 this.orderDetail.add(value);
             }
             return this;
@@ -1459,7 +1465,7 @@ public class ServiceRequest extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder orderDetail(Collection<CodeableConcept> orderDetail) {
+        public Builder orderDetail(Collection<OrderDetail> orderDetail) {
             this.orderDetail = new ArrayList<>(orderDetail);
             return this;
         }
@@ -1481,7 +1487,7 @@ public class ServiceRequest extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder quantity(Element quantity) {
+        public Builder quantity(org.linuxforhealth.fhir.model.type.Element quantity) {
             this.quantity = quantity;
             return this;
         }
@@ -1508,6 +1514,51 @@ public class ServiceRequest extends DomainResource {
          */
         public Builder subject(Reference subject) {
             this.subject = subject;
+            return this;
+        }
+
+        /**
+         * The actual focus of a service request when it is not the subject of record representing something or someone 
+         * associated with the subject such as a spouse, parent, fetus, or donor. The focus of a service request could also be an 
+         * existing condition, an intervention, the subject's diet, another service request on the subject, or a body structure 
+         * such as tumor or implanted device.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param focus
+         *     What the service request is about, when it is not about the subject of record
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder focus(Reference... focus) {
+            for (Reference value : focus) {
+                this.focus.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The actual focus of a service request when it is not the subject of record representing something or someone 
+         * associated with the subject such as a spouse, parent, fetus, or donor. The focus of a service request could also be an 
+         * existing condition, an intervention, the subject's diet, another service request on the subject, or a body structure 
+         * such as tumor or implanted device.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param focus
+         *     What the service request is about, when it is not about the subject of record
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder focus(Collection<Reference> focus) {
+            this.focus = new ArrayList<>(focus);
             return this;
         }
 
@@ -1546,7 +1597,7 @@ public class ServiceRequest extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder occurrence(Element occurrence) {
+        public Builder occurrence(org.linuxforhealth.fhir.model.type.Element occurrence) {
             this.occurrence = occurrence;
             return this;
         }
@@ -1583,7 +1634,7 @@ public class ServiceRequest extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder asNeeded(Element asNeeded) {
+        public Builder asNeeded(org.linuxforhealth.fhir.model.type.Element asNeeded) {
             this.asNeeded = asNeeded;
             return this;
         }
@@ -1710,15 +1761,15 @@ public class ServiceRequest extends DomainResource {
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param locationCode
+         * @param location
          *     Requested location
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder locationCode(CodeableConcept... locationCode) {
-            for (CodeableConcept value : locationCode) {
-                this.locationCode.add(value);
+        public Builder location(CodeableReference... location) {
+            for (CodeableReference value : location) {
+                this.location.add(value);
             }
             return this;
         }
@@ -1730,7 +1781,7 @@ public class ServiceRequest extends DomainResource {
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param locationCode
+         * @param location
          *     Requested location
          * 
          * @return
@@ -1739,59 +1790,8 @@ public class ServiceRequest extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder locationCode(Collection<CodeableConcept> locationCode) {
-            this.locationCode = new ArrayList<>(locationCode);
-            return this;
-        }
-
-        /**
-         * A reference to the the preferred location(s) where the procedure should actually happen. E.g. at home or nursing day 
-         * care center.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Location}</li>
-         * </ul>
-         * 
-         * @param locationReference
-         *     Requested location
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder locationReference(Reference... locationReference) {
-            for (Reference value : locationReference) {
-                this.locationReference.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * A reference to the the preferred location(s) where the procedure should actually happen. E.g. at home or nursing day 
-         * care center.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Location}</li>
-         * </ul>
-         * 
-         * @param locationReference
-         *     Requested location
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder locationReference(Collection<Reference> locationReference) {
-            this.locationReference = new ArrayList<>(locationReference);
+        public Builder location(Collection<CodeableReference> location) {
+            this.location = new ArrayList<>(location);
             return this;
         }
 
@@ -1802,15 +1802,15 @@ public class ServiceRequest extends DomainResource {
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
+         * @param reason
          *     Explanation/Justification for procedure or service
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder reasonCode(CodeableConcept... reasonCode) {
-            for (CodeableConcept value : reasonCode) {
-                this.reasonCode.add(value);
+        public Builder reason(CodeableReference... reason) {
+            for (CodeableReference value : reason) {
+                this.reason.add(value);
             }
             return this;
         }
@@ -1822,7 +1822,7 @@ public class ServiceRequest extends DomainResource {
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
+         * @param reason
          *     Explanation/Justification for procedure or service
          * 
          * @return
@@ -1831,65 +1831,8 @@ public class ServiceRequest extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder reasonCode(Collection<CodeableConcept> reasonCode) {
-            this.reasonCode = new ArrayList<>(reasonCode);
-            return this;
-        }
-
-        /**
-         * Indicates another resource that provides a justification for why this service is being requested. May relate to the 
-         * resources referred to in `supportingInfo`.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Explanation/Justification for service or service
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder reasonReference(Reference... reasonReference) {
-            for (Reference value : reasonReference) {
-                this.reasonReference.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Indicates another resource that provides a justification for why this service is being requested. May relate to the 
-         * resources referred to in `supportingInfo`.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Explanation/Justification for service or service
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder reasonReference(Collection<Reference> reasonReference) {
-            this.reasonReference = new ArrayList<>(reasonReference);
+        public Builder reason(Collection<CodeableReference> reason) {
+            this.reason = new ArrayList<>(reason);
             return this;
         }
 
@@ -1962,8 +1905,8 @@ public class ServiceRequest extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder supportingInfo(Reference... supportingInfo) {
-            for (Reference value : supportingInfo) {
+        public Builder supportingInfo(CodeableReference... supportingInfo) {
+            for (CodeableReference value : supportingInfo) {
                 this.supportingInfo.add(value);
             }
             return this;
@@ -1988,7 +1931,7 @@ public class ServiceRequest extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder supportingInfo(Collection<Reference> supportingInfo) {
+        public Builder supportingInfo(Collection<CodeableReference> supportingInfo) {
             this.supportingInfo = new ArrayList<>(supportingInfo);
             return this;
         }
@@ -2049,7 +1992,7 @@ public class ServiceRequest extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param bodySite
-         *     Location on Body
+         *     Coded location on Body
          * 
          * @return
          *     A reference to this Builder instance
@@ -2068,7 +2011,7 @@ public class ServiceRequest extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param bodySite
-         *     Location on Body
+         *     Coded location on Body
          * 
          * @return
          *     A reference to this Builder instance
@@ -2078,6 +2021,25 @@ public class ServiceRequest extends DomainResource {
          */
         public Builder bodySite(Collection<CodeableConcept> bodySite) {
             this.bodySite = new ArrayList<>(bodySite);
+            return this;
+        }
+
+        /**
+         * Anatomic location where the procedure should be performed. This is the target site.
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link BodyStructure}</li>
+         * </ul>
+         * 
+         * @param bodyStructure
+         *     BodyStructure-based location on the body
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder bodyStructure(Reference bodyStructure) {
+            this.bodyStructure = bodyStructure;
             return this;
         }
 
@@ -2121,32 +2083,41 @@ public class ServiceRequest extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code patientInstruction}.
+         * Instructions in terms that are understood by the patient or consumer.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param patientInstruction
          *     Patient or consumer-oriented instructions
          * 
          * @return
          *     A reference to this Builder instance
-         * 
-         * @see #patientInstruction(org.linuxforhealth.fhir.model.type.String)
          */
-        public Builder patientInstruction(java.lang.String patientInstruction) {
-            this.patientInstruction = (patientInstruction == null) ? null : String.of(patientInstruction);
+        public Builder patientInstruction(PatientInstruction... patientInstruction) {
+            for (PatientInstruction value : patientInstruction) {
+                this.patientInstruction.add(value);
+            }
             return this;
         }
 
         /**
          * Instructions in terms that are understood by the patient or consumer.
          * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
          * @param patientInstruction
          *     Patient or consumer-oriented instructions
          * 
          * @return
          *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
          */
-        public Builder patientInstruction(String patientInstruction) {
-            this.patientInstruction = patientInstruction;
+        public Builder patientInstruction(Collection<PatientInstruction> patientInstruction) {
+            this.patientInstruction = new ArrayList<>(patientInstruction);
             return this;
         }
 
@@ -2233,21 +2204,21 @@ public class ServiceRequest extends DomainResource {
             ValidationSupport.requireNonNull(serviceRequest.status, "status");
             ValidationSupport.requireNonNull(serviceRequest.intent, "intent");
             ValidationSupport.checkList(serviceRequest.category, "category", CodeableConcept.class);
-            ValidationSupport.checkList(serviceRequest.orderDetail, "orderDetail", CodeableConcept.class);
+            ValidationSupport.checkList(serviceRequest.orderDetail, "orderDetail", OrderDetail.class);
             ValidationSupport.choiceElement(serviceRequest.quantity, "quantity", Quantity.class, Ratio.class, Range.class);
             ValidationSupport.requireNonNull(serviceRequest.subject, "subject");
+            ValidationSupport.checkList(serviceRequest.focus, "focus", Reference.class);
             ValidationSupport.choiceElement(serviceRequest.occurrence, "occurrence", DateTime.class, Period.class, Timing.class);
             ValidationSupport.choiceElement(serviceRequest.asNeeded, "asNeeded", Boolean.class, CodeableConcept.class);
             ValidationSupport.checkList(serviceRequest.performer, "performer", Reference.class);
-            ValidationSupport.checkList(serviceRequest.locationCode, "locationCode", CodeableConcept.class);
-            ValidationSupport.checkList(serviceRequest.locationReference, "locationReference", Reference.class);
-            ValidationSupport.checkList(serviceRequest.reasonCode, "reasonCode", CodeableConcept.class);
-            ValidationSupport.checkList(serviceRequest.reasonReference, "reasonReference", Reference.class);
+            ValidationSupport.checkList(serviceRequest.location, "location", CodeableReference.class);
+            ValidationSupport.checkList(serviceRequest.reason, "reason", CodeableReference.class);
             ValidationSupport.checkList(serviceRequest.insurance, "insurance", Reference.class);
-            ValidationSupport.checkList(serviceRequest.supportingInfo, "supportingInfo", Reference.class);
+            ValidationSupport.checkList(serviceRequest.supportingInfo, "supportingInfo", CodeableReference.class);
             ValidationSupport.checkList(serviceRequest.specimen, "specimen", Reference.class);
             ValidationSupport.checkList(serviceRequest.bodySite, "bodySite", CodeableConcept.class);
             ValidationSupport.checkList(serviceRequest.note, "note", Annotation.class);
+            ValidationSupport.checkList(serviceRequest.patientInstruction, "patientInstruction", PatientInstruction.class);
             ValidationSupport.checkList(serviceRequest.relevantHistory, "relevantHistory", Reference.class);
             ValidationSupport.checkReferenceType(serviceRequest.basedOn, "basedOn", "CarePlan", "ServiceRequest", "MedicationRequest");
             ValidationSupport.checkReferenceType(serviceRequest.replaces, "replaces", "ServiceRequest");
@@ -2255,10 +2226,9 @@ public class ServiceRequest extends DomainResource {
             ValidationSupport.checkReferenceType(serviceRequest.encounter, "encounter", "Encounter");
             ValidationSupport.checkReferenceType(serviceRequest.requester, "requester", "Practitioner", "PractitionerRole", "Organization", "Patient", "RelatedPerson", "Device");
             ValidationSupport.checkReferenceType(serviceRequest.performer, "performer", "Practitioner", "PractitionerRole", "Organization", "CareTeam", "HealthcareService", "Patient", "Device", "RelatedPerson");
-            ValidationSupport.checkReferenceType(serviceRequest.locationReference, "locationReference", "Location");
-            ValidationSupport.checkReferenceType(serviceRequest.reasonReference, "reasonReference", "Condition", "Observation", "DiagnosticReport", "DocumentReference");
             ValidationSupport.checkReferenceType(serviceRequest.insurance, "insurance", "Coverage", "ClaimResponse");
             ValidationSupport.checkReferenceType(serviceRequest.specimen, "specimen", "Specimen");
+            ValidationSupport.checkReferenceType(serviceRequest.bodyStructure, "bodyStructure", "BodyStructure");
             ValidationSupport.checkReferenceType(serviceRequest.relevantHistory, "relevantHistory", "Provenance");
         }
 
@@ -2279,6 +2249,7 @@ public class ServiceRequest extends DomainResource {
             orderDetail.addAll(serviceRequest.orderDetail);
             quantity = serviceRequest.quantity;
             subject = serviceRequest.subject;
+            focus.addAll(serviceRequest.focus);
             encounter = serviceRequest.encounter;
             occurrence = serviceRequest.occurrence;
             asNeeded = serviceRequest.asNeeded;
@@ -2286,18 +2257,944 @@ public class ServiceRequest extends DomainResource {
             requester = serviceRequest.requester;
             performerType = serviceRequest.performerType;
             performer.addAll(serviceRequest.performer);
-            locationCode.addAll(serviceRequest.locationCode);
-            locationReference.addAll(serviceRequest.locationReference);
-            reasonCode.addAll(serviceRequest.reasonCode);
-            reasonReference.addAll(serviceRequest.reasonReference);
+            location.addAll(serviceRequest.location);
+            reason.addAll(serviceRequest.reason);
             insurance.addAll(serviceRequest.insurance);
             supportingInfo.addAll(serviceRequest.supportingInfo);
             specimen.addAll(serviceRequest.specimen);
             bodySite.addAll(serviceRequest.bodySite);
+            bodyStructure = serviceRequest.bodyStructure;
             note.addAll(serviceRequest.note);
-            patientInstruction = serviceRequest.patientInstruction;
+            patientInstruction.addAll(serviceRequest.patientInstruction);
             relevantHistory.addAll(serviceRequest.relevantHistory);
             return this;
+        }
+    }
+
+    /**
+     * Additional details and instructions about the how the services are to be delivered. For example, and order for a 
+     * urinary catheter may have an order detail for an external or indwelling catheter, or an order for a bandage may 
+     * require additional instructions specifying how the bandage should be applied.
+     */
+    public static class OrderDetail extends BackboneElement {
+        private final CodeableReference parameterFocus;
+        @Summary
+        @Required
+        private final List<Parameter> parameter;
+
+        private OrderDetail(Builder builder) {
+            super(builder);
+            parameterFocus = builder.parameterFocus;
+            parameter = Collections.unmodifiableList(builder.parameter);
+        }
+
+        /**
+         * Indicates the context of the order details by reference.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableReference} that may be null.
+         */
+        public CodeableReference getParameterFocus() {
+            return parameterFocus;
+        }
+
+        /**
+         * The parameter details for the service being requested.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link Parameter} that is non-empty.
+         */
+        public List<Parameter> getParameter() {
+            return parameter;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (parameterFocus != null) || 
+                !parameter.isEmpty();
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(parameterFocus, "parameterFocus", visitor);
+                    accept(parameter, "parameter", visitor, Parameter.class);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            OrderDetail other = (OrderDetail) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(parameterFocus, other.parameterFocus) && 
+                Objects.equals(parameter, other.parameter);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    parameterFocus, 
+                    parameter);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private CodeableReference parameterFocus;
+            private List<Parameter> parameter = new ArrayList<>();
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * Indicates the context of the order details by reference.
+             * 
+             * @param parameterFocus
+             *     The context of the order details by reference
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder parameterFocus(CodeableReference parameterFocus) {
+                this.parameterFocus = parameterFocus;
+                return this;
+            }
+
+            /**
+             * The parameter details for the service being requested.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * <p>This element is required.
+             * 
+             * @param parameter
+             *     The parameter details for the service being requested
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder parameter(Parameter... parameter) {
+                for (Parameter value : parameter) {
+                    this.parameter.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * The parameter details for the service being requested.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * <p>This element is required.
+             * 
+             * @param parameter
+             *     The parameter details for the service being requested
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder parameter(Collection<Parameter> parameter) {
+                this.parameter = new ArrayList<>(parameter);
+                return this;
+            }
+
+            /**
+             * Build the {@link OrderDetail}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>parameter</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link OrderDetail}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid OrderDetail per the base specification
+             */
+            @Override
+            public OrderDetail build() {
+                OrderDetail orderDetail = new OrderDetail(this);
+                if (validating) {
+                    validate(orderDetail);
+                }
+                return orderDetail;
+            }
+
+            protected void validate(OrderDetail orderDetail) {
+                super.validate(orderDetail);
+                ValidationSupport.checkNonEmptyList(orderDetail.parameter, "parameter", Parameter.class);
+                ValidationSupport.requireValueOrChildren(orderDetail);
+            }
+
+            protected Builder from(OrderDetail orderDetail) {
+                super.from(orderDetail);
+                parameterFocus = orderDetail.parameterFocus;
+                parameter.addAll(orderDetail.parameter);
+                return this;
+            }
+        }
+
+        /**
+         * The parameter details for the service being requested.
+         */
+        public static class Parameter extends BackboneElement {
+            @Summary
+            @Binding(
+                bindingName = "ServiceRequestOrderDetailParameterCode",
+                strength = BindingStrength.Value.EXAMPLE,
+                description = "Codes for order detail parameters.",
+                valueSet = "http://hl7.org/fhir/ValueSet/servicerequest-orderdetail-parameter-code"
+            )
+            @Required
+            private final CodeableConcept code;
+            @Summary
+            @Choice({ Quantity.class, Ratio.class, Range.class, Boolean.class, CodeableConcept.class, String.class, Period.class })
+            @Required
+            private final org.linuxforhealth.fhir.model.type.Element value;
+
+            private Parameter(Builder builder) {
+                super(builder);
+                code = builder.code;
+                value = builder.value;
+            }
+
+            /**
+             * A value representing the additional detail or instructions for the order (e.g., catheter insertion, body elevation, 
+             * descriptive device configuration and/or setting instructions).
+             * 
+             * @return
+             *     An immutable object of type {@link CodeableConcept} that is non-null.
+             */
+            public CodeableConcept getCode() {
+                return code;
+            }
+
+            /**
+             * Indicates a value for the order detail.
+             * 
+             * @return
+             *     An immutable object of type {@link Quantity}, {@link Ratio}, {@link Range}, {@link Boolean}, {@link CodeableConcept}, 
+             *     {@link String} or {@link Period} that is non-null.
+             */
+            public org.linuxforhealth.fhir.model.type.Element getValue() {
+                return value;
+            }
+
+            @Override
+            public boolean hasChildren() {
+                return super.hasChildren() || 
+                    (code != null) || 
+                    (value != null);
+            }
+
+            @Override
+            public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                if (visitor.preVisit(this)) {
+                    visitor.visitStart(elementName, elementIndex, this);
+                    if (visitor.visit(elementName, elementIndex, this)) {
+                        // visit children
+                        accept(id, "id", visitor);
+                        accept(extension, "extension", visitor, Extension.class);
+                        accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                        accept(code, "code", visitor);
+                        accept(value, "value", visitor);
+                    }
+                    visitor.visitEnd(elementName, elementIndex, this);
+                    visitor.postVisit(this);
+                }
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj) {
+                    return true;
+                }
+                if (obj == null) {
+                    return false;
+                }
+                if (getClass() != obj.getClass()) {
+                    return false;
+                }
+                Parameter other = (Parameter) obj;
+                return Objects.equals(id, other.id) && 
+                    Objects.equals(extension, other.extension) && 
+                    Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(code, other.code) && 
+                    Objects.equals(value, other.value);
+            }
+
+            @Override
+            public int hashCode() {
+                int result = hashCode;
+                if (result == 0) {
+                    result = Objects.hash(id, 
+                        extension, 
+                        modifierExtension, 
+                        code, 
+                        value);
+                    hashCode = result;
+                }
+                return result;
+            }
+
+            @Override
+            public Builder toBuilder() {
+                return new Builder().from(this);
+            }
+
+            public static Builder builder() {
+                return new Builder();
+            }
+
+            public static class Builder extends BackboneElement.Builder {
+                private CodeableConcept code;
+                private org.linuxforhealth.fhir.model.type.Element value;
+
+                private Builder() {
+                    super();
+                }
+
+                /**
+                 * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                 * contain spaces.
+                 * 
+                 * @param id
+                 *     Unique id for inter-element referencing
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder id(java.lang.String id) {
+                    return (Builder) super.id(id);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder extension(Extension... extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder extension(Collection<Extension> extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder modifierExtension(Extension... modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * A value representing the additional detail or instructions for the order (e.g., catheter insertion, body elevation, 
+                 * descriptive device configuration and/or setting instructions).
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * @param code
+                 *     The detail of the order being requested
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder code(CodeableConcept code) {
+                    this.code = code;
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code value} with choice type Boolean.
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * @param value
+                 *     The value for the order detail
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #value(Element)
+                 */
+                public Builder value(java.lang.Boolean value) {
+                    this.value = (value == null) ? null : Boolean.of(value);
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code value} with choice type String.
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * @param value
+                 *     The value for the order detail
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #value(Element)
+                 */
+                public Builder value(java.lang.String value) {
+                    this.value = (value == null) ? null : String.of(value);
+                    return this;
+                }
+
+                /**
+                 * Indicates a value for the order detail.
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * <p>This is a choice element with the following allowed types:
+                 * <ul>
+                 * <li>{@link Quantity}</li>
+                 * <li>{@link Ratio}</li>
+                 * <li>{@link Range}</li>
+                 * <li>{@link Boolean}</li>
+                 * <li>{@link CodeableConcept}</li>
+                 * <li>{@link String}</li>
+                 * <li>{@link Period}</li>
+                 * </ul>
+                 * 
+                 * @param value
+                 *     The value for the order detail
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
+                    this.value = value;
+                    return this;
+                }
+
+                /**
+                 * Build the {@link Parameter}
+                 * 
+                 * <p>Required elements:
+                 * <ul>
+                 * <li>code</li>
+                 * <li>value</li>
+                 * </ul>
+                 * 
+                 * @return
+                 *     An immutable object of type {@link Parameter}
+                 * @throws IllegalStateException
+                 *     if the current state cannot be built into a valid Parameter per the base specification
+                 */
+                @Override
+                public Parameter build() {
+                    Parameter parameter = new Parameter(this);
+                    if (validating) {
+                        validate(parameter);
+                    }
+                    return parameter;
+                }
+
+                protected void validate(Parameter parameter) {
+                    super.validate(parameter);
+                    ValidationSupport.requireNonNull(parameter.code, "code");
+                    ValidationSupport.requireChoiceElement(parameter.value, "value", Quantity.class, Ratio.class, Range.class, Boolean.class, CodeableConcept.class, String.class, Period.class);
+                    ValidationSupport.requireValueOrChildren(parameter);
+                }
+
+                protected Builder from(Parameter parameter) {
+                    super.from(parameter);
+                    code = parameter.code;
+                    value = parameter.value;
+                    return this;
+                }
+            }
+        }
+    }
+
+    /**
+     * Instructions in terms that are understood by the patient or consumer.
+     */
+    public static class PatientInstruction extends BackboneElement {
+        @Summary
+        @ReferenceTarget({ "DocumentReference" })
+        @Choice({ Markdown.class, Reference.class })
+        private final org.linuxforhealth.fhir.model.type.Element instruction;
+
+        private PatientInstruction(Builder builder) {
+            super(builder);
+            instruction = builder.instruction;
+        }
+
+        /**
+         * Instructions in terms that are understood by the patient or consumer.
+         * 
+         * @return
+         *     An immutable object of type {@link Markdown} or {@link Reference} that may be null.
+         */
+        public org.linuxforhealth.fhir.model.type.Element getInstruction() {
+            return instruction;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (instruction != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(instruction, "instruction", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            PatientInstruction other = (PatientInstruction) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(instruction, other.instruction);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    instruction);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private org.linuxforhealth.fhir.model.type.Element instruction;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * Instructions in terms that are understood by the patient or consumer.
+             * 
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link Markdown}</li>
+             * <li>{@link Reference}</li>
+             * </ul>
+             * 
+             * When of type {@link Reference}, the allowed resource types for this reference are:
+             * <ul>
+             * <li>{@link DocumentReference}</li>
+             * </ul>
+             * 
+             * @param instruction
+             *     Patient or consumer-oriented instructions
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder instruction(org.linuxforhealth.fhir.model.type.Element instruction) {
+                this.instruction = instruction;
+                return this;
+            }
+
+            /**
+             * Build the {@link PatientInstruction}
+             * 
+             * @return
+             *     An immutable object of type {@link PatientInstruction}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid PatientInstruction per the base specification
+             */
+            @Override
+            public PatientInstruction build() {
+                PatientInstruction patientInstruction = new PatientInstruction(this);
+                if (validating) {
+                    validate(patientInstruction);
+                }
+                return patientInstruction;
+            }
+
+            protected void validate(PatientInstruction patientInstruction) {
+                super.validate(patientInstruction);
+                ValidationSupport.choiceElement(patientInstruction.instruction, "instruction", Markdown.class, Reference.class);
+                ValidationSupport.checkReferenceType(patientInstruction.instruction, "instruction", "DocumentReference");
+                ValidationSupport.requireValueOrChildren(patientInstruction);
+            }
+
+            protected Builder from(PatientInstruction patientInstruction) {
+                super.from(patientInstruction);
+                instruction = patientInstruction.instruction;
+                return this;
+            }
         }
     }
 }

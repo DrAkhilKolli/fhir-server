@@ -17,7 +17,6 @@ import javax.annotation.Generated;
 import org.linuxforhealth.fhir.model.annotation.Binding;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
-import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
@@ -33,26 +32,24 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Warning",
     location = "(base)",
     description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/signature-type",
-    expression = "type.exists() and type.all(memberOf('http://hl7.org/fhir/ValueSet/signature-type', 'preferred'))",
+    expression = "type.exists() implies (type.all(memberOf('http://hl7.org/fhir/ValueSet/signature-type', 'preferred')))",
     source = "http://hl7.org/fhir/StructureDefinition/Signature",
     generated = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Signature extends Element {
+public class Signature extends DataType {
     @Summary
     @Binding(
         bindingName = "SignatureType",
         strength = BindingStrength.Value.PREFERRED,
+        description = "An indication of the reason that an entity signed the object.",
         valueSet = "http://hl7.org/fhir/ValueSet/signature-type"
     )
-    @Required
     private final List<Coding> type;
     @Summary
-    @Required
     private final Instant when;
     @Summary
     @ReferenceTarget({ "Practitioner", "PractitionerRole", "RelatedPerson", "Patient", "Device", "Organization" })
-    @Required
     private final Reference who;
     @Summary
     @ReferenceTarget({ "Practitioner", "PractitionerRole", "RelatedPerson", "Patient", "Device", "Organization" })
@@ -61,14 +58,14 @@ public class Signature extends Element {
         bindingName = "MimeType",
         strength = BindingStrength.Value.REQUIRED,
         description = "BCP 13 (RFCs 2045, 2046, 2047, 4288, 4289 and 2049)",
-        valueSet = "http://hl7.org/fhir/ValueSet/mimetypes|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/mimetypes|5.0.0"
     )
     private final Code targetFormat;
     @Binding(
         bindingName = "MimeType",
         strength = BindingStrength.Value.REQUIRED,
         description = "BCP 13 (RFCs 2045, 2046, 2047, 4288, 4289 and 2049)",
-        valueSet = "http://hl7.org/fhir/ValueSet/mimetypes|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/mimetypes|5.0.0"
     )
     private final Code sigFormat;
     private final Base64Binary data;
@@ -89,7 +86,7 @@ public class Signature extends Element {
      * signature information and can be used when determining accountability for various actions concerning the document.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Coding} that is non-empty.
+     *     An unmodifiable list containing immutable objects of type {@link Coding} that may be empty.
      */
     public List<Coding> getType() {
         return type;
@@ -99,7 +96,7 @@ public class Signature extends Element {
      * When the digital signature was signed.
      * 
      * @return
-     *     An immutable object of type {@link Instant} that is non-null.
+     *     An immutable object of type {@link Instant} that may be null.
      */
     public Instant getWhen() {
         return when;
@@ -110,7 +107,7 @@ public class Signature extends Element {
      * key).
      * 
      * @return
-     *     An immutable object of type {@link Reference} that is non-null.
+     *     An immutable object of type {@link Reference} that may be null.
      */
     public Reference getWho() {
         return who;
@@ -241,7 +238,7 @@ public class Signature extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private List<Coding> type = new ArrayList<>();
         private Instant when;
         private Reference who;
@@ -271,7 +268,7 @@ public class Signature extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -291,7 +288,7 @@ public class Signature extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -319,8 +316,6 @@ public class Signature extends Element {
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>This element is required.
-         * 
          * @param type
          *     Indication of the reason the entity signed the object(s)
          * 
@@ -341,8 +336,6 @@ public class Signature extends Element {
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>This element is required.
-         * 
          * @param type
          *     Indication of the reason the entity signed the object(s)
          * 
@@ -360,8 +353,6 @@ public class Signature extends Element {
         /**
          * Convenience method for setting {@code when}.
          * 
-         * <p>This element is required.
-         * 
          * @param when
          *     When the signature was created
          * 
@@ -378,8 +369,6 @@ public class Signature extends Element {
         /**
          * When the digital signature was signed.
          * 
-         * <p>This element is required.
-         * 
          * @param when
          *     When the signature was created
          * 
@@ -394,8 +383,6 @@ public class Signature extends Element {
         /**
          * A reference to an application-usable description of the identity that signed (e.g. the signature used their private 
          * key).
-         * 
-         * <p>This element is required.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
@@ -489,13 +476,6 @@ public class Signature extends Element {
         /**
          * Build the {@link Signature}
          * 
-         * <p>Required elements:
-         * <ul>
-         * <li>type</li>
-         * <li>when</li>
-         * <li>who</li>
-         * </ul>
-         * 
          * @return
          *     An immutable object of type {@link Signature}
          * @throws IllegalStateException
@@ -512,9 +492,7 @@ public class Signature extends Element {
 
         protected void validate(Signature signature) {
             super.validate(signature);
-            ValidationSupport.checkNonEmptyList(signature.type, "type", Coding.class);
-            ValidationSupport.requireNonNull(signature.when, "when");
-            ValidationSupport.requireNonNull(signature.who, "who");
+            ValidationSupport.checkList(signature.type, "type", Coding.class);
             ValidationSupport.checkReferenceType(signature.who, "who", "Practitioner", "PractitionerRole", "RelatedPerson", "Patient", "Device", "Organization");
             ValidationSupport.checkReferenceType(signature.onBehalfOf, "onBehalfOf", "Practitioner", "PractitionerRole", "RelatedPerson", "Patient", "Device", "Organization");
             ValidationSupport.requireValueOrChildren(signature);

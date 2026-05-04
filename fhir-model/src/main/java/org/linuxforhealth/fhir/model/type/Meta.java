@@ -35,7 +35,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Meta extends Element {
+public class Meta extends DataType {
     @Summary
     private final Id versionId;
     @Summary
@@ -48,6 +48,7 @@ public class Meta extends Element {
     @Binding(
         bindingName = "SecurityLabels",
         strength = BindingStrength.Value.EXTENSIBLE,
+        description = "Security Labels from the Healthcare Privacy and Security Classification System.",
         valueSet = "http://hl7.org/fhir/ValueSet/security-labels"
     )
     private final List<Coding> security;
@@ -55,6 +56,7 @@ public class Meta extends Element {
     @Binding(
         bindingName = "Tags",
         strength = BindingStrength.Value.EXAMPLE,
+        description = "Codes that represent various types of tags, commonly workflow-related; e.g. \"Needs review by Dr. Jones\".",
         valueSet = "http://hl7.org/fhir/ValueSet/common-tags"
     )
     private final List<Coding> tag;
@@ -215,7 +217,7 @@ public class Meta extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private Id versionId;
         private Instant lastUpdated;
         private Uri source;
@@ -244,7 +246,7 @@ public class Meta extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -264,7 +266,7 @@ public class Meta extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 

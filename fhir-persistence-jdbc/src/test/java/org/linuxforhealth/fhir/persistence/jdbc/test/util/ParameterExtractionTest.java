@@ -53,7 +53,7 @@ import org.linuxforhealth.fhir.model.type.Timing;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.ContactPointSystem;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
-import org.linuxforhealth.fhir.model.type.code.ResourceTypeCode;
+import org.linuxforhealth.fhir.model.type.code.FHIRTypes;
 import org.linuxforhealth.fhir.model.type.code.SearchParamType;
 import org.linuxforhealth.fhir.persistence.exception.FHIRPersistenceProcessorException;
 import org.linuxforhealth.fhir.persistence.jdbc.JDBCConstants;
@@ -105,7 +105,7 @@ public class ParameterExtractionTest {
             .status(PublicationStatus.DRAFT)
             .description(Markdown.of("#Test Parameter"))
             .code(Code.of(SEARCH_PARAM_CODE_VALUE))
-            .base(ResourceTypeCode.BASIC);
+            .base(FHIRTypes.BASIC);
     private static final SearchParameter numberSearchParam = searchParamBuilder.type(SearchParamType.NUMBER).build();
     private static final SearchParameter dateSearchParam = searchParamBuilder.type(SearchParamType.DATE).build();
     private static final SearchParameter referenceSearchParam = searchParamBuilder.type(SearchParamType.REFERENCE).build();

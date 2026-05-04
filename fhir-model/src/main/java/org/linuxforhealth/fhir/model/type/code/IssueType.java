@@ -187,6 +187,14 @@ public class IssueType extends Code {
     public static final IssueType CONFLICT = IssueType.builder().value(Value.CONFLICT).build();
 
     /**
+     * Limited Filter Application
+     * 
+     * <p>Some search filters might not have applied on all results. Data may have been included that does not meet all of 
+     * the filters listed in the `self` `Bundle.link`.
+     */
+    public static final IssueType LIMITED_FILTER = IssueType.builder().value(Value.LIMITED_FILTER).build();
+
+    /**
      * Transient Issue
      * 
      * <p>Transient processing issues. The system receiving the message may be able to resubmit the same content once an 
@@ -245,6 +253,13 @@ public class IssueType extends Code {
      * like reminders of password expiry, system maintenance times, etc.).
      */
     public static final IssueType INFORMATIONAL = IssueType.builder().value(Value.INFORMATIONAL).build();
+
+    /**
+     * Operation Successful
+     * 
+     * <p>The operation completed successfully.
+     */
+    public static final IssueType SUCCESS = IssueType.builder().value(Value.SUCCESS).build();
 
     private volatile int hashCode;
 
@@ -310,6 +325,8 @@ public class IssueType extends Code {
             return BUSINESS_RULE;
         case CONFLICT:
             return CONFLICT;
+        case LIMITED_FILTER:
+            return LIMITED_FILTER;
         case TRANSIENT:
             return TRANSIENT;
         case LOCK_ERROR:
@@ -326,6 +343,8 @@ public class IssueType extends Code {
             return THROTTLED;
         case INFORMATIONAL:
             return INFORMATIONAL;
+        case SUCCESS:
+            return SUCCESS;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -626,6 +645,14 @@ public class IssueType extends Code {
         CONFLICT("conflict"),
 
         /**
+         * Limited Filter Application
+         * 
+         * <p>Some search filters might not have applied on all results. Data may have been included that does not meet all of 
+         * the filters listed in the `self` `Bundle.link`.
+         */
+        LIMITED_FILTER("limited-filter"),
+
+        /**
          * Transient Issue
          * 
          * <p>Transient processing issues. The system receiving the message may be able to resubmit the same content once an 
@@ -683,7 +710,14 @@ public class IssueType extends Code {
          * <p>A message unrelated to the processing success of the completed operation (examples of the latter include things 
          * like reminders of password expiry, system maintenance times, etc.).
          */
-        INFORMATIONAL("informational");
+        INFORMATIONAL("informational"),
+
+        /**
+         * Operation Successful
+         * 
+         * <p>The operation completed successfully.
+         */
+        SUCCESS("success");
 
         private final java.lang.String value;
 
@@ -760,6 +794,8 @@ public class IssueType extends Code {
                 return BUSINESS_RULE;
             case "conflict":
                 return CONFLICT;
+            case "limited-filter":
+                return LIMITED_FILTER;
             case "transient":
                 return TRANSIENT;
             case "lock-error":
@@ -776,6 +812,8 @@ public class IssueType extends Code {
                 return THROTTLED;
             case "informational":
                 return INFORMATIONAL;
+            case "success":
+                return SUCCESS;
             default:
                 throw new IllegalArgumentException(value);
             }

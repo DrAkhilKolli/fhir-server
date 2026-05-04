@@ -25,22 +25,32 @@ import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
+import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.DateTime;
+import org.linuxforhealth.fhir.model.type.Decimal;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
+import org.linuxforhealth.fhir.model.type.Integer;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
+import org.linuxforhealth.fhir.model.type.Period;
+import org.linuxforhealth.fhir.model.type.Quantity;
+import org.linuxforhealth.fhir.model.type.RelatedArtifact;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.UsageContext;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
-import org.linuxforhealth.fhir.model.type.code.ConceptMapEquivalence;
 import org.linuxforhealth.fhir.model.type.code.ConceptMapGroupUnmappedMode;
+import org.linuxforhealth.fhir.model.type.code.ConceptMapRelationship;
+import org.linuxforhealth.fhir.model.type.code.ConceptMapmapAttributeType;
+import org.linuxforhealth.fhir.model.type.code.PropertyType;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
+import org.linuxforhealth.fhir.model.type.code.UnmappedConceptMapRelationship;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
@@ -55,39 +65,120 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "cmd-0",
+    id = "cnl-0",
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
+    source = "http://hl7.org/fhir/StructureDefinition/ConceptMap"
+)
+@Constraint(
+    id = "cnl-1",
+    level = "Warning",
+    location = "ConceptMap.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
     source = "http://hl7.org/fhir/StructureDefinition/ConceptMap"
 )
 @Constraint(
     id = "cmd-1",
     level = "Rule",
     location = "ConceptMap.group.element.target",
-    description = "If the map is narrower or inexact, there SHALL be some comments",
-    expression = "comment.exists() or equivalence.empty() or ((equivalence != 'narrower') and (equivalence != 'inexact'))",
+    description = "If the map is source-is-broader-than-target or not-related-to, there SHALL be some comments, unless the status is 'draft'",
+    expression = "comment.exists() or (%resource.status = 'draft') or relationship.empty() or ((relationship != 'source-is-broader-than-target') and (relationship != 'not-related-to'))",
     source = "http://hl7.org/fhir/StructureDefinition/ConceptMap"
 )
 @Constraint(
     id = "cmd-2",
     level = "Rule",
     location = "ConceptMap.group.unmapped",
-    description = "If the mode is 'fixed', a code must be provided",
-    expression = "(mode = 'fixed') implies code.exists()",
+    description = "If the mode is 'fixed', either a code or valueSet must be provided, but not both.",
+    expression = "(mode = 'fixed') implies ((code.exists() and valueSet.empty()) or (code.empty() and valueSet.exists()))",
     source = "http://hl7.org/fhir/StructureDefinition/ConceptMap"
 )
 @Constraint(
     id = "cmd-3",
     level = "Rule",
     location = "ConceptMap.group.unmapped",
-    description = "If the mode is 'other-map', a url must be provided",
-    expression = "(mode = 'other-map') implies url.exists()",
+    description = "If the mode is 'other-map', a url for the other map must be provided",
+    expression = "(mode = 'other-map') implies otherMap.exists()",
     source = "http://hl7.org/fhir/StructureDefinition/ConceptMap"
 )
 @Constraint(
-    id = "conceptMap-4",
+    id = "cmd-4",
+    level = "Rule",
+    location = "ConceptMap.group.element",
+    description = "If noMap is present, target SHALL NOT be present",
+    expression = "(noMap.exists() and noMap=true) implies target.empty()",
+    source = "http://hl7.org/fhir/StructureDefinition/ConceptMap"
+)
+@Constraint(
+    id = "cmd-5",
+    level = "Rule",
+    location = "ConceptMap.group.element",
+    description = "Either code or valueSet SHALL be present but not both.",
+    expression = "(code.exists() and valueSet.empty()) or (code.empty() and valueSet.exists())",
+    source = "http://hl7.org/fhir/StructureDefinition/ConceptMap"
+)
+@Constraint(
+    id = "cmd-6",
+    level = "Rule",
+    location = "ConceptMap.group.element.target.dependsOn",
+    description = "One of value[x] or valueSet must exist, but not both.",
+    expression = "(value.exists() and valueSet.empty()) or (value.empty() and valueSet.exists())",
+    source = "http://hl7.org/fhir/StructureDefinition/ConceptMap"
+)
+@Constraint(
+    id = "cmd-7",
+    level = "Rule",
+    location = "ConceptMap.group.element.target",
+    description = "Either code or valueSet SHALL be present but not both.",
+    expression = "(code.exists() and valueSet.empty()) or (code.empty() and valueSet.exists())",
+    source = "http://hl7.org/fhir/StructureDefinition/ConceptMap"
+)
+@Constraint(
+    id = "cmd-8",
+    level = "Rule",
+    location = "ConceptMap.group.unmapped",
+    description = "If the mode is not 'fixed', code, display and valueSet are not allowed",
+    expression = "(mode != 'fixed') implies (code.empty() and display.empty() and valueSet.empty())",
+    source = "http://hl7.org/fhir/StructureDefinition/ConceptMap"
+)
+@Constraint(
+    id = "cmd-9",
+    level = "Rule",
+    location = "ConceptMap.group.unmapped",
+    description = "If the mode is not 'other-map', relationship must be provided",
+    expression = "(mode != 'other-map') implies relationship.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/ConceptMap"
+)
+@Constraint(
+    id = "cmd-10",
+    level = "Rule",
+    location = "ConceptMap.group.unmapped",
+    description = "If the mode is not 'other-map', otherMap is not allowed",
+    expression = "(mode != 'other-map') implies otherMap.empty()",
+    source = "http://hl7.org/fhir/StructureDefinition/ConceptMap"
+)
+@Constraint(
+    id = "cmd-11",
+    level = "Rule",
+    location = "ConceptMap.property",
+    description = "If the property type is code, a system SHALL be specified",
+    expression = "type = 'code' implies system.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/ConceptMap"
+)
+@Constraint(
+    id = "conceptMap-12",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/ConceptMap",
+    generated = true
+)
+@Constraint(
+    id = "conceptMap-13",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
@@ -100,9 +191,16 @@ public class ConceptMap extends DomainResource {
     @Summary
     private final Uri url;
     @Summary
-    private final Identifier identifier;
+    private final List<Identifier> identifier;
     @Summary
     private final String version;
+    @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
     @Summary
     private final String name;
     @Summary
@@ -112,7 +210,7 @@ public class ConceptMap extends DomainResource {
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -137,19 +235,40 @@ public class ConceptMap extends DomainResource {
     private final List<CodeableConcept> jurisdiction;
     private final Markdown purpose;
     private final Markdown copyright;
+    private final String copyrightLabel;
+    private final Date approvalDate;
+    private final Date lastReviewDate;
+    @Summary
+    private final Period effectivePeriod;
+    @Binding(
+        bindingName = "DefinitionTopic",
+        strength = BindingStrength.Value.EXAMPLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/definition-topic"
+    )
+    private final List<CodeableConcept> topic;
+    private final List<ContactDetail> author;
+    private final List<ContactDetail> editor;
+    private final List<ContactDetail> reviewer;
+    private final List<ContactDetail> endorser;
+    private final List<RelatedArtifact> relatedArtifact;
+    @Summary
+    private final List<Property> property;
+    @Summary
+    private final List<AdditionalAttribute> additionalAttribute;
     @Summary
     @Choice({ Uri.class, Canonical.class })
-    private final Element source;
+    private final org.linuxforhealth.fhir.model.type.Element sourceScope;
     @Summary
     @Choice({ Uri.class, Canonical.class })
-    private final Element target;
+    private final org.linuxforhealth.fhir.model.type.Element targetScope;
     private final List<Group> group;
 
     private ConceptMap(Builder builder) {
         super(builder);
         url = builder.url;
-        identifier = builder.identifier;
+        identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
         title = builder.title;
         status = builder.status;
@@ -162,16 +281,28 @@ public class ConceptMap extends DomainResource {
         jurisdiction = Collections.unmodifiableList(builder.jurisdiction);
         purpose = builder.purpose;
         copyright = builder.copyright;
-        source = builder.source;
-        target = builder.target;
+        copyrightLabel = builder.copyrightLabel;
+        approvalDate = builder.approvalDate;
+        lastReviewDate = builder.lastReviewDate;
+        effectivePeriod = builder.effectivePeriod;
+        topic = Collections.unmodifiableList(builder.topic);
+        author = Collections.unmodifiableList(builder.author);
+        editor = Collections.unmodifiableList(builder.editor);
+        reviewer = Collections.unmodifiableList(builder.reviewer);
+        endorser = Collections.unmodifiableList(builder.endorser);
+        relatedArtifact = Collections.unmodifiableList(builder.relatedArtifact);
+        property = Collections.unmodifiableList(builder.property);
+        additionalAttribute = Collections.unmodifiableList(builder.additionalAttribute);
+        sourceScope = builder.sourceScope;
+        targetScope = builder.targetScope;
         group = Collections.unmodifiableList(builder.group);
     }
 
     /**
      * An absolute URI that is used to identify this concept map when it is referenced in a specification, model, design or 
      * an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
-     * which at which an authoritative instance of this concept map is (or will be) published. This URL can be the target of 
-     * a canonical reference. It SHALL remain the same when the concept map is stored on different servers.
+     * which an authoritative instance of this concept map is (or will be) published. This URL can be the target of a 
+     * canonical reference. It SHALL remain the same when the concept map is stored on different servers.
      * 
      * @return
      *     An immutable object of type {@link Uri} that may be null.
@@ -185,9 +316,9 @@ public class ConceptMap extends DomainResource {
      * in a specification, model, design or an instance.
      * 
      * @return
-     *     An immutable object of type {@link Identifier} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
      */
-    public Identifier getIdentifier() {
+    public List<Identifier> getIdentifier() {
         return identifier;
     }
 
@@ -202,6 +333,16 @@ public class ConceptMap extends DomainResource {
      */
     public String getVersion() {
         return version;
+    }
+
+    /**
+     * Indicates the mechanism used to compare versions to determine which ConceptMap is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
     }
 
     /**
@@ -247,9 +388,9 @@ public class ConceptMap extends DomainResource {
     }
 
     /**
-     * The date (and optionally time) when the concept map was published. The date must change when the business version 
-     * changes and it must change if the status code changes. In addition, it should change when the substantive content of 
-     * the concept map changes.
+     * The date (and optionally time) when the concept map was last significantly changed. The date must change when the 
+     * business version changes and it must change if the status code changes. In addition, it should change when the 
+     * substantive content of the concept map changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -259,7 +400,7 @@ public class ConceptMap extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the concept map.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the concept map.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -332,25 +473,155 @@ public class ConceptMap extends DomainResource {
     }
 
     /**
-     * Identifier for the source value set that contains the concepts that are being mapped and provides context for the 
-     * mappings.
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
      * 
      * @return
-     *     An immutable object of type {@link Uri} or {@link Canonical} that may be null.
+     *     An immutable object of type {@link String} that may be null.
      */
-    public Element getSource() {
-        return source;
+    public String getCopyrightLabel() {
+        return copyrightLabel;
     }
 
     /**
-     * The target value set provides context for the mappings. Note that the mapping is made between concepts, not between 
-     * value sets, but the value set provides important context about how the concept mapping choices are made.
+     * The date on which the resource content was approved by the publisher. Approval happens once when the content is 
+     * officially approved for usage.
+     * 
+     * @return
+     *     An immutable object of type {@link Date} that may be null.
+     */
+    public Date getApprovalDate() {
+        return approvalDate;
+    }
+
+    /**
+     * The date on which the resource content was last reviewed. Review happens periodically after approval but does not 
+     * change the original approval date.
+     * 
+     * @return
+     *     An immutable object of type {@link Date} that may be null.
+     */
+    public Date getLastReviewDate() {
+        return lastReviewDate;
+    }
+
+    /**
+     * The period during which the ConceptMap content was or is planned to be in active use.
+     * 
+     * @return
+     *     An immutable object of type {@link Period} that may be null.
+     */
+    public Period getEffectivePeriod() {
+        return effectivePeriod;
+    }
+
+    /**
+     * Descriptions related to the content of the ConceptMap. Topics provide a high-level categorization as well as keywords 
+     * for the ConceptMap that can be useful for filtering and searching.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     */
+    public List<CodeableConcept> getTopic() {
+        return topic;
+    }
+
+    /**
+     * An individiual or organization primarily involved in the creation and maintenance of the ConceptMap.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
+     */
+    public List<ContactDetail> getAuthor() {
+        return author;
+    }
+
+    /**
+     * An individual or organization primarily responsible for internal coherence of the ConceptMap.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
+     */
+    public List<ContactDetail> getEditor() {
+        return editor;
+    }
+
+    /**
+     * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+     * ConceptMap.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
+     */
+    public List<ContactDetail> getReviewer() {
+        return reviewer;
+    }
+
+    /**
+     * An individual or organization asserted by the publisher to be responsible for officially endorsing the ConceptMap for 
+     * use in some setting.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
+     */
+    public List<ContactDetail> getEndorser() {
+        return endorser;
+    }
+
+    /**
+     * Related artifacts such as additional documentation, justification, dependencies, bibliographic references, and 
+     * predecessor and successor artifacts.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link RelatedArtifact} that may be empty.
+     */
+    public List<RelatedArtifact> getRelatedArtifact() {
+        return relatedArtifact;
+    }
+
+    /**
+     * A property defines a slot through which additional information can be provided about a map from source -&gt; target.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Property} that may be empty.
+     */
+    public List<Property> getProperty() {
+        return property;
+    }
+
+    /**
+     * An additionalAttribute defines an additional data element found in the source or target data model where the data will 
+     * come from or be mapped to. Some mappings are based on data in addition to the source data element, where codes in 
+     * multiple fields are combined to a single field (or vice versa).
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link AdditionalAttribute} that may be empty.
+     */
+    public List<AdditionalAttribute> getAdditionalAttribute() {
+        return additionalAttribute;
+    }
+
+    /**
+     * Identifier for the source value set that contains the concepts that are being mapped and provides context for the 
+     * mappings. Limits the scope of the map to source codes (ConceptMap.group.element code or valueSet) that are members of 
+     * this value set.
      * 
      * @return
      *     An immutable object of type {@link Uri} or {@link Canonical} that may be null.
      */
-    public Element getTarget() {
-        return target;
+    public org.linuxforhealth.fhir.model.type.Element getSourceScope() {
+        return sourceScope;
+    }
+
+    /**
+     * Identifier for the target value set that provides important context about how the mapping choices are made. Limits the 
+     * scope of the map to target codes (ConceptMap.group.element.target code or valueSet) that are members of this value set.
+     * 
+     * @return
+     *     An immutable object of type {@link Uri} or {@link Canonical} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getTargetScope() {
+        return targetScope;
     }
 
     /**
@@ -367,8 +638,9 @@ public class ConceptMap extends DomainResource {
     public boolean hasChildren() {
         return super.hasChildren() || 
             (url != null) || 
-            (identifier != null) || 
+            !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
             (title != null) || 
             (status != null) || 
@@ -381,8 +653,20 @@ public class ConceptMap extends DomainResource {
             !jurisdiction.isEmpty() || 
             (purpose != null) || 
             (copyright != null) || 
-            (source != null) || 
-            (target != null) || 
+            (copyrightLabel != null) || 
+            (approvalDate != null) || 
+            (lastReviewDate != null) || 
+            (effectivePeriod != null) || 
+            !topic.isEmpty() || 
+            !author.isEmpty() || 
+            !editor.isEmpty() || 
+            !reviewer.isEmpty() || 
+            !endorser.isEmpty() || 
+            !relatedArtifact.isEmpty() || 
+            !property.isEmpty() || 
+            !additionalAttribute.isEmpty() || 
+            (sourceScope != null) || 
+            (targetScope != null) || 
             !group.isEmpty();
     }
 
@@ -401,8 +685,9 @@ public class ConceptMap extends DomainResource {
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(url, "url", visitor);
-                accept(identifier, "identifier", visitor);
+                accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(status, "status", visitor);
@@ -415,8 +700,20 @@ public class ConceptMap extends DomainResource {
                 accept(jurisdiction, "jurisdiction", visitor, CodeableConcept.class);
                 accept(purpose, "purpose", visitor);
                 accept(copyright, "copyright", visitor);
-                accept(source, "source", visitor);
-                accept(target, "target", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
+                accept(approvalDate, "approvalDate", visitor);
+                accept(lastReviewDate, "lastReviewDate", visitor);
+                accept(effectivePeriod, "effectivePeriod", visitor);
+                accept(topic, "topic", visitor, CodeableConcept.class);
+                accept(author, "author", visitor, ContactDetail.class);
+                accept(editor, "editor", visitor, ContactDetail.class);
+                accept(reviewer, "reviewer", visitor, ContactDetail.class);
+                accept(endorser, "endorser", visitor, ContactDetail.class);
+                accept(relatedArtifact, "relatedArtifact", visitor, RelatedArtifact.class);
+                accept(property, "property", visitor, Property.class);
+                accept(additionalAttribute, "additionalAttribute", visitor, AdditionalAttribute.class);
+                accept(sourceScope, "sourceScope", visitor);
+                accept(targetScope, "targetScope", visitor);
                 accept(group, "group", visitor, Group.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
@@ -447,6 +744,7 @@ public class ConceptMap extends DomainResource {
             Objects.equals(url, other.url) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(status, other.status) && 
@@ -459,8 +757,20 @@ public class ConceptMap extends DomainResource {
             Objects.equals(jurisdiction, other.jurisdiction) && 
             Objects.equals(purpose, other.purpose) && 
             Objects.equals(copyright, other.copyright) && 
-            Objects.equals(source, other.source) && 
-            Objects.equals(target, other.target) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
+            Objects.equals(approvalDate, other.approvalDate) && 
+            Objects.equals(lastReviewDate, other.lastReviewDate) && 
+            Objects.equals(effectivePeriod, other.effectivePeriod) && 
+            Objects.equals(topic, other.topic) && 
+            Objects.equals(author, other.author) && 
+            Objects.equals(editor, other.editor) && 
+            Objects.equals(reviewer, other.reviewer) && 
+            Objects.equals(endorser, other.endorser) && 
+            Objects.equals(relatedArtifact, other.relatedArtifact) && 
+            Objects.equals(property, other.property) && 
+            Objects.equals(additionalAttribute, other.additionalAttribute) && 
+            Objects.equals(sourceScope, other.sourceScope) && 
+            Objects.equals(targetScope, other.targetScope) && 
             Objects.equals(group, other.group);
     }
 
@@ -479,6 +789,7 @@ public class ConceptMap extends DomainResource {
                 url, 
                 identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
                 title, 
                 status, 
@@ -491,8 +802,20 @@ public class ConceptMap extends DomainResource {
                 jurisdiction, 
                 purpose, 
                 copyright, 
-                source, 
-                target, 
+                copyrightLabel, 
+                approvalDate, 
+                lastReviewDate, 
+                effectivePeriod, 
+                topic, 
+                author, 
+                editor, 
+                reviewer, 
+                endorser, 
+                relatedArtifact, 
+                property, 
+                additionalAttribute, 
+                sourceScope, 
+                targetScope, 
                 group);
             hashCode = result;
         }
@@ -510,8 +833,9 @@ public class ConceptMap extends DomainResource {
 
     public static class Builder extends DomainResource.Builder {
         private Uri url;
-        private Identifier identifier;
+        private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
         private String title;
         private PublicationStatus status;
@@ -524,8 +848,20 @@ public class ConceptMap extends DomainResource {
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
         private Markdown purpose;
         private Markdown copyright;
-        private Element source;
-        private Element target;
+        private String copyrightLabel;
+        private Date approvalDate;
+        private Date lastReviewDate;
+        private Period effectivePeriod;
+        private List<CodeableConcept> topic = new ArrayList<>();
+        private List<ContactDetail> author = new ArrayList<>();
+        private List<ContactDetail> editor = new ArrayList<>();
+        private List<ContactDetail> reviewer = new ArrayList<>();
+        private List<ContactDetail> endorser = new ArrayList<>();
+        private List<RelatedArtifact> relatedArtifact = new ArrayList<>();
+        private List<Property> property = new ArrayList<>();
+        private List<AdditionalAttribute> additionalAttribute = new ArrayList<>();
+        private org.linuxforhealth.fhir.model.type.Element sourceScope;
+        private org.linuxforhealth.fhir.model.type.Element targetScope;
         private List<Group> group = new ArrayList<>();
 
         private Builder() {
@@ -610,7 +946,8 @@ public class ConceptMap extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -628,7 +965,8 @@ public class ConceptMap extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -649,7 +987,7 @@ public class ConceptMap extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -669,7 +1007,7 @@ public class ConceptMap extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -694,9 +1032,9 @@ public class ConceptMap extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -719,9 +1057,9 @@ public class ConceptMap extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -746,8 +1084,8 @@ public class ConceptMap extends DomainResource {
         /**
          * An absolute URI that is used to identify this concept map when it is referenced in a specification, model, design or 
          * an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
-         * which at which an authoritative instance of this concept map is (or will be) published. This URL can be the target of 
-         * a canonical reference. It SHALL remain the same when the concept map is stored on different servers.
+         * which an authoritative instance of this concept map is (or will be) published. This URL can be the target of a 
+         * canonical reference. It SHALL remain the same when the concept map is stored on different servers.
          * 
          * @param url
          *     Canonical identifier for this concept map, represented as a URI (globally unique)
@@ -764,14 +1102,40 @@ public class ConceptMap extends DomainResource {
          * A formal identifier that is used to identify this concept map when it is represented in other formats, or referenced 
          * in a specification, model, design or an instance.
          * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
          * @param identifier
          *     Additional identifier for the concept map
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder identifier(Identifier identifier) {
-            this.identifier = identifier;
+        public Builder identifier(Identifier... identifier) {
+            for (Identifier value : identifier) {
+                this.identifier.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A formal identifier that is used to identify this concept map when it is represented in other formats, or referenced 
+         * in a specification, model, design or an instance.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param identifier
+         *     Additional identifier for the concept map
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder identifier(Collection<Identifier> identifier) {
+            this.identifier = new ArrayList<>(identifier);
             return this;
         }
 
@@ -805,6 +1169,42 @@ public class ConceptMap extends DomainResource {
          */
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which ConceptMap is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
             return this;
         }
 
@@ -917,9 +1317,9 @@ public class ConceptMap extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the concept map was published. The date must change when the business version 
-         * changes and it must change if the status code changes. In addition, it should change when the substantive content of 
-         * the concept map changes.
+         * The date (and optionally time) when the concept map was last significantly changed. The date must change when the 
+         * business version changes and it must change if the status code changes. In addition, it should change when the 
+         * substantive content of the concept map changes.
          * 
          * @param date
          *     Date last changed
@@ -936,7 +1336,7 @@ public class ConceptMap extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -949,10 +1349,10 @@ public class ConceptMap extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the concept map.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the concept map.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1127,8 +1527,440 @@ public class ConceptMap extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code approvalDate}.
+         * 
+         * @param approvalDate
+         *     When the ConceptMap was approved by publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #approvalDate(org.linuxforhealth.fhir.model.type.Date)
+         */
+        public Builder approvalDate(java.time.LocalDate approvalDate) {
+            this.approvalDate = (approvalDate == null) ? null : Date.of(approvalDate);
+            return this;
+        }
+
+        /**
+         * The date on which the resource content was approved by the publisher. Approval happens once when the content is 
+         * officially approved for usage.
+         * 
+         * @param approvalDate
+         *     When the ConceptMap was approved by publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder approvalDate(Date approvalDate) {
+            this.approvalDate = approvalDate;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code lastReviewDate}.
+         * 
+         * @param lastReviewDate
+         *     When the ConceptMap was last reviewed by the publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #lastReviewDate(org.linuxforhealth.fhir.model.type.Date)
+         */
+        public Builder lastReviewDate(java.time.LocalDate lastReviewDate) {
+            this.lastReviewDate = (lastReviewDate == null) ? null : Date.of(lastReviewDate);
+            return this;
+        }
+
+        /**
+         * The date on which the resource content was last reviewed. Review happens periodically after approval but does not 
+         * change the original approval date.
+         * 
+         * @param lastReviewDate
+         *     When the ConceptMap was last reviewed by the publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder lastReviewDate(Date lastReviewDate) {
+            this.lastReviewDate = lastReviewDate;
+            return this;
+        }
+
+        /**
+         * The period during which the ConceptMap content was or is planned to be in active use.
+         * 
+         * @param effectivePeriod
+         *     When the ConceptMap is expected to be used
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder effectivePeriod(Period effectivePeriod) {
+            this.effectivePeriod = effectivePeriod;
+            return this;
+        }
+
+        /**
+         * Descriptions related to the content of the ConceptMap. Topics provide a high-level categorization as well as keywords 
+         * for the ConceptMap that can be useful for filtering and searching.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param topic
+         *     E.g. Education, Treatment, Assessment, etc
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder topic(CodeableConcept... topic) {
+            for (CodeableConcept value : topic) {
+                this.topic.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Descriptions related to the content of the ConceptMap. Topics provide a high-level categorization as well as keywords 
+         * for the ConceptMap that can be useful for filtering and searching.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param topic
+         *     E.g. Education, Treatment, Assessment, etc
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder topic(Collection<CodeableConcept> topic) {
+            this.topic = new ArrayList<>(topic);
+            return this;
+        }
+
+        /**
+         * An individiual or organization primarily involved in the creation and maintenance of the ConceptMap.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param author
+         *     Who authored the ConceptMap
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder author(ContactDetail... author) {
+            for (ContactDetail value : author) {
+                this.author.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * An individiual or organization primarily involved in the creation and maintenance of the ConceptMap.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param author
+         *     Who authored the ConceptMap
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder author(Collection<ContactDetail> author) {
+            this.author = new ArrayList<>(author);
+            return this;
+        }
+
+        /**
+         * An individual or organization primarily responsible for internal coherence of the ConceptMap.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param editor
+         *     Who edited the ConceptMap
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder editor(ContactDetail... editor) {
+            for (ContactDetail value : editor) {
+                this.editor.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * An individual or organization primarily responsible for internal coherence of the ConceptMap.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param editor
+         *     Who edited the ConceptMap
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder editor(Collection<ContactDetail> editor) {
+            this.editor = new ArrayList<>(editor);
+            return this;
+        }
+
+        /**
+         * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+         * ConceptMap.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param reviewer
+         *     Who reviewed the ConceptMap
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder reviewer(ContactDetail... reviewer) {
+            for (ContactDetail value : reviewer) {
+                this.reviewer.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+         * ConceptMap.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param reviewer
+         *     Who reviewed the ConceptMap
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder reviewer(Collection<ContactDetail> reviewer) {
+            this.reviewer = new ArrayList<>(reviewer);
+            return this;
+        }
+
+        /**
+         * An individual or organization asserted by the publisher to be responsible for officially endorsing the ConceptMap for 
+         * use in some setting.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param endorser
+         *     Who endorsed the ConceptMap
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder endorser(ContactDetail... endorser) {
+            for (ContactDetail value : endorser) {
+                this.endorser.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * An individual or organization asserted by the publisher to be responsible for officially endorsing the ConceptMap for 
+         * use in some setting.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param endorser
+         *     Who endorsed the ConceptMap
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder endorser(Collection<ContactDetail> endorser) {
+            this.endorser = new ArrayList<>(endorser);
+            return this;
+        }
+
+        /**
+         * Related artifacts such as additional documentation, justification, dependencies, bibliographic references, and 
+         * predecessor and successor artifacts.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param relatedArtifact
+         *     Additional documentation, citations, etc
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder relatedArtifact(RelatedArtifact... relatedArtifact) {
+            for (RelatedArtifact value : relatedArtifact) {
+                this.relatedArtifact.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Related artifacts such as additional documentation, justification, dependencies, bibliographic references, and 
+         * predecessor and successor artifacts.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param relatedArtifact
+         *     Additional documentation, citations, etc
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder relatedArtifact(Collection<RelatedArtifact> relatedArtifact) {
+            this.relatedArtifact = new ArrayList<>(relatedArtifact);
+            return this;
+        }
+
+        /**
+         * A property defines a slot through which additional information can be provided about a map from source -&gt; target.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param property
+         *     Additional properties of the mapping
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder property(Property... property) {
+            for (Property value : property) {
+                this.property.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A property defines a slot through which additional information can be provided about a map from source -&gt; target.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param property
+         *     Additional properties of the mapping
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder property(Collection<Property> property) {
+            this.property = new ArrayList<>(property);
+            return this;
+        }
+
+        /**
+         * An additionalAttribute defines an additional data element found in the source or target data model where the data will 
+         * come from or be mapped to. Some mappings are based on data in addition to the source data element, where codes in 
+         * multiple fields are combined to a single field (or vice versa).
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param additionalAttribute
+         *     Definition of an additional attribute to act as a data source or target
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder additionalAttribute(AdditionalAttribute... additionalAttribute) {
+            for (AdditionalAttribute value : additionalAttribute) {
+                this.additionalAttribute.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * An additionalAttribute defines an additional data element found in the source or target data model where the data will 
+         * come from or be mapped to. Some mappings are based on data in addition to the source data element, where codes in 
+         * multiple fields are combined to a single field (or vice versa).
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param additionalAttribute
+         *     Definition of an additional attribute to act as a data source or target
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder additionalAttribute(Collection<AdditionalAttribute> additionalAttribute) {
+            this.additionalAttribute = new ArrayList<>(additionalAttribute);
+            return this;
+        }
+
+        /**
          * Identifier for the source value set that contains the concepts that are being mapped and provides context for the 
-         * mappings.
+         * mappings. Limits the scope of the map to source codes (ConceptMap.group.element code or valueSet) that are members of 
+         * this value set.
          * 
          * <p>This is a choice element with the following allowed types:
          * <ul>
@@ -1136,20 +1968,20 @@ public class ConceptMap extends DomainResource {
          * <li>{@link Canonical}</li>
          * </ul>
          * 
-         * @param source
+         * @param sourceScope
          *     The source value set that contains the concepts that are being mapped
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder source(Element source) {
-            this.source = source;
+        public Builder sourceScope(org.linuxforhealth.fhir.model.type.Element sourceScope) {
+            this.sourceScope = sourceScope;
             return this;
         }
 
         /**
-         * The target value set provides context for the mappings. Note that the mapping is made between concepts, not between 
-         * value sets, but the value set provides important context about how the concept mapping choices are made.
+         * Identifier for the target value set that provides important context about how the mapping choices are made. Limits the 
+         * scope of the map to target codes (ConceptMap.group.element.target code or valueSet) that are members of this value set.
          * 
          * <p>This is a choice element with the following allowed types:
          * <ul>
@@ -1157,14 +1989,14 @@ public class ConceptMap extends DomainResource {
          * <li>{@link Canonical}</li>
          * </ul>
          * 
-         * @param target
+         * @param targetScope
          *     The target value set which provides context for the mappings
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder target(Element target) {
-            this.target = target;
+        public Builder targetScope(org.linuxforhealth.fhir.model.type.Element targetScope) {
+            this.targetScope = targetScope;
             return this;
         }
 
@@ -1231,20 +2063,31 @@ public class ConceptMap extends DomainResource {
 
         protected void validate(ConceptMap conceptMap) {
             super.validate(conceptMap);
+            ValidationSupport.checkList(conceptMap.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(conceptMap.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.requireNonNull(conceptMap.status, "status");
             ValidationSupport.checkList(conceptMap.contact, "contact", ContactDetail.class);
             ValidationSupport.checkList(conceptMap.useContext, "useContext", UsageContext.class);
             ValidationSupport.checkList(conceptMap.jurisdiction, "jurisdiction", CodeableConcept.class);
-            ValidationSupport.choiceElement(conceptMap.source, "source", Uri.class, Canonical.class);
-            ValidationSupport.choiceElement(conceptMap.target, "target", Uri.class, Canonical.class);
+            ValidationSupport.checkList(conceptMap.topic, "topic", CodeableConcept.class);
+            ValidationSupport.checkList(conceptMap.author, "author", ContactDetail.class);
+            ValidationSupport.checkList(conceptMap.editor, "editor", ContactDetail.class);
+            ValidationSupport.checkList(conceptMap.reviewer, "reviewer", ContactDetail.class);
+            ValidationSupport.checkList(conceptMap.endorser, "endorser", ContactDetail.class);
+            ValidationSupport.checkList(conceptMap.relatedArtifact, "relatedArtifact", RelatedArtifact.class);
+            ValidationSupport.checkList(conceptMap.property, "property", Property.class);
+            ValidationSupport.checkList(conceptMap.additionalAttribute, "additionalAttribute", AdditionalAttribute.class);
+            ValidationSupport.choiceElement(conceptMap.sourceScope, "sourceScope", Uri.class, Canonical.class);
+            ValidationSupport.choiceElement(conceptMap.targetScope, "targetScope", Uri.class, Canonical.class);
             ValidationSupport.checkList(conceptMap.group, "group", Group.class);
         }
 
         protected Builder from(ConceptMap conceptMap) {
             super.from(conceptMap);
             url = conceptMap.url;
-            identifier = conceptMap.identifier;
+            identifier.addAll(conceptMap.identifier);
             version = conceptMap.version;
+            versionAlgorithm = conceptMap.versionAlgorithm;
             name = conceptMap.name;
             title = conceptMap.title;
             status = conceptMap.status;
@@ -1257,105 +2100,116 @@ public class ConceptMap extends DomainResource {
             jurisdiction.addAll(conceptMap.jurisdiction);
             purpose = conceptMap.purpose;
             copyright = conceptMap.copyright;
-            source = conceptMap.source;
-            target = conceptMap.target;
+            copyrightLabel = conceptMap.copyrightLabel;
+            approvalDate = conceptMap.approvalDate;
+            lastReviewDate = conceptMap.lastReviewDate;
+            effectivePeriod = conceptMap.effectivePeriod;
+            topic.addAll(conceptMap.topic);
+            author.addAll(conceptMap.author);
+            editor.addAll(conceptMap.editor);
+            reviewer.addAll(conceptMap.reviewer);
+            endorser.addAll(conceptMap.endorser);
+            relatedArtifact.addAll(conceptMap.relatedArtifact);
+            property.addAll(conceptMap.property);
+            additionalAttribute.addAll(conceptMap.additionalAttribute);
+            sourceScope = conceptMap.sourceScope;
+            targetScope = conceptMap.targetScope;
             group.addAll(conceptMap.group);
             return this;
         }
     }
 
     /**
-     * A group of mappings that all have the same source and target system.
+     * A property defines a slot through which additional information can be provided about a map from source -&gt; target.
      */
-    public static class Group extends BackboneElement {
-        private final Uri source;
-        private final String sourceVersion;
-        private final Uri target;
-        private final String targetVersion;
+    public static class Property extends BackboneElement {
+        @Summary
         @Required
-        private final List<Element> element;
-        private final Unmapped unmapped;
+        private final Code code;
+        @Summary
+        private final Uri uri;
+        @Summary
+        private final String description;
+        @Summary
+        @Binding(
+            bindingName = "PropertyType",
+            strength = BindingStrength.Value.REQUIRED,
+            description = "The type of a property value.",
+            valueSet = "http://hl7.org/fhir/ValueSet/conceptmap-property-type|5.0.0"
+        )
+        @Required
+        private final PropertyType type;
+        @Summary
+        private final Canonical system;
 
-        private Group(Builder builder) {
+        private Property(Builder builder) {
             super(builder);
-            source = builder.source;
-            sourceVersion = builder.sourceVersion;
-            target = builder.target;
-            targetVersion = builder.targetVersion;
-            element = Collections.unmodifiableList(builder.element);
-            unmapped = builder.unmapped;
+            code = builder.code;
+            uri = builder.uri;
+            description = builder.description;
+            type = builder.type;
+            system = builder.system;
         }
 
         /**
-         * An absolute URI that identifies the source system where the concepts to be mapped are defined.
+         * A code that is used to identify the property. The code is used internally (in ConceptMap.group.element.target.property.
+         * code) and also in the $translate operation.
+         * 
+         * @return
+         *     An immutable object of type {@link Code} that is non-null.
+         */
+        public Code getCode() {
+            return code;
+        }
+
+        /**
+         * Reference to the formal meaning of the property.
          * 
          * @return
          *     An immutable object of type {@link Uri} that may be null.
          */
-        public Uri getSource() {
-            return source;
+        public Uri getUri() {
+            return uri;
         }
 
         /**
-         * The specific version of the code system, as determined by the code system authority.
+         * A description of the property - why it is defined, and how its value might be used.
          * 
          * @return
          *     An immutable object of type {@link String} that may be null.
          */
-        public String getSourceVersion() {
-            return sourceVersion;
+        public String getDescription() {
+            return description;
         }
 
         /**
-         * An absolute URI that identifies the target system that the concepts will be mapped to.
+         * The type of the property value.
          * 
          * @return
-         *     An immutable object of type {@link Uri} that may be null.
+         *     An immutable object of type {@link PropertyType} that is non-null.
          */
-        public Uri getTarget() {
-            return target;
+        public PropertyType getType() {
+            return type;
         }
 
         /**
-         * The specific version of the code system, as determined by the code system authority.
+         * The CodeSystem that defines the codes from which values of type ```code``` in property values.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link Canonical} that may be null.
          */
-        public String getTargetVersion() {
-            return targetVersion;
-        }
-
-        /**
-         * Mappings for an individual concept in the source to one or more concepts in the target.
-         * 
-         * @return
-         *     An unmodifiable list containing immutable objects of type {@link Element} that is non-empty.
-         */
-        public List<Element> getElement() {
-            return element;
-        }
-
-        /**
-         * What to do when there is no mapping for the source concept. "Unmapped" does not include codes that are unmatched, and 
-         * the unmapped element is ignored in a code is specified to have equivalence = unmatched.
-         * 
-         * @return
-         *     An immutable object of type {@link Unmapped} that may be null.
-         */
-        public Unmapped getUnmapped() {
-            return unmapped;
+        public Canonical getSystem() {
+            return system;
         }
 
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                (source != null) || 
-                (sourceVersion != null) || 
-                (target != null) || 
-                (targetVersion != null) || 
-                !element.isEmpty() || 
-                (unmapped != null);
+                (code != null) || 
+                (uri != null) || 
+                (description != null) || 
+                (type != null) || 
+                (system != null);
         }
 
         @Override
@@ -1367,12 +2221,11 @@ public class ConceptMap extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(source, "source", visitor);
-                    accept(sourceVersion, "sourceVersion", visitor);
-                    accept(target, "target", visitor);
-                    accept(targetVersion, "targetVersion", visitor);
-                    accept(element, "element", visitor, Element.class);
-                    accept(unmapped, "unmapped", visitor);
+                    accept(code, "code", visitor);
+                    accept(uri, "uri", visitor);
+                    accept(description, "description", visitor);
+                    accept(type, "type", visitor);
+                    accept(system, "system", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -1390,16 +2243,15 @@ public class ConceptMap extends DomainResource {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            Group other = (Group) obj;
+            Property other = (Property) obj;
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(source, other.source) && 
-                Objects.equals(sourceVersion, other.sourceVersion) && 
-                Objects.equals(target, other.target) && 
-                Objects.equals(targetVersion, other.targetVersion) && 
-                Objects.equals(element, other.element) && 
-                Objects.equals(unmapped, other.unmapped);
+                Objects.equals(code, other.code) && 
+                Objects.equals(uri, other.uri) && 
+                Objects.equals(description, other.description) && 
+                Objects.equals(type, other.type) && 
+                Objects.equals(system, other.system);
         }
 
         @Override
@@ -1409,12 +2261,11 @@ public class ConceptMap extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    source, 
-                    sourceVersion, 
-                    target, 
-                    targetVersion, 
-                    element, 
-                    unmapped);
+                    code, 
+                    uri, 
+                    description, 
+                    type, 
+                    system);
                 hashCode = result;
             }
             return result;
@@ -1430,12 +2281,11 @@ public class ConceptMap extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private Uri source;
-            private String sourceVersion;
-            private Uri target;
-            private String targetVersion;
-            private List<Element> element = new ArrayList<>();
-            private Unmapped unmapped;
+            private Code code;
+            private Uri uri;
+            private String description;
+            private PropertyType type;
+            private Canonical system;
 
             private Builder() {
                 super();
@@ -1458,7 +2308,7 @@ public class ConceptMap extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1478,7 +2328,7 @@ public class ConceptMap extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1503,7 +2353,7 @@ public class ConceptMap extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1528,7 +2378,784 @@ public class ConceptMap extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * A code that is used to identify the property. The code is used internally (in ConceptMap.group.element.target.property.
+             * code) and also in the $translate operation.
+             * 
+             * <p>This element is required.
+             * 
+             * @param code
+             *     Identifies the property on the mappings, and when referred to in the $translate operation
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder code(Code code) {
+                this.code = code;
+                return this;
+            }
+
+            /**
+             * Reference to the formal meaning of the property.
+             * 
+             * @param uri
+             *     Formal identifier for the property
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder uri(Uri uri) {
+                this.uri = uri;
+                return this;
+            }
+
+            /**
+             * Convenience method for setting {@code description}.
+             * 
+             * @param description
+             *     Why the property is defined, and/or what it conveys
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #description(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder description(java.lang.String description) {
+                this.description = (description == null) ? null : String.of(description);
+                return this;
+            }
+
+            /**
+             * A description of the property - why it is defined, and how its value might be used.
+             * 
+             * @param description
+             *     Why the property is defined, and/or what it conveys
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder description(String description) {
+                this.description = description;
+                return this;
+            }
+
+            /**
+             * The type of the property value.
+             * 
+             * <p>This element is required.
+             * 
+             * @param type
+             *     Coding | string | integer | boolean | dateTime | decimal | code
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder type(PropertyType type) {
+                this.type = type;
+                return this;
+            }
+
+            /**
+             * The CodeSystem that defines the codes from which values of type ```code``` in property values.
+             * 
+             * @param system
+             *     The CodeSystem from which code values come
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder system(Canonical system) {
+                this.system = system;
+                return this;
+            }
+
+            /**
+             * Build the {@link Property}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>code</li>
+             * <li>type</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link Property}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Property per the base specification
+             */
+            @Override
+            public Property build() {
+                Property property = new Property(this);
+                if (validating) {
+                    validate(property);
+                }
+                return property;
+            }
+
+            protected void validate(Property property) {
+                super.validate(property);
+                ValidationSupport.requireNonNull(property.code, "code");
+                ValidationSupport.requireNonNull(property.type, "type");
+                ValidationSupport.requireValueOrChildren(property);
+            }
+
+            protected Builder from(Property property) {
+                super.from(property);
+                code = property.code;
+                uri = property.uri;
+                description = property.description;
+                type = property.type;
+                system = property.system;
+                return this;
+            }
+        }
+    }
+
+    /**
+     * An additionalAttribute defines an additional data element found in the source or target data model where the data will 
+     * come from or be mapped to. Some mappings are based on data in addition to the source data element, where codes in 
+     * multiple fields are combined to a single field (or vice versa).
+     */
+    public static class AdditionalAttribute extends BackboneElement {
+        @Summary
+        @Required
+        private final Code code;
+        @Summary
+        private final Uri uri;
+        @Summary
+        private final String description;
+        @Summary
+        @Binding(
+            bindingName = "ConceptMapmapAttributeType",
+            strength = BindingStrength.Value.REQUIRED,
+            description = "The type of a mapping attribute value.",
+            valueSet = "http://hl7.org/fhir/ValueSet/conceptmap-attribute-type|5.0.0"
+        )
+        @Required
+        private final ConceptMapmapAttributeType type;
+
+        private AdditionalAttribute(Builder builder) {
+            super(builder);
+            code = builder.code;
+            uri = builder.uri;
+            description = builder.description;
+            type = builder.type;
+        }
+
+        /**
+         * A code that is used to identify this additional data attribute. The code is used internally in ConceptMap.group.
+         * element.target.dependsOn.attribute and ConceptMap.group.element.target.product.attribute.
+         * 
+         * @return
+         *     An immutable object of type {@link Code} that is non-null.
+         */
+        public Code getCode() {
+            return code;
+        }
+
+        /**
+         * Reference to the formal definition of the source/target data element. For elements defined by the FHIR specification, 
+         * or using a FHIR logical model, the correct format is {canonical-url}#{element-id}.
+         * 
+         * @return
+         *     An immutable object of type {@link Uri} that may be null.
+         */
+        public Uri getUri() {
+            return uri;
+        }
+
+        /**
+         * A description of the additional attribute and/or the data element it refers to - why it is defined, and how the value 
+         * might be used in mappings, and a discussion of issues associated with the use of the data element.
+         * 
+         * @return
+         *     An immutable object of type {@link String} that may be null.
+         */
+        public String getDescription() {
+            return description;
+        }
+
+        /**
+         * The type of the source data contained in this concept map for this data element.
+         * 
+         * @return
+         *     An immutable object of type {@link ConceptMapmapAttributeType} that is non-null.
+         */
+        public ConceptMapmapAttributeType getType() {
+            return type;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (code != null) || 
+                (uri != null) || 
+                (description != null) || 
+                (type != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(code, "code", visitor);
+                    accept(uri, "uri", visitor);
+                    accept(description, "description", visitor);
+                    accept(type, "type", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            AdditionalAttribute other = (AdditionalAttribute) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(code, other.code) && 
+                Objects.equals(uri, other.uri) && 
+                Objects.equals(description, other.description) && 
+                Objects.equals(type, other.type);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    code, 
+                    uri, 
+                    description, 
+                    type);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private Code code;
+            private Uri uri;
+            private String description;
+            private ConceptMapmapAttributeType type;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * A code that is used to identify this additional data attribute. The code is used internally in ConceptMap.group.
+             * element.target.dependsOn.attribute and ConceptMap.group.element.target.product.attribute.
+             * 
+             * <p>This element is required.
+             * 
+             * @param code
+             *     Identifies this additional attribute through this resource
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder code(Code code) {
+                this.code = code;
+                return this;
+            }
+
+            /**
+             * Reference to the formal definition of the source/target data element. For elements defined by the FHIR specification, 
+             * or using a FHIR logical model, the correct format is {canonical-url}#{element-id}.
+             * 
+             * @param uri
+             *     Formal identifier for the data element referred to in this attribte
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder uri(Uri uri) {
+                this.uri = uri;
+                return this;
+            }
+
+            /**
+             * Convenience method for setting {@code description}.
+             * 
+             * @param description
+             *     Why the additional attribute is defined, and/or what the data element it refers to is
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #description(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder description(java.lang.String description) {
+                this.description = (description == null) ? null : String.of(description);
+                return this;
+            }
+
+            /**
+             * A description of the additional attribute and/or the data element it refers to - why it is defined, and how the value 
+             * might be used in mappings, and a discussion of issues associated with the use of the data element.
+             * 
+             * @param description
+             *     Why the additional attribute is defined, and/or what the data element it refers to is
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder description(String description) {
+                this.description = description;
+                return this;
+            }
+
+            /**
+             * The type of the source data contained in this concept map for this data element.
+             * 
+             * <p>This element is required.
+             * 
+             * @param type
+             *     code | Coding | string | boolean | Quantity
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder type(ConceptMapmapAttributeType type) {
+                this.type = type;
+                return this;
+            }
+
+            /**
+             * Build the {@link AdditionalAttribute}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>code</li>
+             * <li>type</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link AdditionalAttribute}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid AdditionalAttribute per the base specification
+             */
+            @Override
+            public AdditionalAttribute build() {
+                AdditionalAttribute additionalAttribute = new AdditionalAttribute(this);
+                if (validating) {
+                    validate(additionalAttribute);
+                }
+                return additionalAttribute;
+            }
+
+            protected void validate(AdditionalAttribute additionalAttribute) {
+                super.validate(additionalAttribute);
+                ValidationSupport.requireNonNull(additionalAttribute.code, "code");
+                ValidationSupport.requireNonNull(additionalAttribute.type, "type");
+                ValidationSupport.requireValueOrChildren(additionalAttribute);
+            }
+
+            protected Builder from(AdditionalAttribute additionalAttribute) {
+                super.from(additionalAttribute);
+                code = additionalAttribute.code;
+                uri = additionalAttribute.uri;
+                description = additionalAttribute.description;
+                type = additionalAttribute.type;
+                return this;
+            }
+        }
+    }
+
+    /**
+     * A group of mappings that all have the same source and target system.
+     */
+    public static class Group extends BackboneElement {
+        private final Canonical source;
+        private final Canonical target;
+        @Required
+        private final List<Element> element;
+        private final Unmapped unmapped;
+
+        private Group(Builder builder) {
+            super(builder);
+            source = builder.source;
+            target = builder.target;
+            element = Collections.unmodifiableList(builder.element);
+            unmapped = builder.unmapped;
+        }
+
+        /**
+         * An absolute URI that identifies the source system where the concepts to be mapped are defined.
+         * 
+         * @return
+         *     An immutable object of type {@link Canonical} that may be null.
+         */
+        public Canonical getSource() {
+            return source;
+        }
+
+        /**
+         * An absolute URI that identifies the target system that the concepts will be mapped to.
+         * 
+         * @return
+         *     An immutable object of type {@link Canonical} that may be null.
+         */
+        public Canonical getTarget() {
+            return target;
+        }
+
+        /**
+         * Mappings for an individual concept in the source to one or more concepts in the target.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link Element} that is non-empty.
+         */
+        public List<Element> getElement() {
+            return element;
+        }
+
+        /**
+         * What to do when there is no mapping to a target concept from the source concept and ConceptMap.group.element.noMap is 
+         * not true. This provides the "default" to be applied when there is no target concept mapping specified or the expansion 
+         * of ConceptMap.group.element.target.valueSet is empty.
+         * 
+         * @return
+         *     An immutable object of type {@link Unmapped} that may be null.
+         */
+        public Unmapped getUnmapped() {
+            return unmapped;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (source != null) || 
+                (target != null) || 
+                !element.isEmpty() || 
+                (unmapped != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(source, "source", visitor);
+                    accept(target, "target", visitor);
+                    accept(element, "element", visitor, Element.class);
+                    accept(unmapped, "unmapped", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Group other = (Group) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(source, other.source) && 
+                Objects.equals(target, other.target) && 
+                Objects.equals(element, other.element) && 
+                Objects.equals(unmapped, other.unmapped);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    source, 
+                    target, 
+                    element, 
+                    unmapped);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private Canonical source;
+            private Canonical target;
+            private List<Element> element = new ArrayList<>();
+            private Unmapped unmapped;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1561,38 +3188,8 @@ public class ConceptMap extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder source(Uri source) {
+            public Builder source(Canonical source) {
                 this.source = source;
-                return this;
-            }
-
-            /**
-             * Convenience method for setting {@code sourceVersion}.
-             * 
-             * @param sourceVersion
-             *     Specific version of the code system
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #sourceVersion(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder sourceVersion(java.lang.String sourceVersion) {
-                this.sourceVersion = (sourceVersion == null) ? null : String.of(sourceVersion);
-                return this;
-            }
-
-            /**
-             * The specific version of the code system, as determined by the code system authority.
-             * 
-             * @param sourceVersion
-             *     Specific version of the code system
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder sourceVersion(String sourceVersion) {
-                this.sourceVersion = sourceVersion;
                 return this;
             }
 
@@ -1605,38 +3202,8 @@ public class ConceptMap extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder target(Uri target) {
+            public Builder target(Canonical target) {
                 this.target = target;
-                return this;
-            }
-
-            /**
-             * Convenience method for setting {@code targetVersion}.
-             * 
-             * @param targetVersion
-             *     Specific version of the code system
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #targetVersion(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder targetVersion(java.lang.String targetVersion) {
-                this.targetVersion = (targetVersion == null) ? null : String.of(targetVersion);
-                return this;
-            }
-
-            /**
-             * The specific version of the code system, as determined by the code system authority.
-             * 
-             * @param targetVersion
-             *     Specific version of the code system
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder targetVersion(String targetVersion) {
-                this.targetVersion = targetVersion;
                 return this;
             }
 
@@ -1684,11 +3251,12 @@ public class ConceptMap extends DomainResource {
             }
 
             /**
-             * What to do when there is no mapping for the source concept. "Unmapped" does not include codes that are unmatched, and 
-             * the unmapped element is ignored in a code is specified to have equivalence = unmatched.
+             * What to do when there is no mapping to a target concept from the source concept and ConceptMap.group.element.noMap is 
+             * not true. This provides the "default" to be applied when there is no target concept mapping specified or the expansion 
+             * of ConceptMap.group.element.target.valueSet is empty.
              * 
              * @param unmapped
-             *     What to do when there is no mapping for the source concept
+             *     What to do when there is no mapping target for the source concept and ConceptMap.group.element.noMap is not true
              * 
              * @return
              *     A reference to this Builder instance
@@ -1729,9 +3297,7 @@ public class ConceptMap extends DomainResource {
             protected Builder from(Group group) {
                 super.from(group);
                 source = group.source;
-                sourceVersion = group.sourceVersion;
                 target = group.target;
-                targetVersion = group.targetVersion;
                 element.addAll(group.element);
                 unmapped = group.unmapped;
                 return this;
@@ -1744,12 +3310,16 @@ public class ConceptMap extends DomainResource {
         public static class Element extends BackboneElement {
             private final Code code;
             private final String display;
+            private final Canonical valueSet;
+            private final Boolean noMap;
             private final List<Target> target;
 
             private Element(Builder builder) {
                 super(builder);
                 code = builder.code;
                 display = builder.display;
+                valueSet = builder.valueSet;
+                noMap = builder.noMap;
                 target = Collections.unmodifiableList(builder.target);
             }
 
@@ -1774,6 +3344,27 @@ public class ConceptMap extends DomainResource {
             }
 
             /**
+             * The set of concepts from the ConceptMap.group.source code system which are all being mapped to the target as part of 
+             * this mapping rule.
+             * 
+             * @return
+             *     An immutable object of type {@link Canonical} that may be null.
+             */
+            public Canonical getValueSet() {
+                return valueSet;
+            }
+
+            /**
+             * If noMap = true this indicates that no mapping to a target concept exists for this source concept.
+             * 
+             * @return
+             *     An immutable object of type {@link Boolean} that may be null.
+             */
+            public Boolean getNoMap() {
+                return noMap;
+            }
+
+            /**
              * A concept from the target value set that this concept maps to.
              * 
              * @return
@@ -1788,6 +3379,8 @@ public class ConceptMap extends DomainResource {
                 return super.hasChildren() || 
                     (code != null) || 
                     (display != null) || 
+                    (valueSet != null) || 
+                    (noMap != null) || 
                     !target.isEmpty();
             }
 
@@ -1802,6 +3395,8 @@ public class ConceptMap extends DomainResource {
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                         accept(code, "code", visitor);
                         accept(display, "display", visitor);
+                        accept(valueSet, "valueSet", visitor);
+                        accept(noMap, "noMap", visitor);
                         accept(target, "target", visitor, Target.class);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
@@ -1826,6 +3421,8 @@ public class ConceptMap extends DomainResource {
                     Objects.equals(modifierExtension, other.modifierExtension) && 
                     Objects.equals(code, other.code) && 
                     Objects.equals(display, other.display) && 
+                    Objects.equals(valueSet, other.valueSet) && 
+                    Objects.equals(noMap, other.noMap) && 
                     Objects.equals(target, other.target);
             }
 
@@ -1838,6 +3435,8 @@ public class ConceptMap extends DomainResource {
                         modifierExtension, 
                         code, 
                         display, 
+                        valueSet, 
+                        noMap, 
                         target);
                     hashCode = result;
                 }
@@ -1856,6 +3455,8 @@ public class ConceptMap extends DomainResource {
             public static class Builder extends BackboneElement.Builder {
                 private Code code;
                 private String display;
+                private Canonical valueSet;
+                private Boolean noMap;
                 private List<Target> target = new ArrayList<>();
 
                 private Builder() {
@@ -1879,7 +3480,7 @@ public class ConceptMap extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1899,7 +3500,7 @@ public class ConceptMap extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1924,7 +3525,7 @@ public class ConceptMap extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -1949,7 +3550,7 @@ public class ConceptMap extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2014,6 +3615,51 @@ public class ConceptMap extends DomainResource {
                  */
                 public Builder display(String display) {
                     this.display = display;
+                    return this;
+                }
+
+                /**
+                 * The set of concepts from the ConceptMap.group.source code system which are all being mapped to the target as part of 
+                 * this mapping rule.
+                 * 
+                 * @param valueSet
+                 *     Identifies the set of concepts being mapped
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder valueSet(Canonical valueSet) {
+                    this.valueSet = valueSet;
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code noMap}.
+                 * 
+                 * @param noMap
+                 *     No mapping to a target concept for this source concept
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #noMap(org.linuxforhealth.fhir.model.type.Boolean)
+                 */
+                public Builder noMap(java.lang.Boolean noMap) {
+                    this.noMap = (noMap == null) ? null : Boolean.of(noMap);
+                    return this;
+                }
+
+                /**
+                 * If noMap = true this indicates that no mapping to a target concept exists for this source concept.
+                 * 
+                 * @param noMap
+                 *     No mapping to a target concept for this source concept
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder noMap(Boolean noMap) {
+                    this.noMap = noMap;
                     return this;
                 }
 
@@ -2083,6 +3729,8 @@ public class ConceptMap extends DomainResource {
                     super.from(element);
                     code = element.code;
                     display = element.display;
+                    valueSet = element.valueSet;
+                    noMap = element.noMap;
                     target.addAll(element.target);
                     return this;
                 }
@@ -2094,15 +3742,17 @@ public class ConceptMap extends DomainResource {
             public static class Target extends BackboneElement {
                 private final Code code;
                 private final String display;
+                private final Canonical valueSet;
                 @Binding(
-                    bindingName = "ConceptMapEquivalence",
+                    bindingName = "ConceptMapRelationship",
                     strength = BindingStrength.Value.REQUIRED,
-                    description = "The degree of equivalence between concepts.",
-                    valueSet = "http://hl7.org/fhir/ValueSet/concept-map-equivalence|4.3.0"
+                    description = "The relationship between concepts.",
+                    valueSet = "http://hl7.org/fhir/ValueSet/concept-map-relationship|5.0.0"
                 )
                 @Required
-                private final ConceptMapEquivalence equivalence;
+                private final ConceptMapRelationship relationship;
                 private final String comment;
+                private final List<Property> property;
                 private final List<DependsOn> dependsOn;
                 private final List<ConceptMap.Group.Element.Target.DependsOn> product;
 
@@ -2110,8 +3760,10 @@ public class ConceptMap extends DomainResource {
                     super(builder);
                     code = builder.code;
                     display = builder.display;
-                    equivalence = builder.equivalence;
+                    valueSet = builder.valueSet;
+                    relationship = builder.relationship;
                     comment = builder.comment;
+                    property = Collections.unmodifiableList(builder.property);
                     dependsOn = Collections.unmodifiableList(builder.dependsOn);
                     product = Collections.unmodifiableList(builder.product);
                 }
@@ -2137,14 +3789,26 @@ public class ConceptMap extends DomainResource {
                 }
 
                 /**
-                 * The equivalence between the source and target concepts (counting for the dependencies and products). The equivalence 
-                 * is read from target to source (e.g. the target is 'wider' than the source).
+                 * The set of concepts from the ConceptMap.group.target code system which are all being mapped to as part of this mapping 
+                 * rule. The effect of using this data element is the same as having multiple ConceptMap.group.element.target elements 
+                 * with one for each concept in the ConceptMap.group.element.target.valueSet value set.
                  * 
                  * @return
-                 *     An immutable object of type {@link ConceptMapEquivalence} that is non-null.
+                 *     An immutable object of type {@link Canonical} that may be null.
                  */
-                public ConceptMapEquivalence getEquivalence() {
-                    return equivalence;
+                public Canonical getValueSet() {
+                    return valueSet;
+                }
+
+                /**
+                 * The relationship between the source and target concepts. The relationship is read from source to target (e.g. source-
+                 * is-narrower-than-target).
+                 * 
+                 * @return
+                 *     An immutable object of type {@link ConceptMapRelationship} that is non-null.
+                 */
+                public ConceptMapRelationship getRelationship() {
+                    return relationship;
                 }
 
                 /**
@@ -2158,8 +3822,18 @@ public class ConceptMap extends DomainResource {
                 }
 
                 /**
-                 * A set of additional dependencies for this mapping to hold. This mapping is only applicable if the specified element 
-                 * can be resolved, and it has the specified value.
+                 * A property value for this source -&gt; target mapping.
+                 * 
+                 * @return
+                 *     An unmodifiable list containing immutable objects of type {@link Property} that may be empty.
+                 */
+                public List<Property> getProperty() {
+                    return property;
+                }
+
+                /**
+                 * A set of additional dependencies for this mapping to hold. This mapping is only applicable if the specified data 
+                 * attribute can be resolved, and it has the specified value.
                  * 
                  * @return
                  *     An unmodifiable list containing immutable objects of type {@link DependsOn} that may be empty.
@@ -2169,9 +3843,8 @@ public class ConceptMap extends DomainResource {
                 }
 
                 /**
-                 * A set of additional outcomes from this mapping to other elements. To properly execute this mapping, the specified 
-                 * element must be mapped to some data element or source that is in context. The mapping may still be useful without a 
-                 * place for the additional data elements, but the equivalence cannot be relied on.
+                 * Product is the output of a ConceptMap that provides additional values that go in other attributes / data elemnts of 
+                 * the target data.
                  * 
                  * @return
                  *     An unmodifiable list containing immutable objects of type {@link DependsOn} that may be empty.
@@ -2185,8 +3858,10 @@ public class ConceptMap extends DomainResource {
                     return super.hasChildren() || 
                         (code != null) || 
                         (display != null) || 
-                        (equivalence != null) || 
+                        (valueSet != null) || 
+                        (relationship != null) || 
                         (comment != null) || 
+                        !property.isEmpty() || 
                         !dependsOn.isEmpty() || 
                         !product.isEmpty();
                 }
@@ -2202,8 +3877,10 @@ public class ConceptMap extends DomainResource {
                             accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                             accept(code, "code", visitor);
                             accept(display, "display", visitor);
-                            accept(equivalence, "equivalence", visitor);
+                            accept(valueSet, "valueSet", visitor);
+                            accept(relationship, "relationship", visitor);
                             accept(comment, "comment", visitor);
+                            accept(property, "property", visitor, Property.class);
                             accept(dependsOn, "dependsOn", visitor, DependsOn.class);
                             accept(product, "product", visitor, ConceptMap.Group.Element.Target.DependsOn.class);
                         }
@@ -2229,8 +3906,10 @@ public class ConceptMap extends DomainResource {
                         Objects.equals(modifierExtension, other.modifierExtension) && 
                         Objects.equals(code, other.code) && 
                         Objects.equals(display, other.display) && 
-                        Objects.equals(equivalence, other.equivalence) && 
+                        Objects.equals(valueSet, other.valueSet) && 
+                        Objects.equals(relationship, other.relationship) && 
                         Objects.equals(comment, other.comment) && 
+                        Objects.equals(property, other.property) && 
                         Objects.equals(dependsOn, other.dependsOn) && 
                         Objects.equals(product, other.product);
                 }
@@ -2244,8 +3923,10 @@ public class ConceptMap extends DomainResource {
                             modifierExtension, 
                             code, 
                             display, 
-                            equivalence, 
+                            valueSet, 
+                            relationship, 
                             comment, 
+                            property, 
                             dependsOn, 
                             product);
                         hashCode = result;
@@ -2265,8 +3946,10 @@ public class ConceptMap extends DomainResource {
                 public static class Builder extends BackboneElement.Builder {
                     private Code code;
                     private String display;
-                    private ConceptMapEquivalence equivalence;
+                    private Canonical valueSet;
+                    private ConceptMapRelationship relationship;
                     private String comment;
+                    private List<Property> property = new ArrayList<>();
                     private List<DependsOn> dependsOn = new ArrayList<>();
                     private List<ConceptMap.Group.Element.Target.DependsOn> product = new ArrayList<>();
 
@@ -2291,7 +3974,7 @@ public class ConceptMap extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -2311,7 +3994,7 @@ public class ConceptMap extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -2336,7 +4019,7 @@ public class ConceptMap extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -2361,7 +4044,7 @@ public class ConceptMap extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -2430,19 +4113,35 @@ public class ConceptMap extends DomainResource {
                     }
 
                     /**
-                     * The equivalence between the source and target concepts (counting for the dependencies and products). The equivalence 
-                     * is read from target to source (e.g. the target is 'wider' than the source).
+                     * The set of concepts from the ConceptMap.group.target code system which are all being mapped to as part of this mapping 
+                     * rule. The effect of using this data element is the same as having multiple ConceptMap.group.element.target elements 
+                     * with one for each concept in the ConceptMap.group.element.target.valueSet value set.
                      * 
-                     * <p>This element is required.
-                     * 
-                     * @param equivalence
-                     *     relatedto | equivalent | equal | wider | subsumes | narrower | specializes | inexact | unmatched | disjoint
+                     * @param valueSet
+                     *     Identifies the set of target concepts
                      * 
                      * @return
                      *     A reference to this Builder instance
                      */
-                    public Builder equivalence(ConceptMapEquivalence equivalence) {
-                        this.equivalence = equivalence;
+                    public Builder valueSet(Canonical valueSet) {
+                        this.valueSet = valueSet;
+                        return this;
+                    }
+
+                    /**
+                     * The relationship between the source and target concepts. The relationship is read from source to target (e.g. source-
+                     * is-narrower-than-target).
+                     * 
+                     * <p>This element is required.
+                     * 
+                     * @param relationship
+                     *     related-to | equivalent | source-is-narrower-than-target | source-is-broader-than-target | not-related-to
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder relationship(ConceptMapRelationship relationship) {
+                        this.relationship = relationship;
                         return this;
                     }
 
@@ -2477,14 +4176,53 @@ public class ConceptMap extends DomainResource {
                     }
 
                     /**
-                     * A set of additional dependencies for this mapping to hold. This mapping is only applicable if the specified element 
-                     * can be resolved, and it has the specified value.
+                     * A property value for this source -&gt; target mapping.
+                     * 
+                     * <p>Adds new element(s) to the existing list.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param property
+                     *     Property value for the source -&gt; target mapping
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder property(Property... property) {
+                        for (Property value : property) {
+                            this.property.add(value);
+                        }
+                        return this;
+                    }
+
+                    /**
+                     * A property value for this source -&gt; target mapping.
+                     * 
+                     * <p>Replaces the existing list with a new one containing elements from the Collection.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param property
+                     *     Property value for the source -&gt; target mapping
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @throws NullPointerException
+                     *     If the passed collection is null
+                     */
+                    public Builder property(Collection<Property> property) {
+                        this.property = new ArrayList<>(property);
+                        return this;
+                    }
+
+                    /**
+                     * A set of additional dependencies for this mapping to hold. This mapping is only applicable if the specified data 
+                     * attribute can be resolved, and it has the specified value.
                      * 
                      * <p>Adds new element(s) to the existing list.
                      * If any of the elements are null, calling {@link #build()} will fail.
                      * 
                      * @param dependsOn
-                     *     Other elements required for this mapping (from context)
+                     *     Other properties required for this mapping
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -2497,14 +4235,14 @@ public class ConceptMap extends DomainResource {
                     }
 
                     /**
-                     * A set of additional dependencies for this mapping to hold. This mapping is only applicable if the specified element 
-                     * can be resolved, and it has the specified value.
+                     * A set of additional dependencies for this mapping to hold. This mapping is only applicable if the specified data 
+                     * attribute can be resolved, and it has the specified value.
                      * 
                      * <p>Replaces the existing list with a new one containing elements from the Collection.
                      * If any of the elements are null, calling {@link #build()} will fail.
                      * 
                      * @param dependsOn
-                     *     Other elements required for this mapping (from context)
+                     *     Other properties required for this mapping
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -2518,15 +4256,14 @@ public class ConceptMap extends DomainResource {
                     }
 
                     /**
-                     * A set of additional outcomes from this mapping to other elements. To properly execute this mapping, the specified 
-                     * element must be mapped to some data element or source that is in context. The mapping may still be useful without a 
-                     * place for the additional data elements, but the equivalence cannot be relied on.
+                     * Product is the output of a ConceptMap that provides additional values that go in other attributes / data elemnts of 
+                     * the target data.
                      * 
                      * <p>Adds new element(s) to the existing list.
                      * If any of the elements are null, calling {@link #build()} will fail.
                      * 
                      * @param product
-                     *     Other concepts that this mapping also produces
+                     *     Other data elements that this mapping also produces
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -2539,15 +4276,14 @@ public class ConceptMap extends DomainResource {
                     }
 
                     /**
-                     * A set of additional outcomes from this mapping to other elements. To properly execute this mapping, the specified 
-                     * element must be mapped to some data element or source that is in context. The mapping may still be useful without a 
-                     * place for the additional data elements, but the equivalence cannot be relied on.
+                     * Product is the output of a ConceptMap that provides additional values that go in other attributes / data elemnts of 
+                     * the target data.
                      * 
                      * <p>Replaces the existing list with a new one containing elements from the Collection.
                      * If any of the elements are null, calling {@link #build()} will fail.
                      * 
                      * @param product
-                     *     Other concepts that this mapping also produces
+                     *     Other data elements that this mapping also produces
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -2565,7 +4301,7 @@ public class ConceptMap extends DomainResource {
                      * 
                      * <p>Required elements:
                      * <ul>
-                     * <li>equivalence</li>
+                     * <li>relationship</li>
                      * </ul>
                      * 
                      * @return
@@ -2584,7 +4320,8 @@ public class ConceptMap extends DomainResource {
 
                     protected void validate(Target target) {
                         super.validate(target);
-                        ValidationSupport.requireNonNull(target.equivalence, "equivalence");
+                        ValidationSupport.requireNonNull(target.relationship, "relationship");
+                        ValidationSupport.checkList(target.property, "property", Property.class);
                         ValidationSupport.checkList(target.dependsOn, "dependsOn", DependsOn.class);
                         ValidationSupport.checkList(target.product, "product", ConceptMap.Group.Element.Target.DependsOn.class);
                         ValidationSupport.requireValueOrChildren(target);
@@ -2594,8 +4331,10 @@ public class ConceptMap extends DomainResource {
                         super.from(target);
                         code = target.code;
                         display = target.display;
-                        equivalence = target.equivalence;
+                        valueSet = target.valueSet;
+                        relationship = target.relationship;
                         comment = target.comment;
+                        property.addAll(target.property);
                         dependsOn.addAll(target.dependsOn);
                         product.addAll(target.product);
                         return this;
@@ -2603,74 +4342,48 @@ public class ConceptMap extends DomainResource {
                 }
 
                 /**
-                 * A set of additional dependencies for this mapping to hold. This mapping is only applicable if the specified element 
-                 * can be resolved, and it has the specified value.
+                 * A property value for this source -&gt; target mapping.
                  */
-                public static class DependsOn extends BackboneElement {
+                public static class Property extends BackboneElement {
                     @Required
-                    private final Uri property;
-                    private final Canonical system;
+                    private final Code code;
+                    @Choice({ Coding.class, String.class, Integer.class, Boolean.class, DateTime.class, Decimal.class, Code.class })
                     @Required
-                    private final String value;
-                    private final String display;
+                    private final org.linuxforhealth.fhir.model.type.Element value;
 
-                    private DependsOn(Builder builder) {
+                    private Property(Builder builder) {
                         super(builder);
-                        property = builder.property;
-                        system = builder.system;
+                        code = builder.code;
                         value = builder.value;
-                        display = builder.display;
                     }
 
                     /**
-                     * A reference to an element that holds a coded value that corresponds to a code system property. The idea is that the 
-                     * information model carries an element somewhere that is labeled to correspond with a code system property.
+                     * A reference to a mapping property defined in ConceptMap.property.
                      * 
                      * @return
-                     *     An immutable object of type {@link Uri} that is non-null.
+                     *     An immutable object of type {@link Code} that is non-null.
                      */
-                    public Uri getProperty() {
-                        return property;
+                    public Code getCode() {
+                        return code;
                     }
 
                     /**
-                     * An absolute URI that identifies the code system of the dependency code (if the source/dependency is a value set that 
-                     * crosses code systems).
+                     * The value of this property. If the type chosen for this element is 'code', then the property SHALL be defined in a 
+                     * ConceptMap.property element.
                      * 
                      * @return
-                     *     An immutable object of type {@link Canonical} that may be null.
+                     *     An immutable object of type {@link Coding}, {@link String}, {@link Integer}, {@link Boolean}, {@link DateTime}, {@link 
+                     *     Decimal} or {@link Code} that is non-null.
                      */
-                    public Canonical getSystem() {
-                        return system;
-                    }
-
-                    /**
-                     * Identity (code or path) or the element/item/ValueSet/text that the map depends on / refers to.
-                     * 
-                     * @return
-                     *     An immutable object of type {@link String} that is non-null.
-                     */
-                    public String getValue() {
+                    public org.linuxforhealth.fhir.model.type.Element getValue() {
                         return value;
-                    }
-
-                    /**
-                     * The display for the code. The display is only provided to help editors when editing the concept map.
-                     * 
-                     * @return
-                     *     An immutable object of type {@link String} that may be null.
-                     */
-                    public String getDisplay() {
-                        return display;
                     }
 
                     @Override
                     public boolean hasChildren() {
                         return super.hasChildren() || 
-                            (property != null) || 
-                            (system != null) || 
-                            (value != null) || 
-                            (display != null);
+                            (code != null) || 
+                            (value != null);
                     }
 
                     @Override
@@ -2682,10 +4395,8 @@ public class ConceptMap extends DomainResource {
                                 accept(id, "id", visitor);
                                 accept(extension, "extension", visitor, Extension.class);
                                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                                accept(property, "property", visitor);
-                                accept(system, "system", visitor);
+                                accept(code, "code", visitor);
                                 accept(value, "value", visitor);
-                                accept(display, "display", visitor);
                             }
                             visitor.visitEnd(elementName, elementIndex, this);
                             visitor.postVisit(this);
@@ -2703,14 +4414,12 @@ public class ConceptMap extends DomainResource {
                         if (getClass() != obj.getClass()) {
                             return false;
                         }
-                        DependsOn other = (DependsOn) obj;
+                        Property other = (Property) obj;
                         return Objects.equals(id, other.id) && 
                             Objects.equals(extension, other.extension) && 
                             Objects.equals(modifierExtension, other.modifierExtension) && 
-                            Objects.equals(property, other.property) && 
-                            Objects.equals(system, other.system) && 
-                            Objects.equals(value, other.value) && 
-                            Objects.equals(display, other.display);
+                            Objects.equals(code, other.code) && 
+                            Objects.equals(value, other.value);
                     }
 
                     @Override
@@ -2720,10 +4429,8 @@ public class ConceptMap extends DomainResource {
                             result = Objects.hash(id, 
                                 extension, 
                                 modifierExtension, 
-                                property, 
-                                system, 
-                                value, 
-                                display);
+                                code, 
+                                value);
                             hashCode = result;
                         }
                         return result;
@@ -2739,10 +4446,8 @@ public class ConceptMap extends DomainResource {
                     }
 
                     public static class Builder extends BackboneElement.Builder {
-                        private Uri property;
-                        private Canonical system;
-                        private String value;
-                        private String display;
+                        private Code code;
+                        private org.linuxforhealth.fhir.model.type.Element value;
 
                         private Builder() {
                             super();
@@ -2765,7 +4470,7 @@ public class ConceptMap extends DomainResource {
 
                         /**
                          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                          * of the definition of the extension.
                          * 
@@ -2785,7 +4490,7 @@ public class ConceptMap extends DomainResource {
 
                         /**
                          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                          * of the definition of the extension.
                          * 
@@ -2810,7 +4515,7 @@ public class ConceptMap extends DomainResource {
                          * May be used to represent additional information that is not part of the basic definition of the element and that 
                          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                          * extension. Applications processing a resource are required to check for modifier extensions.
                          * 
@@ -2835,7 +4540,7 @@ public class ConceptMap extends DomainResource {
                          * May be used to represent additional information that is not part of the basic definition of the element and that 
                          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                          * extension. Applications processing a resource are required to check for modifier extensions.
                          * 
@@ -2860,49 +4565,33 @@ public class ConceptMap extends DomainResource {
                         }
 
                         /**
-                         * A reference to an element that holds a coded value that corresponds to a code system property. The idea is that the 
-                         * information model carries an element somewhere that is labeled to correspond with a code system property.
+                         * A reference to a mapping property defined in ConceptMap.property.
                          * 
                          * <p>This element is required.
                          * 
-                         * @param property
-                         *     Reference to property mapping depends on
+                         * @param code
+                         *     Reference to ConceptMap.property.code
                          * 
                          * @return
                          *     A reference to this Builder instance
                          */
-                        public Builder property(Uri property) {
-                            this.property = property;
+                        public Builder code(Code code) {
+                            this.code = code;
                             return this;
                         }
 
                         /**
-                         * An absolute URI that identifies the code system of the dependency code (if the source/dependency is a value set that 
-                         * crosses code systems).
-                         * 
-                         * @param system
-                         *     Code System (if necessary)
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         */
-                        public Builder system(Canonical system) {
-                            this.system = system;
-                            return this;
-                        }
-
-                        /**
-                         * Convenience method for setting {@code value}.
+                         * Convenience method for setting {@code value} with choice type String.
                          * 
                          * <p>This element is required.
                          * 
                          * @param value
-                         *     Value of the referenced element
+                         *     Value of the property for this concept
                          * 
                          * @return
                          *     A reference to this Builder instance
                          * 
-                         * @see #value(org.linuxforhealth.fhir.model.type.String)
+                         * @see #value(Element)
                          */
                         public Builder value(java.lang.String value) {
                             this.value = (value == null) ? null : String.of(value);
@@ -2910,48 +4599,429 @@ public class ConceptMap extends DomainResource {
                         }
 
                         /**
-                         * Identity (code or path) or the element/item/ValueSet/text that the map depends on / refers to.
+                         * Convenience method for setting {@code value} with choice type Integer.
                          * 
                          * <p>This element is required.
                          * 
                          * @param value
-                         *     Value of the referenced element
+                         *     Value of the property for this concept
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         * 
+                         * @see #value(Element)
+                         */
+                        public Builder value(java.lang.Integer value) {
+                            this.value = (value == null) ? null : Integer.of(value);
+                            return this;
+                        }
+
+                        /**
+                         * Convenience method for setting {@code value} with choice type Boolean.
+                         * 
+                         * <p>This element is required.
+                         * 
+                         * @param value
+                         *     Value of the property for this concept
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         * 
+                         * @see #value(Element)
+                         */
+                        public Builder value(java.lang.Boolean value) {
+                            this.value = (value == null) ? null : Boolean.of(value);
+                            return this;
+                        }
+
+                        /**
+                         * The value of this property. If the type chosen for this element is 'code', then the property SHALL be defined in a 
+                         * ConceptMap.property element.
+                         * 
+                         * <p>This element is required.
+                         * 
+                         * <p>This is a choice element with the following allowed types:
+                         * <ul>
+                         * <li>{@link Coding}</li>
+                         * <li>{@link String}</li>
+                         * <li>{@link Integer}</li>
+                         * <li>{@link Boolean}</li>
+                         * <li>{@link DateTime}</li>
+                         * <li>{@link Decimal}</li>
+                         * <li>{@link Code}</li>
+                         * </ul>
+                         * 
+                         * @param value
+                         *     Value of the property for this concept
                          * 
                          * @return
                          *     A reference to this Builder instance
                          */
-                        public Builder value(String value) {
+                        public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                             this.value = value;
                             return this;
                         }
 
                         /**
-                         * Convenience method for setting {@code display}.
+                         * Build the {@link Property}
                          * 
-                         * @param display
-                         *     Display for the code (if value is a code)
+                         * <p>Required elements:
+                         * <ul>
+                         * <li>code</li>
+                         * <li>value</li>
+                         * </ul>
+                         * 
+                         * @return
+                         *     An immutable object of type {@link Property}
+                         * @throws IllegalStateException
+                         *     if the current state cannot be built into a valid Property per the base specification
+                         */
+                        @Override
+                        public Property build() {
+                            Property property = new Property(this);
+                            if (validating) {
+                                validate(property);
+                            }
+                            return property;
+                        }
+
+                        protected void validate(Property property) {
+                            super.validate(property);
+                            ValidationSupport.requireNonNull(property.code, "code");
+                            ValidationSupport.requireChoiceElement(property.value, "value", Coding.class, String.class, Integer.class, Boolean.class, DateTime.class, Decimal.class, Code.class);
+                            ValidationSupport.requireValueOrChildren(property);
+                        }
+
+                        protected Builder from(Property property) {
+                            super.from(property);
+                            code = property.code;
+                            value = property.value;
+                            return this;
+                        }
+                    }
+                }
+
+                /**
+                 * A set of additional dependencies for this mapping to hold. This mapping is only applicable if the specified data 
+                 * attribute can be resolved, and it has the specified value.
+                 */
+                public static class DependsOn extends BackboneElement {
+                    @Required
+                    private final Code attribute;
+                    @Choice({ Code.class, Coding.class, String.class, Boolean.class, Quantity.class })
+                    private final org.linuxforhealth.fhir.model.type.Element value;
+                    private final Canonical valueSet;
+
+                    private DependsOn(Builder builder) {
+                        super(builder);
+                        attribute = builder.attribute;
+                        value = builder.value;
+                        valueSet = builder.valueSet;
+                    }
+
+                    /**
+                     * A reference to the additional attribute that holds a value the map depends on.
+                     * 
+                     * @return
+                     *     An immutable object of type {@link Code} that is non-null.
+                     */
+                    public Code getAttribute() {
+                        return attribute;
+                    }
+
+                    /**
+                     * Data element value that the map depends on / produces.
+                     * 
+                     * @return
+                     *     An immutable object of type {@link Code}, {@link Coding}, {@link String}, {@link Boolean} or {@link Quantity} that may 
+                     *     be null.
+                     */
+                    public org.linuxforhealth.fhir.model.type.Element getValue() {
+                        return value;
+                    }
+
+                    /**
+                     * This mapping applies if the data element value is a code from this value set.
+                     * 
+                     * @return
+                     *     An immutable object of type {@link Canonical} that may be null.
+                     */
+                    public Canonical getValueSet() {
+                        return valueSet;
+                    }
+
+                    @Override
+                    public boolean hasChildren() {
+                        return super.hasChildren() || 
+                            (attribute != null) || 
+                            (value != null) || 
+                            (valueSet != null);
+                    }
+
+                    @Override
+                    public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                        if (visitor.preVisit(this)) {
+                            visitor.visitStart(elementName, elementIndex, this);
+                            if (visitor.visit(elementName, elementIndex, this)) {
+                                // visit children
+                                accept(id, "id", visitor);
+                                accept(extension, "extension", visitor, Extension.class);
+                                accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                                accept(attribute, "attribute", visitor);
+                                accept(value, "value", visitor);
+                                accept(valueSet, "valueSet", visitor);
+                            }
+                            visitor.visitEnd(elementName, elementIndex, this);
+                            visitor.postVisit(this);
+                        }
+                    }
+
+                    @Override
+                    public boolean equals(Object obj) {
+                        if (this == obj) {
+                            return true;
+                        }
+                        if (obj == null) {
+                            return false;
+                        }
+                        if (getClass() != obj.getClass()) {
+                            return false;
+                        }
+                        DependsOn other = (DependsOn) obj;
+                        return Objects.equals(id, other.id) && 
+                            Objects.equals(extension, other.extension) && 
+                            Objects.equals(modifierExtension, other.modifierExtension) && 
+                            Objects.equals(attribute, other.attribute) && 
+                            Objects.equals(value, other.value) && 
+                            Objects.equals(valueSet, other.valueSet);
+                    }
+
+                    @Override
+                    public int hashCode() {
+                        int result = hashCode;
+                        if (result == 0) {
+                            result = Objects.hash(id, 
+                                extension, 
+                                modifierExtension, 
+                                attribute, 
+                                value, 
+                                valueSet);
+                            hashCode = result;
+                        }
+                        return result;
+                    }
+
+                    @Override
+                    public Builder toBuilder() {
+                        return new Builder().from(this);
+                    }
+
+                    public static Builder builder() {
+                        return new Builder();
+                    }
+
+                    public static class Builder extends BackboneElement.Builder {
+                        private Code attribute;
+                        private org.linuxforhealth.fhir.model.type.Element value;
+                        private Canonical valueSet;
+
+                        private Builder() {
+                            super();
+                        }
+
+                        /**
+                         * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                         * contain spaces.
+                         * 
+                         * @param id
+                         *     Unique id for inter-element referencing
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        @Override
+                        public Builder id(java.lang.String id) {
+                            return (Builder) super.id(id);
+                        }
+
+                        /**
+                         * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                         * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                         * of the definition of the extension.
+                         * 
+                         * <p>Adds new element(s) to the existing list.
+                         * If any of the elements are null, calling {@link #build()} will fail.
+                         * 
+                         * @param extension
+                         *     Additional content defined by implementations
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        @Override
+                        public Builder extension(Extension... extension) {
+                            return (Builder) super.extension(extension);
+                        }
+
+                        /**
+                         * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                         * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                         * of the definition of the extension.
+                         * 
+                         * <p>Replaces the existing list with a new one containing elements from the Collection.
+                         * If any of the elements are null, calling {@link #build()} will fail.
+                         * 
+                         * @param extension
+                         *     Additional content defined by implementations
                          * 
                          * @return
                          *     A reference to this Builder instance
                          * 
-                         * @see #display(org.linuxforhealth.fhir.model.type.String)
+                         * @throws NullPointerException
+                         *     If the passed collection is null
                          */
-                        public Builder display(java.lang.String display) {
-                            this.display = (display == null) ? null : String.of(display);
+                        @Override
+                        public Builder extension(Collection<Extension> extension) {
+                            return (Builder) super.extension(extension);
+                        }
+
+                        /**
+                         * May be used to represent additional information that is not part of the basic definition of the element and that 
+                         * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                         * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                         * extension. Applications processing a resource are required to check for modifier extensions.
+                         * 
+                         * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                         * change the meaning of modifierExtension itself).
+                         * 
+                         * <p>Adds new element(s) to the existing list.
+                         * If any of the elements are null, calling {@link #build()} will fail.
+                         * 
+                         * @param modifierExtension
+                         *     Extensions that cannot be ignored even if unrecognized
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        @Override
+                        public Builder modifierExtension(Extension... modifierExtension) {
+                            return (Builder) super.modifierExtension(modifierExtension);
+                        }
+
+                        /**
+                         * May be used to represent additional information that is not part of the basic definition of the element and that 
+                         * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                         * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                         * extension. Applications processing a resource are required to check for modifier extensions.
+                         * 
+                         * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                         * change the meaning of modifierExtension itself).
+                         * 
+                         * <p>Replaces the existing list with a new one containing elements from the Collection.
+                         * If any of the elements are null, calling {@link #build()} will fail.
+                         * 
+                         * @param modifierExtension
+                         *     Extensions that cannot be ignored even if unrecognized
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         * 
+                         * @throws NullPointerException
+                         *     If the passed collection is null
+                         */
+                        @Override
+                        public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                            return (Builder) super.modifierExtension(modifierExtension);
+                        }
+
+                        /**
+                         * A reference to the additional attribute that holds a value the map depends on.
+                         * 
+                         * <p>This element is required.
+                         * 
+                         * @param attribute
+                         *     A reference to a mapping attribute defined in ConceptMap.additionalAttribute
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        public Builder attribute(Code attribute) {
+                            this.attribute = attribute;
                             return this;
                         }
 
                         /**
-                         * The display for the code. The display is only provided to help editors when editing the concept map.
+                         * Convenience method for setting {@code value} with choice type String.
                          * 
-                         * @param display
-                         *     Display for the code (if value is a code)
+                         * @param value
+                         *     Value of the referenced data element
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         * 
+                         * @see #value(Element)
+                         */
+                        public Builder value(java.lang.String value) {
+                            this.value = (value == null) ? null : String.of(value);
+                            return this;
+                        }
+
+                        /**
+                         * Convenience method for setting {@code value} with choice type Boolean.
+                         * 
+                         * @param value
+                         *     Value of the referenced data element
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         * 
+                         * @see #value(Element)
+                         */
+                        public Builder value(java.lang.Boolean value) {
+                            this.value = (value == null) ? null : Boolean.of(value);
+                            return this;
+                        }
+
+                        /**
+                         * Data element value that the map depends on / produces.
+                         * 
+                         * <p>This is a choice element with the following allowed types:
+                         * <ul>
+                         * <li>{@link Code}</li>
+                         * <li>{@link Coding}</li>
+                         * <li>{@link String}</li>
+                         * <li>{@link Boolean}</li>
+                         * <li>{@link Quantity}</li>
+                         * </ul>
+                         * 
+                         * @param value
+                         *     Value of the referenced data element
                          * 
                          * @return
                          *     A reference to this Builder instance
                          */
-                        public Builder display(String display) {
-                            this.display = display;
+                        public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
+                            this.value = value;
+                            return this;
+                        }
+
+                        /**
+                         * This mapping applies if the data element value is a code from this value set.
+                         * 
+                         * @param valueSet
+                         *     The mapping depends on a data element with a value from this value set
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        public Builder valueSet(Canonical valueSet) {
+                            this.valueSet = valueSet;
                             return this;
                         }
 
@@ -2960,8 +5030,7 @@ public class ConceptMap extends DomainResource {
                          * 
                          * <p>Required elements:
                          * <ul>
-                         * <li>property</li>
-                         * <li>value</li>
+                         * <li>attribute</li>
                          * </ul>
                          * 
                          * @return
@@ -2980,17 +5049,16 @@ public class ConceptMap extends DomainResource {
 
                         protected void validate(DependsOn dependsOn) {
                             super.validate(dependsOn);
-                            ValidationSupport.requireNonNull(dependsOn.property, "property");
-                            ValidationSupport.requireNonNull(dependsOn.value, "value");
+                            ValidationSupport.requireNonNull(dependsOn.attribute, "attribute");
+                            ValidationSupport.choiceElement(dependsOn.value, "value", Code.class, Coding.class, String.class, Boolean.class, Quantity.class);
                             ValidationSupport.requireValueOrChildren(dependsOn);
                         }
 
                         protected Builder from(DependsOn dependsOn) {
                             super.from(dependsOn);
-                            property = dependsOn.property;
-                            system = dependsOn.system;
+                            attribute = dependsOn.attribute;
                             value = dependsOn.value;
-                            display = dependsOn.display;
+                            valueSet = dependsOn.valueSet;
                             return this;
                         }
                     }
@@ -2999,35 +5067,46 @@ public class ConceptMap extends DomainResource {
         }
 
         /**
-         * What to do when there is no mapping for the source concept. "Unmapped" does not include codes that are unmatched, and 
-         * the unmapped element is ignored in a code is specified to have equivalence = unmatched.
+         * What to do when there is no mapping to a target concept from the source concept and ConceptMap.group.element.noMap is 
+         * not true. This provides the "default" to be applied when there is no target concept mapping specified or the expansion 
+         * of ConceptMap.group.element.target.valueSet is empty.
          */
         public static class Unmapped extends BackboneElement {
             @Binding(
                 bindingName = "ConceptMapGroupUnmappedMode",
                 strength = BindingStrength.Value.REQUIRED,
                 description = "Defines which action to take if there is no match in the group.",
-                valueSet = "http://hl7.org/fhir/ValueSet/conceptmap-unmapped-mode|4.3.0"
+                valueSet = "http://hl7.org/fhir/ValueSet/conceptmap-unmapped-mode|5.0.0"
             )
             @Required
             private final ConceptMapGroupUnmappedMode mode;
             private final Code code;
             private final String display;
-            private final Canonical url;
+            private final Canonical valueSet;
+            @Binding(
+                bindingName = "UnmappedConceptMapRelationship",
+                strength = BindingStrength.Value.REQUIRED,
+                description = "The default relationship value to apply between the source and target concepts when no concept mapping is specified.",
+                valueSet = "http://hl7.org/fhir/ValueSet/concept-map-relationship|5.0.0"
+            )
+            private final UnmappedConceptMapRelationship relationship;
+            private final Canonical otherMap;
 
             private Unmapped(Builder builder) {
                 super(builder);
                 mode = builder.mode;
                 code = builder.code;
                 display = builder.display;
-                url = builder.url;
+                valueSet = builder.valueSet;
+                relationship = builder.relationship;
+                otherMap = builder.otherMap;
             }
 
             /**
              * Defines which action to take if there is no match for the source concept in the target system designated for the 
-             * group. One of 3 actions are possible: use the unmapped code (this is useful when doing a mapping between versions, and 
-             * only a few codes have changed), use a fixed code (a default code), or alternatively, a reference to a different 
-             * concept map can be provided (by canonical URL).
+             * group. One of 3 actions are possible: use the unmapped source code (this is useful when doing a mapping between 
+             * versions, and only a few codes have changed), use a fixed code (a default code), or alternatively, a reference to a 
+             * different concept map can be provided (by canonical URL).
              * 
              * @return
              *     An immutable object of type {@link ConceptMapGroupUnmappedMode} that is non-null.
@@ -3057,14 +5136,35 @@ public class ConceptMap extends DomainResource {
             }
 
             /**
+             * The set of fixed codes to use when the mode = 'fixed' - all unmapped codes are mapped to each of the fixed codes.
+             * 
+             * @return
+             *     An immutable object of type {@link Canonical} that may be null.
+             */
+            public Canonical getValueSet() {
+                return valueSet;
+            }
+
+            /**
+             * The default relationship value to apply between the source and target concepts when the source code is unmapped and 
+             * the mode is 'fixed' or 'use-source-code'.
+             * 
+             * @return
+             *     An immutable object of type {@link UnmappedConceptMapRelationship} that may be null.
+             */
+            public UnmappedConceptMapRelationship getRelationship() {
+                return relationship;
+            }
+
+            /**
              * The canonical reference to an additional ConceptMap resource instance to use for mapping if this ConceptMap resource 
              * contains no matching mapping for the source concept.
              * 
              * @return
              *     An immutable object of type {@link Canonical} that may be null.
              */
-            public Canonical getUrl() {
-                return url;
+            public Canonical getOtherMap() {
+                return otherMap;
             }
 
             @Override
@@ -3073,7 +5173,9 @@ public class ConceptMap extends DomainResource {
                     (mode != null) || 
                     (code != null) || 
                     (display != null) || 
-                    (url != null);
+                    (valueSet != null) || 
+                    (relationship != null) || 
+                    (otherMap != null);
             }
 
             @Override
@@ -3088,7 +5190,9 @@ public class ConceptMap extends DomainResource {
                         accept(mode, "mode", visitor);
                         accept(code, "code", visitor);
                         accept(display, "display", visitor);
-                        accept(url, "url", visitor);
+                        accept(valueSet, "valueSet", visitor);
+                        accept(relationship, "relationship", visitor);
+                        accept(otherMap, "otherMap", visitor);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
                     visitor.postVisit(this);
@@ -3113,7 +5217,9 @@ public class ConceptMap extends DomainResource {
                     Objects.equals(mode, other.mode) && 
                     Objects.equals(code, other.code) && 
                     Objects.equals(display, other.display) && 
-                    Objects.equals(url, other.url);
+                    Objects.equals(valueSet, other.valueSet) && 
+                    Objects.equals(relationship, other.relationship) && 
+                    Objects.equals(otherMap, other.otherMap);
             }
 
             @Override
@@ -3126,7 +5232,9 @@ public class ConceptMap extends DomainResource {
                         mode, 
                         code, 
                         display, 
-                        url);
+                        valueSet, 
+                        relationship, 
+                        otherMap);
                     hashCode = result;
                 }
                 return result;
@@ -3145,7 +5253,9 @@ public class ConceptMap extends DomainResource {
                 private ConceptMapGroupUnmappedMode mode;
                 private Code code;
                 private String display;
-                private Canonical url;
+                private Canonical valueSet;
+                private UnmappedConceptMapRelationship relationship;
+                private Canonical otherMap;
 
                 private Builder() {
                     super();
@@ -3168,7 +5278,7 @@ public class ConceptMap extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3188,7 +5298,7 @@ public class ConceptMap extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3213,7 +5323,7 @@ public class ConceptMap extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3238,7 +5348,7 @@ public class ConceptMap extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3264,14 +5374,14 @@ public class ConceptMap extends DomainResource {
 
                 /**
                  * Defines which action to take if there is no match for the source concept in the target system designated for the 
-                 * group. One of 3 actions are possible: use the unmapped code (this is useful when doing a mapping between versions, and 
-                 * only a few codes have changed), use a fixed code (a default code), or alternatively, a reference to a different 
-                 * concept map can be provided (by canonical URL).
+                 * group. One of 3 actions are possible: use the unmapped source code (this is useful when doing a mapping between 
+                 * versions, and only a few codes have changed), use a fixed code (a default code), or alternatively, a reference to a 
+                 * different concept map can be provided (by canonical URL).
                  * 
                  * <p>This element is required.
                  * 
                  * @param mode
-                 *     provided | fixed | other-map
+                 *     use-source-code | fixed | other-map
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -3326,17 +5436,46 @@ public class ConceptMap extends DomainResource {
                 }
 
                 /**
+                 * The set of fixed codes to use when the mode = 'fixed' - all unmapped codes are mapped to each of the fixed codes.
+                 * 
+                 * @param valueSet
+                 *     Fixed code set when mode = fixed
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder valueSet(Canonical valueSet) {
+                    this.valueSet = valueSet;
+                    return this;
+                }
+
+                /**
+                 * The default relationship value to apply between the source and target concepts when the source code is unmapped and 
+                 * the mode is 'fixed' or 'use-source-code'.
+                 * 
+                 * @param relationship
+                 *     related-to | equivalent | source-is-narrower-than-target | source-is-broader-than-target | not-related-to
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder relationship(UnmappedConceptMapRelationship relationship) {
+                    this.relationship = relationship;
+                    return this;
+                }
+
+                /**
                  * The canonical reference to an additional ConceptMap resource instance to use for mapping if this ConceptMap resource 
                  * contains no matching mapping for the source concept.
                  * 
-                 * @param url
+                 * @param otherMap
                  *     canonical reference to an additional ConceptMap to use for mapping if the source concept is unmapped
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder url(Canonical url) {
-                    this.url = url;
+                public Builder otherMap(Canonical otherMap) {
+                    this.otherMap = otherMap;
                     return this;
                 }
 
@@ -3373,7 +5512,9 @@ public class ConceptMap extends DomainResource {
                     mode = unmapped.mode;
                     code = unmapped.code;
                     display = unmapped.display;
-                    url = unmapped.url;
+                    valueSet = unmapped.valueSet;
+                    relationship = unmapped.relationship;
+                    otherMap = unmapped.otherMap;
                     return this;
                 }
             }

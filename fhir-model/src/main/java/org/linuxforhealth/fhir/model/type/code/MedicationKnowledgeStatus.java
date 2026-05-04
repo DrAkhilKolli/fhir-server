@@ -16,29 +16,32 @@ import java.util.Objects;
 
 import javax.annotation.Generated;
 
-@System("http://terminology.hl7.org/CodeSystem/medicationknowledge-status")
+@System("http://hl7.org/fhir/CodeSystem/medicationknowledge-status")
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class MedicationKnowledgeStatus extends Code {
     /**
      * Active
      * 
-     * <p>The medication is available for use.
+     * <p>The medication referred to by this MedicationKnowledge is in active use within the drug database or inventory 
+     * system.
      */
     public static final MedicationKnowledgeStatus ACTIVE = MedicationKnowledgeStatus.builder().value(Value.ACTIVE).build();
 
     /**
-     * Inactive
-     * 
-     * <p>The medication is not available for use.
-     */
-    public static final MedicationKnowledgeStatus INACTIVE = MedicationKnowledgeStatus.builder().value(Value.INACTIVE).build();
-
-    /**
      * Entered in Error
      * 
-     * <p>The medication was entered in error.
+     * <p>The medication referred to by this MedicationKnowledge was entered in error within the drug database or inventory 
+     * system.
      */
     public static final MedicationKnowledgeStatus ENTERED_IN_ERROR = MedicationKnowledgeStatus.builder().value(Value.ENTERED_IN_ERROR).build();
+
+    /**
+     * Inactive
+     * 
+     * <p>The medication referred to by this MedicationKnowledge is not in active use within the drug database or inventory 
+     * system.
+     */
+    public static final MedicationKnowledgeStatus INACTIVE = MedicationKnowledgeStatus.builder().value(Value.INACTIVE).build();
 
     private volatile int hashCode;
 
@@ -60,10 +63,10 @@ public class MedicationKnowledgeStatus extends Code {
         switch (value) {
         case ACTIVE:
             return ACTIVE;
-        case INACTIVE:
-            return INACTIVE;
         case ENTERED_IN_ERROR:
             return ENTERED_IN_ERROR;
+        case INACTIVE:
+            return INACTIVE;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -199,23 +202,26 @@ public class MedicationKnowledgeStatus extends Code {
         /**
          * Active
          * 
-         * <p>The medication is available for use.
+         * <p>The medication referred to by this MedicationKnowledge is in active use within the drug database or inventory 
+         * system.
          */
         ACTIVE("active"),
 
         /**
-         * Inactive
-         * 
-         * <p>The medication is not available for use.
-         */
-        INACTIVE("inactive"),
-
-        /**
          * Entered in Error
          * 
-         * <p>The medication was entered in error.
+         * <p>The medication referred to by this MedicationKnowledge was entered in error within the drug database or inventory 
+         * system.
          */
-        ENTERED_IN_ERROR("entered-in-error");
+        ENTERED_IN_ERROR("entered-in-error"),
+
+        /**
+         * Inactive
+         * 
+         * <p>The medication referred to by this MedicationKnowledge is not in active use within the drug database or inventory 
+         * system.
+         */
+        INACTIVE("inactive");
 
         private final java.lang.String value;
 
@@ -248,10 +254,10 @@ public class MedicationKnowledgeStatus extends Code {
             switch (value) {
             case "active":
                 return ACTIVE;
-            case "inactive":
-                return INACTIVE;
             case "entered-in-error":
                 return ENTERED_IN_ERROR;
+            case "inactive":
+                return INACTIVE;
             default:
                 throw new IllegalArgumentException(value);
             }

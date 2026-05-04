@@ -273,7 +273,8 @@ public class Linkage extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -291,7 +292,8 @@ public class Linkage extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -312,7 +314,7 @@ public class Linkage extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -332,7 +334,7 @@ public class Linkage extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -357,9 +359,9 @@ public class Linkage extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -382,9 +384,9 @@ public class Linkage extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -550,7 +552,7 @@ public class Linkage extends DomainResource {
             bindingName = "LinkageType",
             strength = BindingStrength.Value.REQUIRED,
             description = "Used to distinguish different roles a resource can play within a set of linked resources.",
-            valueSet = "http://hl7.org/fhir/ValueSet/linkage-type|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/linkage-type|5.0.0"
         )
         @Required
         private final LinkageType type;
@@ -676,7 +678,7 @@ public class Linkage extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -696,7 +698,7 @@ public class Linkage extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -721,7 +723,7 @@ public class Linkage extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -746,7 +748,7 @@ public class Linkage extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 

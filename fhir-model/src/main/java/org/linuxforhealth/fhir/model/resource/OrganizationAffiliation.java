@@ -22,7 +22,7 @@ import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
-import org.linuxforhealth.fhir.model.type.ContactPoint;
+import org.linuxforhealth.fhir.model.type.ExtendedContactDetail;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Meta;
@@ -36,17 +36,33 @@ import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
- * Defines an affiliation/assotiation/relationship between 2 distinct oganizations, that is not a part-of 
+ * Defines an affiliation/association/relationship between 2 distinct organizations, that is not a part-of 
  * relationship/sub-division relationship.
  * 
- * <p>Maturity level: FMM0 (Trial Use)
+ * <p>Maturity level: FMM1 (Trial Use)
  */
 @Maturity(
-    level = 0,
+    level = 1,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "organizationAffiliation-0",
+    id = "org-3",
+    level = "Rule",
+    location = "OrganizationAffiliation.contact",
+    description = "The telecom of an organization can never be of use 'home'",
+    expression = "telecom.where(use = 'home').empty()",
+    source = "http://hl7.org/fhir/StructureDefinition/OrganizationAffiliation"
+)
+@Constraint(
+    id = "org-4",
+    level = "Rule",
+    location = "OrganizationAffiliation.contact",
+    description = "The address of an organization can never be of use 'home'",
+    expression = "address.where(use = 'home').empty()",
+    source = "http://hl7.org/fhir/StructureDefinition/OrganizationAffiliation"
+)
+@Constraint(
+    id = "organizationAffiliation-5",
     level = "Warning",
     location = "(base)",
     description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/c80-practice-codes",
@@ -92,8 +108,7 @@ public class OrganizationAffiliation extends DomainResource {
     private final List<Reference> location;
     @ReferenceTarget({ "HealthcareService" })
     private final List<Reference> healthcareService;
-    @Summary
-    private final List<ContactPoint> telecom;
+    private final List<ExtendedContactDetail> contact;
     @ReferenceTarget({ "Endpoint" })
     private final List<Reference> endpoint;
 
@@ -109,7 +124,7 @@ public class OrganizationAffiliation extends DomainResource {
         specialty = Collections.unmodifiableList(builder.specialty);
         location = Collections.unmodifiableList(builder.location);
         healthcareService = Collections.unmodifiableList(builder.healthcareService);
-        telecom = Collections.unmodifiableList(builder.telecom);
+        contact = Collections.unmodifiableList(builder.contact);
         endpoint = Collections.unmodifiableList(builder.endpoint);
     }
 
@@ -165,8 +180,8 @@ public class OrganizationAffiliation extends DomainResource {
     }
 
     /**
-     * Health insurance provider network in which the participatingOrganization provides the role's services (if defined) at 
-     * the indicated locations (if defined).
+     * The network in which the participatingOrganization provides the role's services (if defined) at the indicated 
+     * locations (if defined).
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
@@ -216,13 +231,13 @@ public class OrganizationAffiliation extends DomainResource {
     }
 
     /**
-     * Contact details at the participatingOrganization relevant to this Affiliation.
+     * The contact details of communication devices available at the participatingOrganization relevant to this Affiliation.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link ContactPoint} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link ExtendedContactDetail} that may be empty.
      */
-    public List<ContactPoint> getTelecom() {
-        return telecom;
+    public List<ExtendedContactDetail> getContact() {
+        return contact;
     }
 
     /**
@@ -248,7 +263,7 @@ public class OrganizationAffiliation extends DomainResource {
             !specialty.isEmpty() || 
             !location.isEmpty() || 
             !healthcareService.isEmpty() || 
-            !telecom.isEmpty() || 
+            !contact.isEmpty() || 
             !endpoint.isEmpty();
     }
 
@@ -276,7 +291,7 @@ public class OrganizationAffiliation extends DomainResource {
                 accept(specialty, "specialty", visitor, CodeableConcept.class);
                 accept(location, "location", visitor, Reference.class);
                 accept(healthcareService, "healthcareService", visitor, Reference.class);
-                accept(telecom, "telecom", visitor, ContactPoint.class);
+                accept(contact, "contact", visitor, ExtendedContactDetail.class);
                 accept(endpoint, "endpoint", visitor, Reference.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
@@ -314,7 +329,7 @@ public class OrganizationAffiliation extends DomainResource {
             Objects.equals(specialty, other.specialty) && 
             Objects.equals(location, other.location) && 
             Objects.equals(healthcareService, other.healthcareService) && 
-            Objects.equals(telecom, other.telecom) && 
+            Objects.equals(contact, other.contact) && 
             Objects.equals(endpoint, other.endpoint);
     }
 
@@ -340,7 +355,7 @@ public class OrganizationAffiliation extends DomainResource {
                 specialty, 
                 location, 
                 healthcareService, 
-                telecom, 
+                contact, 
                 endpoint);
             hashCode = result;
         }
@@ -367,7 +382,7 @@ public class OrganizationAffiliation extends DomainResource {
         private List<CodeableConcept> specialty = new ArrayList<>();
         private List<Reference> location = new ArrayList<>();
         private List<Reference> healthcareService = new ArrayList<>();
-        private List<ContactPoint> telecom = new ArrayList<>();
+        private List<ExtendedContactDetail> contact = new ArrayList<>();
         private List<Reference> endpoint = new ArrayList<>();
 
         private Builder() {
@@ -452,7 +467,8 @@ public class OrganizationAffiliation extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -470,7 +486,8 @@ public class OrganizationAffiliation extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -491,7 +508,7 @@ public class OrganizationAffiliation extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -511,7 +528,7 @@ public class OrganizationAffiliation extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -536,9 +553,9 @@ public class OrganizationAffiliation extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -561,9 +578,9 @@ public class OrganizationAffiliation extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -708,8 +725,8 @@ public class OrganizationAffiliation extends DomainResource {
         }
 
         /**
-         * Health insurance provider network in which the participatingOrganization provides the role's services (if defined) at 
-         * the indicated locations (if defined).
+         * The network in which the participatingOrganization provides the role's services (if defined) at the indicated 
+         * locations (if defined).
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -720,8 +737,8 @@ public class OrganizationAffiliation extends DomainResource {
          * </ul>
          * 
          * @param network
-         *     Health insurance provider network in which the participatingOrganization provides the role's services (if defined) at 
-         *     the indicated locations (if defined)
+         *     The network in which the participatingOrganization provides the role's services (if defined) at the indicated 
+         *     locations (if defined)
          * 
          * @return
          *     A reference to this Builder instance
@@ -734,8 +751,8 @@ public class OrganizationAffiliation extends DomainResource {
         }
 
         /**
-         * Health insurance provider network in which the participatingOrganization provides the role's services (if defined) at 
-         * the indicated locations (if defined).
+         * The network in which the participatingOrganization provides the role's services (if defined) at the indicated 
+         * locations (if defined).
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -746,8 +763,8 @@ public class OrganizationAffiliation extends DomainResource {
          * </ul>
          * 
          * @param network
-         *     Health insurance provider network in which the participatingOrganization provides the role's services (if defined) at 
-         *     the indicated locations (if defined)
+         *     The network in which the participatingOrganization provides the role's services (if defined) at the indicated 
+         *     locations (if defined)
          * 
          * @return
          *     A reference to this Builder instance
@@ -937,32 +954,32 @@ public class OrganizationAffiliation extends DomainResource {
         }
 
         /**
-         * Contact details at the participatingOrganization relevant to this Affiliation.
+         * The contact details of communication devices available at the participatingOrganization relevant to this Affiliation.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param telecom
-         *     Contact details at the participatingOrganization relevant to this Affiliation
+         * @param contact
+         *     Official contact details at the participatingOrganization relevant to this Affiliation
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder telecom(ContactPoint... telecom) {
-            for (ContactPoint value : telecom) {
-                this.telecom.add(value);
+        public Builder contact(ExtendedContactDetail... contact) {
+            for (ExtendedContactDetail value : contact) {
+                this.contact.add(value);
             }
             return this;
         }
 
         /**
-         * Contact details at the participatingOrganization relevant to this Affiliation.
+         * The contact details of communication devices available at the participatingOrganization relevant to this Affiliation.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param telecom
-         *     Contact details at the participatingOrganization relevant to this Affiliation
+         * @param contact
+         *     Official contact details at the participatingOrganization relevant to this Affiliation
          * 
          * @return
          *     A reference to this Builder instance
@@ -970,8 +987,8 @@ public class OrganizationAffiliation extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder telecom(Collection<ContactPoint> telecom) {
-            this.telecom = new ArrayList<>(telecom);
+        public Builder contact(Collection<ExtendedContactDetail> contact) {
+            this.contact = new ArrayList<>(contact);
             return this;
         }
 
@@ -1049,7 +1066,7 @@ public class OrganizationAffiliation extends DomainResource {
             ValidationSupport.checkList(organizationAffiliation.specialty, "specialty", CodeableConcept.class);
             ValidationSupport.checkList(organizationAffiliation.location, "location", Reference.class);
             ValidationSupport.checkList(organizationAffiliation.healthcareService, "healthcareService", Reference.class);
-            ValidationSupport.checkList(organizationAffiliation.telecom, "telecom", ContactPoint.class);
+            ValidationSupport.checkList(organizationAffiliation.contact, "contact", ExtendedContactDetail.class);
             ValidationSupport.checkList(organizationAffiliation.endpoint, "endpoint", Reference.class);
             ValidationSupport.checkReferenceType(organizationAffiliation.organization, "organization", "Organization");
             ValidationSupport.checkReferenceType(organizationAffiliation.participatingOrganization, "participatingOrganization", "Organization");
@@ -1071,7 +1088,7 @@ public class OrganizationAffiliation extends DomainResource {
             specialty.addAll(organizationAffiliation.specialty);
             location.addAll(organizationAffiliation.location);
             healthcareService.addAll(organizationAffiliation.healthcareService);
-            telecom.addAll(organizationAffiliation.telecom);
+            contact.addAll(organizationAffiliation.contact);
             endpoint.addAll(organizationAffiliation.endpoint);
             return this;
         }

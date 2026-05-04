@@ -20,6 +20,48 @@ import javax.annotation.Generated;
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class ActivityParticipantType extends Code {
     /**
+     * CareTeam
+     * 
+     * <p>The participant is a care team caring for the patient under evaluation.
+     */
+    public static final ActivityParticipantType CARETEAM = ActivityParticipantType.builder().value(Value.CARETEAM).build();
+
+    /**
+     * Device
+     * 
+     * <p>The participant is a system or device used in the care of the patient.
+     */
+    public static final ActivityParticipantType DEVICE = ActivityParticipantType.builder().value(Value.DEVICE).build();
+
+    /**
+     * Group
+     * 
+     * <p>The participant is a group of participants involved in the care of the patient.
+     */
+    public static final ActivityParticipantType GROUP = ActivityParticipantType.builder().value(Value.GROUP).build();
+
+    /**
+     * HealthcareService
+     * 
+     * <p>The participant is an institution that can provide the given healthcare service used in the care of the patient.
+     */
+    public static final ActivityParticipantType HEALTHCARESERVICE = ActivityParticipantType.builder().value(Value.HEALTHCARESERVICE).build();
+
+    /**
+     * Location
+     * 
+     * <p>The participant is a location involved in the care of the patient.
+     */
+    public static final ActivityParticipantType LOCATION = ActivityParticipantType.builder().value(Value.LOCATION).build();
+
+    /**
+     * Organization
+     * 
+     * <p>The participant is an organization involved in the care of the patient.
+     */
+    public static final ActivityParticipantType ORGANIZATION = ActivityParticipantType.builder().value(Value.ORGANIZATION).build();
+
+    /**
      * Patient
      * 
      * <p>The participant is the patient under evaluation.
@@ -34,18 +76,18 @@ public class ActivityParticipantType extends Code {
     public static final ActivityParticipantType PRACTITIONER = ActivityParticipantType.builder().value(Value.PRACTITIONER).build();
 
     /**
-     * Related Person
+     * PractitionerRole
+     * 
+     * <p>The participant is a particular practitioner role involved in the patient's care.
+     */
+    public static final ActivityParticipantType PRACTITIONERROLE = ActivityParticipantType.builder().value(Value.PRACTITIONERROLE).build();
+
+    /**
+     * RelatedPerson
      * 
      * <p>The participant is a person related to the patient.
      */
-    public static final ActivityParticipantType RELATED_PERSON = ActivityParticipantType.builder().value(Value.RELATED_PERSON).build();
-
-    /**
-     * Device
-     * 
-     * <p>The participant is a system or device used in the care of the patient.
-     */
-    public static final ActivityParticipantType DEVICE = ActivityParticipantType.builder().value(Value.DEVICE).build();
+    public static final ActivityParticipantType RELATEDPERSON = ActivityParticipantType.builder().value(Value.RELATEDPERSON).build();
 
     private volatile int hashCode;
 
@@ -65,14 +107,26 @@ public class ActivityParticipantType extends Code {
      */
     public static ActivityParticipantType of(Value value) {
         switch (value) {
+        case CARETEAM:
+            return CARETEAM;
+        case DEVICE:
+            return DEVICE;
+        case GROUP:
+            return GROUP;
+        case HEALTHCARESERVICE:
+            return HEALTHCARESERVICE;
+        case LOCATION:
+            return LOCATION;
+        case ORGANIZATION:
+            return ORGANIZATION;
         case PATIENT:
             return PATIENT;
         case PRACTITIONER:
             return PRACTITIONER;
-        case RELATED_PERSON:
-            return RELATED_PERSON;
-        case DEVICE:
-            return DEVICE;
+        case PRACTITIONERROLE:
+            return PRACTITIONERROLE;
+        case RELATEDPERSON:
+            return RELATEDPERSON;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -206,6 +260,48 @@ public class ActivityParticipantType extends Code {
 
     public enum Value {
         /**
+         * CareTeam
+         * 
+         * <p>The participant is a care team caring for the patient under evaluation.
+         */
+        CARETEAM("careteam"),
+
+        /**
+         * Device
+         * 
+         * <p>The participant is a system or device used in the care of the patient.
+         */
+        DEVICE("device"),
+
+        /**
+         * Group
+         * 
+         * <p>The participant is a group of participants involved in the care of the patient.
+         */
+        GROUP("group"),
+
+        /**
+         * HealthcareService
+         * 
+         * <p>The participant is an institution that can provide the given healthcare service used in the care of the patient.
+         */
+        HEALTHCARESERVICE("healthcareservice"),
+
+        /**
+         * Location
+         * 
+         * <p>The participant is a location involved in the care of the patient.
+         */
+        LOCATION("location"),
+
+        /**
+         * Organization
+         * 
+         * <p>The participant is an organization involved in the care of the patient.
+         */
+        ORGANIZATION("organization"),
+
+        /**
          * Patient
          * 
          * <p>The participant is the patient under evaluation.
@@ -220,18 +316,18 @@ public class ActivityParticipantType extends Code {
         PRACTITIONER("practitioner"),
 
         /**
-         * Related Person
+         * PractitionerRole
+         * 
+         * <p>The participant is a particular practitioner role involved in the patient's care.
+         */
+        PRACTITIONERROLE("practitionerrole"),
+
+        /**
+         * RelatedPerson
          * 
          * <p>The participant is a person related to the patient.
          */
-        RELATED_PERSON("related-person"),
-
-        /**
-         * Device
-         * 
-         * <p>The participant is a system or device used in the care of the patient.
-         */
-        DEVICE("device");
+        RELATEDPERSON("relatedperson");
 
         private final java.lang.String value;
 
@@ -262,14 +358,26 @@ public class ActivityParticipantType extends Code {
                 return null;
             }
             switch (value) {
+            case "careteam":
+                return CARETEAM;
+            case "device":
+                return DEVICE;
+            case "group":
+                return GROUP;
+            case "healthcareservice":
+                return HEALTHCARESERVICE;
+            case "location":
+                return LOCATION;
+            case "organization":
+                return ORGANIZATION;
             case "patient":
                 return PATIENT;
             case "practitioner":
                 return PRACTITIONER;
-            case "related-person":
-                return RELATED_PERSON;
-            case "device":
-                return DEVICE;
+            case "practitionerrole":
+                return PRACTITIONERROLE;
+            case "relatedperson":
+                return RELATEDPERSON;
             default:
                 throw new IllegalArgumentException(value);
             }

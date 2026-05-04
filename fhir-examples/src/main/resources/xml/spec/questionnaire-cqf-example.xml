@@ -37,7 +37,7 @@
       <code value="44250-9"/>
     </code>
     <text value="Little interest or pleasure in doing things"/>
-    <type value="choice"/>
+    <type value="coding"/>
     <required value="true"/>
     <answerValueSet value="http://loinc.org/vs/LL358-3"/>
   </item>
@@ -48,7 +48,7 @@
       <code value="44255-8"/>
     </code>
     <text value="Feeling down, depressed, or hopeless"/>
-    <type value="choice"/>
+    <type value="coding"/>
     <required value="true"/>
     <answerValueSet value="http://loinc.org/vs/LL358-3"/>
   </item>
@@ -59,7 +59,7 @@
       <code value="44259-0"/>
     </code>
     <text value="Trouble falling or staying asleep"/>
-    <type value="choice"/>
+    <type value="coding"/>
     <required value="true"/>
     <answerValueSet value="http://loinc.org/vs/LL358-3"/>
   </item>
@@ -70,7 +70,7 @@
       <code value="44254-1"/>
     </code>
     <text value="Feeling tired or having little energy"/>
-    <type value="choice"/>
+    <type value="coding"/>
     <required value="true"/>
     <answerValueSet value="http://loinc.org/vs/LL358-3"/>
   </item>
@@ -81,7 +81,7 @@
       <code value="44251-7"/>
     </code>
     <text value="Poor appetite or overeating"/>
-    <type value="choice"/>
+    <type value="coding"/>
     <required value="true"/>
     <answerValueSet value="http://loinc.org/vs/LL358-3"/>
   </item>
@@ -92,7 +92,7 @@
       <code value="44258-2"/>
     </code>
     <text value="Feeling bad about yourself - or that you are a failure or have let yourself or your family down"/>
-    <type value="choice"/>
+    <type value="coding"/>
     <required value="true"/>
     <answerValueSet value="http://loinc.org/vs/LL358-3"/>
   </item>
@@ -103,7 +103,7 @@
       <code value="44252-5"/>
     </code>
     <text value="Trouble concentrating on things, such as reading the newspaper or watching television"/>
-    <type value="choice"/>
+    <type value="coding"/>
     <required value="true"/>
     <answerValueSet value="http://loinc.org/vs/LL358-3"/>
   </item>
@@ -114,7 +114,7 @@
       <code value="44253-3"/>
     </code>
     <text value="Moving or speaking so slowly that other people could have noticed. Or the opposite - being so fidgety or restless that you have been moving around a lot more than usual"/>
-    <type value="choice"/>
+    <type value="coding"/>
     <required value="true"/>
     <answerValueSet value="http://loinc.org/vs/LL358-3"/>
   </item>
@@ -141,7 +141,7 @@
       <code value="44256-6"/>
     </code>
     <text value="If you checked off any problems, how difficult have these problems made it for you to do your work, take care of things at home, or get along with other people"/>
-    <type value="choice"/>
+    <type value="coding"/>
     <required value="true"/>
     <answerValueSet value="http://loinc.org/vs/LL358-3"/>
   </item>

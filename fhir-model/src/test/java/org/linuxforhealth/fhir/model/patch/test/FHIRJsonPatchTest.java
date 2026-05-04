@@ -169,12 +169,9 @@ public class FHIRJsonPatchTest {
     }
 
     private Patient buildPatient() {
-        java.lang.String div = "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p><b>Generated Narrative</b></p></div>";
+        java.lang.String id = UUID.randomUUID().toString();
 
-        String id = UUID.randomUUID().toString();
-
-        Meta meta = Meta.builder()
-                .versionId(Id.of("1"))
+        Meta meta = Meta.builder().versionId(Id.of("1"))
                 .lastUpdated(Instant.now(ZoneOffset.UTC))
                 .build();
 
@@ -185,7 +182,7 @@ public class FHIRJsonPatchTest {
 
         Narrative text = Narrative.builder()
                 .status(NarrativeStatus.GENERATED)
-                .div(xhtml(div))
+                .div(xhtml("<div xmlns=\"http://www.w3.org/1999/xhtml\">generated</div>"))
                 .build();
 
         return Patient.builder()
@@ -194,7 +191,7 @@ public class FHIRJsonPatchTest {
                 .text(text)
                 .active(Boolean.TRUE)
                 .name(name)
-                .birthDate(Date.of("1980-01-01"))
+                .birthDate(Date.of("1970-01-01"))
                 .build();
     }
 }

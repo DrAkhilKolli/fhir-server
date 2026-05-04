@@ -47,6 +47,13 @@ public class SubscriptionStatusCode extends Code {
      */
     public static final SubscriptionStatusCode OFF = SubscriptionStatusCode.builder().value(Value.OFF).build();
 
+    /**
+     * Entered in Error
+     * 
+     * <p>This subscription has been flagged as incorrect.
+     */
+    public static final SubscriptionStatusCode ENTERED_IN_ERROR = SubscriptionStatusCode.builder().value(Value.ENTERED_IN_ERROR).build();
+
     private volatile int hashCode;
 
     private SubscriptionStatusCode(Builder builder) {
@@ -73,6 +80,8 @@ public class SubscriptionStatusCode extends Code {
             return ERROR;
         case OFF:
             return OFF;
+        case ENTERED_IN_ERROR:
+            return ENTERED_IN_ERROR;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -231,7 +240,14 @@ public class SubscriptionStatusCode extends Code {
          * 
          * <p>Too many errors have occurred or the subscription has expired.
          */
-        OFF("off");
+        OFF("off"),
+
+        /**
+         * Entered in Error
+         * 
+         * <p>This subscription has been flagged as incorrect.
+         */
+        ENTERED_IN_ERROR("entered-in-error");
 
         private final java.lang.String value;
 
@@ -270,6 +286,8 @@ public class SubscriptionStatusCode extends Code {
                 return ERROR;
             case "off":
                 return OFF;
+            case "entered-in-error":
+                return ENTERED_IN_ERROR;
             default:
                 throw new IllegalArgumentException(value);
             }

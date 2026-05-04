@@ -24,11 +24,11 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Rule",
     location = "(base)",
     description = "If present, low SHALL have a lower value than high",
-    expression = "low.empty() or high.empty() or (low <= high)",
+    expression = "low.value.empty() or high.value.empty() or low.lowBoundary().comparable(high.highBoundary()).not() or (low.lowBoundary() <= high.highBoundary())",
     source = "http://hl7.org/fhir/StructureDefinition/Range"
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Range extends Element {
+public class Range extends DataType {
     @Summary
     private final SimpleQuantity low;
     @Summary
@@ -123,7 +123,7 @@ public class Range extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private SimpleQuantity low;
         private SimpleQuantity high;
 
@@ -148,7 +148,7 @@ public class Range extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -168,7 +168,7 @@ public class Range extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 

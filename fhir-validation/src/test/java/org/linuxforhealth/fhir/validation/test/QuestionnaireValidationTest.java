@@ -28,6 +28,7 @@ public class QuestionnaireValidationTest {
     public void testQuestionnaireValidation() throws Exception {
         try (Reader reader = ExamplesUtil.resourceReader("json/spec/questionnaire-cqf-example.json")) {
             Questionnaire questionnaire = FHIRParser.parser(Format.JSON).parse(reader);
+            System.out.println(questionnaire.toString());
 
             StructureDefinition profile = ProfileSupport.getProfile(questionnaire.getMeta().getProfile().get(0).getValue());
             ConstraintGenerator generator = new ConstraintGenerator(profile);

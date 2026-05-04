@@ -23,7 +23,7 @@ import org.linuxforhealth.fhir.model.resource.OperationOutcome.Issue;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.code.IssueSeverity;
 import org.linuxforhealth.fhir.model.type.code.IssueType;
-import org.linuxforhealth.fhir.model.type.code.ResourceTypeCode;
+import org.linuxforhealth.fhir.model.type.code.FHIRTypes;
 import org.linuxforhealth.fhir.model.util.FHIRUtil;
 import org.linuxforhealth.fhir.server.spi.operation.FHIROperation;
 import org.linuxforhealth.fhir.validation.FHIRValidator;
@@ -62,7 +62,7 @@ public class FHIROperationRegistry {
                     isSet = true;
                 }
 
-                List<ResourceTypeCode> operationResourceTypes = operation.getDefinition().getResource();
+                List<FHIRTypes> operationResourceTypes = operation.getDefinition().getResource();
                 if (operationResourceTypes == null || operationResourceTypes.isEmpty()) {
                     if (!isSet && operationMap.putIfAbsent(operationCode, operation) != null) {
                         throw new IllegalStateException("Found duplicated operation code: " + operationCode);
@@ -76,7 +76,7 @@ public class FHIROperationRegistry {
                             + " <--> " + operationMap.get(tmpKey).getDefinition().getName());
                     }
                     // Then check if there is already operation defined for the required resource types.
-                    for (ResourceTypeCode operationResourceType : operationResourceTypes) {
+                    for (FHIRTypes operationResourceType : operationResourceTypes) {
                         tmpKey = operationCode + ":" + operationResourceType.getValue();
                         if (operationMap.putIfAbsent(tmpKey, operation) != null) {
                             throw new IllegalStateException("Found duplicated operation name plus resource type: "

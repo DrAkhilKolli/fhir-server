@@ -20,18 +20,53 @@ import javax.annotation.Generated;
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class CharacteristicCombination extends Code {
     /**
-     * intersection
+     * All of
      * 
      * <p>Combine characteristics with AND.
      */
-    public static final CharacteristicCombination INTERSECTION = CharacteristicCombination.builder().value(Value.INTERSECTION).build();
+    public static final CharacteristicCombination ALL_OF = CharacteristicCombination.builder().value(Value.ALL_OF).build();
 
     /**
-     * union
+     * Any of
      * 
      * <p>Combine characteristics with OR.
      */
-    public static final CharacteristicCombination UNION = CharacteristicCombination.builder().value(Value.UNION).build();
+    public static final CharacteristicCombination ANY_OF = CharacteristicCombination.builder().value(Value.ANY_OF).build();
+
+    /**
+     * At least
+     * 
+     * <p>Meet at least the threshold number of characteristics for definition.
+     */
+    public static final CharacteristicCombination AT_LEAST = CharacteristicCombination.builder().value(Value.AT_LEAST).build();
+
+    /**
+     * At most
+     * 
+     * <p>Meet at most the threshold number of characteristics for definition.
+     */
+    public static final CharacteristicCombination AT_MOST = CharacteristicCombination.builder().value(Value.AT_MOST).build();
+
+    /**
+     * Statistical
+     * 
+     * <p>Combine characteristics statistically. Use method to specify the statistical method.
+     */
+    public static final CharacteristicCombination STATISTICAL = CharacteristicCombination.builder().value(Value.STATISTICAL).build();
+
+    /**
+     * Net effect
+     * 
+     * <p>Combine characteristics by addition of benefits and subtraction of harms.
+     */
+    public static final CharacteristicCombination NET_EFFECT = CharacteristicCombination.builder().value(Value.NET_EFFECT).build();
+
+    /**
+     * Dataset
+     * 
+     * <p>Combine characteristics as a collection used as the dataset.
+     */
+    public static final CharacteristicCombination DATASET = CharacteristicCombination.builder().value(Value.DATASET).build();
 
     private volatile int hashCode;
 
@@ -51,10 +86,20 @@ public class CharacteristicCombination extends Code {
      */
     public static CharacteristicCombination of(Value value) {
         switch (value) {
-        case INTERSECTION:
-            return INTERSECTION;
-        case UNION:
-            return UNION;
+        case ALL_OF:
+            return ALL_OF;
+        case ANY_OF:
+            return ANY_OF;
+        case AT_LEAST:
+            return AT_LEAST;
+        case AT_MOST:
+            return AT_MOST;
+        case STATISTICAL:
+            return STATISTICAL;
+        case NET_EFFECT:
+            return NET_EFFECT;
+        case DATASET:
+            return DATASET;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -188,18 +233,53 @@ public class CharacteristicCombination extends Code {
 
     public enum Value {
         /**
-         * intersection
+         * All of
          * 
          * <p>Combine characteristics with AND.
          */
-        INTERSECTION("intersection"),
+        ALL_OF("all-of"),
 
         /**
-         * union
+         * Any of
          * 
          * <p>Combine characteristics with OR.
          */
-        UNION("union");
+        ANY_OF("any-of"),
+
+        /**
+         * At least
+         * 
+         * <p>Meet at least the threshold number of characteristics for definition.
+         */
+        AT_LEAST("at-least"),
+
+        /**
+         * At most
+         * 
+         * <p>Meet at most the threshold number of characteristics for definition.
+         */
+        AT_MOST("at-most"),
+
+        /**
+         * Statistical
+         * 
+         * <p>Combine characteristics statistically. Use method to specify the statistical method.
+         */
+        STATISTICAL("statistical"),
+
+        /**
+         * Net effect
+         * 
+         * <p>Combine characteristics by addition of benefits and subtraction of harms.
+         */
+        NET_EFFECT("net-effect"),
+
+        /**
+         * Dataset
+         * 
+         * <p>Combine characteristics as a collection used as the dataset.
+         */
+        DATASET("dataset");
 
         private final java.lang.String value;
 
@@ -230,10 +310,20 @@ public class CharacteristicCombination extends Code {
                 return null;
             }
             switch (value) {
-            case "intersection":
-                return INTERSECTION;
-            case "union":
-                return UNION;
+            case "all-of":
+                return ALL_OF;
+            case "any-of":
+                return ANY_OF;
+            case "at-least":
+                return AT_LEAST;
+            case "at-most":
+                return AT_MOST;
+            case "statistical":
+                return STATISTICAL;
+            case "net-effect":
+                return NET_EFFECT;
+            case "dataset":
+                return DATASET;
             default:
                 throw new IllegalArgumentException(value);
             }

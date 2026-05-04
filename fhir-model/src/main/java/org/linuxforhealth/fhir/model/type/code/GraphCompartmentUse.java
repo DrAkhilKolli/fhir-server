@@ -20,18 +20,18 @@ import javax.annotation.Generated;
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class GraphCompartmentUse extends Code {
     /**
-     * Condition
+     * Where
      * 
      * <p>This compartment rule is a condition for whether the rule applies.
      */
-    public static final GraphCompartmentUse CONDITION = GraphCompartmentUse.builder().value(Value.CONDITION).build();
+    public static final GraphCompartmentUse WHERE = GraphCompartmentUse.builder().value(Value.WHERE).build();
 
     /**
-     * Requirement
+     * requires
      * 
      * <p>This compartment rule is enforced on any relationships that meet the conditions.
      */
-    public static final GraphCompartmentUse REQUIREMENT = GraphCompartmentUse.builder().value(Value.REQUIREMENT).build();
+    public static final GraphCompartmentUse REQUIRES = GraphCompartmentUse.builder().value(Value.REQUIRES).build();
 
     private volatile int hashCode;
 
@@ -51,10 +51,10 @@ public class GraphCompartmentUse extends Code {
      */
     public static GraphCompartmentUse of(Value value) {
         switch (value) {
-        case CONDITION:
-            return CONDITION;
-        case REQUIREMENT:
-            return REQUIREMENT;
+        case WHERE:
+            return WHERE;
+        case REQUIRES:
+            return REQUIRES;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -188,18 +188,18 @@ public class GraphCompartmentUse extends Code {
 
     public enum Value {
         /**
-         * Condition
+         * Where
          * 
          * <p>This compartment rule is a condition for whether the rule applies.
          */
-        CONDITION("condition"),
+        WHERE("where"),
 
         /**
-         * Requirement
+         * requires
          * 
          * <p>This compartment rule is enforced on any relationships that meet the conditions.
          */
-        REQUIREMENT("requirement");
+        REQUIRES("requires");
 
         private final java.lang.String value;
 
@@ -230,10 +230,10 @@ public class GraphCompartmentUse extends Code {
                 return null;
             }
             switch (value) {
-            case "condition":
-                return CONDITION;
-            case "requirement":
-                return REQUIREMENT;
+            case "where":
+                return WHERE;
+            case "requires":
+                return REQUIRES;
             default:
                 throw new IllegalArgumentException(value);
             }

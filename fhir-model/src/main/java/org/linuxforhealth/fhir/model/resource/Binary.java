@@ -40,8 +40,8 @@ public class Binary extends Resource {
     @Binding(
         bindingName = "MimeType",
         strength = BindingStrength.Value.REQUIRED,
-        description = "BCP 13 (RFCs 2045, 2046, 2047, 4288, 4289 and 2049)",
-        valueSet = "http://hl7.org/fhir/ValueSet/mimetypes|4.3.0"
+        description = "The mime type of an attachment. Any valid mime type is allowed.",
+        valueSet = "http://hl7.org/fhir/ValueSet/mimetypes|5.0.0"
     )
     @Required
     private final Code contentType;
@@ -70,7 +70,7 @@ public class Binary extends Resource {
      * This element identifies another resource that can be used as a proxy of the security sensitivity to use when deciding 
      * and enforcing access control rules for the Binary resource. Given that the Binary resource contains very few elements 
      * that can be used to determine the sensitivity of the data and relationships to individuals, the referenced resource 
-     * stands in as a proxy equivalent for this purpose. This referenced resource may be related to the Binary (e.g. Media, 
+     * stands in as a proxy equivalent for this purpose. This referenced resource may be related to the Binary (e.g. 
      * DocumentReference), or may be some non-related Resource purely as a security proxy. E.g. to identify that the binary 
      * resource relates to a patient, and access should only be granted to applications that have access to the patient.
      * 
@@ -252,7 +252,7 @@ public class Binary extends Resource {
          * This element identifies another resource that can be used as a proxy of the security sensitivity to use when deciding 
          * and enforcing access control rules for the Binary resource. Given that the Binary resource contains very few elements 
          * that can be used to determine the sensitivity of the data and relationships to individuals, the referenced resource 
-         * stands in as a proxy equivalent for this purpose. This referenced resource may be related to the Binary (e.g. Media, 
+         * stands in as a proxy equivalent for this purpose. This referenced resource may be related to the Binary (e.g. 
          * DocumentReference), or may be some non-related Resource purely as a security proxy. E.g. to identify that the binary 
          * resource relates to a patient, and access should only be granted to applications that have access to the patient.
          * 

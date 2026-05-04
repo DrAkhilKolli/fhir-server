@@ -20,16 +20,16 @@ import javax.annotation.Generated;
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class StrandType extends Code {
     /**
-     * Watson strand of referenceSeq
+     * Watson strand of starting sequence
      * 
-     * <p>Watson strand of reference sequence.
+     * <p>Watson strand of starting sequence.
      */
     public static final StrandType WATSON = StrandType.builder().value(Value.WATSON).build();
 
     /**
-     * Crick strand of referenceSeq
+     * Crick strand of starting sequence
      * 
-     * <p>Crick strand of reference sequence.
+     * <p>Crick strand of starting sequence.
      */
     public static final StrandType CRICK = StrandType.builder().value(Value.CRICK).build();
 
@@ -188,16 +188,16 @@ public class StrandType extends Code {
 
     public enum Value {
         /**
-         * Watson strand of referenceSeq
+         * Watson strand of starting sequence
          * 
-         * <p>Watson strand of reference sequence.
+         * <p>Watson strand of starting sequence.
          */
         WATSON("watson"),
 
         /**
-         * Crick strand of referenceSeq
+         * Crick strand of starting sequence
          * 
-         * <p>Crick strand of reference sequence.
+         * <p>Crick strand of starting sequence.
          */
         CRICK("crick");
 

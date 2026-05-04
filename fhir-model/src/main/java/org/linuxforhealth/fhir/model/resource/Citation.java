@@ -20,20 +20,19 @@ import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
-import org.linuxforhealth.fhir.model.type.Address;
 import org.linuxforhealth.fhir.model.type.Annotation;
 import org.linuxforhealth.fhir.model.type.Attachment;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Boolean;
+import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
-import org.linuxforhealth.fhir.model.type.ContactPoint;
 import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
-import org.linuxforhealth.fhir.model.type.HumanName;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
@@ -41,11 +40,13 @@ import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
 import org.linuxforhealth.fhir.model.type.PositiveInt;
 import org.linuxforhealth.fhir.model.type.Reference;
+import org.linuxforhealth.fhir.model.type.RelatedArtifact;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.UsageContext;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
+import org.linuxforhealth.fhir.model.type.code.RelatedArtifactTypeExpanded;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
@@ -55,10 +56,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * Citation Resource supports existing reference structures and developing publication practices such as versioning, 
  * expressing complex contributorship roles, and referencing computable resources.
  * 
- * <p>Maturity level: FMM0 (Trial Use)
+ * <p>Maturity level: FMM1 (Trial Use)
  */
 @Maturity(
-    level = 0,
+    level = 1,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
@@ -66,11 +67,28 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
     source = "http://hl7.org/fhir/StructureDefinition/Citation"
 )
 @Constraint(
-    id = "citation-1",
+    id = "cnl-1",
+    level = "Warning",
+    location = "Citation.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
+    source = "http://hl7.org/fhir/StructureDefinition/Citation"
+)
+@Constraint(
+    id = "citation-2",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/Citation",
+    generated = true
+)
+@Constraint(
+    id = "citation-3",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
@@ -79,7 +97,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "citation-2",
+    id = "citation-4",
     level = "Warning",
     location = "summary.style",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/citation-summary-style",
@@ -88,7 +106,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "citation-3",
+    id = "citation-5",
     level = "Warning",
     location = "classification.type",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/citation-classification-type",
@@ -97,16 +115,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "citation-4",
-    level = "Warning",
-    location = "relatesTo.relationshipType",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/artifact-relationship-type",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/artifact-relationship-type', 'extensible')",
-    source = "http://hl7.org/fhir/StructureDefinition/Citation",
-    generated = true
-)
-@Constraint(
-    id = "citation-5",
+    id = "citation-6",
     level = "Warning",
     location = "citedArtifact.currentState",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/cited-artifact-status-type",
@@ -115,7 +124,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "citation-6",
+    id = "citation-7",
     level = "Warning",
     location = "citedArtifact.statusDate.activity",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/cited-artifact-status-type",
@@ -124,7 +133,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "citation-7",
+    id = "citation-8",
     level = "Warning",
     location = "citedArtifact.title.type",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/title-type",
@@ -133,7 +142,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "citation-8",
+    id = "citation-9",
     level = "Warning",
     location = "citedArtifact.title.language",
     description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/languages",
@@ -142,7 +151,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "citation-9",
+    id = "citation-10",
     level = "Warning",
     location = "citedArtifact.abstract.type",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/cited-artifact-abstract-type",
@@ -151,7 +160,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "citation-10",
+    id = "citation-11",
     level = "Warning",
     location = "citedArtifact.abstract.language",
     description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/languages",
@@ -160,7 +169,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "citation-11",
+    id = "citation-12",
     level = "Warning",
     location = "citedArtifact.part.type",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/cited-artifact-part-type",
@@ -169,16 +178,16 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "citation-12",
+    id = "citation-13",
     level = "Warning",
-    location = "citedArtifact.relatesTo.relationshipType",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/artifact-relationship-type",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/artifact-relationship-type', 'extensible')",
+    location = "citedArtifact.relatesTo.classifier",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/citation-artifact-classifier",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/citation-artifact-classifier', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/Citation",
     generated = true
 )
 @Constraint(
-    id = "citation-13",
+    id = "citation-14",
     level = "Warning",
     location = "citedArtifact.publicationForm.publishedIn.type",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/published-in-type",
@@ -187,16 +196,16 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "citation-14",
+    id = "citation-15",
     level = "Warning",
-    location = "citedArtifact.publicationForm.periodicRelease.citedMedium",
+    location = "citedArtifact.publicationForm.citedMedium",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/cited-medium",
     expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/cited-medium', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/Citation",
     generated = true
 )
 @Constraint(
-    id = "citation-15",
+    id = "citation-16",
     level = "Warning",
     location = "citedArtifact.publicationForm.language",
     description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/languages",
@@ -205,16 +214,16 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "citation-16",
+    id = "citation-17",
     level = "Warning",
-    location = "citedArtifact.webLocation.type",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/article-url-type",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/article-url-type', 'extensible')",
+    location = "citedArtifact.webLocation.classifier",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/artifact-url-classifier",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/artifact-url-classifier', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/Citation",
     generated = true
 )
 @Constraint(
-    id = "citation-17",
+    id = "citation-18",
     level = "Warning",
     location = "citedArtifact.classification.type",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/cited-artifact-classification-type",
@@ -223,7 +232,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "citation-18",
+    id = "citation-19",
     level = "Warning",
     location = "citedArtifact.contributorship.entry.contributionType",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/artifact-contribution-type",
@@ -232,7 +241,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "citation-19",
+    id = "citation-20",
     level = "Warning",
     location = "citedArtifact.contributorship.entry.role",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/contributor-role",
@@ -241,7 +250,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "citation-20",
+    id = "citation-21",
     level = "Warning",
     location = "citedArtifact.contributorship.entry.contributionInstance.type",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/artifact-contribution-instance-type",
@@ -250,7 +259,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "citation-21",
+    id = "citation-22",
     level = "Warning",
     location = "citedArtifact.contributorship.summary.type",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/contributor-summary-type",
@@ -259,7 +268,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "citation-22",
+    id = "citation-23",
     level = "Warning",
     location = "citedArtifact.contributorship.summary.style",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/contributor-summary-style",
@@ -268,7 +277,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "citation-23",
+    id = "citation-24",
     level = "Warning",
     location = "citedArtifact.contributorship.summary.source",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/contributor-summary-source",
@@ -285,6 +294,13 @@ public class Citation extends DomainResource {
     @org.linuxforhealth.fhir.model.annotation.Summary
     private final String version;
     @org.linuxforhealth.fhir.model.annotation.Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+    @org.linuxforhealth.fhir.model.annotation.Summary
     private final String name;
     @org.linuxforhealth.fhir.model.annotation.Summary
     private final String title;
@@ -292,7 +308,7 @@ public class Citation extends DomainResource {
     @Binding(
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -316,6 +332,7 @@ public class Citation extends DomainResource {
     private final List<CodeableConcept> jurisdiction;
     private final Markdown purpose;
     private final Markdown copyright;
+    private final String copyrightLabel;
     private final Date approvalDate;
     private final Date lastReviewDate;
     @org.linuxforhealth.fhir.model.annotation.Summary
@@ -334,7 +351,7 @@ public class Citation extends DomainResource {
     )
     private final List<CodeableConcept> currentState;
     private final List<StatusDate> statusDate;
-    private final List<RelatesTo> relatesTo;
+    private final List<RelatedArtifact> relatedArtifact;
     private final CitedArtifact citedArtifact;
 
     private Citation(Builder builder) {
@@ -342,6 +359,7 @@ public class Citation extends DomainResource {
         url = builder.url;
         identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
         title = builder.title;
         status = builder.status;
@@ -354,6 +372,7 @@ public class Citation extends DomainResource {
         jurisdiction = Collections.unmodifiableList(builder.jurisdiction);
         purpose = builder.purpose;
         copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
         approvalDate = builder.approvalDate;
         lastReviewDate = builder.lastReviewDate;
         effectivePeriod = builder.effectivePeriod;
@@ -366,14 +385,14 @@ public class Citation extends DomainResource {
         note = Collections.unmodifiableList(builder.note);
         currentState = Collections.unmodifiableList(builder.currentState);
         statusDate = Collections.unmodifiableList(builder.statusDate);
-        relatesTo = Collections.unmodifiableList(builder.relatesTo);
+        relatedArtifact = Collections.unmodifiableList(builder.relatedArtifact);
         citedArtifact = builder.citedArtifact;
     }
 
     /**
-     * An absolute URI that is used to identify this citation when it is referenced in a specification, model, design or an 
-     * instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
-     * which at which an authoritative instance of this summary is (or will be) published. This URL can be the target of a 
+     * An absolute URI that is used to identify this citation record when it is referenced in a specification, model, design 
+     * or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address 
+     * at which an authoritative instance of this summary is (or will be) published. This URL can be the target of a 
      * canonical reference. It SHALL remain the same when the summary is stored on different servers.
      * 
      * @return
@@ -384,8 +403,8 @@ public class Citation extends DomainResource {
     }
 
     /**
-     * A formal identifier that is used to identify this citation when it is represented in other formats, or referenced in a 
-     * specification, model, design or an instance.
+     * A formal identifier that is used to identify this citation record when it is represented in other formats, or 
+     * referenced in a specification, model, design or an instance.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
@@ -395,10 +414,10 @@ public class Citation extends DomainResource {
     }
 
     /**
-     * The identifier that is used to identify this version of the citation when it is referenced in a specification, model, 
-     * design or instance. This is an arbitrary value managed by the citation author and is not expected to be globally 
-     * unique. For example, it might be a timestamp (e.g. yyyymmdd) if a managed version is not available. There is also no 
-     * expectation that versions can be placed in a lexicographical sequence.
+     * The identifier that is used to identify this version of the citation record when it is referenced in a specification, 
+     * model, design or instance. This is an arbitrary value managed by the citation record author and is not expected to be 
+     * globally unique. For example, it might be a timestamp (e.g. yyyymmdd) if a managed version is not available. There is 
+     * also no expectation that versions can be placed in a lexicographical sequence.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -408,7 +427,17 @@ public class Citation extends DomainResource {
     }
 
     /**
-     * A natural language name identifying the citation. This name should be usable as an identifier for the module by 
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
+    }
+
+    /**
+     * A natural language name identifying the citation record. This name should be usable as an identifier for the module by 
      * machine processing applications such as code generation.
      * 
      * @return
@@ -419,7 +448,7 @@ public class Citation extends DomainResource {
     }
 
     /**
-     * A short, descriptive, user-friendly title for the citation.
+     * A short, descriptive, user-friendly title for the citation record.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -439,8 +468,8 @@ public class Citation extends DomainResource {
     }
 
     /**
-     * A Boolean value to indicate that this citation is authored for testing purposes (or education/evaluation/marketing) 
-     * and is not intended to be used for genuine usage.
+     * A Boolean value to indicate that this citation record is authored for testing purposes (or 
+     * education/evaluation/marketing) and is not intended to be used for genuine usage.
      * 
      * @return
      *     An immutable object of type {@link Boolean} that may be null.
@@ -450,9 +479,9 @@ public class Citation extends DomainResource {
     }
 
     /**
-     * The date (and optionally time) when the citation was published. The date must change when the business version changes 
-     * and it must change if the status code changes. In addition, it should change when the substantive content of the 
-     * citation changes.
+     * The date (and optionally time) when the citation record was last significantly changed. The date must change when the 
+     * business version changes and it must change if the status code changes. In addition, it should change when the 
+     * substantive content of the citation record changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -462,7 +491,7 @@ public class Citation extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the citation.
+     * The name of the organization or individual that published the citation record.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -494,7 +523,7 @@ public class Citation extends DomainResource {
     /**
      * The content was developed with a focus and intent of supporting the contexts that are listed. These contexts may be 
      * general categories (gender, age, ...) or may be references to specific programs (insurance plans, studies, ...) and 
-     * may be used to assist with indexing and searching for appropriate citation instances.
+     * may be used to assist with indexing and searching for appropriate citation record instances.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link UsageContext} that may be empty.
@@ -504,7 +533,7 @@ public class Citation extends DomainResource {
     }
 
     /**
-     * A legal or geographic region in which the citation is intended to be used.
+     * A legal or geographic region in which the citation record is intended to be used.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
@@ -524,13 +553,24 @@ public class Citation extends DomainResource {
     }
 
     /**
-     * Use and/or publishing restrictions for the Citation, not for the cited artifact.
+     * Use and/or publishing restrictions for the citation record, not for the cited artifact.
      * 
      * @return
      *     An immutable object of type {@link Markdown} that may be null.
      */
     public Markdown getCopyright() {
         return copyright;
+    }
+
+    /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
     }
 
     /**
@@ -556,7 +596,7 @@ public class Citation extends DomainResource {
     }
 
     /**
-     * The period during which the citation content was or is planned to be in active use.
+     * The period during which the citation record content was or is planned to be in active use.
      * 
      * @return
      *     An immutable object of type {@link Period} that may be null.
@@ -566,7 +606,7 @@ public class Citation extends DomainResource {
     }
 
     /**
-     * Who authored the Citation.
+     * Who authored or created the citation record.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
@@ -576,7 +616,7 @@ public class Citation extends DomainResource {
     }
 
     /**
-     * Who edited the Citation.
+     * Who edited or revised the citation record.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
@@ -586,7 +626,7 @@ public class Citation extends DomainResource {
     }
 
     /**
-     * Who reviewed the Citation.
+     * Who reviewed the citation record.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
@@ -596,7 +636,7 @@ public class Citation extends DomainResource {
     }
 
     /**
-     * Who endorsed the Citation.
+     * Who endorsed the citation record.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
@@ -606,7 +646,7 @@ public class Citation extends DomainResource {
     }
 
     /**
-     * A human-readable display of the citation.
+     * A human-readable display of key concepts to represent the citation.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Summary} that may be empty.
@@ -636,7 +676,7 @@ public class Citation extends DomainResource {
     }
 
     /**
-     * The status of the citation.
+     * The status of the citation record.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
@@ -646,7 +686,7 @@ public class Citation extends DomainResource {
     }
 
     /**
-     * An effective date or period for a status of the citation.
+     * The state or status of the citation record paired with an effective date or period for that state.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link StatusDate} that may be empty.
@@ -656,13 +696,13 @@ public class Citation extends DomainResource {
     }
 
     /**
-     * Artifact related to the Citation Resource.
+     * Artifact related to the citation record.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link RelatesTo} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link RelatedArtifact} that may be empty.
      */
-    public List<RelatesTo> getRelatesTo() {
-        return relatesTo;
+    public List<RelatedArtifact> getRelatedArtifact() {
+        return relatedArtifact;
     }
 
     /**
@@ -681,6 +721,7 @@ public class Citation extends DomainResource {
             (url != null) || 
             !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
             (title != null) || 
             (status != null) || 
@@ -693,6 +734,7 @@ public class Citation extends DomainResource {
             !jurisdiction.isEmpty() || 
             (purpose != null) || 
             (copyright != null) || 
+            (copyrightLabel != null) || 
             (approvalDate != null) || 
             (lastReviewDate != null) || 
             (effectivePeriod != null) || 
@@ -705,7 +747,7 @@ public class Citation extends DomainResource {
             !note.isEmpty() || 
             !currentState.isEmpty() || 
             !statusDate.isEmpty() || 
-            !relatesTo.isEmpty() || 
+            !relatedArtifact.isEmpty() || 
             (citedArtifact != null);
     }
 
@@ -726,6 +768,7 @@ public class Citation extends DomainResource {
                 accept(url, "url", visitor);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(status, "status", visitor);
@@ -738,6 +781,7 @@ public class Citation extends DomainResource {
                 accept(jurisdiction, "jurisdiction", visitor, CodeableConcept.class);
                 accept(purpose, "purpose", visitor);
                 accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
                 accept(approvalDate, "approvalDate", visitor);
                 accept(lastReviewDate, "lastReviewDate", visitor);
                 accept(effectivePeriod, "effectivePeriod", visitor);
@@ -750,7 +794,7 @@ public class Citation extends DomainResource {
                 accept(note, "note", visitor, Annotation.class);
                 accept(currentState, "currentState", visitor, CodeableConcept.class);
                 accept(statusDate, "statusDate", visitor, StatusDate.class);
-                accept(relatesTo, "relatesTo", visitor, RelatesTo.class);
+                accept(relatedArtifact, "relatedArtifact", visitor, RelatedArtifact.class);
                 accept(citedArtifact, "citedArtifact", visitor);
             }
             visitor.visitEnd(elementName, elementIndex, this);
@@ -781,6 +825,7 @@ public class Citation extends DomainResource {
             Objects.equals(url, other.url) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(status, other.status) && 
@@ -793,6 +838,7 @@ public class Citation extends DomainResource {
             Objects.equals(jurisdiction, other.jurisdiction) && 
             Objects.equals(purpose, other.purpose) && 
             Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
             Objects.equals(approvalDate, other.approvalDate) && 
             Objects.equals(lastReviewDate, other.lastReviewDate) && 
             Objects.equals(effectivePeriod, other.effectivePeriod) && 
@@ -805,7 +851,7 @@ public class Citation extends DomainResource {
             Objects.equals(note, other.note) && 
             Objects.equals(currentState, other.currentState) && 
             Objects.equals(statusDate, other.statusDate) && 
-            Objects.equals(relatesTo, other.relatesTo) && 
+            Objects.equals(relatedArtifact, other.relatedArtifact) && 
             Objects.equals(citedArtifact, other.citedArtifact);
     }
 
@@ -824,6 +870,7 @@ public class Citation extends DomainResource {
                 url, 
                 identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
                 title, 
                 status, 
@@ -836,6 +883,7 @@ public class Citation extends DomainResource {
                 jurisdiction, 
                 purpose, 
                 copyright, 
+                copyrightLabel, 
                 approvalDate, 
                 lastReviewDate, 
                 effectivePeriod, 
@@ -848,7 +896,7 @@ public class Citation extends DomainResource {
                 note, 
                 currentState, 
                 statusDate, 
-                relatesTo, 
+                relatedArtifact, 
                 citedArtifact);
             hashCode = result;
         }
@@ -868,6 +916,7 @@ public class Citation extends DomainResource {
         private Uri url;
         private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
         private String title;
         private PublicationStatus status;
@@ -880,6 +929,7 @@ public class Citation extends DomainResource {
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
         private Markdown purpose;
         private Markdown copyright;
+        private String copyrightLabel;
         private Date approvalDate;
         private Date lastReviewDate;
         private Period effectivePeriod;
@@ -892,7 +942,7 @@ public class Citation extends DomainResource {
         private List<Annotation> note = new ArrayList<>();
         private List<CodeableConcept> currentState = new ArrayList<>();
         private List<StatusDate> statusDate = new ArrayList<>();
-        private List<RelatesTo> relatesTo = new ArrayList<>();
+        private List<RelatedArtifact> relatedArtifact = new ArrayList<>();
         private CitedArtifact citedArtifact;
 
         private Builder() {
@@ -977,7 +1027,8 @@ public class Citation extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -995,7 +1046,8 @@ public class Citation extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1016,7 +1068,7 @@ public class Citation extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -1036,7 +1088,7 @@ public class Citation extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -1061,9 +1113,9 @@ public class Citation extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1086,9 +1138,9 @@ public class Citation extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1111,13 +1163,13 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * An absolute URI that is used to identify this citation when it is referenced in a specification, model, design or an 
-         * instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
-         * which at which an authoritative instance of this summary is (or will be) published. This URL can be the target of a 
+         * An absolute URI that is used to identify this citation record when it is referenced in a specification, model, design 
+         * or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address 
+         * at which an authoritative instance of this summary is (or will be) published. This URL can be the target of a 
          * canonical reference. It SHALL remain the same when the summary is stored on different servers.
          * 
          * @param url
-         *     Canonical identifier for this citation, represented as a globally unique URI
+         *     Canonical identifier for this citation record, represented as a globally unique URI
          * 
          * @return
          *     A reference to this Builder instance
@@ -1128,14 +1180,14 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * A formal identifier that is used to identify this citation when it is represented in other formats, or referenced in a 
-         * specification, model, design or an instance.
+         * A formal identifier that is used to identify this citation record when it is represented in other formats, or 
+         * referenced in a specification, model, design or an instance.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param identifier
-         *     Identifier for the Citation resource itself
+         *     Identifier for the citation record itself
          * 
          * @return
          *     A reference to this Builder instance
@@ -1148,14 +1200,14 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * A formal identifier that is used to identify this citation when it is represented in other formats, or referenced in a 
-         * specification, model, design or an instance.
+         * A formal identifier that is used to identify this citation record when it is represented in other formats, or 
+         * referenced in a specification, model, design or an instance.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param identifier
-         *     Identifier for the Citation resource itself
+         *     Identifier for the citation record itself
          * 
          * @return
          *     A reference to this Builder instance
@@ -1172,7 +1224,7 @@ public class Citation extends DomainResource {
          * Convenience method for setting {@code version}.
          * 
          * @param version
-         *     Business version of the citation
+         *     Business version of the citation record
          * 
          * @return
          *     A reference to this Builder instance
@@ -1185,13 +1237,13 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * The identifier that is used to identify this version of the citation when it is referenced in a specification, model, 
-         * design or instance. This is an arbitrary value managed by the citation author and is not expected to be globally 
-         * unique. For example, it might be a timestamp (e.g. yyyymmdd) if a managed version is not available. There is also no 
-         * expectation that versions can be placed in a lexicographical sequence.
+         * The identifier that is used to identify this version of the citation record when it is referenced in a specification, 
+         * model, design or instance. This is an arbitrary value managed by the citation record author and is not expected to be 
+         * globally unique. For example, it might be a timestamp (e.g. yyyymmdd) if a managed version is not available. There is 
+         * also no expectation that versions can be placed in a lexicographical sequence.
          * 
          * @param version
-         *     Business version of the citation
+         *     Business version of the citation record
          * 
          * @return
          *     A reference to this Builder instance
@@ -1202,10 +1254,46 @@ public class Citation extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
+            return this;
+        }
+
+        /**
          * Convenience method for setting {@code name}.
          * 
          * @param name
-         *     Name for this citation (computer friendly)
+         *     Name for this citation record (computer friendly)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1218,11 +1306,11 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * A natural language name identifying the citation. This name should be usable as an identifier for the module by 
+         * A natural language name identifying the citation record. This name should be usable as an identifier for the module by 
          * machine processing applications such as code generation.
          * 
          * @param name
-         *     Name for this citation (computer friendly)
+         *     Name for this citation record (computer friendly)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1236,7 +1324,7 @@ public class Citation extends DomainResource {
          * Convenience method for setting {@code title}.
          * 
          * @param title
-         *     Name for this citation (human friendly)
+         *     Name for this citation record (human friendly)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1249,10 +1337,10 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * A short, descriptive, user-friendly title for the citation.
+         * A short, descriptive, user-friendly title for the citation record.
          * 
          * @param title
-         *     Name for this citation (human friendly)
+         *     Name for this citation record (human friendly)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1295,8 +1383,8 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * A Boolean value to indicate that this citation is authored for testing purposes (or education/evaluation/marketing) 
-         * and is not intended to be used for genuine usage.
+         * A Boolean value to indicate that this citation record is authored for testing purposes (or 
+         * education/evaluation/marketing) and is not intended to be used for genuine usage.
          * 
          * @param experimental
          *     For testing purposes, not real usage
@@ -1310,9 +1398,9 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the citation was published. The date must change when the business version changes 
-         * and it must change if the status code changes. In addition, it should change when the substantive content of the 
-         * citation changes.
+         * The date (and optionally time) when the citation record was last significantly changed. The date must change when the 
+         * business version changes and it must change if the status code changes. In addition, it should change when the 
+         * substantive content of the citation record changes.
          * 
          * @param date
          *     Date last changed
@@ -1329,7 +1417,7 @@ public class Citation extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     The publisher of the Citation, not the publisher of the article or artifact being cited
+         *     The publisher of the citation record, not the publisher of the article or artifact being cited
          * 
          * @return
          *     A reference to this Builder instance
@@ -1342,10 +1430,10 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the citation.
+         * The name of the organization or individual that published the citation record.
          * 
          * @param publisher
-         *     The publisher of the Citation, not the publisher of the article or artifact being cited
+         *     The publisher of the citation record, not the publisher of the article or artifact being cited
          * 
          * @return
          *     A reference to this Builder instance
@@ -1362,7 +1450,7 @@ public class Citation extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param contact
-         *     Contact details for the publisher of the Citation Resource
+         *     Contact details for the publisher of the citation record
          * 
          * @return
          *     A reference to this Builder instance
@@ -1381,7 +1469,7 @@ public class Citation extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param contact
-         *     Contact details for the publisher of the Citation Resource
+         *     Contact details for the publisher of the citation record
          * 
          * @return
          *     A reference to this Builder instance
@@ -1411,13 +1499,13 @@ public class Citation extends DomainResource {
         /**
          * The content was developed with a focus and intent of supporting the contexts that are listed. These contexts may be 
          * general categories (gender, age, ...) or may be references to specific programs (insurance plans, studies, ...) and 
-         * may be used to assist with indexing and searching for appropriate citation instances.
+         * may be used to assist with indexing and searching for appropriate citation record instances.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param useContext
-         *     The context that the Citation Resource content is intended to support
+         *     The context that the citation record content is intended to support
          * 
          * @return
          *     A reference to this Builder instance
@@ -1432,13 +1520,13 @@ public class Citation extends DomainResource {
         /**
          * The content was developed with a focus and intent of supporting the contexts that are listed. These contexts may be 
          * general categories (gender, age, ...) or may be references to specific programs (insurance plans, studies, ...) and 
-         * may be used to assist with indexing and searching for appropriate citation instances.
+         * may be used to assist with indexing and searching for appropriate citation record instances.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param useContext
-         *     The context that the Citation Resource content is intended to support
+         *     The context that the citation record content is intended to support
          * 
          * @return
          *     A reference to this Builder instance
@@ -1452,13 +1540,13 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * A legal or geographic region in which the citation is intended to be used.
+         * A legal or geographic region in which the citation record is intended to be used.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param jurisdiction
-         *     Intended jurisdiction for citation (if applicable)
+         *     Intended jurisdiction for citation record (if applicable)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1471,13 +1559,13 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * A legal or geographic region in which the citation is intended to be used.
+         * A legal or geographic region in which the citation record is intended to be used.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param jurisdiction
-         *     Intended jurisdiction for citation (if applicable)
+         *     Intended jurisdiction for citation record (if applicable)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1505,10 +1593,10 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * Use and/or publishing restrictions for the Citation, not for the cited artifact.
+         * Use and/or publishing restrictions for the citation record, not for the cited artifact.
          * 
          * @param copyright
-         *     Use and/or publishing restrictions for the Citation, not for the cited artifact
+         *     Use and/or publishing restrictions for the citation record, not for the cited artifact
          * 
          * @return
          *     A reference to this Builder instance
@@ -1519,10 +1607,41 @@ public class Citation extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s) for the ciation record, not for the cited artifact
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s) for the ciation record, not for the cited artifact
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
+            return this;
+        }
+
+        /**
          * Convenience method for setting {@code approvalDate}.
          * 
          * @param approvalDate
-         *     When the citation was approved by publisher
+         *     When the citation record was approved by publisher
          * 
          * @return
          *     A reference to this Builder instance
@@ -1539,7 +1658,7 @@ public class Citation extends DomainResource {
          * officially approved for usage.
          * 
          * @param approvalDate
-         *     When the citation was approved by publisher
+         *     When the citation record was approved by publisher
          * 
          * @return
          *     A reference to this Builder instance
@@ -1553,7 +1672,7 @@ public class Citation extends DomainResource {
          * Convenience method for setting {@code lastReviewDate}.
          * 
          * @param lastReviewDate
-         *     When the citation was last reviewed
+         *     When the citation record was last reviewed by the publisher
          * 
          * @return
          *     A reference to this Builder instance
@@ -1570,7 +1689,7 @@ public class Citation extends DomainResource {
          * change the original approval date.
          * 
          * @param lastReviewDate
-         *     When the citation was last reviewed
+         *     When the citation record was last reviewed by the publisher
          * 
          * @return
          *     A reference to this Builder instance
@@ -1581,10 +1700,10 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * The period during which the citation content was or is planned to be in active use.
+         * The period during which the citation record content was or is planned to be in active use.
          * 
          * @param effectivePeriod
-         *     When the citation is expected to be used
+         *     When the citation record is expected to be used
          * 
          * @return
          *     A reference to this Builder instance
@@ -1595,13 +1714,13 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * Who authored the Citation.
+         * Who authored or created the citation record.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param author
-         *     Who authored the Citation
+         *     Who authored the citation record
          * 
          * @return
          *     A reference to this Builder instance
@@ -1614,13 +1733,13 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * Who authored the Citation.
+         * Who authored or created the citation record.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param author
-         *     Who authored the Citation
+         *     Who authored the citation record
          * 
          * @return
          *     A reference to this Builder instance
@@ -1634,13 +1753,13 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * Who edited the Citation.
+         * Who edited or revised the citation record.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param editor
-         *     Who edited the Citation
+         *     Who edited the citation record
          * 
          * @return
          *     A reference to this Builder instance
@@ -1653,13 +1772,13 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * Who edited the Citation.
+         * Who edited or revised the citation record.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param editor
-         *     Who edited the Citation
+         *     Who edited the citation record
          * 
          * @return
          *     A reference to this Builder instance
@@ -1673,13 +1792,13 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * Who reviewed the Citation.
+         * Who reviewed the citation record.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param reviewer
-         *     Who reviewed the Citation
+         *     Who reviewed the citation record
          * 
          * @return
          *     A reference to this Builder instance
@@ -1692,13 +1811,13 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * Who reviewed the Citation.
+         * Who reviewed the citation record.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param reviewer
-         *     Who reviewed the Citation
+         *     Who reviewed the citation record
          * 
          * @return
          *     A reference to this Builder instance
@@ -1712,13 +1831,13 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * Who endorsed the Citation.
+         * Who endorsed the citation record.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param endorser
-         *     Who endorsed the Citation
+         *     Who endorsed the citation record
          * 
          * @return
          *     A reference to this Builder instance
@@ -1731,13 +1850,13 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * Who endorsed the Citation.
+         * Who endorsed the citation record.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param endorser
-         *     Who endorsed the Citation
+         *     Who endorsed the citation record
          * 
          * @return
          *     A reference to this Builder instance
@@ -1751,13 +1870,13 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * A human-readable display of the citation.
+         * A human-readable display of key concepts to represent the citation.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param summary
-         *     A human-readable display of the citation
+         *     A human-readable display of key concepts to represent the citation
          * 
          * @return
          *     A reference to this Builder instance
@@ -1770,13 +1889,13 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * A human-readable display of the citation.
+         * A human-readable display of key concepts to represent the citation.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param summary
-         *     A human-readable display of the citation
+         *     A human-readable display of key concepts to represent the citation
          * 
          * @return
          *     A reference to this Builder instance
@@ -1868,13 +1987,13 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * The status of the citation.
+         * The status of the citation record.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param currentState
-         *     The status of the citation
+         *     The status of the citation record
          * 
          * @return
          *     A reference to this Builder instance
@@ -1887,13 +2006,13 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * The status of the citation.
+         * The status of the citation record.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param currentState
-         *     The status of the citation
+         *     The status of the citation record
          * 
          * @return
          *     A reference to this Builder instance
@@ -1907,13 +2026,13 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * An effective date or period for a status of the citation.
+         * The state or status of the citation record paired with an effective date or period for that state.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param statusDate
-         *     An effective date or period for a status of the citation
+         *     An effective date or period for a status of the citation record
          * 
          * @return
          *     A reference to this Builder instance
@@ -1926,13 +2045,13 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * An effective date or period for a status of the citation.
+         * The state or status of the citation record paired with an effective date or period for that state.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param statusDate
-         *     An effective date or period for a status of the citation
+         *     An effective date or period for a status of the citation record
          * 
          * @return
          *     A reference to this Builder instance
@@ -1946,32 +2065,32 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * Artifact related to the Citation Resource.
+         * Artifact related to the citation record.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param relatesTo
-         *     Artifact related to the Citation Resource
+         * @param relatedArtifact
+         *     Artifact related to the citation record
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder relatesTo(RelatesTo... relatesTo) {
-            for (RelatesTo value : relatesTo) {
-                this.relatesTo.add(value);
+        public Builder relatedArtifact(RelatedArtifact... relatedArtifact) {
+            for (RelatedArtifact value : relatedArtifact) {
+                this.relatedArtifact.add(value);
             }
             return this;
         }
 
         /**
-         * Artifact related to the Citation Resource.
+         * Artifact related to the citation record.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param relatesTo
-         *     Artifact related to the Citation Resource
+         * @param relatedArtifact
+         *     Artifact related to the citation record
          * 
          * @return
          *     A reference to this Builder instance
@@ -1979,8 +2098,8 @@ public class Citation extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder relatesTo(Collection<RelatesTo> relatesTo) {
-            this.relatesTo = new ArrayList<>(relatesTo);
+        public Builder relatedArtifact(Collection<RelatedArtifact> relatedArtifact) {
+            this.relatedArtifact = new ArrayList<>(relatedArtifact);
             return this;
         }
 
@@ -2023,6 +2142,7 @@ public class Citation extends DomainResource {
         protected void validate(Citation citation) {
             super.validate(citation);
             ValidationSupport.checkList(citation.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(citation.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.requireNonNull(citation.status, "status");
             ValidationSupport.checkList(citation.contact, "contact", ContactDetail.class);
             ValidationSupport.checkList(citation.useContext, "useContext", UsageContext.class);
@@ -2036,7 +2156,7 @@ public class Citation extends DomainResource {
             ValidationSupport.checkList(citation.note, "note", Annotation.class);
             ValidationSupport.checkList(citation.currentState, "currentState", CodeableConcept.class);
             ValidationSupport.checkList(citation.statusDate, "statusDate", StatusDate.class);
-            ValidationSupport.checkList(citation.relatesTo, "relatesTo", RelatesTo.class);
+            ValidationSupport.checkList(citation.relatedArtifact, "relatedArtifact", RelatedArtifact.class);
         }
 
         protected Builder from(Citation citation) {
@@ -2044,6 +2164,7 @@ public class Citation extends DomainResource {
             url = citation.url;
             identifier.addAll(citation.identifier);
             version = citation.version;
+            versionAlgorithm = citation.versionAlgorithm;
             name = citation.name;
             title = citation.title;
             status = citation.status;
@@ -2056,6 +2177,7 @@ public class Citation extends DomainResource {
             jurisdiction.addAll(citation.jurisdiction);
             purpose = citation.purpose;
             copyright = citation.copyright;
+            copyrightLabel = citation.copyrightLabel;
             approvalDate = citation.approvalDate;
             lastReviewDate = citation.lastReviewDate;
             effectivePeriod = citation.effectivePeriod;
@@ -2068,14 +2190,14 @@ public class Citation extends DomainResource {
             note.addAll(citation.note);
             currentState.addAll(citation.currentState);
             statusDate.addAll(citation.statusDate);
-            relatesTo.addAll(citation.relatesTo);
+            relatedArtifact.addAll(citation.relatedArtifact);
             citedArtifact = citation.citedArtifact;
             return this;
         }
     }
 
     /**
-     * A human-readable display of the citation.
+     * A human-readable display of key concepts to represent the citation.
      */
     public static class Summary extends BackboneElement {
         @Binding(
@@ -2095,7 +2217,7 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * Format for display of the citation.
+         * Format for display of the citation summary.
          * 
          * @return
          *     An immutable object of type {@link CodeableConcept} that may be null.
@@ -2105,7 +2227,7 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * The human-readable display of the citation.
+         * The human-readable display of the citation summary.
          * 
          * @return
          *     An immutable object of type {@link Markdown} that is non-null.
@@ -2205,7 +2327,7 @@ public class Citation extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2225,7 +2347,7 @@ public class Citation extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2250,7 +2372,7 @@ public class Citation extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2275,7 +2397,7 @@ public class Citation extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2300,10 +2422,10 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * Format for display of the citation.
+             * Format for display of the citation summary.
              * 
              * @param style
-             *     Format for display of the citation
+             *     Format for display of the citation summary
              * 
              * @return
              *     A reference to this Builder instance
@@ -2314,12 +2436,12 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * The human-readable display of the citation.
+             * The human-readable display of the citation summary.
              * 
              * <p>This element is required.
              * 
              * @param text
-             *     The human-readable display of the citation
+             *     The human-readable display of the citation summary
              * 
              * @return
              *     A reference to this Builder instance
@@ -2500,7 +2622,7 @@ public class Citation extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2520,7 +2642,7 @@ public class Citation extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2545,7 +2667,7 @@ public class Citation extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2570,7 +2692,7 @@ public class Citation extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2680,7 +2802,7 @@ public class Citation extends DomainResource {
     }
 
     /**
-     * An effective date or period for a status of the citation.
+     * The state or status of the citation record paired with an effective date or period for that state.
      */
     public static class StatusDate extends BackboneElement {
         @Binding(
@@ -2702,7 +2824,7 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * Classification of the status.
+         * The state or status of the citation record (that will be paired with the period).
          * 
          * @return
          *     An immutable object of type {@link CodeableConcept} that is non-null.
@@ -2712,7 +2834,7 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * Either occurred or expected.
+         * Whether the status date is actual (has occurred) or expected (estimated or anticipated).
          * 
          * @return
          *     An immutable object of type {@link Boolean} that may be null.
@@ -2827,7 +2949,7 @@ public class Citation extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2847,7 +2969,7 @@ public class Citation extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2872,7 +2994,7 @@ public class Citation extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2897,7 +3019,7 @@ public class Citation extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2922,7 +3044,7 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * Classification of the status.
+             * The state or status of the citation record (that will be paired with the period).
              * 
              * <p>This element is required.
              * 
@@ -2954,7 +3076,7 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * Either occurred or expected.
+             * Whether the status date is actual (has occurred) or expected (estimated or anticipated).
              * 
              * @param actual
              *     Either occurred or expected
@@ -3024,374 +3146,6 @@ public class Citation extends DomainResource {
     }
 
     /**
-     * Artifact related to the Citation Resource.
-     */
-    public static class RelatesTo extends BackboneElement {
-        @Binding(
-            bindingName = "ArtifactRelationshipType",
-            strength = BindingStrength.Value.EXTENSIBLE,
-            valueSet = "http://hl7.org/fhir/ValueSet/artifact-relationship-type"
-        )
-        @Required
-        private final CodeableConcept relationshipType;
-        @Binding(
-            bindingName = "CitationArtifactClassifier",
-            strength = BindingStrength.Value.EXAMPLE,
-            valueSet = "http://hl7.org/fhir/ValueSet/citation-artifact-classifier"
-        )
-        private final List<CodeableConcept> targetClassifier;
-        @Choice({ Uri.class, Identifier.class, Reference.class, Attachment.class })
-        @Required
-        private final Element target;
-
-        private RelatesTo(Builder builder) {
-            super(builder);
-            relationshipType = builder.relationshipType;
-            targetClassifier = Collections.unmodifiableList(builder.targetClassifier);
-            target = builder.target;
-        }
-
-        /**
-         * How the Citation resource relates to the target artifact.
-         * 
-         * @return
-         *     An immutable object of type {@link CodeableConcept} that is non-null.
-         */
-        public CodeableConcept getRelationshipType() {
-            return relationshipType;
-        }
-
-        /**
-         * The clasification of the related artifact.
-         * 
-         * @return
-         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
-         */
-        public List<CodeableConcept> getTargetClassifier() {
-            return targetClassifier;
-        }
-
-        /**
-         * The article or artifact that the Citation Resource is related to.
-         * 
-         * @return
-         *     An immutable object of type {@link Uri}, {@link Identifier}, {@link Reference} or {@link Attachment} that is non-null.
-         */
-        public Element getTarget() {
-            return target;
-        }
-
-        @Override
-        public boolean hasChildren() {
-            return super.hasChildren() || 
-                (relationshipType != null) || 
-                !targetClassifier.isEmpty() || 
-                (target != null);
-        }
-
-        @Override
-        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-            if (visitor.preVisit(this)) {
-                visitor.visitStart(elementName, elementIndex, this);
-                if (visitor.visit(elementName, elementIndex, this)) {
-                    // visit children
-                    accept(id, "id", visitor);
-                    accept(extension, "extension", visitor, Extension.class);
-                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(relationshipType, "relationshipType", visitor);
-                    accept(targetClassifier, "targetClassifier", visitor, CodeableConcept.class);
-                    accept(target, "target", visitor);
-                }
-                visitor.visitEnd(elementName, elementIndex, this);
-                visitor.postVisit(this);
-            }
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            RelatesTo other = (RelatesTo) obj;
-            return Objects.equals(id, other.id) && 
-                Objects.equals(extension, other.extension) && 
-                Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(relationshipType, other.relationshipType) && 
-                Objects.equals(targetClassifier, other.targetClassifier) && 
-                Objects.equals(target, other.target);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = hashCode;
-            if (result == 0) {
-                result = Objects.hash(id, 
-                    extension, 
-                    modifierExtension, 
-                    relationshipType, 
-                    targetClassifier, 
-                    target);
-                hashCode = result;
-            }
-            return result;
-        }
-
-        @Override
-        public Builder toBuilder() {
-            return new Builder().from(this);
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public static class Builder extends BackboneElement.Builder {
-            private CodeableConcept relationshipType;
-            private List<CodeableConcept> targetClassifier = new ArrayList<>();
-            private Element target;
-
-            private Builder() {
-                super();
-            }
-
-            /**
-             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-             * contain spaces.
-             * 
-             * @param id
-             *     Unique id for inter-element referencing
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder id(java.lang.String id) {
-                return (Builder) super.id(id);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder extension(Extension... extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder extension(Collection<Extension> extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder modifierExtension(Extension... modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * How the Citation resource relates to the target artifact.
-             * 
-             * <p>This element is required.
-             * 
-             * @param relationshipType
-             *     How the Citation resource relates to the target artifact
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder relationshipType(CodeableConcept relationshipType) {
-                this.relationshipType = relationshipType;
-                return this;
-            }
-
-            /**
-             * The clasification of the related artifact.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param targetClassifier
-             *     The clasification of the related artifact
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder targetClassifier(CodeableConcept... targetClassifier) {
-                for (CodeableConcept value : targetClassifier) {
-                    this.targetClassifier.add(value);
-                }
-                return this;
-            }
-
-            /**
-             * The clasification of the related artifact.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param targetClassifier
-             *     The clasification of the related artifact
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            public Builder targetClassifier(Collection<CodeableConcept> targetClassifier) {
-                this.targetClassifier = new ArrayList<>(targetClassifier);
-                return this;
-            }
-
-            /**
-             * The article or artifact that the Citation Resource is related to.
-             * 
-             * <p>This element is required.
-             * 
-             * <p>This is a choice element with the following allowed types:
-             * <ul>
-             * <li>{@link Uri}</li>
-             * <li>{@link Identifier}</li>
-             * <li>{@link Reference}</li>
-             * <li>{@link Attachment}</li>
-             * </ul>
-             * 
-             * @param target
-             *     The article or artifact that the Citation Resource is related to
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder target(Element target) {
-                this.target = target;
-                return this;
-            }
-
-            /**
-             * Build the {@link RelatesTo}
-             * 
-             * <p>Required elements:
-             * <ul>
-             * <li>relationshipType</li>
-             * <li>target</li>
-             * </ul>
-             * 
-             * @return
-             *     An immutable object of type {@link RelatesTo}
-             * @throws IllegalStateException
-             *     if the current state cannot be built into a valid RelatesTo per the base specification
-             */
-            @Override
-            public RelatesTo build() {
-                RelatesTo relatesTo = new RelatesTo(this);
-                if (validating) {
-                    validate(relatesTo);
-                }
-                return relatesTo;
-            }
-
-            protected void validate(RelatesTo relatesTo) {
-                super.validate(relatesTo);
-                ValidationSupport.requireNonNull(relatesTo.relationshipType, "relationshipType");
-                ValidationSupport.checkList(relatesTo.targetClassifier, "targetClassifier", CodeableConcept.class);
-                ValidationSupport.requireChoiceElement(relatesTo.target, "target", Uri.class, Identifier.class, Reference.class, Attachment.class);
-                ValidationSupport.requireValueOrChildren(relatesTo);
-            }
-
-            protected Builder from(RelatesTo relatesTo) {
-                super.from(relatesTo);
-                relationshipType = relatesTo.relationshipType;
-                targetClassifier.addAll(relatesTo.targetClassifier);
-                target = relatesTo.target;
-                return this;
-            }
-        }
-    }
-
-    /**
      * The article or artifact being described.
      */
     public static class CitedArtifact extends BackboneElement {
@@ -3439,8 +3193,8 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * A formal identifier that is used to identify this citation when it is represented in other formats, or referenced in a 
-         * specification, model, design or an instance.
+         * A formal identifier that is used to identify the cited artifact when it is represented in other formats, or referenced 
+         * in a specification, model, design or an instance.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
@@ -3450,7 +3204,7 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * A formal identifier that is used to identify things closely related to this citation.
+         * A formal identifier that is used to identify things closely related to the cited artifact.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
@@ -3490,7 +3244,7 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * An effective date or period for a status of the cited artifact.
+         * An effective date or period, historical or future, actual or expected, for a status of the cited artifact.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link StatusDate} that may be empty.
@@ -3510,7 +3264,8 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * Summary of the article or artifact.
+         * The abstract may be used to convey article-contained abstracts, externally-created abstracts, or other descriptive 
+         * summaries.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link Abstract} that may be empty.
@@ -3746,7 +3501,7 @@ public class Citation extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3766,7 +3521,7 @@ public class Citation extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3791,7 +3546,7 @@ public class Citation extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3816,7 +3571,7 @@ public class Citation extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3841,14 +3596,14 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * A formal identifier that is used to identify this citation when it is represented in other formats, or referenced in a 
-             * specification, model, design or an instance.
+             * A formal identifier that is used to identify the cited artifact when it is represented in other formats, or referenced 
+             * in a specification, model, design or an instance.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param identifier
-             *     May include DOI, PMID, PMCID, etc.
+             *     Unique identifier. May include DOI, PMID, PMCID, etc
              * 
              * @return
              *     A reference to this Builder instance
@@ -3861,14 +3616,14 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * A formal identifier that is used to identify this citation when it is represented in other formats, or referenced in a 
-             * specification, model, design or an instance.
+             * A formal identifier that is used to identify the cited artifact when it is represented in other formats, or referenced 
+             * in a specification, model, design or an instance.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param identifier
-             *     May include DOI, PMID, PMCID, etc.
+             *     Unique identifier. May include DOI, PMID, PMCID, etc
              * 
              * @return
              *     A reference to this Builder instance
@@ -3882,13 +3637,13 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * A formal identifier that is used to identify things closely related to this citation.
+             * A formal identifier that is used to identify things closely related to the cited artifact.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param relatedIdentifier
-             *     May include trial registry identifiers
+             *     Identifier not unique to the cited artifact. May include trial registry identifiers
              * 
              * @return
              *     A reference to this Builder instance
@@ -3901,13 +3656,13 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * A formal identifier that is used to identify things closely related to this citation.
+             * A formal identifier that is used to identify things closely related to the cited artifact.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param relatedIdentifier
-             *     May include trial registry identifiers
+             *     Identifier not unique to the cited artifact. May include trial registry identifiers
              * 
              * @return
              *     A reference to this Builder instance
@@ -3988,7 +3743,7 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * An effective date or period for a status of the cited artifact.
+             * An effective date or period, historical or future, actual or expected, for a status of the cited artifact.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -4007,7 +3762,7 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * An effective date or period for a status of the cited artifact.
+             * An effective date or period, historical or future, actual or expected, for a status of the cited artifact.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -4066,7 +3821,8 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * Summary of the article or artifact.
+             * The abstract may be used to convey article-contained abstracts, externally-created abstracts, or other descriptive 
+             * summaries.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -4085,7 +3841,8 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * Summary of the article or artifact.
+             * The abstract may be used to convey article-contained abstracts, externally-created abstracts, or other descriptive 
+             * summaries.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -4508,7 +4265,7 @@ public class Citation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -4528,7 +4285,7 @@ public class Citation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -4553,7 +4310,7 @@ public class Citation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4578,7 +4335,7 @@ public class Citation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4694,7 +4451,7 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * An effective date or period for a status of the cited artifact.
+         * An effective date or period, historical or future, actual or expected, for a status of the cited artifact.
          */
         public static class StatusDate extends BackboneElement {
             @Binding(
@@ -4716,7 +4473,7 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * Classification of the status.
+             * A definition of the status associated with a date or period.
              * 
              * @return
              *     An immutable object of type {@link CodeableConcept} that is non-null.
@@ -4841,7 +4598,7 @@ public class Citation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -4861,7 +4618,7 @@ public class Citation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -4886,7 +4643,7 @@ public class Citation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4911,7 +4668,7 @@ public class Citation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4936,7 +4693,7 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * Classification of the status.
+                 * A definition of the status associated with a date or period.
                  * 
                  * <p>This element is required.
                  * 
@@ -5050,6 +4807,7 @@ public class Citation extends DomainResource {
             @Binding(
                 bindingName = "Language",
                 strength = BindingStrength.Value.PREFERRED,
+                description = "A human language.",
                 valueSet = "http://hl7.org/fhir/ValueSet/languages"
             )
             private final CodeableConcept language;
@@ -5064,7 +4822,7 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * Used to express the reason or specific aspect for the title.
+             * Used to express the reason for or classification of the title.
              * 
              * @return
              *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
@@ -5074,7 +4832,7 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * Used to express the specific language.
+             * Used to express the specific language of the title.
              * 
              * @return
              *     An immutable object of type {@link CodeableConcept} that may be null.
@@ -5189,7 +4947,7 @@ public class Citation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5209,7 +4967,7 @@ public class Citation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5234,7 +4992,7 @@ public class Citation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5259,7 +5017,7 @@ public class Citation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5284,7 +5042,7 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * Used to express the reason or specific aspect for the title.
+                 * Used to express the reason for or classification of the title.
                  * 
                  * <p>Adds new element(s) to the existing list.
                  * If any of the elements are null, calling {@link #build()} will fail.
@@ -5303,7 +5061,7 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * Used to express the reason or specific aspect for the title.
+                 * Used to express the reason for or classification of the title.
                  * 
                  * <p>Replaces the existing list with a new one containing elements from the Collection.
                  * If any of the elements are null, calling {@link #build()} will fail.
@@ -5323,7 +5081,7 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * Used to express the specific language.
+                 * Used to express the specific language of the title.
                  * 
                  * @param language
                  *     Used to express the specific language
@@ -5392,7 +5150,8 @@ public class Citation extends DomainResource {
         }
 
         /**
-         * Summary of the article or artifact.
+         * The abstract may be used to convey article-contained abstracts, externally-created abstracts, or other descriptive 
+         * summaries.
          */
         public static class Abstract extends BackboneElement {
             @Binding(
@@ -5404,6 +5163,7 @@ public class Citation extends DomainResource {
             @Binding(
                 bindingName = "Language",
                 strength = BindingStrength.Value.PREFERRED,
+                description = "A human language.",
                 valueSet = "http://hl7.org/fhir/ValueSet/languages"
             )
             private final CodeableConcept language;
@@ -5420,7 +5180,7 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * Used to express the reason or specific aspect for the abstract.
+             * Used to express the reason for or classification of the abstract.
              * 
              * @return
              *     An immutable object of type {@link CodeableConcept} that may be null.
@@ -5430,7 +5190,7 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * Used to express the specific language.
+             * Used to express the specific language of the abstract.
              * 
              * @return
              *     An immutable object of type {@link CodeableConcept} that may be null.
@@ -5560,7 +5320,7 @@ public class Citation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5580,7 +5340,7 @@ public class Citation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5605,7 +5365,7 @@ public class Citation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5630,7 +5390,7 @@ public class Citation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5655,7 +5415,7 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * Used to express the reason or specific aspect for the abstract.
+                 * Used to express the reason for or classification of the abstract.
                  * 
                  * @param type
                  *     The kind of abstract
@@ -5669,7 +5429,7 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * Used to express the specific language.
+                 * Used to express the specific language of the abstract.
                  * 
                  * @param language
                  *     Used to express the specific language
@@ -5898,7 +5658,7 @@ public class Citation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5918,7 +5678,7 @@ public class Citation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5943,7 +5703,7 @@ public class Citation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5968,7 +5728,7 @@ public class Citation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -6093,65 +5853,131 @@ public class Citation extends DomainResource {
          */
         public static class RelatesTo extends BackboneElement {
             @Binding(
-                bindingName = "ArtifactRelationshipType",
-                strength = BindingStrength.Value.EXTENSIBLE,
-                valueSet = "http://hl7.org/fhir/ValueSet/artifact-relationship-type"
+                bindingName = "RelatedArtifactTypeExpanded",
+                strength = BindingStrength.Value.REQUIRED,
+                valueSet = "http://hl7.org/fhir/ValueSet/related-artifact-type-all|5.0.0"
             )
             @Required
-            private final CodeableConcept relationshipType;
+            private final RelatedArtifactTypeExpanded type;
             @Binding(
                 bindingName = "CitationArtifactClassifier",
-                strength = BindingStrength.Value.EXAMPLE,
+                strength = BindingStrength.Value.EXTENSIBLE,
                 valueSet = "http://hl7.org/fhir/ValueSet/citation-artifact-classifier"
             )
-            private final List<CodeableConcept> targetClassifier;
-            @Choice({ Uri.class, Identifier.class, Reference.class, Attachment.class })
-            @Required
-            private final Element target;
+            private final List<CodeableConcept> classifier;
+            private final String label;
+            private final String display;
+            private final Markdown citation;
+            private final Attachment document;
+            private final Canonical resource;
+            private final Reference resourceReference;
 
             private RelatesTo(Builder builder) {
                 super(builder);
-                relationshipType = builder.relationshipType;
-                targetClassifier = Collections.unmodifiableList(builder.targetClassifier);
-                target = builder.target;
+                type = builder.type;
+                classifier = Collections.unmodifiableList(builder.classifier);
+                label = builder.label;
+                display = builder.display;
+                citation = builder.citation;
+                document = builder.document;
+                resource = builder.resource;
+                resourceReference = builder.resourceReference;
             }
 
             /**
-             * How the cited artifact relates to the target artifact.
+             * The type of relationship to the related artifact.
              * 
              * @return
-             *     An immutable object of type {@link CodeableConcept} that is non-null.
+             *     An immutable object of type {@link RelatedArtifactTypeExpanded} that is non-null.
              */
-            public CodeableConcept getRelationshipType() {
-                return relationshipType;
+            public RelatedArtifactTypeExpanded getType() {
+                return type;
             }
 
             /**
-             * The clasification of the related artifact.
+             * Provides additional classifiers of the related artifact.
              * 
              * @return
              *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
              */
-            public List<CodeableConcept> getTargetClassifier() {
-                return targetClassifier;
+            public List<CodeableConcept> getClassifier() {
+                return classifier;
             }
 
             /**
-             * The article or artifact that the cited artifact is related to.
+             * A short label that can be used to reference the related artifact from elsewhere in the containing artifact, such as a 
+             * footnote index.
              * 
              * @return
-             *     An immutable object of type {@link Uri}, {@link Identifier}, {@link Reference} or {@link Attachment} that is non-null.
+             *     An immutable object of type {@link String} that may be null.
              */
-            public Element getTarget() {
-                return target;
+            public String getLabel() {
+                return label;
+            }
+
+            /**
+             * A brief description of the document or knowledge resource being referenced, suitable for display to a consumer.
+             * 
+             * @return
+             *     An immutable object of type {@link String} that may be null.
+             */
+            public String getDisplay() {
+                return display;
+            }
+
+            /**
+             * A bibliographic citation for the related artifact. This text SHOULD be formatted according to an accepted citation 
+             * format.
+             * 
+             * @return
+             *     An immutable object of type {@link Markdown} that may be null.
+             */
+            public Markdown getCitation() {
+                return citation;
+            }
+
+            /**
+             * The document being referenced, represented as an attachment. Do not use this element if using the resource element to 
+             * provide the canonical to the related artifact.
+             * 
+             * @return
+             *     An immutable object of type {@link Attachment} that may be null.
+             */
+            public Attachment getDocument() {
+                return document;
+            }
+
+            /**
+             * The related artifact, such as a library, value set, profile, or other knowledge resource.
+             * 
+             * @return
+             *     An immutable object of type {@link Canonical} that may be null.
+             */
+            public Canonical getResource() {
+                return resource;
+            }
+
+            /**
+             * The related artifact, if the artifact is not a canonical resource, or a resource reference to a canonical resource.
+             * 
+             * @return
+             *     An immutable object of type {@link Reference} that may be null.
+             */
+            public Reference getResourceReference() {
+                return resourceReference;
             }
 
             @Override
             public boolean hasChildren() {
                 return super.hasChildren() || 
-                    (relationshipType != null) || 
-                    !targetClassifier.isEmpty() || 
-                    (target != null);
+                    (type != null) || 
+                    !classifier.isEmpty() || 
+                    (label != null) || 
+                    (display != null) || 
+                    (citation != null) || 
+                    (document != null) || 
+                    (resource != null) || 
+                    (resourceReference != null);
             }
 
             @Override
@@ -6163,9 +5989,14 @@ public class Citation extends DomainResource {
                         accept(id, "id", visitor);
                         accept(extension, "extension", visitor, Extension.class);
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                        accept(relationshipType, "relationshipType", visitor);
-                        accept(targetClassifier, "targetClassifier", visitor, CodeableConcept.class);
-                        accept(target, "target", visitor);
+                        accept(type, "type", visitor);
+                        accept(classifier, "classifier", visitor, CodeableConcept.class);
+                        accept(label, "label", visitor);
+                        accept(display, "display", visitor);
+                        accept(citation, "citation", visitor);
+                        accept(document, "document", visitor);
+                        accept(resource, "resource", visitor);
+                        accept(resourceReference, "resourceReference", visitor);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
                     visitor.postVisit(this);
@@ -6187,9 +6018,14 @@ public class Citation extends DomainResource {
                 return Objects.equals(id, other.id) && 
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
-                    Objects.equals(relationshipType, other.relationshipType) && 
-                    Objects.equals(targetClassifier, other.targetClassifier) && 
-                    Objects.equals(target, other.target);
+                    Objects.equals(type, other.type) && 
+                    Objects.equals(classifier, other.classifier) && 
+                    Objects.equals(label, other.label) && 
+                    Objects.equals(display, other.display) && 
+                    Objects.equals(citation, other.citation) && 
+                    Objects.equals(document, other.document) && 
+                    Objects.equals(resource, other.resource) && 
+                    Objects.equals(resourceReference, other.resourceReference);
             }
 
             @Override
@@ -6199,9 +6035,14 @@ public class Citation extends DomainResource {
                     result = Objects.hash(id, 
                         extension, 
                         modifierExtension, 
-                        relationshipType, 
-                        targetClassifier, 
-                        target);
+                        type, 
+                        classifier, 
+                        label, 
+                        display, 
+                        citation, 
+                        document, 
+                        resource, 
+                        resourceReference);
                     hashCode = result;
                 }
                 return result;
@@ -6217,9 +6058,14 @@ public class Citation extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private CodeableConcept relationshipType;
-                private List<CodeableConcept> targetClassifier = new ArrayList<>();
-                private Element target;
+                private RelatedArtifactTypeExpanded type;
+                private List<CodeableConcept> classifier = new ArrayList<>();
+                private String label;
+                private String display;
+                private Markdown citation;
+                private Attachment document;
+                private Canonical resource;
+                private Reference resourceReference;
 
                 private Builder() {
                     super();
@@ -6242,7 +6088,7 @@ public class Citation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -6262,7 +6108,7 @@ public class Citation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -6287,7 +6133,7 @@ public class Citation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -6312,7 +6158,7 @@ public class Citation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -6337,48 +6183,52 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * How the cited artifact relates to the target artifact.
+                 * The type of relationship to the related artifact.
                  * 
                  * <p>This element is required.
                  * 
-                 * @param relationshipType
-                 *     How the cited artifact relates to the target artifact
+                 * @param type
+                 *     documentation | justification | citation | predecessor | successor | derived-from | depends-on | composed-of | part-of 
+                 *     | amends | amended-with | appends | appended-with | cites | cited-by | comments-on | comment-in | contains | contained-
+                 *     in | corrects | correction-in | replaces | replaced-with | retracts | retracted-by | signs | similar-to | supports | 
+                 *     supported-with | transforms | transformed-into | transformed-with | documents | specification-of | created-with | cite-
+                 *     as | reprint | reprint-of
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder relationshipType(CodeableConcept relationshipType) {
-                    this.relationshipType = relationshipType;
+                public Builder type(RelatedArtifactTypeExpanded type) {
+                    this.type = type;
                     return this;
                 }
 
                 /**
-                 * The clasification of the related artifact.
+                 * Provides additional classifiers of the related artifact.
                  * 
                  * <p>Adds new element(s) to the existing list.
                  * If any of the elements are null, calling {@link #build()} will fail.
                  * 
-                 * @param targetClassifier
-                 *     The clasification of the related artifact
+                 * @param classifier
+                 *     Additional classifiers
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder targetClassifier(CodeableConcept... targetClassifier) {
-                    for (CodeableConcept value : targetClassifier) {
-                        this.targetClassifier.add(value);
+                public Builder classifier(CodeableConcept... classifier) {
+                    for (CodeableConcept value : classifier) {
+                        this.classifier.add(value);
                     }
                     return this;
                 }
 
                 /**
-                 * The clasification of the related artifact.
+                 * Provides additional classifiers of the related artifact.
                  * 
                  * <p>Replaces the existing list with a new one containing elements from the Collection.
                  * If any of the elements are null, calling {@link #build()} will fail.
                  * 
-                 * @param targetClassifier
-                 *     The clasification of the related artifact
+                 * @param classifier
+                 *     Additional classifiers
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -6386,32 +6236,127 @@ public class Citation extends DomainResource {
                  * @throws NullPointerException
                  *     If the passed collection is null
                  */
-                public Builder targetClassifier(Collection<CodeableConcept> targetClassifier) {
-                    this.targetClassifier = new ArrayList<>(targetClassifier);
+                public Builder classifier(Collection<CodeableConcept> classifier) {
+                    this.classifier = new ArrayList<>(classifier);
                     return this;
                 }
 
                 /**
-                 * The article or artifact that the cited artifact is related to.
+                 * Convenience method for setting {@code label}.
                  * 
-                 * <p>This element is required.
+                 * @param label
+                 *     Short label
                  * 
-                 * <p>This is a choice element with the following allowed types:
-                 * <ul>
-                 * <li>{@link Uri}</li>
-                 * <li>{@link Identifier}</li>
-                 * <li>{@link Reference}</li>
-                 * <li>{@link Attachment}</li>
-                 * </ul>
+                 * @return
+                 *     A reference to this Builder instance
                  * 
-                 * @param target
-                 *     The article or artifact that the cited artifact is related to
+                 * @see #label(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder label(java.lang.String label) {
+                    this.label = (label == null) ? null : String.of(label);
+                    return this;
+                }
+
+                /**
+                 * A short label that can be used to reference the related artifact from elsewhere in the containing artifact, such as a 
+                 * footnote index.
+                 * 
+                 * @param label
+                 *     Short label
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder target(Element target) {
-                    this.target = target;
+                public Builder label(String label) {
+                    this.label = label;
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code display}.
+                 * 
+                 * @param display
+                 *     Brief description of the related artifact
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #display(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder display(java.lang.String display) {
+                    this.display = (display == null) ? null : String.of(display);
+                    return this;
+                }
+
+                /**
+                 * A brief description of the document or knowledge resource being referenced, suitable for display to a consumer.
+                 * 
+                 * @param display
+                 *     Brief description of the related artifact
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder display(String display) {
+                    this.display = display;
+                    return this;
+                }
+
+                /**
+                 * A bibliographic citation for the related artifact. This text SHOULD be formatted according to an accepted citation 
+                 * format.
+                 * 
+                 * @param citation
+                 *     Bibliographic citation for the artifact
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder citation(Markdown citation) {
+                    this.citation = citation;
+                    return this;
+                }
+
+                /**
+                 * The document being referenced, represented as an attachment. Do not use this element if using the resource element to 
+                 * provide the canonical to the related artifact.
+                 * 
+                 * @param document
+                 *     What document is being referenced
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder document(Attachment document) {
+                    this.document = document;
+                    return this;
+                }
+
+                /**
+                 * The related artifact, such as a library, value set, profile, or other knowledge resource.
+                 * 
+                 * @param resource
+                 *     What artifact is being referenced
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder resource(Canonical resource) {
+                    this.resource = resource;
+                    return this;
+                }
+
+                /**
+                 * The related artifact, if the artifact is not a canonical resource, or a resource reference to a canonical resource.
+                 * 
+                 * @param resourceReference
+                 *     What artifact, if not a conformance resource
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder resourceReference(Reference resourceReference) {
+                    this.resourceReference = resourceReference;
                     return this;
                 }
 
@@ -6420,8 +6365,7 @@ public class Citation extends DomainResource {
                  * 
                  * <p>Required elements:
                  * <ul>
-                 * <li>relationshipType</li>
-                 * <li>target</li>
+                 * <li>type</li>
                  * </ul>
                  * 
                  * @return
@@ -6440,17 +6384,21 @@ public class Citation extends DomainResource {
 
                 protected void validate(RelatesTo relatesTo) {
                     super.validate(relatesTo);
-                    ValidationSupport.requireNonNull(relatesTo.relationshipType, "relationshipType");
-                    ValidationSupport.checkList(relatesTo.targetClassifier, "targetClassifier", CodeableConcept.class);
-                    ValidationSupport.requireChoiceElement(relatesTo.target, "target", Uri.class, Identifier.class, Reference.class, Attachment.class);
+                    ValidationSupport.requireNonNull(relatesTo.type, "type");
+                    ValidationSupport.checkList(relatesTo.classifier, "classifier", CodeableConcept.class);
                     ValidationSupport.requireValueOrChildren(relatesTo);
                 }
 
                 protected Builder from(RelatesTo relatesTo) {
                     super.from(relatesTo);
-                    relationshipType = relatesTo.relationshipType;
-                    targetClassifier.addAll(relatesTo.targetClassifier);
-                    target = relatesTo.target;
+                    type = relatesTo.type;
+                    classifier.addAll(relatesTo.classifier);
+                    label = relatesTo.label;
+                    display = relatesTo.display;
+                    citation = relatesTo.citation;
+                    document = relatesTo.document;
+                    resource = relatesTo.resource;
+                    resourceReference = relatesTo.resourceReference;
                     return this;
                 }
             }
@@ -6461,12 +6409,22 @@ public class Citation extends DomainResource {
          */
         public static class PublicationForm extends BackboneElement {
             private final PublishedIn publishedIn;
-            private final PeriodicRelease periodicRelease;
+            @Binding(
+                bindingName = "CitedMedium",
+                strength = BindingStrength.Value.EXTENSIBLE,
+                valueSet = "http://hl7.org/fhir/ValueSet/cited-medium"
+            )
+            private final CodeableConcept citedMedium;
+            private final String volume;
+            private final String issue;
             private final DateTime articleDate;
+            private final String publicationDateText;
+            private final String publicationDateSeason;
             private final DateTime lastRevisionDate;
             @Binding(
                 bindingName = "Language",
                 strength = BindingStrength.Value.PREFERRED,
+                description = "A human language.",
                 valueSet = "http://hl7.org/fhir/ValueSet/languages"
             )
             private final List<CodeableConcept> language;
@@ -6480,8 +6438,12 @@ public class Citation extends DomainResource {
             private PublicationForm(Builder builder) {
                 super(builder);
                 publishedIn = builder.publishedIn;
-                periodicRelease = builder.periodicRelease;
+                citedMedium = builder.citedMedium;
+                volume = builder.volume;
+                issue = builder.issue;
                 articleDate = builder.articleDate;
+                publicationDateText = builder.publicationDateText;
+                publicationDateSeason = builder.publicationDateSeason;
                 lastRevisionDate = builder.lastRevisionDate;
                 language = Collections.unmodifiableList(builder.language);
                 accessionNumber = builder.accessionNumber;
@@ -6503,24 +6465,68 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * The specific issue in which the cited article resides.
+             * Describes the form of the medium cited. Common codes are "Internet" or "Print". The CitedMedium value set has 6 codes. 
+             * The codes internet, print, and offline-digital-storage are the common codes for a typical publication form, though 
+             * internet and print are more common for study citations. Three additional codes (each appending one of the primary 
+             * codes with "-without-issue" are used for situations when a study is published both within an issue (of a periodical 
+             * release as commonly done for journals) AND is published separately from the issue (as commonly done with early online 
+             * publication), to represent specific identification of the publication form not associated with the issue.
              * 
              * @return
-             *     An immutable object of type {@link PeriodicRelease} that may be null.
+             *     An immutable object of type {@link CodeableConcept} that may be null.
              */
-            public PeriodicRelease getPeriodicRelease() {
-                return periodicRelease;
+            public CodeableConcept getCitedMedium() {
+                return citedMedium;
             }
 
             /**
-             * The date the article was added to the database, or the date the article was released (which may differ from the 
-             * journal issue publication date).
+             * Volume number of journal or other collection in which the article is published.
+             * 
+             * @return
+             *     An immutable object of type {@link String} that may be null.
+             */
+            public String getVolume() {
+                return volume;
+            }
+
+            /**
+             * Issue, part or supplement of journal or other collection in which the article is published.
+             * 
+             * @return
+             *     An immutable object of type {@link String} that may be null.
+             */
+            public String getIssue() {
+                return issue;
+            }
+
+            /**
+             * The date the article was added to the database, or the date the article was released.
              * 
              * @return
              *     An immutable object of type {@link DateTime} that may be null.
              */
             public DateTime getArticleDate() {
                 return articleDate;
+            }
+
+            /**
+             * Text representation of the date on which the issue of the cited artifact was published.
+             * 
+             * @return
+             *     An immutable object of type {@link String} that may be null.
+             */
+            public String getPublicationDateText() {
+                return publicationDateText;
+            }
+
+            /**
+             * Spring, Summer, Fall/Autumn, Winter.
+             * 
+             * @return
+             *     An immutable object of type {@link String} that may be null.
+             */
+            public String getPublicationDateSeason() {
+                return publicationDateSeason;
             }
 
             /**
@@ -6534,7 +6540,7 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * Language in which this form of the article is published.
+             * The language or languages in which this form of the article is published.
              * 
              * @return
              *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
@@ -6584,7 +6590,7 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * Actual or approximate number of pages or screens.
+             * Actual or approximate number of pages or screens. Distinct from reporting the page numbers.
              * 
              * @return
              *     An immutable object of type {@link String} that may be null.
@@ -6607,8 +6613,12 @@ public class Citation extends DomainResource {
             public boolean hasChildren() {
                 return super.hasChildren() || 
                     (publishedIn != null) || 
-                    (periodicRelease != null) || 
+                    (citedMedium != null) || 
+                    (volume != null) || 
+                    (issue != null) || 
                     (articleDate != null) || 
+                    (publicationDateText != null) || 
+                    (publicationDateSeason != null) || 
                     (lastRevisionDate != null) || 
                     !language.isEmpty() || 
                     (accessionNumber != null) || 
@@ -6629,8 +6639,12 @@ public class Citation extends DomainResource {
                         accept(extension, "extension", visitor, Extension.class);
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                         accept(publishedIn, "publishedIn", visitor);
-                        accept(periodicRelease, "periodicRelease", visitor);
+                        accept(citedMedium, "citedMedium", visitor);
+                        accept(volume, "volume", visitor);
+                        accept(issue, "issue", visitor);
                         accept(articleDate, "articleDate", visitor);
+                        accept(publicationDateText, "publicationDateText", visitor);
+                        accept(publicationDateSeason, "publicationDateSeason", visitor);
                         accept(lastRevisionDate, "lastRevisionDate", visitor);
                         accept(language, "language", visitor, CodeableConcept.class);
                         accept(accessionNumber, "accessionNumber", visitor);
@@ -6661,8 +6675,12 @@ public class Citation extends DomainResource {
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
                     Objects.equals(publishedIn, other.publishedIn) && 
-                    Objects.equals(periodicRelease, other.periodicRelease) && 
+                    Objects.equals(citedMedium, other.citedMedium) && 
+                    Objects.equals(volume, other.volume) && 
+                    Objects.equals(issue, other.issue) && 
                     Objects.equals(articleDate, other.articleDate) && 
+                    Objects.equals(publicationDateText, other.publicationDateText) && 
+                    Objects.equals(publicationDateSeason, other.publicationDateSeason) && 
                     Objects.equals(lastRevisionDate, other.lastRevisionDate) && 
                     Objects.equals(language, other.language) && 
                     Objects.equals(accessionNumber, other.accessionNumber) && 
@@ -6681,8 +6699,12 @@ public class Citation extends DomainResource {
                         extension, 
                         modifierExtension, 
                         publishedIn, 
-                        periodicRelease, 
+                        citedMedium, 
+                        volume, 
+                        issue, 
                         articleDate, 
+                        publicationDateText, 
+                        publicationDateSeason, 
                         lastRevisionDate, 
                         language, 
                         accessionNumber, 
@@ -6707,8 +6729,12 @@ public class Citation extends DomainResource {
 
             public static class Builder extends BackboneElement.Builder {
                 private PublishedIn publishedIn;
-                private PeriodicRelease periodicRelease;
+                private CodeableConcept citedMedium;
+                private String volume;
+                private String issue;
                 private DateTime articleDate;
+                private String publicationDateText;
+                private String publicationDateSeason;
                 private DateTime lastRevisionDate;
                 private List<CodeableConcept> language = new ArrayList<>();
                 private String accessionNumber;
@@ -6739,7 +6765,7 @@ public class Citation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -6759,7 +6785,7 @@ public class Citation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -6784,7 +6810,7 @@ public class Citation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -6809,7 +6835,7 @@ public class Citation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -6848,22 +6874,86 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * The specific issue in which the cited article resides.
+                 * Describes the form of the medium cited. Common codes are "Internet" or "Print". The CitedMedium value set has 6 codes. 
+                 * The codes internet, print, and offline-digital-storage are the common codes for a typical publication form, though 
+                 * internet and print are more common for study citations. Three additional codes (each appending one of the primary 
+                 * codes with "-without-issue" are used for situations when a study is published both within an issue (of a periodical 
+                 * release as commonly done for journals) AND is published separately from the issue (as commonly done with early online 
+                 * publication), to represent specific identification of the publication form not associated with the issue.
                  * 
-                 * @param periodicRelease
-                 *     The specific issue in which the cited article resides
+                 * @param citedMedium
+                 *     Internet or Print
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder periodicRelease(PeriodicRelease periodicRelease) {
-                    this.periodicRelease = periodicRelease;
+                public Builder citedMedium(CodeableConcept citedMedium) {
+                    this.citedMedium = citedMedium;
                     return this;
                 }
 
                 /**
-                 * The date the article was added to the database, or the date the article was released (which may differ from the 
-                 * journal issue publication date).
+                 * Convenience method for setting {@code volume}.
+                 * 
+                 * @param volume
+                 *     Volume number of journal or other collection in which the article is published
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #volume(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder volume(java.lang.String volume) {
+                    this.volume = (volume == null) ? null : String.of(volume);
+                    return this;
+                }
+
+                /**
+                 * Volume number of journal or other collection in which the article is published.
+                 * 
+                 * @param volume
+                 *     Volume number of journal or other collection in which the article is published
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder volume(String volume) {
+                    this.volume = volume;
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code issue}.
+                 * 
+                 * @param issue
+                 *     Issue, part or supplement of journal or other collection in which the article is published
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #issue(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder issue(java.lang.String issue) {
+                    this.issue = (issue == null) ? null : String.of(issue);
+                    return this;
+                }
+
+                /**
+                 * Issue, part or supplement of journal or other collection in which the article is published.
+                 * 
+                 * @param issue
+                 *     Issue, part or supplement of journal or other collection in which the article is published
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder issue(String issue) {
+                    this.issue = issue;
+                    return this;
+                }
+
+                /**
+                 * The date the article was added to the database, or the date the article was released.
                  * 
                  * @param articleDate
                  *     The date the article was added to the database, or the date the article was released
@@ -6873,6 +6963,66 @@ public class Citation extends DomainResource {
                  */
                 public Builder articleDate(DateTime articleDate) {
                     this.articleDate = articleDate;
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code publicationDateText}.
+                 * 
+                 * @param publicationDateText
+                 *     Text representation of the date on which the issue of the cited artifact was published
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #publicationDateText(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder publicationDateText(java.lang.String publicationDateText) {
+                    this.publicationDateText = (publicationDateText == null) ? null : String.of(publicationDateText);
+                    return this;
+                }
+
+                /**
+                 * Text representation of the date on which the issue of the cited artifact was published.
+                 * 
+                 * @param publicationDateText
+                 *     Text representation of the date on which the issue of the cited artifact was published
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder publicationDateText(String publicationDateText) {
+                    this.publicationDateText = publicationDateText;
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code publicationDateSeason}.
+                 * 
+                 * @param publicationDateSeason
+                 *     Season in which the cited artifact was published
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #publicationDateSeason(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder publicationDateSeason(java.lang.String publicationDateSeason) {
+                    this.publicationDateSeason = (publicationDateSeason == null) ? null : String.of(publicationDateSeason);
+                    return this;
+                }
+
+                /**
+                 * Spring, Summer, Fall/Autumn, Winter.
+                 * 
+                 * @param publicationDateSeason
+                 *     Season in which the cited artifact was published
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder publicationDateSeason(String publicationDateSeason) {
+                    this.publicationDateSeason = publicationDateSeason;
                     return this;
                 }
 
@@ -6891,13 +7041,13 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * Language in which this form of the article is published.
+                 * The language or languages in which this form of the article is published.
                  * 
                  * <p>Adds new element(s) to the existing list.
                  * If any of the elements are null, calling {@link #build()} will fail.
                  * 
                  * @param language
-                 *     Language in which this form of the article is published
+                 *     Language(s) in which this form of the article is published
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -6910,13 +7060,13 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * Language in which this form of the article is published.
+                 * The language or languages in which this form of the article is published.
                  * 
                  * <p>Replaces the existing list with a new one containing elements from the Collection.
                  * If any of the elements are null, calling {@link #build()} will fail.
                  * 
                  * @param language
-                 *     Language in which this form of the article is published
+                 *     Language(s) in which this form of the article is published
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -7066,7 +7216,7 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * Actual or approximate number of pages or screens.
+                 * Actual or approximate number of pages or screens. Distinct from reporting the page numbers.
                  * 
                  * @param pageCount
                  *     Number of pages or screens
@@ -7119,8 +7269,12 @@ public class Citation extends DomainResource {
                 protected Builder from(PublicationForm publicationForm) {
                     super.from(publicationForm);
                     publishedIn = publicationForm.publishedIn;
-                    periodicRelease = publicationForm.periodicRelease;
+                    citedMedium = publicationForm.citedMedium;
+                    volume = publicationForm.volume;
+                    issue = publicationForm.issue;
                     articleDate = publicationForm.articleDate;
+                    publicationDateText = publicationForm.publicationDateText;
+                    publicationDateSeason = publicationForm.publicationDateSeason;
                     lastRevisionDate = publicationForm.lastRevisionDate;
                     language.addAll(publicationForm.language);
                     accessionNumber = publicationForm.accessionNumber;
@@ -7189,7 +7343,7 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * Name of the publisher.
+                 * Name of or resource describing the publisher.
                  * 
                  * @return
                  *     An immutable object of type {@link Reference} that may be null.
@@ -7314,7 +7468,7 @@ public class Citation extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -7334,7 +7488,7 @@ public class Citation extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -7359,7 +7513,7 @@ public class Citation extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -7384,7 +7538,7 @@ public class Citation extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -7492,7 +7646,7 @@ public class Citation extends DomainResource {
                     }
 
                     /**
-                     * Name of the publisher.
+                     * Name of or resource describing the publisher.
                      * 
                      * <p>Allowed resource types for this reference:
                      * <ul>
@@ -7500,7 +7654,7 @@ public class Citation extends DomainResource {
                      * </ul>
                      * 
                      * @param publisher
-                     *     Name of the publisher
+                     *     Name of or resource describing the publisher
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -7575,885 +7729,6 @@ public class Citation extends DomainResource {
                     }
                 }
             }
-
-            /**
-             * The specific issue in which the cited article resides.
-             */
-            public static class PeriodicRelease extends BackboneElement {
-                @Binding(
-                    bindingName = "CitedMedium",
-                    strength = BindingStrength.Value.EXTENSIBLE,
-                    valueSet = "http://hl7.org/fhir/ValueSet/cited-medium"
-                )
-                private final CodeableConcept citedMedium;
-                private final String volume;
-                private final String issue;
-                private final DateOfPublication dateOfPublication;
-
-                private PeriodicRelease(Builder builder) {
-                    super(builder);
-                    citedMedium = builder.citedMedium;
-                    volume = builder.volume;
-                    issue = builder.issue;
-                    dateOfPublication = builder.dateOfPublication;
-                }
-
-                /**
-                 * Describes the form of the medium cited. Common codes are "Internet" or "Print".
-                 * 
-                 * @return
-                 *     An immutable object of type {@link CodeableConcept} that may be null.
-                 */
-                public CodeableConcept getCitedMedium() {
-                    return citedMedium;
-                }
-
-                /**
-                 * Volume number of journal in which the article is published.
-                 * 
-                 * @return
-                 *     An immutable object of type {@link String} that may be null.
-                 */
-                public String getVolume() {
-                    return volume;
-                }
-
-                /**
-                 * Issue, part or supplement of journal in which the article is published.
-                 * 
-                 * @return
-                 *     An immutable object of type {@link String} that may be null.
-                 */
-                public String getIssue() {
-                    return issue;
-                }
-
-                /**
-                 * Defining the date on which the issue of the journal was published.
-                 * 
-                 * @return
-                 *     An immutable object of type {@link DateOfPublication} that may be null.
-                 */
-                public DateOfPublication getDateOfPublication() {
-                    return dateOfPublication;
-                }
-
-                @Override
-                public boolean hasChildren() {
-                    return super.hasChildren() || 
-                        (citedMedium != null) || 
-                        (volume != null) || 
-                        (issue != null) || 
-                        (dateOfPublication != null);
-                }
-
-                @Override
-                public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-                    if (visitor.preVisit(this)) {
-                        visitor.visitStart(elementName, elementIndex, this);
-                        if (visitor.visit(elementName, elementIndex, this)) {
-                            // visit children
-                            accept(id, "id", visitor);
-                            accept(extension, "extension", visitor, Extension.class);
-                            accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                            accept(citedMedium, "citedMedium", visitor);
-                            accept(volume, "volume", visitor);
-                            accept(issue, "issue", visitor);
-                            accept(dateOfPublication, "dateOfPublication", visitor);
-                        }
-                        visitor.visitEnd(elementName, elementIndex, this);
-                        visitor.postVisit(this);
-                    }
-                }
-
-                @Override
-                public boolean equals(Object obj) {
-                    if (this == obj) {
-                        return true;
-                    }
-                    if (obj == null) {
-                        return false;
-                    }
-                    if (getClass() != obj.getClass()) {
-                        return false;
-                    }
-                    PeriodicRelease other = (PeriodicRelease) obj;
-                    return Objects.equals(id, other.id) && 
-                        Objects.equals(extension, other.extension) && 
-                        Objects.equals(modifierExtension, other.modifierExtension) && 
-                        Objects.equals(citedMedium, other.citedMedium) && 
-                        Objects.equals(volume, other.volume) && 
-                        Objects.equals(issue, other.issue) && 
-                        Objects.equals(dateOfPublication, other.dateOfPublication);
-                }
-
-                @Override
-                public int hashCode() {
-                    int result = hashCode;
-                    if (result == 0) {
-                        result = Objects.hash(id, 
-                            extension, 
-                            modifierExtension, 
-                            citedMedium, 
-                            volume, 
-                            issue, 
-                            dateOfPublication);
-                        hashCode = result;
-                    }
-                    return result;
-                }
-
-                @Override
-                public Builder toBuilder() {
-                    return new Builder().from(this);
-                }
-
-                public static Builder builder() {
-                    return new Builder();
-                }
-
-                public static class Builder extends BackboneElement.Builder {
-                    private CodeableConcept citedMedium;
-                    private String volume;
-                    private String issue;
-                    private DateOfPublication dateOfPublication;
-
-                    private Builder() {
-                        super();
-                    }
-
-                    /**
-                     * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-                     * contain spaces.
-                     * 
-                     * @param id
-                     *     Unique id for inter-element referencing
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    @Override
-                    public Builder id(java.lang.String id) {
-                        return (Builder) super.id(id);
-                    }
-
-                    /**
-                     * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-                     * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-                     * of the definition of the extension.
-                     * 
-                     * <p>Adds new element(s) to the existing list.
-                     * If any of the elements are null, calling {@link #build()} will fail.
-                     * 
-                     * @param extension
-                     *     Additional content defined by implementations
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    @Override
-                    public Builder extension(Extension... extension) {
-                        return (Builder) super.extension(extension);
-                    }
-
-                    /**
-                     * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-                     * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-                     * of the definition of the extension.
-                     * 
-                     * <p>Replaces the existing list with a new one containing elements from the Collection.
-                     * If any of the elements are null, calling {@link #build()} will fail.
-                     * 
-                     * @param extension
-                     *     Additional content defined by implementations
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @throws NullPointerException
-                     *     If the passed collection is null
-                     */
-                    @Override
-                    public Builder extension(Collection<Extension> extension) {
-                        return (Builder) super.extension(extension);
-                    }
-
-                    /**
-                     * May be used to represent additional information that is not part of the basic definition of the element and that 
-                     * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-                     * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-                     * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-                     * extension. Applications processing a resource are required to check for modifier extensions.
-                     * 
-                     * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-                     * change the meaning of modifierExtension itself).
-                     * 
-                     * <p>Adds new element(s) to the existing list.
-                     * If any of the elements are null, calling {@link #build()} will fail.
-                     * 
-                     * @param modifierExtension
-                     *     Extensions that cannot be ignored even if unrecognized
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    @Override
-                    public Builder modifierExtension(Extension... modifierExtension) {
-                        return (Builder) super.modifierExtension(modifierExtension);
-                    }
-
-                    /**
-                     * May be used to represent additional information that is not part of the basic definition of the element and that 
-                     * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-                     * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-                     * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-                     * extension. Applications processing a resource are required to check for modifier extensions.
-                     * 
-                     * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-                     * change the meaning of modifierExtension itself).
-                     * 
-                     * <p>Replaces the existing list with a new one containing elements from the Collection.
-                     * If any of the elements are null, calling {@link #build()} will fail.
-                     * 
-                     * @param modifierExtension
-                     *     Extensions that cannot be ignored even if unrecognized
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @throws NullPointerException
-                     *     If the passed collection is null
-                     */
-                    @Override
-                    public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                        return (Builder) super.modifierExtension(modifierExtension);
-                    }
-
-                    /**
-                     * Describes the form of the medium cited. Common codes are "Internet" or "Print".
-                     * 
-                     * @param citedMedium
-                     *     Internet or Print
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    public Builder citedMedium(CodeableConcept citedMedium) {
-                        this.citedMedium = citedMedium;
-                        return this;
-                    }
-
-                    /**
-                     * Convenience method for setting {@code volume}.
-                     * 
-                     * @param volume
-                     *     Volume number of journal in which the article is published
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @see #volume(org.linuxforhealth.fhir.model.type.String)
-                     */
-                    public Builder volume(java.lang.String volume) {
-                        this.volume = (volume == null) ? null : String.of(volume);
-                        return this;
-                    }
-
-                    /**
-                     * Volume number of journal in which the article is published.
-                     * 
-                     * @param volume
-                     *     Volume number of journal in which the article is published
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    public Builder volume(String volume) {
-                        this.volume = volume;
-                        return this;
-                    }
-
-                    /**
-                     * Convenience method for setting {@code issue}.
-                     * 
-                     * @param issue
-                     *     Issue, part or supplement of journal in which the article is published
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @see #issue(org.linuxforhealth.fhir.model.type.String)
-                     */
-                    public Builder issue(java.lang.String issue) {
-                        this.issue = (issue == null) ? null : String.of(issue);
-                        return this;
-                    }
-
-                    /**
-                     * Issue, part or supplement of journal in which the article is published.
-                     * 
-                     * @param issue
-                     *     Issue, part or supplement of journal in which the article is published
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    public Builder issue(String issue) {
-                        this.issue = issue;
-                        return this;
-                    }
-
-                    /**
-                     * Defining the date on which the issue of the journal was published.
-                     * 
-                     * @param dateOfPublication
-                     *     Defining the date on which the issue of the journal was published
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    public Builder dateOfPublication(DateOfPublication dateOfPublication) {
-                        this.dateOfPublication = dateOfPublication;
-                        return this;
-                    }
-
-                    /**
-                     * Build the {@link PeriodicRelease}
-                     * 
-                     * @return
-                     *     An immutable object of type {@link PeriodicRelease}
-                     * @throws IllegalStateException
-                     *     if the current state cannot be built into a valid PeriodicRelease per the base specification
-                     */
-                    @Override
-                    public PeriodicRelease build() {
-                        PeriodicRelease periodicRelease = new PeriodicRelease(this);
-                        if (validating) {
-                            validate(periodicRelease);
-                        }
-                        return periodicRelease;
-                    }
-
-                    protected void validate(PeriodicRelease periodicRelease) {
-                        super.validate(periodicRelease);
-                        ValidationSupport.requireValueOrChildren(periodicRelease);
-                    }
-
-                    protected Builder from(PeriodicRelease periodicRelease) {
-                        super.from(periodicRelease);
-                        citedMedium = periodicRelease.citedMedium;
-                        volume = periodicRelease.volume;
-                        issue = periodicRelease.issue;
-                        dateOfPublication = periodicRelease.dateOfPublication;
-                        return this;
-                    }
-                }
-
-                /**
-                 * Defining the date on which the issue of the journal was published.
-                 */
-                public static class DateOfPublication extends BackboneElement {
-                    private final Date date;
-                    private final String year;
-                    private final String month;
-                    private final String day;
-                    private final String season;
-                    private final String text;
-
-                    private DateOfPublication(Builder builder) {
-                        super(builder);
-                        date = builder.date;
-                        year = builder.year;
-                        month = builder.month;
-                        day = builder.day;
-                        season = builder.season;
-                        text = builder.text;
-                    }
-
-                    /**
-                     * Date on which the issue of the journal was published.
-                     * 
-                     * @return
-                     *     An immutable object of type {@link Date} that may be null.
-                     */
-                    public Date getDate() {
-                        return date;
-                    }
-
-                    /**
-                     * Year on which the issue of the journal was published.
-                     * 
-                     * @return
-                     *     An immutable object of type {@link String} that may be null.
-                     */
-                    public String getYear() {
-                        return year;
-                    }
-
-                    /**
-                     * Month on which the issue of the journal was published.
-                     * 
-                     * @return
-                     *     An immutable object of type {@link String} that may be null.
-                     */
-                    public String getMonth() {
-                        return month;
-                    }
-
-                    /**
-                     * Day on which the issue of the journal was published.
-                     * 
-                     * @return
-                     *     An immutable object of type {@link String} that may be null.
-                     */
-                    public String getDay() {
-                        return day;
-                    }
-
-                    /**
-                     * Spring, Summer, Fall/Autumn, Winter.
-                     * 
-                     * @return
-                     *     An immutable object of type {@link String} that may be null.
-                     */
-                    public String getSeason() {
-                        return season;
-                    }
-
-                    /**
-                     * Text representation of the date of which the issue of the journal was published.
-                     * 
-                     * @return
-                     *     An immutable object of type {@link String} that may be null.
-                     */
-                    public String getText() {
-                        return text;
-                    }
-
-                    @Override
-                    public boolean hasChildren() {
-                        return super.hasChildren() || 
-                            (date != null) || 
-                            (year != null) || 
-                            (month != null) || 
-                            (day != null) || 
-                            (season != null) || 
-                            (text != null);
-                    }
-
-                    @Override
-                    public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-                        if (visitor.preVisit(this)) {
-                            visitor.visitStart(elementName, elementIndex, this);
-                            if (visitor.visit(elementName, elementIndex, this)) {
-                                // visit children
-                                accept(id, "id", visitor);
-                                accept(extension, "extension", visitor, Extension.class);
-                                accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                                accept(date, "date", visitor);
-                                accept(year, "year", visitor);
-                                accept(month, "month", visitor);
-                                accept(day, "day", visitor);
-                                accept(season, "season", visitor);
-                                accept(text, "text", visitor);
-                            }
-                            visitor.visitEnd(elementName, elementIndex, this);
-                            visitor.postVisit(this);
-                        }
-                    }
-
-                    @Override
-                    public boolean equals(Object obj) {
-                        if (this == obj) {
-                            return true;
-                        }
-                        if (obj == null) {
-                            return false;
-                        }
-                        if (getClass() != obj.getClass()) {
-                            return false;
-                        }
-                        DateOfPublication other = (DateOfPublication) obj;
-                        return Objects.equals(id, other.id) && 
-                            Objects.equals(extension, other.extension) && 
-                            Objects.equals(modifierExtension, other.modifierExtension) && 
-                            Objects.equals(date, other.date) && 
-                            Objects.equals(year, other.year) && 
-                            Objects.equals(month, other.month) && 
-                            Objects.equals(day, other.day) && 
-                            Objects.equals(season, other.season) && 
-                            Objects.equals(text, other.text);
-                    }
-
-                    @Override
-                    public int hashCode() {
-                        int result = hashCode;
-                        if (result == 0) {
-                            result = Objects.hash(id, 
-                                extension, 
-                                modifierExtension, 
-                                date, 
-                                year, 
-                                month, 
-                                day, 
-                                season, 
-                                text);
-                            hashCode = result;
-                        }
-                        return result;
-                    }
-
-                    @Override
-                    public Builder toBuilder() {
-                        return new Builder().from(this);
-                    }
-
-                    public static Builder builder() {
-                        return new Builder();
-                    }
-
-                    public static class Builder extends BackboneElement.Builder {
-                        private Date date;
-                        private String year;
-                        private String month;
-                        private String day;
-                        private String season;
-                        private String text;
-
-                        private Builder() {
-                            super();
-                        }
-
-                        /**
-                         * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-                         * contain spaces.
-                         * 
-                         * @param id
-                         *     Unique id for inter-element referencing
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         */
-                        @Override
-                        public Builder id(java.lang.String id) {
-                            return (Builder) super.id(id);
-                        }
-
-                        /**
-                         * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-                         * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-                         * of the definition of the extension.
-                         * 
-                         * <p>Adds new element(s) to the existing list.
-                         * If any of the elements are null, calling {@link #build()} will fail.
-                         * 
-                         * @param extension
-                         *     Additional content defined by implementations
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         */
-                        @Override
-                        public Builder extension(Extension... extension) {
-                            return (Builder) super.extension(extension);
-                        }
-
-                        /**
-                         * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-                         * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-                         * of the definition of the extension.
-                         * 
-                         * <p>Replaces the existing list with a new one containing elements from the Collection.
-                         * If any of the elements are null, calling {@link #build()} will fail.
-                         * 
-                         * @param extension
-                         *     Additional content defined by implementations
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         * 
-                         * @throws NullPointerException
-                         *     If the passed collection is null
-                         */
-                        @Override
-                        public Builder extension(Collection<Extension> extension) {
-                            return (Builder) super.extension(extension);
-                        }
-
-                        /**
-                         * May be used to represent additional information that is not part of the basic definition of the element and that 
-                         * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-                         * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-                         * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-                         * extension. Applications processing a resource are required to check for modifier extensions.
-                         * 
-                         * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-                         * change the meaning of modifierExtension itself).
-                         * 
-                         * <p>Adds new element(s) to the existing list.
-                         * If any of the elements are null, calling {@link #build()} will fail.
-                         * 
-                         * @param modifierExtension
-                         *     Extensions that cannot be ignored even if unrecognized
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         */
-                        @Override
-                        public Builder modifierExtension(Extension... modifierExtension) {
-                            return (Builder) super.modifierExtension(modifierExtension);
-                        }
-
-                        /**
-                         * May be used to represent additional information that is not part of the basic definition of the element and that 
-                         * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-                         * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-                         * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-                         * extension. Applications processing a resource are required to check for modifier extensions.
-                         * 
-                         * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-                         * change the meaning of modifierExtension itself).
-                         * 
-                         * <p>Replaces the existing list with a new one containing elements from the Collection.
-                         * If any of the elements are null, calling {@link #build()} will fail.
-                         * 
-                         * @param modifierExtension
-                         *     Extensions that cannot be ignored even if unrecognized
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         * 
-                         * @throws NullPointerException
-                         *     If the passed collection is null
-                         */
-                        @Override
-                        public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                            return (Builder) super.modifierExtension(modifierExtension);
-                        }
-
-                        /**
-                         * Convenience method for setting {@code date}.
-                         * 
-                         * @param date
-                         *     Date on which the issue of the journal was published
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         * 
-                         * @see #date(org.linuxforhealth.fhir.model.type.Date)
-                         */
-                        public Builder date(java.time.LocalDate date) {
-                            this.date = (date == null) ? null : Date.of(date);
-                            return this;
-                        }
-
-                        /**
-                         * Date on which the issue of the journal was published.
-                         * 
-                         * @param date
-                         *     Date on which the issue of the journal was published
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         */
-                        public Builder date(Date date) {
-                            this.date = date;
-                            return this;
-                        }
-
-                        /**
-                         * Convenience method for setting {@code year}.
-                         * 
-                         * @param year
-                         *     Year on which the issue of the journal was published
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         * 
-                         * @see #year(org.linuxforhealth.fhir.model.type.String)
-                         */
-                        public Builder year(java.lang.String year) {
-                            this.year = (year == null) ? null : String.of(year);
-                            return this;
-                        }
-
-                        /**
-                         * Year on which the issue of the journal was published.
-                         * 
-                         * @param year
-                         *     Year on which the issue of the journal was published
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         */
-                        public Builder year(String year) {
-                            this.year = year;
-                            return this;
-                        }
-
-                        /**
-                         * Convenience method for setting {@code month}.
-                         * 
-                         * @param month
-                         *     Month on which the issue of the journal was published
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         * 
-                         * @see #month(org.linuxforhealth.fhir.model.type.String)
-                         */
-                        public Builder month(java.lang.String month) {
-                            this.month = (month == null) ? null : String.of(month);
-                            return this;
-                        }
-
-                        /**
-                         * Month on which the issue of the journal was published.
-                         * 
-                         * @param month
-                         *     Month on which the issue of the journal was published
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         */
-                        public Builder month(String month) {
-                            this.month = month;
-                            return this;
-                        }
-
-                        /**
-                         * Convenience method for setting {@code day}.
-                         * 
-                         * @param day
-                         *     Day on which the issue of the journal was published
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         * 
-                         * @see #day(org.linuxforhealth.fhir.model.type.String)
-                         */
-                        public Builder day(java.lang.String day) {
-                            this.day = (day == null) ? null : String.of(day);
-                            return this;
-                        }
-
-                        /**
-                         * Day on which the issue of the journal was published.
-                         * 
-                         * @param day
-                         *     Day on which the issue of the journal was published
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         */
-                        public Builder day(String day) {
-                            this.day = day;
-                            return this;
-                        }
-
-                        /**
-                         * Convenience method for setting {@code season}.
-                         * 
-                         * @param season
-                         *     Season on which the issue of the journal was published
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         * 
-                         * @see #season(org.linuxforhealth.fhir.model.type.String)
-                         */
-                        public Builder season(java.lang.String season) {
-                            this.season = (season == null) ? null : String.of(season);
-                            return this;
-                        }
-
-                        /**
-                         * Spring, Summer, Fall/Autumn, Winter.
-                         * 
-                         * @param season
-                         *     Season on which the issue of the journal was published
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         */
-                        public Builder season(String season) {
-                            this.season = season;
-                            return this;
-                        }
-
-                        /**
-                         * Convenience method for setting {@code text}.
-                         * 
-                         * @param text
-                         *     Text representation of the date of which the issue of the journal was published
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         * 
-                         * @see #text(org.linuxforhealth.fhir.model.type.String)
-                         */
-                        public Builder text(java.lang.String text) {
-                            this.text = (text == null) ? null : String.of(text);
-                            return this;
-                        }
-
-                        /**
-                         * Text representation of the date of which the issue of the journal was published.
-                         * 
-                         * @param text
-                         *     Text representation of the date of which the issue of the journal was published
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         */
-                        public Builder text(String text) {
-                            this.text = text;
-                            return this;
-                        }
-
-                        /**
-                         * Build the {@link DateOfPublication}
-                         * 
-                         * @return
-                         *     An immutable object of type {@link DateOfPublication}
-                         * @throws IllegalStateException
-                         *     if the current state cannot be built into a valid DateOfPublication per the base specification
-                         */
-                        @Override
-                        public DateOfPublication build() {
-                            DateOfPublication dateOfPublication = new DateOfPublication(this);
-                            if (validating) {
-                                validate(dateOfPublication);
-                            }
-                            return dateOfPublication;
-                        }
-
-                        protected void validate(DateOfPublication dateOfPublication) {
-                            super.validate(dateOfPublication);
-                            ValidationSupport.requireValueOrChildren(dateOfPublication);
-                        }
-
-                        protected Builder from(DateOfPublication dateOfPublication) {
-                            super.from(dateOfPublication);
-                            date = dateOfPublication.date;
-                            year = dateOfPublication.year;
-                            month = dateOfPublication.month;
-                            day = dateOfPublication.day;
-                            season = dateOfPublication.season;
-                            text = dateOfPublication.text;
-                            return this;
-                        }
-                    }
-                }
-            }
         }
 
         /**
@@ -8461,27 +7736,27 @@ public class Citation extends DomainResource {
          */
         public static class WebLocation extends BackboneElement {
             @Binding(
-                bindingName = "ArticleUrlType",
+                bindingName = "ArtifactUrlClassifier",
                 strength = BindingStrength.Value.EXTENSIBLE,
-                valueSet = "http://hl7.org/fhir/ValueSet/article-url-type"
+                valueSet = "http://hl7.org/fhir/ValueSet/artifact-url-classifier"
             )
-            private final CodeableConcept type;
+            private final List<CodeableConcept> classifier;
             private final Uri url;
 
             private WebLocation(Builder builder) {
                 super(builder);
-                type = builder.type;
+                classifier = Collections.unmodifiableList(builder.classifier);
                 url = builder.url;
             }
 
             /**
-             * Code the reason for different URLs, e.g. abstract and full-text.
+             * A characterization of the object expected at the web location.
              * 
              * @return
-             *     An immutable object of type {@link CodeableConcept} that may be null.
+             *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
              */
-            public CodeableConcept getType() {
-                return type;
+            public List<CodeableConcept> getClassifier() {
+                return classifier;
             }
 
             /**
@@ -8497,7 +7772,7 @@ public class Citation extends DomainResource {
             @Override
             public boolean hasChildren() {
                 return super.hasChildren() || 
-                    (type != null) || 
+                    !classifier.isEmpty() || 
                     (url != null);
             }
 
@@ -8510,7 +7785,7 @@ public class Citation extends DomainResource {
                         accept(id, "id", visitor);
                         accept(extension, "extension", visitor, Extension.class);
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                        accept(type, "type", visitor);
+                        accept(classifier, "classifier", visitor, CodeableConcept.class);
                         accept(url, "url", visitor);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
@@ -8533,7 +7808,7 @@ public class Citation extends DomainResource {
                 return Objects.equals(id, other.id) && 
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
-                    Objects.equals(type, other.type) && 
+                    Objects.equals(classifier, other.classifier) && 
                     Objects.equals(url, other.url);
             }
 
@@ -8544,7 +7819,7 @@ public class Citation extends DomainResource {
                     result = Objects.hash(id, 
                         extension, 
                         modifierExtension, 
-                        type, 
+                        classifier, 
                         url);
                     hashCode = result;
                 }
@@ -8561,7 +7836,7 @@ public class Citation extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private CodeableConcept type;
+                private List<CodeableConcept> classifier = new ArrayList<>();
                 private Uri url;
 
                 private Builder() {
@@ -8585,7 +7860,7 @@ public class Citation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -8605,7 +7880,7 @@ public class Citation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -8630,7 +7905,7 @@ public class Citation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -8655,7 +7930,7 @@ public class Citation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -8680,16 +7955,41 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * Code the reason for different URLs, e.g. abstract and full-text.
+                 * A characterization of the object expected at the web location.
                  * 
-                 * @param type
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param classifier
                  *     Code the reason for different URLs, e.g. abstract and full-text
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder type(CodeableConcept type) {
-                    this.type = type;
+                public Builder classifier(CodeableConcept... classifier) {
+                    for (CodeableConcept value : classifier) {
+                        this.classifier.add(value);
+                    }
+                    return this;
+                }
+
+                /**
+                 * A characterization of the object expected at the web location.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param classifier
+                 *     Code the reason for different URLs, e.g. abstract and full-text
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                public Builder classifier(Collection<CodeableConcept> classifier) {
+                    this.classifier = new ArrayList<>(classifier);
                     return this;
                 }
 
@@ -8726,12 +8026,13 @@ public class Citation extends DomainResource {
 
                 protected void validate(WebLocation webLocation) {
                     super.validate(webLocation);
+                    ValidationSupport.checkList(webLocation.classifier, "classifier", CodeableConcept.class);
                     ValidationSupport.requireValueOrChildren(webLocation);
                 }
 
                 protected Builder from(WebLocation webLocation) {
                     super.from(webLocation);
-                    type = webLocation.type;
+                    classifier.addAll(webLocation.classifier);
                     url = webLocation.url;
                     return this;
                 }
@@ -8754,13 +8055,14 @@ public class Citation extends DomainResource {
                 valueSet = "http://hl7.org/fhir/ValueSet/citation-artifact-classifier"
             )
             private final List<CodeableConcept> classifier;
-            private final WhoClassified whoClassified;
+            @ReferenceTarget({ "ArtifactAssessment" })
+            private final List<Reference> artifactAssessment;
 
             private Classification(Builder builder) {
                 super(builder);
                 type = builder.type;
                 classifier = Collections.unmodifiableList(builder.classifier);
-                whoClassified = builder.whoClassified;
+                artifactAssessment = Collections.unmodifiableList(builder.artifactAssessment);
             }
 
             /**
@@ -8784,13 +8086,13 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * Provenance and copyright of classification.
+             * Complex or externally created classification.
              * 
              * @return
-             *     An immutable object of type {@link WhoClassified} that may be null.
+             *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
              */
-            public WhoClassified getWhoClassified() {
-                return whoClassified;
+            public List<Reference> getArtifactAssessment() {
+                return artifactAssessment;
             }
 
             @Override
@@ -8798,7 +8100,7 @@ public class Citation extends DomainResource {
                 return super.hasChildren() || 
                     (type != null) || 
                     !classifier.isEmpty() || 
-                    (whoClassified != null);
+                    !artifactAssessment.isEmpty();
             }
 
             @Override
@@ -8812,7 +8114,7 @@ public class Citation extends DomainResource {
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                         accept(type, "type", visitor);
                         accept(classifier, "classifier", visitor, CodeableConcept.class);
-                        accept(whoClassified, "whoClassified", visitor);
+                        accept(artifactAssessment, "artifactAssessment", visitor, Reference.class);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
                     visitor.postVisit(this);
@@ -8836,7 +8138,7 @@ public class Citation extends DomainResource {
                     Objects.equals(modifierExtension, other.modifierExtension) && 
                     Objects.equals(type, other.type) && 
                     Objects.equals(classifier, other.classifier) && 
-                    Objects.equals(whoClassified, other.whoClassified);
+                    Objects.equals(artifactAssessment, other.artifactAssessment);
             }
 
             @Override
@@ -8848,7 +8150,7 @@ public class Citation extends DomainResource {
                         modifierExtension, 
                         type, 
                         classifier, 
-                        whoClassified);
+                        artifactAssessment);
                     hashCode = result;
                 }
                 return result;
@@ -8866,7 +8168,7 @@ public class Citation extends DomainResource {
             public static class Builder extends BackboneElement.Builder {
                 private CodeableConcept type;
                 private List<CodeableConcept> classifier = new ArrayList<>();
-                private WhoClassified whoClassified;
+                private List<Reference> artifactAssessment = new ArrayList<>();
 
                 private Builder() {
                     super();
@@ -8889,7 +8191,7 @@ public class Citation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -8909,7 +8211,7 @@ public class Citation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -8934,7 +8236,7 @@ public class Citation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -8959,7 +8261,7 @@ public class Citation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -9037,16 +8339,51 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * Provenance and copyright of classification.
+                 * Complex or externally created classification.
                  * 
-                 * @param whoClassified
-                 *     Provenance and copyright of classification
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * <p>Allowed resource types for the references:
+                 * <ul>
+                 * <li>{@link ArtifactAssessment}</li>
+                 * </ul>
+                 * 
+                 * @param artifactAssessment
+                 *     Complex or externally created classification
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder whoClassified(WhoClassified whoClassified) {
-                    this.whoClassified = whoClassified;
+                public Builder artifactAssessment(Reference... artifactAssessment) {
+                    for (Reference value : artifactAssessment) {
+                        this.artifactAssessment.add(value);
+                    }
+                    return this;
+                }
+
+                /**
+                 * Complex or externally created classification.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * <p>Allowed resource types for the references:
+                 * <ul>
+                 * <li>{@link ArtifactAssessment}</li>
+                 * </ul>
+                 * 
+                 * @param artifactAssessment
+                 *     Complex or externally created classification
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                public Builder artifactAssessment(Collection<Reference> artifactAssessment) {
+                    this.artifactAssessment = new ArrayList<>(artifactAssessment);
                     return this;
                 }
 
@@ -9070,6 +8407,8 @@ public class Citation extends DomainResource {
                 protected void validate(Classification classification) {
                     super.validate(classification);
                     ValidationSupport.checkList(classification.classifier, "classifier", CodeableConcept.class);
+                    ValidationSupport.checkList(classification.artifactAssessment, "artifactAssessment", Reference.class);
+                    ValidationSupport.checkReferenceType(classification.artifactAssessment, "artifactAssessment", "ArtifactAssessment");
                     ValidationSupport.requireValueOrChildren(classification);
                 }
 
@@ -9077,435 +8416,8 @@ public class Citation extends DomainResource {
                     super.from(classification);
                     type = classification.type;
                     classifier.addAll(classification.classifier);
-                    whoClassified = classification.whoClassified;
+                    artifactAssessment.addAll(classification.artifactAssessment);
                     return this;
-                }
-            }
-
-            /**
-             * Provenance and copyright of classification.
-             */
-            public static class WhoClassified extends BackboneElement {
-                @ReferenceTarget({ "Person", "Practitioner" })
-                private final Reference person;
-                @ReferenceTarget({ "Organization" })
-                private final Reference organization;
-                @ReferenceTarget({ "Organization" })
-                private final Reference publisher;
-                private final String classifierCopyright;
-                private final Boolean freeToShare;
-
-                private WhoClassified(Builder builder) {
-                    super(builder);
-                    person = builder.person;
-                    organization = builder.organization;
-                    publisher = builder.publisher;
-                    classifierCopyright = builder.classifierCopyright;
-                    freeToShare = builder.freeToShare;
-                }
-
-                /**
-                 * Person who created the classification.
-                 * 
-                 * @return
-                 *     An immutable object of type {@link Reference} that may be null.
-                 */
-                public Reference getPerson() {
-                    return person;
-                }
-
-                /**
-                 * Organization who created the classification.
-                 * 
-                 * @return
-                 *     An immutable object of type {@link Reference} that may be null.
-                 */
-                public Reference getOrganization() {
-                    return organization;
-                }
-
-                /**
-                 * The publisher of the classification, not the publisher of the article or artifact being cited.
-                 * 
-                 * @return
-                 *     An immutable object of type {@link Reference} that may be null.
-                 */
-                public Reference getPublisher() {
-                    return publisher;
-                }
-
-                /**
-                 * Rights management statement for the classification.
-                 * 
-                 * @return
-                 *     An immutable object of type {@link String} that may be null.
-                 */
-                public String getClassifierCopyright() {
-                    return classifierCopyright;
-                }
-
-                /**
-                 * Acceptable to re-use the classification.
-                 * 
-                 * @return
-                 *     An immutable object of type {@link Boolean} that may be null.
-                 */
-                public Boolean getFreeToShare() {
-                    return freeToShare;
-                }
-
-                @Override
-                public boolean hasChildren() {
-                    return super.hasChildren() || 
-                        (person != null) || 
-                        (organization != null) || 
-                        (publisher != null) || 
-                        (classifierCopyright != null) || 
-                        (freeToShare != null);
-                }
-
-                @Override
-                public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-                    if (visitor.preVisit(this)) {
-                        visitor.visitStart(elementName, elementIndex, this);
-                        if (visitor.visit(elementName, elementIndex, this)) {
-                            // visit children
-                            accept(id, "id", visitor);
-                            accept(extension, "extension", visitor, Extension.class);
-                            accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                            accept(person, "person", visitor);
-                            accept(organization, "organization", visitor);
-                            accept(publisher, "publisher", visitor);
-                            accept(classifierCopyright, "classifierCopyright", visitor);
-                            accept(freeToShare, "freeToShare", visitor);
-                        }
-                        visitor.visitEnd(elementName, elementIndex, this);
-                        visitor.postVisit(this);
-                    }
-                }
-
-                @Override
-                public boolean equals(Object obj) {
-                    if (this == obj) {
-                        return true;
-                    }
-                    if (obj == null) {
-                        return false;
-                    }
-                    if (getClass() != obj.getClass()) {
-                        return false;
-                    }
-                    WhoClassified other = (WhoClassified) obj;
-                    return Objects.equals(id, other.id) && 
-                        Objects.equals(extension, other.extension) && 
-                        Objects.equals(modifierExtension, other.modifierExtension) && 
-                        Objects.equals(person, other.person) && 
-                        Objects.equals(organization, other.organization) && 
-                        Objects.equals(publisher, other.publisher) && 
-                        Objects.equals(classifierCopyright, other.classifierCopyright) && 
-                        Objects.equals(freeToShare, other.freeToShare);
-                }
-
-                @Override
-                public int hashCode() {
-                    int result = hashCode;
-                    if (result == 0) {
-                        result = Objects.hash(id, 
-                            extension, 
-                            modifierExtension, 
-                            person, 
-                            organization, 
-                            publisher, 
-                            classifierCopyright, 
-                            freeToShare);
-                        hashCode = result;
-                    }
-                    return result;
-                }
-
-                @Override
-                public Builder toBuilder() {
-                    return new Builder().from(this);
-                }
-
-                public static Builder builder() {
-                    return new Builder();
-                }
-
-                public static class Builder extends BackboneElement.Builder {
-                    private Reference person;
-                    private Reference organization;
-                    private Reference publisher;
-                    private String classifierCopyright;
-                    private Boolean freeToShare;
-
-                    private Builder() {
-                        super();
-                    }
-
-                    /**
-                     * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-                     * contain spaces.
-                     * 
-                     * @param id
-                     *     Unique id for inter-element referencing
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    @Override
-                    public Builder id(java.lang.String id) {
-                        return (Builder) super.id(id);
-                    }
-
-                    /**
-                     * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-                     * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-                     * of the definition of the extension.
-                     * 
-                     * <p>Adds new element(s) to the existing list.
-                     * If any of the elements are null, calling {@link #build()} will fail.
-                     * 
-                     * @param extension
-                     *     Additional content defined by implementations
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    @Override
-                    public Builder extension(Extension... extension) {
-                        return (Builder) super.extension(extension);
-                    }
-
-                    /**
-                     * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-                     * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-                     * of the definition of the extension.
-                     * 
-                     * <p>Replaces the existing list with a new one containing elements from the Collection.
-                     * If any of the elements are null, calling {@link #build()} will fail.
-                     * 
-                     * @param extension
-                     *     Additional content defined by implementations
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @throws NullPointerException
-                     *     If the passed collection is null
-                     */
-                    @Override
-                    public Builder extension(Collection<Extension> extension) {
-                        return (Builder) super.extension(extension);
-                    }
-
-                    /**
-                     * May be used to represent additional information that is not part of the basic definition of the element and that 
-                     * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-                     * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-                     * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-                     * extension. Applications processing a resource are required to check for modifier extensions.
-                     * 
-                     * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-                     * change the meaning of modifierExtension itself).
-                     * 
-                     * <p>Adds new element(s) to the existing list.
-                     * If any of the elements are null, calling {@link #build()} will fail.
-                     * 
-                     * @param modifierExtension
-                     *     Extensions that cannot be ignored even if unrecognized
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    @Override
-                    public Builder modifierExtension(Extension... modifierExtension) {
-                        return (Builder) super.modifierExtension(modifierExtension);
-                    }
-
-                    /**
-                     * May be used to represent additional information that is not part of the basic definition of the element and that 
-                     * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-                     * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-                     * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-                     * extension. Applications processing a resource are required to check for modifier extensions.
-                     * 
-                     * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-                     * change the meaning of modifierExtension itself).
-                     * 
-                     * <p>Replaces the existing list with a new one containing elements from the Collection.
-                     * If any of the elements are null, calling {@link #build()} will fail.
-                     * 
-                     * @param modifierExtension
-                     *     Extensions that cannot be ignored even if unrecognized
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @throws NullPointerException
-                     *     If the passed collection is null
-                     */
-                    @Override
-                    public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                        return (Builder) super.modifierExtension(modifierExtension);
-                    }
-
-                    /**
-                     * Person who created the classification.
-                     * 
-                     * <p>Allowed resource types for this reference:
-                     * <ul>
-                     * <li>{@link Person}</li>
-                     * <li>{@link Practitioner}</li>
-                     * </ul>
-                     * 
-                     * @param person
-                     *     Person who created the classification
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    public Builder person(Reference person) {
-                        this.person = person;
-                        return this;
-                    }
-
-                    /**
-                     * Organization who created the classification.
-                     * 
-                     * <p>Allowed resource types for this reference:
-                     * <ul>
-                     * <li>{@link Organization}</li>
-                     * </ul>
-                     * 
-                     * @param organization
-                     *     Organization who created the classification
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    public Builder organization(Reference organization) {
-                        this.organization = organization;
-                        return this;
-                    }
-
-                    /**
-                     * The publisher of the classification, not the publisher of the article or artifact being cited.
-                     * 
-                     * <p>Allowed resource types for this reference:
-                     * <ul>
-                     * <li>{@link Organization}</li>
-                     * </ul>
-                     * 
-                     * @param publisher
-                     *     The publisher of the classification, not the publisher of the article or artifact being cited
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    public Builder publisher(Reference publisher) {
-                        this.publisher = publisher;
-                        return this;
-                    }
-
-                    /**
-                     * Convenience method for setting {@code classifierCopyright}.
-                     * 
-                     * @param classifierCopyright
-                     *     Rights management statement for the classification
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @see #classifierCopyright(org.linuxforhealth.fhir.model.type.String)
-                     */
-                    public Builder classifierCopyright(java.lang.String classifierCopyright) {
-                        this.classifierCopyright = (classifierCopyright == null) ? null : String.of(classifierCopyright);
-                        return this;
-                    }
-
-                    /**
-                     * Rights management statement for the classification.
-                     * 
-                     * @param classifierCopyright
-                     *     Rights management statement for the classification
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    public Builder classifierCopyright(String classifierCopyright) {
-                        this.classifierCopyright = classifierCopyright;
-                        return this;
-                    }
-
-                    /**
-                     * Convenience method for setting {@code freeToShare}.
-                     * 
-                     * @param freeToShare
-                     *     Acceptable to re-use the classification
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @see #freeToShare(org.linuxforhealth.fhir.model.type.Boolean)
-                     */
-                    public Builder freeToShare(java.lang.Boolean freeToShare) {
-                        this.freeToShare = (freeToShare == null) ? null : Boolean.of(freeToShare);
-                        return this;
-                    }
-
-                    /**
-                     * Acceptable to re-use the classification.
-                     * 
-                     * @param freeToShare
-                     *     Acceptable to re-use the classification
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    public Builder freeToShare(Boolean freeToShare) {
-                        this.freeToShare = freeToShare;
-                        return this;
-                    }
-
-                    /**
-                     * Build the {@link WhoClassified}
-                     * 
-                     * @return
-                     *     An immutable object of type {@link WhoClassified}
-                     * @throws IllegalStateException
-                     *     if the current state cannot be built into a valid WhoClassified per the base specification
-                     */
-                    @Override
-                    public WhoClassified build() {
-                        WhoClassified whoClassified = new WhoClassified(this);
-                        if (validating) {
-                            validate(whoClassified);
-                        }
-                        return whoClassified;
-                    }
-
-                    protected void validate(WhoClassified whoClassified) {
-                        super.validate(whoClassified);
-                        ValidationSupport.checkReferenceType(whoClassified.person, "person", "Person", "Practitioner");
-                        ValidationSupport.checkReferenceType(whoClassified.organization, "organization", "Organization");
-                        ValidationSupport.checkReferenceType(whoClassified.publisher, "publisher", "Organization");
-                        ValidationSupport.requireValueOrChildren(whoClassified);
-                    }
-
-                    protected Builder from(WhoClassified whoClassified) {
-                        super.from(whoClassified);
-                        person = whoClassified.person;
-                        organization = whoClassified.organization;
-                        publisher = whoClassified.publisher;
-                        classifierCopyright = whoClassified.classifierCopyright;
-                        freeToShare = whoClassified.freeToShare;
-                        return this;
-                    }
                 }
             }
         }
@@ -9537,7 +8449,7 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * An individual entity named in the author list or contributor list.
+             * An individual entity named as a contributor, for example in the author list or contributor list.
              * 
              * @return
              *     An unmodifiable list containing immutable objects of type {@link Entry} that may be empty.
@@ -9547,7 +8459,7 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * Used to record a display of the author/contributor list without separate coding for each list member.
+             * Used to record a display of the author/contributor list without separate data element for each list member.
              * 
              * @return
              *     An unmodifiable list containing immutable objects of type {@link Summary} that may be empty.
@@ -9652,7 +8564,7 @@ public class Citation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -9672,7 +8584,7 @@ public class Citation extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -9697,7 +8609,7 @@ public class Citation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -9722,7 +8634,7 @@ public class Citation extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -9777,13 +8689,13 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * An individual entity named in the author list or contributor list.
+                 * An individual entity named as a contributor, for example in the author list or contributor list.
                  * 
                  * <p>Adds new element(s) to the existing list.
                  * If any of the elements are null, calling {@link #build()} will fail.
                  * 
                  * @param entry
-                 *     An individual entity named in the list
+                 *     An individual entity named as a contributor
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -9796,13 +8708,13 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * An individual entity named in the author list or contributor list.
+                 * An individual entity named as a contributor, for example in the author list or contributor list.
                  * 
                  * <p>Replaces the existing list with a new one containing elements from the Collection.
                  * If any of the elements are null, calling {@link #build()} will fail.
                  * 
                  * @param entry
-                 *     An individual entity named in the list
+                 *     An individual entity named as a contributor
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -9816,13 +8728,13 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * Used to record a display of the author/contributor list without separate coding for each list member.
+                 * Used to record a display of the author/contributor list without separate data element for each list member.
                  * 
                  * <p>Adds new element(s) to the existing list.
                  * If any of the elements are null, calling {@link #build()} will fail.
                  * 
                  * @param summary
-                 *     Used to record a display of the author/contributor list without separate coding for each list member
+                 *     Used to record a display of the author/contributor list without separate data element for each list member
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -9835,13 +8747,13 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * Used to record a display of the author/contributor list without separate coding for each list member.
+                 * Used to record a display of the author/contributor list without separate data element for each list member.
                  * 
                  * <p>Replaces the existing list with a new one containing elements from the Collection.
                  * If any of the elements are null, calling {@link #build()} will fail.
                  * 
                  * @param summary
-                 *     Used to record a display of the author/contributor list without separate coding for each list member
+                 *     Used to record a display of the author/contributor list without separate data element for each list member
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -9888,16 +8800,15 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * An individual entity named in the author list or contributor list.
+             * An individual entity named as a contributor, for example in the author list or contributor list.
              */
             public static class Entry extends BackboneElement {
-                private final HumanName name;
-                private final String initials;
-                private final String collectiveName;
-                private final List<Identifier> identifier;
-                private final List<AffiliationInfo> affiliationInfo;
-                private final List<Address> address;
-                private final List<ContactPoint> telecom;
+                @ReferenceTarget({ "Practitioner", "Organization" })
+                @Required
+                private final Reference contributor;
+                private final String forenameInitials;
+                @ReferenceTarget({ "Organization", "PractitionerRole" })
+                private final List<Reference> affiliation;
                 @Binding(
                     bindingName = "ArtifactContributionType",
                     strength = BindingStrength.Value.EXTENSIBLE,
@@ -9912,92 +8823,48 @@ public class Citation extends DomainResource {
                 private final CodeableConcept role;
                 private final List<ContributionInstance> contributionInstance;
                 private final Boolean correspondingContact;
-                private final PositiveInt listOrder;
+                private final PositiveInt rankingOrder;
 
                 private Entry(Builder builder) {
                     super(builder);
-                    name = builder.name;
-                    initials = builder.initials;
-                    collectiveName = builder.collectiveName;
-                    identifier = Collections.unmodifiableList(builder.identifier);
-                    affiliationInfo = Collections.unmodifiableList(builder.affiliationInfo);
-                    address = Collections.unmodifiableList(builder.address);
-                    telecom = Collections.unmodifiableList(builder.telecom);
+                    contributor = builder.contributor;
+                    forenameInitials = builder.forenameInitials;
+                    affiliation = Collections.unmodifiableList(builder.affiliation);
                     contributionType = Collections.unmodifiableList(builder.contributionType);
                     role = builder.role;
                     contributionInstance = Collections.unmodifiableList(builder.contributionInstance);
                     correspondingContact = builder.correspondingContact;
-                    listOrder = builder.listOrder;
+                    rankingOrder = builder.rankingOrder;
                 }
 
                 /**
-                 * A name associated with the individual.
+                 * The identity of the individual contributor.
                  * 
                  * @return
-                 *     An immutable object of type {@link HumanName} that may be null.
+                 *     An immutable object of type {@link Reference} that is non-null.
                  */
-                public HumanName getName() {
-                    return name;
+                public Reference getContributor() {
+                    return contributor;
                 }
 
                 /**
-                 * Initials for forename.
-                 * 
-                 * @return
-                 *     An immutable object of type {@link String} that may be null.
-                 */
-                public String getInitials() {
-                    return initials;
-                }
-
-                /**
-                 * Used for collective or corporate name as an author.
+                 * For citation styles that use initials.
                  * 
                  * @return
                  *     An immutable object of type {@link String} that may be null.
                  */
-                public String getCollectiveName() {
-                    return collectiveName;
+                public String getForenameInitials() {
+                    return forenameInitials;
                 }
 
                 /**
-                 * Unique person identifier.
+                 * Organization affiliated with the contributor.
                  * 
                  * @return
-                 *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
+                 *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
                  */
-                public List<Identifier> getIdentifier() {
-                    return identifier;
-                }
-
-                /**
-                 * Organization affiliated with the entity.
-                 * 
-                 * @return
-                 *     An unmodifiable list containing immutable objects of type {@link AffiliationInfo} that may be empty.
-                 */
-                public List<AffiliationInfo> getAffiliationInfo() {
-                    return affiliationInfo;
-                }
-
-                /**
-                 * Physical mailing address for the author or contributor.
-                 * 
-                 * @return
-                 *     An unmodifiable list containing immutable objects of type {@link Address} that may be empty.
-                 */
-                public List<Address> getAddress() {
-                    return address;
-                }
-
-                /**
-                 * Email or telephone contact methods for the author or contributor.
-                 * 
-                 * @return
-                 *     An unmodifiable list containing immutable objects of type {@link ContactPoint} that may be empty.
-                 */
-                public List<ContactPoint> getTelecom() {
-                    return telecom;
+                public List<Reference> getAffiliation() {
+                    return affiliation;
                 }
 
                 /**
@@ -10011,7 +8878,7 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * The role of the contributor (e.g. author, editor, reviewer).
+                 * The role of the contributor (e.g. author, editor, reviewer, funder).
                  * 
                  * @return
                  *     An immutable object of type {@link CodeableConcept} that may be null.
@@ -10031,7 +8898,7 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * Indication of which contributor is the corresponding contributor for the role.
+                 * Whether the contributor is the corresponding contributor for the role.
                  * 
                  * @return
                  *     An immutable object of type {@link Boolean} that may be null.
@@ -10041,30 +8908,27 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * Used to code order of authors.
+                 * Provides a numerical ranking to represent the degree of contributorship relative to other contributors, such as 1 for 
+                 * first author and 2 for second author.
                  * 
                  * @return
                  *     An immutable object of type {@link PositiveInt} that may be null.
                  */
-                public PositiveInt getListOrder() {
-                    return listOrder;
+                public PositiveInt getRankingOrder() {
+                    return rankingOrder;
                 }
 
                 @Override
                 public boolean hasChildren() {
                     return super.hasChildren() || 
-                        (name != null) || 
-                        (initials != null) || 
-                        (collectiveName != null) || 
-                        !identifier.isEmpty() || 
-                        !affiliationInfo.isEmpty() || 
-                        !address.isEmpty() || 
-                        !telecom.isEmpty() || 
+                        (contributor != null) || 
+                        (forenameInitials != null) || 
+                        !affiliation.isEmpty() || 
                         !contributionType.isEmpty() || 
                         (role != null) || 
                         !contributionInstance.isEmpty() || 
                         (correspondingContact != null) || 
-                        (listOrder != null);
+                        (rankingOrder != null);
                 }
 
                 @Override
@@ -10076,18 +8940,14 @@ public class Citation extends DomainResource {
                             accept(id, "id", visitor);
                             accept(extension, "extension", visitor, Extension.class);
                             accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                            accept(name, "name", visitor);
-                            accept(initials, "initials", visitor);
-                            accept(collectiveName, "collectiveName", visitor);
-                            accept(identifier, "identifier", visitor, Identifier.class);
-                            accept(affiliationInfo, "affiliationInfo", visitor, AffiliationInfo.class);
-                            accept(address, "address", visitor, Address.class);
-                            accept(telecom, "telecom", visitor, ContactPoint.class);
+                            accept(contributor, "contributor", visitor);
+                            accept(forenameInitials, "forenameInitials", visitor);
+                            accept(affiliation, "affiliation", visitor, Reference.class);
                             accept(contributionType, "contributionType", visitor, CodeableConcept.class);
                             accept(role, "role", visitor);
                             accept(contributionInstance, "contributionInstance", visitor, ContributionInstance.class);
                             accept(correspondingContact, "correspondingContact", visitor);
-                            accept(listOrder, "listOrder", visitor);
+                            accept(rankingOrder, "rankingOrder", visitor);
                         }
                         visitor.visitEnd(elementName, elementIndex, this);
                         visitor.postVisit(this);
@@ -10109,18 +8969,14 @@ public class Citation extends DomainResource {
                     return Objects.equals(id, other.id) && 
                         Objects.equals(extension, other.extension) && 
                         Objects.equals(modifierExtension, other.modifierExtension) && 
-                        Objects.equals(name, other.name) && 
-                        Objects.equals(initials, other.initials) && 
-                        Objects.equals(collectiveName, other.collectiveName) && 
-                        Objects.equals(identifier, other.identifier) && 
-                        Objects.equals(affiliationInfo, other.affiliationInfo) && 
-                        Objects.equals(address, other.address) && 
-                        Objects.equals(telecom, other.telecom) && 
+                        Objects.equals(contributor, other.contributor) && 
+                        Objects.equals(forenameInitials, other.forenameInitials) && 
+                        Objects.equals(affiliation, other.affiliation) && 
                         Objects.equals(contributionType, other.contributionType) && 
                         Objects.equals(role, other.role) && 
                         Objects.equals(contributionInstance, other.contributionInstance) && 
                         Objects.equals(correspondingContact, other.correspondingContact) && 
-                        Objects.equals(listOrder, other.listOrder);
+                        Objects.equals(rankingOrder, other.rankingOrder);
                 }
 
                 @Override
@@ -10130,18 +8986,14 @@ public class Citation extends DomainResource {
                         result = Objects.hash(id, 
                             extension, 
                             modifierExtension, 
-                            name, 
-                            initials, 
-                            collectiveName, 
-                            identifier, 
-                            affiliationInfo, 
-                            address, 
-                            telecom, 
+                            contributor, 
+                            forenameInitials, 
+                            affiliation, 
                             contributionType, 
                             role, 
                             contributionInstance, 
                             correspondingContact, 
-                            listOrder);
+                            rankingOrder);
                         hashCode = result;
                     }
                     return result;
@@ -10157,18 +9009,14 @@ public class Citation extends DomainResource {
                 }
 
                 public static class Builder extends BackboneElement.Builder {
-                    private HumanName name;
-                    private String initials;
-                    private String collectiveName;
-                    private List<Identifier> identifier = new ArrayList<>();
-                    private List<AffiliationInfo> affiliationInfo = new ArrayList<>();
-                    private List<Address> address = new ArrayList<>();
-                    private List<ContactPoint> telecom = new ArrayList<>();
+                    private Reference contributor;
+                    private String forenameInitials;
+                    private List<Reference> affiliation = new ArrayList<>();
                     private List<CodeableConcept> contributionType = new ArrayList<>();
                     private CodeableConcept role;
                     private List<ContributionInstance> contributionInstance = new ArrayList<>();
                     private Boolean correspondingContact;
-                    private PositiveInt listOrder;
+                    private PositiveInt rankingOrder;
 
                     private Builder() {
                         super();
@@ -10191,7 +9039,7 @@ public class Citation extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -10211,7 +9059,7 @@ public class Citation extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -10236,7 +9084,7 @@ public class Citation extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -10261,7 +9109,7 @@ public class Citation extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -10286,144 +9134,95 @@ public class Citation extends DomainResource {
                     }
 
                     /**
-                     * A name associated with the individual.
+                     * The identity of the individual contributor.
                      * 
-                     * @param name
-                     *     A name associated with the person
+                     * <p>This element is required.
                      * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    public Builder name(HumanName name) {
-                        this.name = name;
-                        return this;
-                    }
-
-                    /**
-                     * Convenience method for setting {@code initials}.
+                     * <p>Allowed resource types for this reference:
+                     * <ul>
+                     * <li>{@link Practitioner}</li>
+                     * <li>{@link Organization}</li>
+                     * </ul>
                      * 
-                     * @param initials
-                     *     Initials for forename
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @see #initials(org.linuxforhealth.fhir.model.type.String)
-                     */
-                    public Builder initials(java.lang.String initials) {
-                        this.initials = (initials == null) ? null : String.of(initials);
-                        return this;
-                    }
-
-                    /**
-                     * Initials for forename.
-                     * 
-                     * @param initials
-                     *     Initials for forename
+                     * @param contributor
+                     *     The identity of the individual contributor
                      * 
                      * @return
                      *     A reference to this Builder instance
                      */
-                    public Builder initials(String initials) {
-                        this.initials = initials;
+                    public Builder contributor(Reference contributor) {
+                        this.contributor = contributor;
                         return this;
                     }
 
                     /**
-                     * Convenience method for setting {@code collectiveName}.
+                     * Convenience method for setting {@code forenameInitials}.
                      * 
-                     * @param collectiveName
-                     *     Used for collective or corporate name as an author
+                     * @param forenameInitials
+                     *     For citation styles that use initials
                      * 
                      * @return
                      *     A reference to this Builder instance
                      * 
-                     * @see #collectiveName(org.linuxforhealth.fhir.model.type.String)
+                     * @see #forenameInitials(org.linuxforhealth.fhir.model.type.String)
                      */
-                    public Builder collectiveName(java.lang.String collectiveName) {
-                        this.collectiveName = (collectiveName == null) ? null : String.of(collectiveName);
+                    public Builder forenameInitials(java.lang.String forenameInitials) {
+                        this.forenameInitials = (forenameInitials == null) ? null : String.of(forenameInitials);
                         return this;
                     }
 
                     /**
-                     * Used for collective or corporate name as an author.
+                     * For citation styles that use initials.
                      * 
-                     * @param collectiveName
-                     *     Used for collective or corporate name as an author
+                     * @param forenameInitials
+                     *     For citation styles that use initials
                      * 
                      * @return
                      *     A reference to this Builder instance
                      */
-                    public Builder collectiveName(String collectiveName) {
-                        this.collectiveName = collectiveName;
+                    public Builder forenameInitials(String forenameInitials) {
+                        this.forenameInitials = forenameInitials;
                         return this;
                     }
 
                     /**
-                     * Unique person identifier.
+                     * Organization affiliated with the contributor.
                      * 
                      * <p>Adds new element(s) to the existing list.
                      * If any of the elements are null, calling {@link #build()} will fail.
                      * 
-                     * @param identifier
-                     *     Author identifier, eg ORCID
+                     * <p>Allowed resource types for the references:
+                     * <ul>
+                     * <li>{@link Organization}</li>
+                     * <li>{@link PractitionerRole}</li>
+                     * </ul>
                      * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    public Builder identifier(Identifier... identifier) {
-                        for (Identifier value : identifier) {
-                            this.identifier.add(value);
-                        }
-                        return this;
-                    }
-
-                    /**
-                     * Unique person identifier.
-                     * 
-                     * <p>Replaces the existing list with a new one containing elements from the Collection.
-                     * If any of the elements are null, calling {@link #build()} will fail.
-                     * 
-                     * @param identifier
-                     *     Author identifier, eg ORCID
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @throws NullPointerException
-                     *     If the passed collection is null
-                     */
-                    public Builder identifier(Collection<Identifier> identifier) {
-                        this.identifier = new ArrayList<>(identifier);
-                        return this;
-                    }
-
-                    /**
-                     * Organization affiliated with the entity.
-                     * 
-                     * <p>Adds new element(s) to the existing list.
-                     * If any of the elements are null, calling {@link #build()} will fail.
-                     * 
-                     * @param affiliationInfo
+                     * @param affiliation
                      *     Organizational affiliation
                      * 
                      * @return
                      *     A reference to this Builder instance
                      */
-                    public Builder affiliationInfo(AffiliationInfo... affiliationInfo) {
-                        for (AffiliationInfo value : affiliationInfo) {
-                            this.affiliationInfo.add(value);
+                    public Builder affiliation(Reference... affiliation) {
+                        for (Reference value : affiliation) {
+                            this.affiliation.add(value);
                         }
                         return this;
                     }
 
                     /**
-                     * Organization affiliated with the entity.
+                     * Organization affiliated with the contributor.
                      * 
                      * <p>Replaces the existing list with a new one containing elements from the Collection.
                      * If any of the elements are null, calling {@link #build()} will fail.
                      * 
-                     * @param affiliationInfo
+                     * <p>Allowed resource types for the references:
+                     * <ul>
+                     * <li>{@link Organization}</li>
+                     * <li>{@link PractitionerRole}</li>
+                     * </ul>
+                     * 
+                     * @param affiliation
                      *     Organizational affiliation
                      * 
                      * @return
@@ -10432,86 +9231,8 @@ public class Citation extends DomainResource {
                      * @throws NullPointerException
                      *     If the passed collection is null
                      */
-                    public Builder affiliationInfo(Collection<AffiliationInfo> affiliationInfo) {
-                        this.affiliationInfo = new ArrayList<>(affiliationInfo);
-                        return this;
-                    }
-
-                    /**
-                     * Physical mailing address for the author or contributor.
-                     * 
-                     * <p>Adds new element(s) to the existing list.
-                     * If any of the elements are null, calling {@link #build()} will fail.
-                     * 
-                     * @param address
-                     *     Physical mailing address
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    public Builder address(Address... address) {
-                        for (Address value : address) {
-                            this.address.add(value);
-                        }
-                        return this;
-                    }
-
-                    /**
-                     * Physical mailing address for the author or contributor.
-                     * 
-                     * <p>Replaces the existing list with a new one containing elements from the Collection.
-                     * If any of the elements are null, calling {@link #build()} will fail.
-                     * 
-                     * @param address
-                     *     Physical mailing address
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @throws NullPointerException
-                     *     If the passed collection is null
-                     */
-                    public Builder address(Collection<Address> address) {
-                        this.address = new ArrayList<>(address);
-                        return this;
-                    }
-
-                    /**
-                     * Email or telephone contact methods for the author or contributor.
-                     * 
-                     * <p>Adds new element(s) to the existing list.
-                     * If any of the elements are null, calling {@link #build()} will fail.
-                     * 
-                     * @param telecom
-                     *     Email or telephone contact methods for the author or contributor
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    public Builder telecom(ContactPoint... telecom) {
-                        for (ContactPoint value : telecom) {
-                            this.telecom.add(value);
-                        }
-                        return this;
-                    }
-
-                    /**
-                     * Email or telephone contact methods for the author or contributor.
-                     * 
-                     * <p>Replaces the existing list with a new one containing elements from the Collection.
-                     * If any of the elements are null, calling {@link #build()} will fail.
-                     * 
-                     * @param telecom
-                     *     Email or telephone contact methods for the author or contributor
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @throws NullPointerException
-                     *     If the passed collection is null
-                     */
-                    public Builder telecom(Collection<ContactPoint> telecom) {
-                        this.telecom = new ArrayList<>(telecom);
+                    public Builder affiliation(Collection<Reference> affiliation) {
+                        this.affiliation = new ArrayList<>(affiliation);
                         return this;
                     }
 
@@ -10555,10 +9276,10 @@ public class Citation extends DomainResource {
                     }
 
                     /**
-                     * The role of the contributor (e.g. author, editor, reviewer).
+                     * The role of the contributor (e.g. author, editor, reviewer, funder).
                      * 
                      * @param role
-                     *     The role of the contributor (e.g. author, editor, reviewer)
+                     *     The role of the contributor (e.g. author, editor, reviewer, funder)
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -10611,7 +9332,7 @@ public class Citation extends DomainResource {
                      * Convenience method for setting {@code correspondingContact}.
                      * 
                      * @param correspondingContact
-                     *     Indication of which contributor is the corresponding contributor for the role
+                     *     Whether the contributor is the corresponding contributor for the role
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -10624,10 +9345,10 @@ public class Citation extends DomainResource {
                     }
 
                     /**
-                     * Indication of which contributor is the corresponding contributor for the role.
+                     * Whether the contributor is the corresponding contributor for the role.
                      * 
                      * @param correspondingContact
-                     *     Indication of which contributor is the corresponding contributor for the role
+                     *     Whether the contributor is the corresponding contributor for the role
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -10638,21 +9359,27 @@ public class Citation extends DomainResource {
                     }
 
                     /**
-                     * Used to code order of authors.
+                     * Provides a numerical ranking to represent the degree of contributorship relative to other contributors, such as 1 for 
+                     * first author and 2 for second author.
                      * 
-                     * @param listOrder
-                     *     Used to code order of authors
+                     * @param rankingOrder
+                     *     Ranked order of contribution
                      * 
                      * @return
                      *     A reference to this Builder instance
                      */
-                    public Builder listOrder(PositiveInt listOrder) {
-                        this.listOrder = listOrder;
+                    public Builder rankingOrder(PositiveInt rankingOrder) {
+                        this.rankingOrder = rankingOrder;
                         return this;
                     }
 
                     /**
                      * Build the {@link Entry}
+                     * 
+                     * <p>Required elements:
+                     * <ul>
+                     * <li>contributor</li>
+                     * </ul>
                      * 
                      * @return
                      *     An immutable object of type {@link Entry}
@@ -10670,397 +9397,26 @@ public class Citation extends DomainResource {
 
                     protected void validate(Entry entry) {
                         super.validate(entry);
-                        ValidationSupport.checkList(entry.identifier, "identifier", Identifier.class);
-                        ValidationSupport.checkList(entry.affiliationInfo, "affiliationInfo", AffiliationInfo.class);
-                        ValidationSupport.checkList(entry.address, "address", Address.class);
-                        ValidationSupport.checkList(entry.telecom, "telecom", ContactPoint.class);
+                        ValidationSupport.requireNonNull(entry.contributor, "contributor");
+                        ValidationSupport.checkList(entry.affiliation, "affiliation", Reference.class);
                         ValidationSupport.checkList(entry.contributionType, "contributionType", CodeableConcept.class);
                         ValidationSupport.checkList(entry.contributionInstance, "contributionInstance", ContributionInstance.class);
+                        ValidationSupport.checkReferenceType(entry.contributor, "contributor", "Practitioner", "Organization");
+                        ValidationSupport.checkReferenceType(entry.affiliation, "affiliation", "Organization", "PractitionerRole");
                         ValidationSupport.requireValueOrChildren(entry);
                     }
 
                     protected Builder from(Entry entry) {
                         super.from(entry);
-                        name = entry.name;
-                        initials = entry.initials;
-                        collectiveName = entry.collectiveName;
-                        identifier.addAll(entry.identifier);
-                        affiliationInfo.addAll(entry.affiliationInfo);
-                        address.addAll(entry.address);
-                        telecom.addAll(entry.telecom);
+                        contributor = entry.contributor;
+                        forenameInitials = entry.forenameInitials;
+                        affiliation.addAll(entry.affiliation);
                         contributionType.addAll(entry.contributionType);
                         role = entry.role;
                         contributionInstance.addAll(entry.contributionInstance);
                         correspondingContact = entry.correspondingContact;
-                        listOrder = entry.listOrder;
+                        rankingOrder = entry.rankingOrder;
                         return this;
-                    }
-                }
-
-                /**
-                 * Organization affiliated with the entity.
-                 */
-                public static class AffiliationInfo extends BackboneElement {
-                    private final String affiliation;
-                    private final String role;
-                    private final List<Identifier> identifier;
-
-                    private AffiliationInfo(Builder builder) {
-                        super(builder);
-                        affiliation = builder.affiliation;
-                        role = builder.role;
-                        identifier = Collections.unmodifiableList(builder.identifier);
-                    }
-
-                    /**
-                     * Display for the organization.
-                     * 
-                     * @return
-                     *     An immutable object of type {@link String} that may be null.
-                     */
-                    public String getAffiliation() {
-                        return affiliation;
-                    }
-
-                    /**
-                     * Role within the organization, such as professional title.
-                     * 
-                     * @return
-                     *     An immutable object of type {@link String} that may be null.
-                     */
-                    public String getRole() {
-                        return role;
-                    }
-
-                    /**
-                     * Identifier for the organization.
-                     * 
-                     * @return
-                     *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
-                     */
-                    public List<Identifier> getIdentifier() {
-                        return identifier;
-                    }
-
-                    @Override
-                    public boolean hasChildren() {
-                        return super.hasChildren() || 
-                            (affiliation != null) || 
-                            (role != null) || 
-                            !identifier.isEmpty();
-                    }
-
-                    @Override
-                    public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-                        if (visitor.preVisit(this)) {
-                            visitor.visitStart(elementName, elementIndex, this);
-                            if (visitor.visit(elementName, elementIndex, this)) {
-                                // visit children
-                                accept(id, "id", visitor);
-                                accept(extension, "extension", visitor, Extension.class);
-                                accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                                accept(affiliation, "affiliation", visitor);
-                                accept(role, "role", visitor);
-                                accept(identifier, "identifier", visitor, Identifier.class);
-                            }
-                            visitor.visitEnd(elementName, elementIndex, this);
-                            visitor.postVisit(this);
-                        }
-                    }
-
-                    @Override
-                    public boolean equals(Object obj) {
-                        if (this == obj) {
-                            return true;
-                        }
-                        if (obj == null) {
-                            return false;
-                        }
-                        if (getClass() != obj.getClass()) {
-                            return false;
-                        }
-                        AffiliationInfo other = (AffiliationInfo) obj;
-                        return Objects.equals(id, other.id) && 
-                            Objects.equals(extension, other.extension) && 
-                            Objects.equals(modifierExtension, other.modifierExtension) && 
-                            Objects.equals(affiliation, other.affiliation) && 
-                            Objects.equals(role, other.role) && 
-                            Objects.equals(identifier, other.identifier);
-                    }
-
-                    @Override
-                    public int hashCode() {
-                        int result = hashCode;
-                        if (result == 0) {
-                            result = Objects.hash(id, 
-                                extension, 
-                                modifierExtension, 
-                                affiliation, 
-                                role, 
-                                identifier);
-                            hashCode = result;
-                        }
-                        return result;
-                    }
-
-                    @Override
-                    public Builder toBuilder() {
-                        return new Builder().from(this);
-                    }
-
-                    public static Builder builder() {
-                        return new Builder();
-                    }
-
-                    public static class Builder extends BackboneElement.Builder {
-                        private String affiliation;
-                        private String role;
-                        private List<Identifier> identifier = new ArrayList<>();
-
-                        private Builder() {
-                            super();
-                        }
-
-                        /**
-                         * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-                         * contain spaces.
-                         * 
-                         * @param id
-                         *     Unique id for inter-element referencing
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         */
-                        @Override
-                        public Builder id(java.lang.String id) {
-                            return (Builder) super.id(id);
-                        }
-
-                        /**
-                         * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-                         * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-                         * of the definition of the extension.
-                         * 
-                         * <p>Adds new element(s) to the existing list.
-                         * If any of the elements are null, calling {@link #build()} will fail.
-                         * 
-                         * @param extension
-                         *     Additional content defined by implementations
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         */
-                        @Override
-                        public Builder extension(Extension... extension) {
-                            return (Builder) super.extension(extension);
-                        }
-
-                        /**
-                         * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-                         * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-                         * of the definition of the extension.
-                         * 
-                         * <p>Replaces the existing list with a new one containing elements from the Collection.
-                         * If any of the elements are null, calling {@link #build()} will fail.
-                         * 
-                         * @param extension
-                         *     Additional content defined by implementations
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         * 
-                         * @throws NullPointerException
-                         *     If the passed collection is null
-                         */
-                        @Override
-                        public Builder extension(Collection<Extension> extension) {
-                            return (Builder) super.extension(extension);
-                        }
-
-                        /**
-                         * May be used to represent additional information that is not part of the basic definition of the element and that 
-                         * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-                         * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-                         * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-                         * extension. Applications processing a resource are required to check for modifier extensions.
-                         * 
-                         * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-                         * change the meaning of modifierExtension itself).
-                         * 
-                         * <p>Adds new element(s) to the existing list.
-                         * If any of the elements are null, calling {@link #build()} will fail.
-                         * 
-                         * @param modifierExtension
-                         *     Extensions that cannot be ignored even if unrecognized
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         */
-                        @Override
-                        public Builder modifierExtension(Extension... modifierExtension) {
-                            return (Builder) super.modifierExtension(modifierExtension);
-                        }
-
-                        /**
-                         * May be used to represent additional information that is not part of the basic definition of the element and that 
-                         * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-                         * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-                         * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-                         * extension. Applications processing a resource are required to check for modifier extensions.
-                         * 
-                         * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-                         * change the meaning of modifierExtension itself).
-                         * 
-                         * <p>Replaces the existing list with a new one containing elements from the Collection.
-                         * If any of the elements are null, calling {@link #build()} will fail.
-                         * 
-                         * @param modifierExtension
-                         *     Extensions that cannot be ignored even if unrecognized
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         * 
-                         * @throws NullPointerException
-                         *     If the passed collection is null
-                         */
-                        @Override
-                        public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                            return (Builder) super.modifierExtension(modifierExtension);
-                        }
-
-                        /**
-                         * Convenience method for setting {@code affiliation}.
-                         * 
-                         * @param affiliation
-                         *     Display for the organization
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         * 
-                         * @see #affiliation(org.linuxforhealth.fhir.model.type.String)
-                         */
-                        public Builder affiliation(java.lang.String affiliation) {
-                            this.affiliation = (affiliation == null) ? null : String.of(affiliation);
-                            return this;
-                        }
-
-                        /**
-                         * Display for the organization.
-                         * 
-                         * @param affiliation
-                         *     Display for the organization
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         */
-                        public Builder affiliation(String affiliation) {
-                            this.affiliation = affiliation;
-                            return this;
-                        }
-
-                        /**
-                         * Convenience method for setting {@code role}.
-                         * 
-                         * @param role
-                         *     Role within the organization, such as professional title
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         * 
-                         * @see #role(org.linuxforhealth.fhir.model.type.String)
-                         */
-                        public Builder role(java.lang.String role) {
-                            this.role = (role == null) ? null : String.of(role);
-                            return this;
-                        }
-
-                        /**
-                         * Role within the organization, such as professional title.
-                         * 
-                         * @param role
-                         *     Role within the organization, such as professional title
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         */
-                        public Builder role(String role) {
-                            this.role = role;
-                            return this;
-                        }
-
-                        /**
-                         * Identifier for the organization.
-                         * 
-                         * <p>Adds new element(s) to the existing list.
-                         * If any of the elements are null, calling {@link #build()} will fail.
-                         * 
-                         * @param identifier
-                         *     Identifier for the organization
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         */
-                        public Builder identifier(Identifier... identifier) {
-                            for (Identifier value : identifier) {
-                                this.identifier.add(value);
-                            }
-                            return this;
-                        }
-
-                        /**
-                         * Identifier for the organization.
-                         * 
-                         * <p>Replaces the existing list with a new one containing elements from the Collection.
-                         * If any of the elements are null, calling {@link #build()} will fail.
-                         * 
-                         * @param identifier
-                         *     Identifier for the organization
-                         * 
-                         * @return
-                         *     A reference to this Builder instance
-                         * 
-                         * @throws NullPointerException
-                         *     If the passed collection is null
-                         */
-                        public Builder identifier(Collection<Identifier> identifier) {
-                            this.identifier = new ArrayList<>(identifier);
-                            return this;
-                        }
-
-                        /**
-                         * Build the {@link AffiliationInfo}
-                         * 
-                         * @return
-                         *     An immutable object of type {@link AffiliationInfo}
-                         * @throws IllegalStateException
-                         *     if the current state cannot be built into a valid AffiliationInfo per the base specification
-                         */
-                        @Override
-                        public AffiliationInfo build() {
-                            AffiliationInfo affiliationInfo = new AffiliationInfo(this);
-                            if (validating) {
-                                validate(affiliationInfo);
-                            }
-                            return affiliationInfo;
-                        }
-
-                        protected void validate(AffiliationInfo affiliationInfo) {
-                            super.validate(affiliationInfo);
-                            ValidationSupport.checkList(affiliationInfo.identifier, "identifier", Identifier.class);
-                            ValidationSupport.requireValueOrChildren(affiliationInfo);
-                        }
-
-                        protected Builder from(AffiliationInfo affiliationInfo) {
-                            super.from(affiliationInfo);
-                            affiliation = affiliationInfo.affiliation;
-                            role = affiliationInfo.role;
-                            identifier.addAll(affiliationInfo.identifier);
-                            return this;
-                        }
                     }
                 }
 
@@ -11194,7 +9550,7 @@ public class Citation extends DomainResource {
 
                         /**
                          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                          * of the definition of the extension.
                          * 
@@ -11214,7 +9570,7 @@ public class Citation extends DomainResource {
 
                         /**
                          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                          * of the definition of the extension.
                          * 
@@ -11239,7 +9595,7 @@ public class Citation extends DomainResource {
                          * May be used to represent additional information that is not part of the basic definition of the element and that 
                          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                          * extension. Applications processing a resource are required to check for modifier extensions.
                          * 
@@ -11264,7 +9620,7 @@ public class Citation extends DomainResource {
                          * May be used to represent additional information that is not part of the basic definition of the element and that 
                          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                          * extension. Applications processing a resource are required to check for modifier extensions.
                          * 
@@ -11357,7 +9713,7 @@ public class Citation extends DomainResource {
             }
 
             /**
-             * Used to record a display of the author/contributor list without separate coding for each list member.
+             * Used to record a display of the author/contributor list without separate data element for each list member.
              */
             public static class Summary extends BackboneElement {
                 @Binding(
@@ -11400,7 +9756,8 @@ public class Citation extends DomainResource {
                 }
 
                 /**
-                 * The format for the display string.
+                 * The format for the display string, such as author last name with first letter capitalized followed by forename 
+                 * initials.
                  * 
                  * @return
                  *     An immutable object of type {@link CodeableConcept} that may be null.
@@ -11530,7 +9887,7 @@ public class Citation extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -11550,7 +9907,7 @@ public class Citation extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -11575,7 +9932,7 @@ public class Citation extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -11600,7 +9957,7 @@ public class Citation extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -11628,7 +9985,8 @@ public class Citation extends DomainResource {
                      * Used most commonly to express an author list or a contributorship statement.
                      * 
                      * @param type
-                     *     Either authorList or contributorshipStatement
+                     *     Such as author list, contributorship statement, funding statement, acknowledgements statement, or conflicts of 
+                     *     interest statement
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -11639,7 +9997,8 @@ public class Citation extends DomainResource {
                     }
 
                     /**
-                     * The format for the display string.
+                     * The format for the display string, such as author last name with first letter capitalized followed by forename 
+                     * initials.
                      * 
                      * @param style
                      *     The format for the display string

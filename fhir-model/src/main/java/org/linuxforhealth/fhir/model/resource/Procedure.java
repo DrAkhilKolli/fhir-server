@@ -24,9 +24,11 @@ import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.Age;
 import org.linuxforhealth.fhir.model.type.Annotation;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
+import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
@@ -37,6 +39,7 @@ import org.linuxforhealth.fhir.model.type.Period;
 import org.linuxforhealth.fhir.model.type.Range;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.String;
+import org.linuxforhealth.fhir.model.type.Timing;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.ProcedureStatus;
@@ -45,17 +48,27 @@ import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
- * An action that is or was performed on or for a patient. This can be a physical intervention like an operation, or less 
- * invasive like long term services, counseling, or hypnotherapy.
+ * An action that is or was performed on or for a patient, practitioner, device, organization, or location. For example, 
+ * this can be a physical intervention on a patient like an operation, or less invasive like long term services, 
+ * counseling, or hypnotherapy. This can be a quality or safety inspection for a location, organization, or device. This 
+ * can be an accreditation procedure on a practitioner for licensing.
  * 
- * <p>Maturity level: FMM3 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 3,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "procedure-0",
+    id = "prc-1",
+    level = "Rule",
+    location = "Procedure.performer",
+    description = "Procedure.performer.onBehalfOf can only be populated when performer.actor isn't Practitioner or PractitionerRole",
+    expression = "onBehalfOf.exists() and actor.resolve().exists() implies actor.resolve().where($this is Practitioner or $this is PractitionerRole).empty()",
+    source = "http://hl7.org/fhir/StructureDefinition/Procedure"
+)
+@Constraint(
+    id = "procedure-2",
     level = "Warning",
     location = "focalDevice.action",
     description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/device-action",
@@ -82,7 +95,7 @@ public class Procedure extends DomainResource {
         bindingName = "ProcedureStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "A code specifying the state of the procedure.",
-        valueSet = "http://hl7.org/fhir/ValueSet/event-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/event-status|5.0.0"
     )
     @Required
     private final ProcedureStatus status;
@@ -101,7 +114,7 @@ public class Procedure extends DomainResource {
         description = "A code that classifies a procedure for searching, sorting and display purposes.",
         valueSet = "http://hl7.org/fhir/ValueSet/procedure-category"
     )
-    private final CodeableConcept category;
+    private final List<CodeableConcept> category;
     @Summary
     @Binding(
         bindingName = "ProcedureCode",
@@ -111,21 +124,27 @@ public class Procedure extends DomainResource {
     )
     private final CodeableConcept code;
     @Summary
-    @ReferenceTarget({ "Patient", "Group" })
+    @ReferenceTarget({ "Patient", "Group", "Device", "Practitioner", "Organization", "Location" })
     @Required
     private final Reference subject;
+    @Summary
+    @ReferenceTarget({ "Patient", "Group", "RelatedPerson", "Practitioner", "Organization", "CareTeam", "PractitionerRole", "Specimen" })
+    private final Reference focus;
     @Summary
     @ReferenceTarget({ "Encounter" })
     private final Reference encounter;
     @Summary
-    @Choice({ DateTime.class, Period.class, String.class, Age.class, Range.class })
-    private final Element performed;
+    @Choice({ DateTime.class, Period.class, String.class, Age.class, Range.class, Timing.class })
+    private final org.linuxforhealth.fhir.model.type.Element occurrence;
+    @Summary
+    private final DateTime recorded;
     @Summary
     @ReferenceTarget({ "Patient", "RelatedPerson", "Practitioner", "PractitionerRole" })
     private final Reference recorder;
     @Summary
-    @ReferenceTarget({ "Patient", "RelatedPerson", "Practitioner", "PractitionerRole" })
-    private final Reference asserter;
+    @ReferenceTarget({ "Patient", "RelatedPerson", "Practitioner", "PractitionerRole", "Organization" })
+    @Choice({ Boolean.class, Reference.class })
+    private final org.linuxforhealth.fhir.model.type.Element reported;
     @Summary
     private final List<Performer> performer;
     @Summary
@@ -138,10 +157,7 @@ public class Procedure extends DomainResource {
         description = "A code that identifies the reason a procedure is  required.",
         valueSet = "http://hl7.org/fhir/ValueSet/procedure-reason"
     )
-    private final List<CodeableConcept> reasonCode;
-    @Summary
-    @ReferenceTarget({ "Condition", "Observation", "Procedure", "DiagnosticReport", "DocumentReference" })
-    private final List<Reference> reasonReference;
+    private final List<CodeableReference> reason;
     @Summary
     @Binding(
         bindingName = "BodySite",
@@ -166,9 +182,7 @@ public class Procedure extends DomainResource {
         description = "Codes describing complications that resulted from a procedure.",
         valueSet = "http://hl7.org/fhir/ValueSet/condition-code"
     )
-    private final List<CodeableConcept> complication;
-    @ReferenceTarget({ "Condition" })
-    private final List<Reference> complicationDetail;
+    private final List<CodeableReference> complication;
     @Binding(
         bindingName = "ProcedureFollowUp",
         strength = BindingStrength.Value.EXAMPLE,
@@ -178,15 +192,14 @@ public class Procedure extends DomainResource {
     private final List<CodeableConcept> followUp;
     private final List<Annotation> note;
     private final List<FocalDevice> focalDevice;
-    @ReferenceTarget({ "Device", "Medication", "Substance" })
-    private final List<Reference> usedReference;
     @Binding(
         bindingName = "ProcedureUsed",
         strength = BindingStrength.Value.EXAMPLE,
         description = "Codes describing items used during a procedure.",
-        valueSet = "http://hl7.org/fhir/ValueSet/device-kind"
+        valueSet = "http://hl7.org/fhir/ValueSet/device-type"
     )
-    private final List<CodeableConcept> usedCode;
+    private final List<CodeableReference> used;
+    private final List<Reference> supportingInfo;
 
     private Procedure(Builder builder) {
         super(builder);
@@ -197,27 +210,27 @@ public class Procedure extends DomainResource {
         partOf = Collections.unmodifiableList(builder.partOf);
         status = builder.status;
         statusReason = builder.statusReason;
-        category = builder.category;
+        category = Collections.unmodifiableList(builder.category);
         code = builder.code;
         subject = builder.subject;
+        focus = builder.focus;
         encounter = builder.encounter;
-        performed = builder.performed;
+        occurrence = builder.occurrence;
+        recorded = builder.recorded;
         recorder = builder.recorder;
-        asserter = builder.asserter;
+        reported = builder.reported;
         performer = Collections.unmodifiableList(builder.performer);
         location = builder.location;
-        reasonCode = Collections.unmodifiableList(builder.reasonCode);
-        reasonReference = Collections.unmodifiableList(builder.reasonReference);
+        reason = Collections.unmodifiableList(builder.reason);
         bodySite = Collections.unmodifiableList(builder.bodySite);
         outcome = builder.outcome;
         report = Collections.unmodifiableList(builder.report);
         complication = Collections.unmodifiableList(builder.complication);
-        complicationDetail = Collections.unmodifiableList(builder.complicationDetail);
         followUp = Collections.unmodifiableList(builder.followUp);
         note = Collections.unmodifiableList(builder.note);
         focalDevice = Collections.unmodifiableList(builder.focalDevice);
-        usedReference = Collections.unmodifiableList(builder.usedReference);
-        usedCode = Collections.unmodifiableList(builder.usedCode);
+        used = Collections.unmodifiableList(builder.used);
+        supportingInfo = Collections.unmodifiableList(builder.supportingInfo);
     }
 
     /**
@@ -297,9 +310,9 @@ public class Procedure extends DomainResource {
      * A code that classifies the procedure for searching, sorting and display purposes (e.g. "Surgical Procedure").
      * 
      * @return
-     *     An immutable object of type {@link CodeableConcept} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
      */
-    public CodeableConcept getCategory() {
+    public List<CodeableConcept> getCategory() {
         return category;
     }
 
@@ -315,13 +328,31 @@ public class Procedure extends DomainResource {
     }
 
     /**
-     * The person, animal or group on which the procedure was performed.
+     * On whom or on what the procedure was performed. This is usually an individual human, but can also be performed on 
+     * animals, groups of humans or animals, organizations or practitioners (for licensing), locations or devices (for safety 
+     * inspections or regulatory authorizations). If the actual focus of the procedure is different from the subject, the 
+     * focus element specifies the actual focus of the procedure.
      * 
      * @return
      *     An immutable object of type {@link Reference} that is non-null.
      */
     public Reference getSubject() {
         return subject;
+    }
+
+    /**
+     * Who is the target of the procedure when it is not the subject of record only. If focus is not present, then subject is 
+     * the focus. If focus is present and the subject is one of the targets of the procedure, include subject as a focus as 
+     * well. If focus is present and the subject is not included in focus, it implies that the procedure was only targeted on 
+     * the focus. For example, when a caregiver is given education for a patient, the caregiver would be the focus and the 
+     * procedure record is associated with the subject (e.g. patient). For example, use focus when recording the target of 
+     * the education, training, or counseling is the parent or relative of a patient.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getFocus() {
+        return focus;
     }
 
     /**
@@ -336,15 +367,27 @@ public class Procedure extends DomainResource {
     }
 
     /**
-     * Estimated or actual date, date-time, period, or age when the procedure was performed. Allows a period to support 
-     * complex procedures that span more than one date, and also allows for the length of the procedure to be captured.
+     * Estimated or actual date, date-time, period, or age when the procedure did occur or is occurring. Allows a period to 
+     * support complex procedures that span more than one date, and also allows for the length of the procedure to be 
+     * captured.
      * 
      * @return
-     *     An immutable object of type {@link DateTime}, {@link Period}, {@link String}, {@link Age} or {@link Range} that may be 
-     *     null.
+     *     An immutable object of type {@link DateTime}, {@link Period}, {@link String}, {@link Age}, {@link Range} or {@link 
+     *     Timing} that may be null.
      */
-    public Element getPerformed() {
-        return performed;
+    public org.linuxforhealth.fhir.model.type.Element getOccurrence() {
+        return occurrence;
+    }
+
+    /**
+     * The date the occurrence of the procedure was first captured in the record regardless of Procedure.status (potentially 
+     * after the occurrence of the event).
+     * 
+     * @return
+     *     An immutable object of type {@link DateTime} that may be null.
+     */
+    public DateTime getRecorded() {
+        return recorded;
     }
 
     /**
@@ -358,17 +401,18 @@ public class Procedure extends DomainResource {
     }
 
     /**
-     * Individual who is making the procedure statement.
+     * Indicates if this record was captured as a secondary 'reported' record rather than as an original primary source-of-
+     * truth record. It may also indicate the source of the report.
      * 
      * @return
-     *     An immutable object of type {@link Reference} that may be null.
+     *     An immutable object of type {@link Boolean} or {@link Reference} that may be null.
      */
-    public Reference getAsserter() {
-        return asserter;
+    public org.linuxforhealth.fhir.model.type.Element getReported() {
+        return reported;
     }
 
     /**
-     * Limited to "real" people rather than equipment.
+     * Indicates who or what performed the procedure and how they were involved.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Performer} that may be empty.
@@ -388,24 +432,14 @@ public class Procedure extends DomainResource {
     }
 
     /**
-     * The coded reason why the procedure was performed. This may be a coded entity of some type, or may simply be present as 
-     * text.
+     * The coded reason or reference why the procedure was performed. This may be a coded entity of some type, be present as 
+     * text, or be a reference to one of several resources that justify the procedure.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<CodeableConcept> getReasonCode() {
-        return reasonCode;
-    }
-
-    /**
-     * The justification of why the procedure was performed.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-     */
-    public List<Reference> getReasonReference() {
-        return reasonReference;
+    public List<CodeableReference> getReason() {
+        return reason;
     }
 
     /**
@@ -445,20 +479,10 @@ public class Procedure extends DomainResource {
      * issues.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<CodeableConcept> getComplication() {
+    public List<CodeableReference> getComplication() {
         return complication;
-    }
-
-    /**
-     * Any complications that occurred during the procedure, or in the immediate post-performance period.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-     */
-    public List<Reference> getComplicationDetail() {
-        return complicationDetail;
     }
 
     /**
@@ -497,20 +521,22 @@ public class Procedure extends DomainResource {
      * Identifies medications, devices and any other substance used as part of the procedure.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<Reference> getUsedReference() {
-        return usedReference;
+    public List<CodeableReference> getUsed() {
+        return used;
     }
 
     /**
-     * Identifies coded items that were used as part of the procedure.
+     * Other resources from the patient record that may be relevant to the procedure. The information from these resources 
+     * was either used to create the instance or is provided to help with its interpretation. This extension should not be 
+     * used if more specific inline elements or extensions are available.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
      */
-    public List<CodeableConcept> getUsedCode() {
-        return usedCode;
+    public List<Reference> getSupportingInfo() {
+        return supportingInfo;
     }
 
     @Override
@@ -523,27 +549,27 @@ public class Procedure extends DomainResource {
             !partOf.isEmpty() || 
             (status != null) || 
             (statusReason != null) || 
-            (category != null) || 
+            !category.isEmpty() || 
             (code != null) || 
             (subject != null) || 
+            (focus != null) || 
             (encounter != null) || 
-            (performed != null) || 
+            (occurrence != null) || 
+            (recorded != null) || 
             (recorder != null) || 
-            (asserter != null) || 
+            (reported != null) || 
             !performer.isEmpty() || 
             (location != null) || 
-            !reasonCode.isEmpty() || 
-            !reasonReference.isEmpty() || 
+            !reason.isEmpty() || 
             !bodySite.isEmpty() || 
             (outcome != null) || 
             !report.isEmpty() || 
             !complication.isEmpty() || 
-            !complicationDetail.isEmpty() || 
             !followUp.isEmpty() || 
             !note.isEmpty() || 
             !focalDevice.isEmpty() || 
-            !usedReference.isEmpty() || 
-            !usedCode.isEmpty();
+            !used.isEmpty() || 
+            !supportingInfo.isEmpty();
     }
 
     @Override
@@ -567,27 +593,27 @@ public class Procedure extends DomainResource {
                 accept(partOf, "partOf", visitor, Reference.class);
                 accept(status, "status", visitor);
                 accept(statusReason, "statusReason", visitor);
-                accept(category, "category", visitor);
+                accept(category, "category", visitor, CodeableConcept.class);
                 accept(code, "code", visitor);
                 accept(subject, "subject", visitor);
+                accept(focus, "focus", visitor);
                 accept(encounter, "encounter", visitor);
-                accept(performed, "performed", visitor);
+                accept(occurrence, "occurrence", visitor);
+                accept(recorded, "recorded", visitor);
                 accept(recorder, "recorder", visitor);
-                accept(asserter, "asserter", visitor);
+                accept(reported, "reported", visitor);
                 accept(performer, "performer", visitor, Performer.class);
                 accept(location, "location", visitor);
-                accept(reasonCode, "reasonCode", visitor, CodeableConcept.class);
-                accept(reasonReference, "reasonReference", visitor, Reference.class);
+                accept(reason, "reason", visitor, CodeableReference.class);
                 accept(bodySite, "bodySite", visitor, CodeableConcept.class);
                 accept(outcome, "outcome", visitor);
                 accept(report, "report", visitor, Reference.class);
-                accept(complication, "complication", visitor, CodeableConcept.class);
-                accept(complicationDetail, "complicationDetail", visitor, Reference.class);
+                accept(complication, "complication", visitor, CodeableReference.class);
                 accept(followUp, "followUp", visitor, CodeableConcept.class);
                 accept(note, "note", visitor, Annotation.class);
                 accept(focalDevice, "focalDevice", visitor, FocalDevice.class);
-                accept(usedReference, "usedReference", visitor, Reference.class);
-                accept(usedCode, "usedCode", visitor, CodeableConcept.class);
+                accept(used, "used", visitor, CodeableReference.class);
+                accept(supportingInfo, "supportingInfo", visitor, Reference.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
             visitor.postVisit(this);
@@ -624,24 +650,24 @@ public class Procedure extends DomainResource {
             Objects.equals(category, other.category) && 
             Objects.equals(code, other.code) && 
             Objects.equals(subject, other.subject) && 
+            Objects.equals(focus, other.focus) && 
             Objects.equals(encounter, other.encounter) && 
-            Objects.equals(performed, other.performed) && 
+            Objects.equals(occurrence, other.occurrence) && 
+            Objects.equals(recorded, other.recorded) && 
             Objects.equals(recorder, other.recorder) && 
-            Objects.equals(asserter, other.asserter) && 
+            Objects.equals(reported, other.reported) && 
             Objects.equals(performer, other.performer) && 
             Objects.equals(location, other.location) && 
-            Objects.equals(reasonCode, other.reasonCode) && 
-            Objects.equals(reasonReference, other.reasonReference) && 
+            Objects.equals(reason, other.reason) && 
             Objects.equals(bodySite, other.bodySite) && 
             Objects.equals(outcome, other.outcome) && 
             Objects.equals(report, other.report) && 
             Objects.equals(complication, other.complication) && 
-            Objects.equals(complicationDetail, other.complicationDetail) && 
             Objects.equals(followUp, other.followUp) && 
             Objects.equals(note, other.note) && 
             Objects.equals(focalDevice, other.focalDevice) && 
-            Objects.equals(usedReference, other.usedReference) && 
-            Objects.equals(usedCode, other.usedCode);
+            Objects.equals(used, other.used) && 
+            Objects.equals(supportingInfo, other.supportingInfo);
     }
 
     @Override
@@ -666,24 +692,24 @@ public class Procedure extends DomainResource {
                 category, 
                 code, 
                 subject, 
+                focus, 
                 encounter, 
-                performed, 
+                occurrence, 
+                recorded, 
                 recorder, 
-                asserter, 
+                reported, 
                 performer, 
                 location, 
-                reasonCode, 
-                reasonReference, 
+                reason, 
                 bodySite, 
                 outcome, 
                 report, 
                 complication, 
-                complicationDetail, 
                 followUp, 
                 note, 
                 focalDevice, 
-                usedReference, 
-                usedCode);
+                used, 
+                supportingInfo);
             hashCode = result;
         }
         return result;
@@ -706,27 +732,27 @@ public class Procedure extends DomainResource {
         private List<Reference> partOf = new ArrayList<>();
         private ProcedureStatus status;
         private CodeableConcept statusReason;
-        private CodeableConcept category;
+        private List<CodeableConcept> category = new ArrayList<>();
         private CodeableConcept code;
         private Reference subject;
+        private Reference focus;
         private Reference encounter;
-        private Element performed;
+        private org.linuxforhealth.fhir.model.type.Element occurrence;
+        private DateTime recorded;
         private Reference recorder;
-        private Reference asserter;
+        private org.linuxforhealth.fhir.model.type.Element reported;
         private List<Performer> performer = new ArrayList<>();
         private Reference location;
-        private List<CodeableConcept> reasonCode = new ArrayList<>();
-        private List<Reference> reasonReference = new ArrayList<>();
+        private List<CodeableReference> reason = new ArrayList<>();
         private List<CodeableConcept> bodySite = new ArrayList<>();
         private CodeableConcept outcome;
         private List<Reference> report = new ArrayList<>();
-        private List<CodeableConcept> complication = new ArrayList<>();
-        private List<Reference> complicationDetail = new ArrayList<>();
+        private List<CodeableReference> complication = new ArrayList<>();
         private List<CodeableConcept> followUp = new ArrayList<>();
         private List<Annotation> note = new ArrayList<>();
         private List<FocalDevice> focalDevice = new ArrayList<>();
-        private List<Reference> usedReference = new ArrayList<>();
-        private List<CodeableConcept> usedCode = new ArrayList<>();
+        private List<CodeableReference> used = new ArrayList<>();
+        private List<Reference> supportingInfo = new ArrayList<>();
 
         private Builder() {
             super();
@@ -810,7 +836,8 @@ public class Procedure extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -828,7 +855,8 @@ public class Procedure extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -849,7 +877,7 @@ public class Procedure extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -869,7 +897,7 @@ public class Procedure extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -894,9 +922,9 @@ public class Procedure extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -919,9 +947,9 @@ public class Procedure extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1203,14 +1231,39 @@ public class Procedure extends DomainResource {
         /**
          * A code that classifies the procedure for searching, sorting and display purposes (e.g. "Surgical Procedure").
          * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
          * @param category
          *     Classification of the procedure
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder category(CodeableConcept category) {
-            this.category = category;
+        public Builder category(CodeableConcept... category) {
+            for (CodeableConcept value : category) {
+                this.category.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A code that classifies the procedure for searching, sorting and display purposes (e.g. "Surgical Procedure").
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param category
+         *     Classification of the procedure
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder category(Collection<CodeableConcept> category) {
+            this.category = new ArrayList<>(category);
             return this;
         }
 
@@ -1230,7 +1283,10 @@ public class Procedure extends DomainResource {
         }
 
         /**
-         * The person, animal or group on which the procedure was performed.
+         * On whom or on what the procedure was performed. This is usually an individual human, but can also be performed on 
+         * animals, groups of humans or animals, organizations or practitioners (for licensing), locations or devices (for safety 
+         * inspections or regulatory authorizations). If the actual focus of the procedure is different from the subject, the 
+         * focus element specifies the actual focus of the procedure.
          * 
          * <p>This element is required.
          * 
@@ -1238,16 +1294,51 @@ public class Procedure extends DomainResource {
          * <ul>
          * <li>{@link Patient}</li>
          * <li>{@link Group}</li>
+         * <li>{@link Device}</li>
+         * <li>{@link Practitioner}</li>
+         * <li>{@link Organization}</li>
+         * <li>{@link Location}</li>
          * </ul>
          * 
          * @param subject
-         *     Who the procedure was performed on
+         *     Individual or entity the procedure was performed on
          * 
          * @return
          *     A reference to this Builder instance
          */
         public Builder subject(Reference subject) {
             this.subject = subject;
+            return this;
+        }
+
+        /**
+         * Who is the target of the procedure when it is not the subject of record only. If focus is not present, then subject is 
+         * the focus. If focus is present and the subject is one of the targets of the procedure, include subject as a focus as 
+         * well. If focus is present and the subject is not included in focus, it implies that the procedure was only targeted on 
+         * the focus. For example, when a caregiver is given education for a patient, the caregiver would be the focus and the 
+         * procedure record is associated with the subject (e.g. patient). For example, use focus when recording the target of 
+         * the education, training, or counseling is the parent or relative of a patient.
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link Patient}</li>
+         * <li>{@link Group}</li>
+         * <li>{@link RelatedPerson}</li>
+         * <li>{@link Practitioner}</li>
+         * <li>{@link Organization}</li>
+         * <li>{@link CareTeam}</li>
+         * <li>{@link PractitionerRole}</li>
+         * <li>{@link Specimen}</li>
+         * </ul>
+         * 
+         * @param focus
+         *     Who is the target of the procedure when it is not the subject of record only
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder focus(Reference focus) {
+            this.focus = focus;
             return this;
         }
 
@@ -1261,7 +1352,7 @@ public class Procedure extends DomainResource {
          * </ul>
          * 
          * @param encounter
-         *     Encounter created as part of
+         *     The Encounter during which this Procedure was created
          * 
          * @return
          *     A reference to this Builder instance
@@ -1272,24 +1363,25 @@ public class Procedure extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code performed} with choice type String.
+         * Convenience method for setting {@code occurrence} with choice type String.
          * 
-         * @param performed
-         *     When the procedure was performed
+         * @param occurrence
+         *     When the procedure occurred or is occurring
          * 
          * @return
          *     A reference to this Builder instance
          * 
-         * @see #performed(Element)
+         * @see #occurrence(Element)
          */
-        public Builder performed(java.lang.String performed) {
-            this.performed = (performed == null) ? null : String.of(performed);
+        public Builder occurrence(java.lang.String occurrence) {
+            this.occurrence = (occurrence == null) ? null : String.of(occurrence);
             return this;
         }
 
         /**
-         * Estimated or actual date, date-time, period, or age when the procedure was performed. Allows a period to support 
-         * complex procedures that span more than one date, and also allows for the length of the procedure to be captured.
+         * Estimated or actual date, date-time, period, or age when the procedure did occur or is occurring. Allows a period to 
+         * support complex procedures that span more than one date, and also allows for the length of the procedure to be 
+         * captured.
          * 
          * <p>This is a choice element with the following allowed types:
          * <ul>
@@ -1298,16 +1390,32 @@ public class Procedure extends DomainResource {
          * <li>{@link String}</li>
          * <li>{@link Age}</li>
          * <li>{@link Range}</li>
+         * <li>{@link Timing}</li>
          * </ul>
          * 
-         * @param performed
-         *     When the procedure was performed
+         * @param occurrence
+         *     When the procedure occurred or is occurring
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder performed(Element performed) {
-            this.performed = performed;
+        public Builder occurrence(org.linuxforhealth.fhir.model.type.Element occurrence) {
+            this.occurrence = occurrence;
+            return this;
+        }
+
+        /**
+         * The date the occurrence of the procedure was first captured in the record regardless of Procedure.status (potentially 
+         * after the occurrence of the event).
+         * 
+         * @param recorded
+         *     When the procedure was first captured in the subject's record
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder recorded(DateTime recorded) {
+            this.recorded = recorded;
             return this;
         }
 
@@ -1334,35 +1442,59 @@ public class Procedure extends DomainResource {
         }
 
         /**
-         * Individual who is making the procedure statement.
+         * Convenience method for setting {@code reported} with choice type Boolean.
          * 
-         * <p>Allowed resource types for this reference:
+         * @param reported
+         *     Reported rather than primary record
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #reported(Element)
+         */
+        public Builder reported(java.lang.Boolean reported) {
+            this.reported = (reported == null) ? null : Boolean.of(reported);
+            return this;
+        }
+
+        /**
+         * Indicates if this record was captured as a secondary 'reported' record rather than as an original primary source-of-
+         * truth record. It may also indicate the source of the report.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link Boolean}</li>
+         * <li>{@link Reference}</li>
+         * </ul>
+         * 
+         * When of type {@link Reference}, the allowed resource types for this reference are:
          * <ul>
          * <li>{@link Patient}</li>
          * <li>{@link RelatedPerson}</li>
          * <li>{@link Practitioner}</li>
          * <li>{@link PractitionerRole}</li>
+         * <li>{@link Organization}</li>
          * </ul>
          * 
-         * @param asserter
-         *     Person who asserts this procedure
+         * @param reported
+         *     Reported rather than primary record
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder asserter(Reference asserter) {
-            this.asserter = asserter;
+        public Builder reported(org.linuxforhealth.fhir.model.type.Element reported) {
+            this.reported = reported;
             return this;
         }
 
         /**
-         * Limited to "real" people rather than equipment.
+         * Indicates who or what performed the procedure and how they were involved.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param performer
-         *     The people who performed the procedure
+         *     Who performed the procedure and what they did
          * 
          * @return
          *     A reference to this Builder instance
@@ -1375,13 +1507,13 @@ public class Procedure extends DomainResource {
         }
 
         /**
-         * Limited to "real" people rather than equipment.
+         * Indicates who or what performed the procedure and how they were involved.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param performer
-         *     The people who performed the procedure
+         *     Who performed the procedure and what they did
          * 
          * @return
          *     A reference to this Builder instance
@@ -1414,90 +1546,33 @@ public class Procedure extends DomainResource {
         }
 
         /**
-         * The coded reason why the procedure was performed. This may be a coded entity of some type, or may simply be present as 
-         * text.
+         * The coded reason or reference why the procedure was performed. This may be a coded entity of some type, be present as 
+         * text, or be a reference to one of several resources that justify the procedure.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
-         *     Coded reason procedure performed
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder reasonCode(CodeableConcept... reasonCode) {
-            for (CodeableConcept value : reasonCode) {
-                this.reasonCode.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * The coded reason why the procedure was performed. This may be a coded entity of some type, or may simply be present as 
-         * text.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param reasonCode
-         *     Coded reason procedure performed
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder reasonCode(Collection<CodeableConcept> reasonCode) {
-            this.reasonCode = new ArrayList<>(reasonCode);
-            return this;
-        }
-
-        /**
-         * The justification of why the procedure was performed.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link Procedure}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param reasonReference
+         * @param reason
          *     The justification that the procedure was performed
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder reasonReference(Reference... reasonReference) {
-            for (Reference value : reasonReference) {
-                this.reasonReference.add(value);
+        public Builder reason(CodeableReference... reason) {
+            for (CodeableReference value : reason) {
+                this.reason.add(value);
             }
             return this;
         }
 
         /**
-         * The justification of why the procedure was performed.
+         * The coded reason or reference why the procedure was performed. This may be a coded entity of some type, be present as 
+         * text, or be a reference to one of several resources that justify the procedure.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link Procedure}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param reasonReference
+         * @param reason
          *     The justification that the procedure was performed
          * 
          * @return
@@ -1506,8 +1581,8 @@ public class Procedure extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder reasonReference(Collection<Reference> reasonReference) {
-            this.reasonReference = new ArrayList<>(reasonReference);
+        public Builder reason(Collection<CodeableReference> reason) {
+            this.reason = new ArrayList<>(reason);
             return this;
         }
 
@@ -1633,8 +1708,8 @@ public class Procedure extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder complication(CodeableConcept... complication) {
-            for (CodeableConcept value : complication) {
+        public Builder complication(CodeableReference... complication) {
+            for (CodeableReference value : complication) {
                 this.complication.add(value);
             }
             return this;
@@ -1657,57 +1732,8 @@ public class Procedure extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder complication(Collection<CodeableConcept> complication) {
+        public Builder complication(Collection<CodeableReference> complication) {
             this.complication = new ArrayList<>(complication);
-            return this;
-        }
-
-        /**
-         * Any complications that occurred during the procedure, or in the immediate post-performance period.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * </ul>
-         * 
-         * @param complicationDetail
-         *     A condition that is a result of the procedure
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder complicationDetail(Reference... complicationDetail) {
-            for (Reference value : complicationDetail) {
-                this.complicationDetail.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Any complications that occurred during the procedure, or in the immediate post-performance period.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * </ul>
-         * 
-         * @param complicationDetail
-         *     A condition that is a result of the procedure
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder complicationDetail(Collection<Reference> complicationDetail) {
-            this.complicationDetail = new ArrayList<>(complicationDetail);
             return this;
         }
 
@@ -1838,22 +1864,15 @@ public class Procedure extends DomainResource {
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Device}</li>
-         * <li>{@link Medication}</li>
-         * <li>{@link Substance}</li>
-         * </ul>
-         * 
-         * @param usedReference
+         * @param used
          *     Items used during procedure
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder usedReference(Reference... usedReference) {
-            for (Reference value : usedReference) {
-                this.usedReference.add(value);
+        public Builder used(CodeableReference... used) {
+            for (CodeableReference value : used) {
+                this.used.add(value);
             }
             return this;
         }
@@ -1864,14 +1883,7 @@ public class Procedure extends DomainResource {
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Device}</li>
-         * <li>{@link Medication}</li>
-         * <li>{@link Substance}</li>
-         * </ul>
-         * 
-         * @param usedReference
+         * @param used
          *     Items used during procedure
          * 
          * @return
@@ -1880,38 +1892,42 @@ public class Procedure extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder usedReference(Collection<Reference> usedReference) {
-            this.usedReference = new ArrayList<>(usedReference);
+        public Builder used(Collection<CodeableReference> used) {
+            this.used = new ArrayList<>(used);
             return this;
         }
 
         /**
-         * Identifies coded items that were used as part of the procedure.
+         * Other resources from the patient record that may be relevant to the procedure. The information from these resources 
+         * was either used to create the instance or is provided to help with its interpretation. This extension should not be 
+         * used if more specific inline elements or extensions are available.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param usedCode
-         *     Coded items used during the procedure
+         * @param supportingInfo
+         *     Extra information relevant to the procedure
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder usedCode(CodeableConcept... usedCode) {
-            for (CodeableConcept value : usedCode) {
-                this.usedCode.add(value);
+        public Builder supportingInfo(Reference... supportingInfo) {
+            for (Reference value : supportingInfo) {
+                this.supportingInfo.add(value);
             }
             return this;
         }
 
         /**
-         * Identifies coded items that were used as part of the procedure.
+         * Other resources from the patient record that may be relevant to the procedure. The information from these resources 
+         * was either used to create the instance or is provided to help with its interpretation. This extension should not be 
+         * used if more specific inline elements or extensions are available.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param usedCode
-         *     Coded items used during the procedure
+         * @param supportingInfo
+         *     Extra information relevant to the procedure
          * 
          * @return
          *     A reference to this Builder instance
@@ -1919,8 +1935,8 @@ public class Procedure extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder usedCode(Collection<CodeableConcept> usedCode) {
-            this.usedCode = new ArrayList<>(usedCode);
+        public Builder supportingInfo(Collection<Reference> supportingInfo) {
+            this.supportingInfo = new ArrayList<>(supportingInfo);
             return this;
         }
 
@@ -1955,31 +1971,29 @@ public class Procedure extends DomainResource {
             ValidationSupport.checkList(procedure.basedOn, "basedOn", Reference.class);
             ValidationSupport.checkList(procedure.partOf, "partOf", Reference.class);
             ValidationSupport.requireNonNull(procedure.status, "status");
+            ValidationSupport.checkList(procedure.category, "category", CodeableConcept.class);
             ValidationSupport.requireNonNull(procedure.subject, "subject");
-            ValidationSupport.choiceElement(procedure.performed, "performed", DateTime.class, Period.class, String.class, Age.class, Range.class);
+            ValidationSupport.choiceElement(procedure.occurrence, "occurrence", DateTime.class, Period.class, String.class, Age.class, Range.class, Timing.class);
+            ValidationSupport.choiceElement(procedure.reported, "reported", Boolean.class, Reference.class);
             ValidationSupport.checkList(procedure.performer, "performer", Performer.class);
-            ValidationSupport.checkList(procedure.reasonCode, "reasonCode", CodeableConcept.class);
-            ValidationSupport.checkList(procedure.reasonReference, "reasonReference", Reference.class);
+            ValidationSupport.checkList(procedure.reason, "reason", CodeableReference.class);
             ValidationSupport.checkList(procedure.bodySite, "bodySite", CodeableConcept.class);
             ValidationSupport.checkList(procedure.report, "report", Reference.class);
-            ValidationSupport.checkList(procedure.complication, "complication", CodeableConcept.class);
-            ValidationSupport.checkList(procedure.complicationDetail, "complicationDetail", Reference.class);
+            ValidationSupport.checkList(procedure.complication, "complication", CodeableReference.class);
             ValidationSupport.checkList(procedure.followUp, "followUp", CodeableConcept.class);
             ValidationSupport.checkList(procedure.note, "note", Annotation.class);
             ValidationSupport.checkList(procedure.focalDevice, "focalDevice", FocalDevice.class);
-            ValidationSupport.checkList(procedure.usedReference, "usedReference", Reference.class);
-            ValidationSupport.checkList(procedure.usedCode, "usedCode", CodeableConcept.class);
+            ValidationSupport.checkList(procedure.used, "used", CodeableReference.class);
+            ValidationSupport.checkList(procedure.supportingInfo, "supportingInfo", Reference.class);
             ValidationSupport.checkReferenceType(procedure.basedOn, "basedOn", "CarePlan", "ServiceRequest");
             ValidationSupport.checkReferenceType(procedure.partOf, "partOf", "Procedure", "Observation", "MedicationAdministration");
-            ValidationSupport.checkReferenceType(procedure.subject, "subject", "Patient", "Group");
+            ValidationSupport.checkReferenceType(procedure.subject, "subject", "Patient", "Group", "Device", "Practitioner", "Organization", "Location");
+            ValidationSupport.checkReferenceType(procedure.focus, "focus", "Patient", "Group", "RelatedPerson", "Practitioner", "Organization", "CareTeam", "PractitionerRole", "Specimen");
             ValidationSupport.checkReferenceType(procedure.encounter, "encounter", "Encounter");
             ValidationSupport.checkReferenceType(procedure.recorder, "recorder", "Patient", "RelatedPerson", "Practitioner", "PractitionerRole");
-            ValidationSupport.checkReferenceType(procedure.asserter, "asserter", "Patient", "RelatedPerson", "Practitioner", "PractitionerRole");
+            ValidationSupport.checkReferenceType(procedure.reported, "reported", "Patient", "RelatedPerson", "Practitioner", "PractitionerRole", "Organization");
             ValidationSupport.checkReferenceType(procedure.location, "location", "Location");
-            ValidationSupport.checkReferenceType(procedure.reasonReference, "reasonReference", "Condition", "Observation", "Procedure", "DiagnosticReport", "DocumentReference");
             ValidationSupport.checkReferenceType(procedure.report, "report", "DiagnosticReport", "DocumentReference", "Composition");
-            ValidationSupport.checkReferenceType(procedure.complicationDetail, "complicationDetail", "Condition");
-            ValidationSupport.checkReferenceType(procedure.usedReference, "usedReference", "Device", "Medication", "Substance");
         }
 
         protected Builder from(Procedure procedure) {
@@ -1991,33 +2005,33 @@ public class Procedure extends DomainResource {
             partOf.addAll(procedure.partOf);
             status = procedure.status;
             statusReason = procedure.statusReason;
-            category = procedure.category;
+            category.addAll(procedure.category);
             code = procedure.code;
             subject = procedure.subject;
+            focus = procedure.focus;
             encounter = procedure.encounter;
-            performed = procedure.performed;
+            occurrence = procedure.occurrence;
+            recorded = procedure.recorded;
             recorder = procedure.recorder;
-            asserter = procedure.asserter;
+            reported = procedure.reported;
             performer.addAll(procedure.performer);
             location = procedure.location;
-            reasonCode.addAll(procedure.reasonCode);
-            reasonReference.addAll(procedure.reasonReference);
+            reason.addAll(procedure.reason);
             bodySite.addAll(procedure.bodySite);
             outcome = procedure.outcome;
             report.addAll(procedure.report);
             complication.addAll(procedure.complication);
-            complicationDetail.addAll(procedure.complicationDetail);
             followUp.addAll(procedure.followUp);
             note.addAll(procedure.note);
             focalDevice.addAll(procedure.focalDevice);
-            usedReference.addAll(procedure.usedReference);
-            usedCode.addAll(procedure.usedCode);
+            used.addAll(procedure.used);
+            supportingInfo.addAll(procedure.supportingInfo);
             return this;
         }
     }
 
     /**
-     * Limited to "real" people rather than equipment.
+     * Indicates who or what performed the procedure and how they were involved.
      */
     public static class Performer extends BackboneElement {
         @Summary
@@ -2029,17 +2043,19 @@ public class Procedure extends DomainResource {
         )
         private final CodeableConcept function;
         @Summary
-        @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "Patient", "RelatedPerson", "Device" })
+        @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "Patient", "RelatedPerson", "Device", "CareTeam", "HealthcareService" })
         @Required
         private final Reference actor;
         @ReferenceTarget({ "Organization" })
         private final Reference onBehalfOf;
+        private final Period period;
 
         private Performer(Builder builder) {
             super(builder);
             function = builder.function;
             actor = builder.actor;
             onBehalfOf = builder.onBehalfOf;
+            period = builder.period;
         }
 
         /**
@@ -2054,7 +2070,7 @@ public class Procedure extends DomainResource {
         }
 
         /**
-         * The practitioner who was involved in the procedure.
+         * Indicates who or what performed the procedure.
          * 
          * @return
          *     An immutable object of type {@link Reference} that is non-null.
@@ -2064,7 +2080,7 @@ public class Procedure extends DomainResource {
         }
 
         /**
-         * The organization the device or practitioner was acting on behalf of.
+         * The Organization the Patient, RelatedPerson, Device, CareTeam, and HealthcareService was acting on behalf of.
          * 
          * @return
          *     An immutable object of type {@link Reference} that may be null.
@@ -2073,12 +2089,23 @@ public class Procedure extends DomainResource {
             return onBehalfOf;
         }
 
+        /**
+         * Time period during which the performer performed the procedure.
+         * 
+         * @return
+         *     An immutable object of type {@link Period} that may be null.
+         */
+        public Period getPeriod() {
+            return period;
+        }
+
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
                 (function != null) || 
                 (actor != null) || 
-                (onBehalfOf != null);
+                (onBehalfOf != null) || 
+                (period != null);
         }
 
         @Override
@@ -2093,6 +2120,7 @@ public class Procedure extends DomainResource {
                     accept(function, "function", visitor);
                     accept(actor, "actor", visitor);
                     accept(onBehalfOf, "onBehalfOf", visitor);
+                    accept(period, "period", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -2116,7 +2144,8 @@ public class Procedure extends DomainResource {
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(function, other.function) && 
                 Objects.equals(actor, other.actor) && 
-                Objects.equals(onBehalfOf, other.onBehalfOf);
+                Objects.equals(onBehalfOf, other.onBehalfOf) && 
+                Objects.equals(period, other.period);
         }
 
         @Override
@@ -2128,7 +2157,8 @@ public class Procedure extends DomainResource {
                     modifierExtension, 
                     function, 
                     actor, 
-                    onBehalfOf);
+                    onBehalfOf, 
+                    period);
                 hashCode = result;
             }
             return result;
@@ -2147,6 +2177,7 @@ public class Procedure extends DomainResource {
             private CodeableConcept function;
             private Reference actor;
             private Reference onBehalfOf;
+            private Period period;
 
             private Builder() {
                 super();
@@ -2169,7 +2200,7 @@ public class Procedure extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2189,7 +2220,7 @@ public class Procedure extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2214,7 +2245,7 @@ public class Procedure extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2239,7 +2270,7 @@ public class Procedure extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2279,7 +2310,7 @@ public class Procedure extends DomainResource {
             }
 
             /**
-             * The practitioner who was involved in the procedure.
+             * Indicates who or what performed the procedure.
              * 
              * <p>This element is required.
              * 
@@ -2291,10 +2322,12 @@ public class Procedure extends DomainResource {
              * <li>{@link Patient}</li>
              * <li>{@link RelatedPerson}</li>
              * <li>{@link Device}</li>
+             * <li>{@link CareTeam}</li>
+             * <li>{@link HealthcareService}</li>
              * </ul>
              * 
              * @param actor
-             *     The reference to the practitioner
+             *     Who performed the procedure
              * 
              * @return
              *     A reference to this Builder instance
@@ -2305,7 +2338,7 @@ public class Procedure extends DomainResource {
             }
 
             /**
-             * The organization the device or practitioner was acting on behalf of.
+             * The Organization the Patient, RelatedPerson, Device, CareTeam, and HealthcareService was acting on behalf of.
              * 
              * <p>Allowed resource types for this reference:
              * <ul>
@@ -2320,6 +2353,20 @@ public class Procedure extends DomainResource {
              */
             public Builder onBehalfOf(Reference onBehalfOf) {
                 this.onBehalfOf = onBehalfOf;
+                return this;
+            }
+
+            /**
+             * Time period during which the performer performed the procedure.
+             * 
+             * @param period
+             *     When the performer performed the procedure
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder period(Period period) {
+                this.period = period;
                 return this;
             }
 
@@ -2348,7 +2395,7 @@ public class Procedure extends DomainResource {
             protected void validate(Performer performer) {
                 super.validate(performer);
                 ValidationSupport.requireNonNull(performer.actor, "actor");
-                ValidationSupport.checkReferenceType(performer.actor, "actor", "Practitioner", "PractitionerRole", "Organization", "Patient", "RelatedPerson", "Device");
+                ValidationSupport.checkReferenceType(performer.actor, "actor", "Practitioner", "PractitionerRole", "Organization", "Patient", "RelatedPerson", "Device", "CareTeam", "HealthcareService");
                 ValidationSupport.checkReferenceType(performer.onBehalfOf, "onBehalfOf", "Organization");
                 ValidationSupport.requireValueOrChildren(performer);
             }
@@ -2358,6 +2405,7 @@ public class Procedure extends DomainResource {
                 function = performer.function;
                 actor = performer.actor;
                 onBehalfOf = performer.onBehalfOf;
+                period = performer.period;
                 return this;
             }
         }
@@ -2496,7 +2544,7 @@ public class Procedure extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2516,7 +2564,7 @@ public class Procedure extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2541,7 +2589,7 @@ public class Procedure extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2566,7 +2614,7 @@ public class Procedure extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 

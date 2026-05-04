@@ -24,7 +24,7 @@ import org.linuxforhealth.fhir.model.parser.FHIRParser;
 import org.linuxforhealth.fhir.model.resource.Bundle;
 import org.linuxforhealth.fhir.model.resource.Resource;
 import org.linuxforhealth.fhir.model.resource.SearchParameter;
-import org.linuxforhealth.fhir.model.type.code.ResourceTypeCode;
+import org.linuxforhealth.fhir.model.type.code.FHIRTypes;
 import org.linuxforhealth.fhir.registry.util.Index;
 import org.linuxforhealth.fhir.registry.util.Index.Entry;
 
@@ -70,7 +70,7 @@ public class IndexGenerator {
                             (id.equals("clinical-patient") || id.equals("Provenance-patient"))) {
                         // Workaround for https://jira.hl7.org/browse/FHIR-13601
                         resource = ((SearchParameter) resource).toBuilder()
-                                .target(Collections.singleton(ResourceTypeCode.PATIENT))
+                                .target(Collections.singleton(FHIRTypes.PATIENT))
                                 .build();
                     }
 

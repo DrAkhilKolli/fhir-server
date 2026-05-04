@@ -52,8 +52,8 @@ public class QuestionnaireResponseStatus extends Code {
     /**
      * Stopped
      * 
-     * <p>This QuestionnaireResponse has been partially filled out with answers but has been abandoned. It is unknown whether 
-     * changes or additions are expected to be made to it.
+     * <p>This QuestionnaireResponse has been partially filled out with answers but has been abandoned. No subsequent changes 
+     * can be made.
      */
     public static final QuestionnaireResponseStatus STOPPED = QuestionnaireResponseStatus.builder().value(Value.STOPPED).build();
 
@@ -250,8 +250,8 @@ public class QuestionnaireResponseStatus extends Code {
         /**
          * Stopped
          * 
-         * <p>This QuestionnaireResponse has been partially filled out with answers but has been abandoned. It is unknown whether 
-         * changes or additions are expected to be made to it.
+         * <p>This QuestionnaireResponse has been partially filled out with answers but has been abandoned. No subsequent changes 
+         * can be made.
          */
         STOPPED("stopped");
 

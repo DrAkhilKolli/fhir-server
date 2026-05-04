@@ -27,6 +27,7 @@ import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Decimal;
@@ -38,13 +39,13 @@ import org.linuxforhealth.fhir.model.type.Money;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
 import org.linuxforhealth.fhir.model.type.PositiveInt;
+import org.linuxforhealth.fhir.model.type.Quantity;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.SimpleQuantity;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.ClaimResponseStatus;
-import org.linuxforhealth.fhir.model.type.code.NoteType;
 import org.linuxforhealth.fhir.model.type.code.RemittanceOutcome;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.type.code.Use;
@@ -72,21 +73,22 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 @Constraint(
     id = "claimResponse-1",
     level = "Warning",
-    location = "processNote.language",
-    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/languages",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/languages', 'preferred')",
+    location = "processNote.type",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/note-type",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/note-type', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/ClaimResponse",
     generated = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class ClaimResponse extends DomainResource {
     private final List<Identifier> identifier;
+    private final List<Identifier> traceNumber;
     @Summary
     @Binding(
         bindingName = "ClaimResponseStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "A code specifying the state of the resource instance.",
-        valueSet = "http://hl7.org/fhir/ValueSet/fm-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/fm-status|5.0.0"
     )
     @Required
     private final ClaimResponseStatus status;
@@ -111,7 +113,7 @@ public class ClaimResponse extends DomainResource {
         bindingName = "Use",
         strength = BindingStrength.Value.REQUIRED,
         description = "Claim, preauthorization, predetermination.",
-        valueSet = "http://hl7.org/fhir/ValueSet/claim-use|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/claim-use|5.0.0"
     )
     @Required
     private final Use use;
@@ -124,7 +126,6 @@ public class ClaimResponse extends DomainResource {
     private final DateTime created;
     @Summary
     @ReferenceTarget({ "Organization" })
-    @Required
     private final Reference insurer;
     @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization" })
     private final Reference requestor;
@@ -136,13 +137,22 @@ public class ClaimResponse extends DomainResource {
         bindingName = "RemittanceOutcome",
         strength = BindingStrength.Value.REQUIRED,
         description = "The result of the claim processing.",
-        valueSet = "http://hl7.org/fhir/ValueSet/remittance-outcome|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/claim-outcome|5.0.0"
     )
     @Required
     private final RemittanceOutcome outcome;
+    @Summary
+    @Binding(
+        bindingName = "AdjudicationDecision",
+        strength = BindingStrength.Value.EXAMPLE,
+        description = "The overall result of the claim adjudication.",
+        valueSet = "http://hl7.org/fhir/ValueSet/claim-decision"
+    )
+    private final CodeableConcept decision;
     private final String disposition;
     private final String preAuthRef;
     private final Period preAuthPeriod;
+    private final List<Event> event;
     @Binding(
         bindingName = "PayeeType",
         strength = BindingStrength.Value.EXAMPLE,
@@ -150,6 +160,14 @@ public class ClaimResponse extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/payeetype"
     )
     private final CodeableConcept payeeType;
+    @ReferenceTarget({ "Encounter" })
+    private final List<Reference> encounter;
+    @Binding(
+        bindingName = "DiagnosisRelatedGroup",
+        strength = BindingStrength.Value.EXAMPLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/ex-diagnosisrelatedgroup"
+    )
+    private final CodeableConcept diagnosisRelatedGroup;
     private final List<Item> item;
     private final List<AddItem> addItem;
     private final List<ClaimResponse.Item.Adjudication> adjudication;
@@ -180,6 +198,7 @@ public class ClaimResponse extends DomainResource {
     private ClaimResponse(Builder builder) {
         super(builder);
         identifier = Collections.unmodifiableList(builder.identifier);
+        traceNumber = Collections.unmodifiableList(builder.traceNumber);
         status = builder.status;
         type = builder.type;
         subType = builder.subType;
@@ -190,10 +209,14 @@ public class ClaimResponse extends DomainResource {
         requestor = builder.requestor;
         request = builder.request;
         outcome = builder.outcome;
+        decision = builder.decision;
         disposition = builder.disposition;
         preAuthRef = builder.preAuthRef;
         preAuthPeriod = builder.preAuthPeriod;
+        event = Collections.unmodifiableList(builder.event);
         payeeType = builder.payeeType;
+        encounter = Collections.unmodifiableList(builder.encounter);
+        diagnosisRelatedGroup = builder.diagnosisRelatedGroup;
         item = Collections.unmodifiableList(builder.item);
         addItem = Collections.unmodifiableList(builder.addItem);
         adjudication = Collections.unmodifiableList(builder.adjudication);
@@ -216,6 +239,16 @@ public class ClaimResponse extends DomainResource {
      */
     public List<Identifier> getIdentifier() {
         return identifier;
+    }
+
+    /**
+     * Trace number for tracking purposes. May be defined at the jurisdiction level or between trading partners.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
+     */
+    public List<Identifier> getTraceNumber() {
+        return traceNumber;
     }
 
     /**
@@ -251,9 +284,14 @@ public class ClaimResponse extends DomainResource {
     }
 
     /**
-     * A code to indicate whether the nature of the request is: to request adjudication of products and services previously 
-     * rendered; or requesting authorization and adjudication for provision in the future; or requesting the non-binding 
-     * adjudication of the listed products and services which could be provided in the future.
+     * A code to indicate whether the nature of the request is: Claim - A request to an Insurer to adjudicate the supplied 
+     * charges for health care goods and services under the identified policy and to pay the determined Benefit amount, if 
+     * any; Preauthorization - A request to an Insurer to adjudicate the supplied proposed future charges for health care 
+     * goods and services under the identified policy and to approve the services and provide the expected benefit amounts 
+     * and potentially to reserve funds to pay the benefits when Claims for the indicated services are later submitted; or, 
+     * Pre-determination - A request to an Insurer to adjudicate the supplied 'what if' charges for health care goods and 
+     * services under the identified policy and report back what the Benefit payable would be had the services actually been 
+     * provided.
      * 
      * @return
      *     An immutable object of type {@link Use} that is non-null.
@@ -287,7 +325,7 @@ public class ClaimResponse extends DomainResource {
      * The party responsible for authorization, adjudication and reimbursement.
      * 
      * @return
-     *     An immutable object of type {@link Reference} that is non-null.
+     *     An immutable object of type {@link Reference} that may be null.
      */
     public Reference getInsurer() {
         return insurer;
@@ -324,6 +362,16 @@ public class ClaimResponse extends DomainResource {
     }
 
     /**
+     * The result of the claim, predetermination, or preauthorization adjudication.
+     * 
+     * @return
+     *     An immutable object of type {@link CodeableConcept} that may be null.
+     */
+    public CodeableConcept getDecision() {
+        return decision;
+    }
+
+    /**
      * A human readable description of the status of the adjudication.
      * 
      * @return
@@ -354,6 +402,16 @@ public class ClaimResponse extends DomainResource {
     }
 
     /**
+     * Information code for an event with a corresponding date or period.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Event} that may be empty.
+     */
+    public List<Event> getEvent() {
+        return event;
+    }
+
+    /**
      * Type of Party to be reimbursed: subscriber, provider, other.
      * 
      * @return
@@ -361,6 +419,27 @@ public class ClaimResponse extends DomainResource {
      */
     public CodeableConcept getPayeeType() {
         return payeeType;
+    }
+
+    /**
+     * Healthcare encounters related to this claim.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getEncounter() {
+        return encounter;
+    }
+
+    /**
+     * A package billing code or bundle code used to group products and services to a particular health condition (such as 
+     * heart attack) which is based on a predetermined grouping code system.
+     * 
+     * @return
+     *     An immutable object of type {@link CodeableConcept} that may be null.
+     */
+    public CodeableConcept getDiagnosisRelatedGroup() {
+        return diagnosisRelatedGroup;
     }
 
     /**
@@ -489,6 +568,7 @@ public class ClaimResponse extends DomainResource {
     public boolean hasChildren() {
         return super.hasChildren() || 
             !identifier.isEmpty() || 
+            !traceNumber.isEmpty() || 
             (status != null) || 
             (type != null) || 
             (subType != null) || 
@@ -499,10 +579,14 @@ public class ClaimResponse extends DomainResource {
             (requestor != null) || 
             (request != null) || 
             (outcome != null) || 
+            (decision != null) || 
             (disposition != null) || 
             (preAuthRef != null) || 
             (preAuthPeriod != null) || 
+            !event.isEmpty() || 
             (payeeType != null) || 
+            !encounter.isEmpty() || 
+            (diagnosisRelatedGroup != null) || 
             !item.isEmpty() || 
             !addItem.isEmpty() || 
             !adjudication.isEmpty() || 
@@ -532,6 +616,7 @@ public class ClaimResponse extends DomainResource {
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(identifier, "identifier", visitor, Identifier.class);
+                accept(traceNumber, "traceNumber", visitor, Identifier.class);
                 accept(status, "status", visitor);
                 accept(type, "type", visitor);
                 accept(subType, "subType", visitor);
@@ -542,10 +627,14 @@ public class ClaimResponse extends DomainResource {
                 accept(requestor, "requestor", visitor);
                 accept(request, "request", visitor);
                 accept(outcome, "outcome", visitor);
+                accept(decision, "decision", visitor);
                 accept(disposition, "disposition", visitor);
                 accept(preAuthRef, "preAuthRef", visitor);
                 accept(preAuthPeriod, "preAuthPeriod", visitor);
+                accept(event, "event", visitor, Event.class);
                 accept(payeeType, "payeeType", visitor);
+                accept(encounter, "encounter", visitor, Reference.class);
+                accept(diagnosisRelatedGroup, "diagnosisRelatedGroup", visitor);
                 accept(item, "item", visitor, Item.class);
                 accept(addItem, "addItem", visitor, AddItem.class);
                 accept(adjudication, "adjudication", visitor, ClaimResponse.Item.Adjudication.class);
@@ -585,6 +674,7 @@ public class ClaimResponse extends DomainResource {
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(identifier, other.identifier) && 
+            Objects.equals(traceNumber, other.traceNumber) && 
             Objects.equals(status, other.status) && 
             Objects.equals(type, other.type) && 
             Objects.equals(subType, other.subType) && 
@@ -595,10 +685,14 @@ public class ClaimResponse extends DomainResource {
             Objects.equals(requestor, other.requestor) && 
             Objects.equals(request, other.request) && 
             Objects.equals(outcome, other.outcome) && 
+            Objects.equals(decision, other.decision) && 
             Objects.equals(disposition, other.disposition) && 
             Objects.equals(preAuthRef, other.preAuthRef) && 
             Objects.equals(preAuthPeriod, other.preAuthPeriod) && 
+            Objects.equals(event, other.event) && 
             Objects.equals(payeeType, other.payeeType) && 
+            Objects.equals(encounter, other.encounter) && 
+            Objects.equals(diagnosisRelatedGroup, other.diagnosisRelatedGroup) && 
             Objects.equals(item, other.item) && 
             Objects.equals(addItem, other.addItem) && 
             Objects.equals(adjudication, other.adjudication) && 
@@ -626,6 +720,7 @@ public class ClaimResponse extends DomainResource {
                 extension, 
                 modifierExtension, 
                 identifier, 
+                traceNumber, 
                 status, 
                 type, 
                 subType, 
@@ -636,10 +731,14 @@ public class ClaimResponse extends DomainResource {
                 requestor, 
                 request, 
                 outcome, 
+                decision, 
                 disposition, 
                 preAuthRef, 
                 preAuthPeriod, 
+                event, 
                 payeeType, 
+                encounter, 
+                diagnosisRelatedGroup, 
                 item, 
                 addItem, 
                 adjudication, 
@@ -668,6 +767,7 @@ public class ClaimResponse extends DomainResource {
 
     public static class Builder extends DomainResource.Builder {
         private List<Identifier> identifier = new ArrayList<>();
+        private List<Identifier> traceNumber = new ArrayList<>();
         private ClaimResponseStatus status;
         private CodeableConcept type;
         private CodeableConcept subType;
@@ -678,10 +778,14 @@ public class ClaimResponse extends DomainResource {
         private Reference requestor;
         private Reference request;
         private RemittanceOutcome outcome;
+        private CodeableConcept decision;
         private String disposition;
         private String preAuthRef;
         private Period preAuthPeriod;
+        private List<Event> event = new ArrayList<>();
         private CodeableConcept payeeType;
+        private List<Reference> encounter = new ArrayList<>();
+        private CodeableConcept diagnosisRelatedGroup;
         private List<Item> item = new ArrayList<>();
         private List<AddItem> addItem = new ArrayList<>();
         private List<ClaimResponse.Item.Adjudication> adjudication = new ArrayList<>();
@@ -777,7 +881,8 @@ public class ClaimResponse extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -795,7 +900,8 @@ public class ClaimResponse extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -816,7 +922,7 @@ public class ClaimResponse extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -836,7 +942,7 @@ public class ClaimResponse extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -861,9 +967,9 @@ public class ClaimResponse extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -886,9 +992,9 @@ public class ClaimResponse extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -950,6 +1056,45 @@ public class ClaimResponse extends DomainResource {
         }
 
         /**
+         * Trace number for tracking purposes. May be defined at the jurisdiction level or between trading partners.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param traceNumber
+         *     Number for tracking
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder traceNumber(Identifier... traceNumber) {
+            for (Identifier value : traceNumber) {
+                this.traceNumber.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Trace number for tracking purposes. May be defined at the jurisdiction level or between trading partners.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param traceNumber
+         *     Number for tracking
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder traceNumber(Collection<Identifier> traceNumber) {
+            this.traceNumber = new ArrayList<>(traceNumber);
+            return this;
+        }
+
+        /**
          * The status of the resource instance.
          * 
          * <p>This element is required.
@@ -998,9 +1143,14 @@ public class ClaimResponse extends DomainResource {
         }
 
         /**
-         * A code to indicate whether the nature of the request is: to request adjudication of products and services previously 
-         * rendered; or requesting authorization and adjudication for provision in the future; or requesting the non-binding 
-         * adjudication of the listed products and services which could be provided in the future.
+         * A code to indicate whether the nature of the request is: Claim - A request to an Insurer to adjudicate the supplied 
+         * charges for health care goods and services under the identified policy and to pay the determined Benefit amount, if 
+         * any; Preauthorization - A request to an Insurer to adjudicate the supplied proposed future charges for health care 
+         * goods and services under the identified policy and to approve the services and provide the expected benefit amounts 
+         * and potentially to reserve funds to pay the benefits when Claims for the indicated services are later submitted; or, 
+         * Pre-determination - A request to an Insurer to adjudicate the supplied 'what if' charges for health care goods and 
+         * services under the identified policy and report back what the Benefit payable would be had the services actually been 
+         * provided.
          * 
          * <p>This element is required.
          * 
@@ -1055,8 +1205,6 @@ public class ClaimResponse extends DomainResource {
 
         /**
          * The party responsible for authorization, adjudication and reimbursement.
-         * 
-         * <p>This element is required.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
@@ -1127,6 +1275,20 @@ public class ClaimResponse extends DomainResource {
          */
         public Builder outcome(RemittanceOutcome outcome) {
             this.outcome = outcome;
+            return this;
+        }
+
+        /**
+         * The result of the claim, predetermination, or preauthorization adjudication.
+         * 
+         * @param decision
+         *     Result of the adjudication
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder decision(CodeableConcept decision) {
+            this.decision = decision;
             return this;
         }
 
@@ -1205,6 +1367,45 @@ public class ClaimResponse extends DomainResource {
         }
 
         /**
+         * Information code for an event with a corresponding date or period.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param event
+         *     Event information
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder event(Event... event) {
+            for (Event value : event) {
+                this.event.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Information code for an event with a corresponding date or period.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param event
+         *     Event information
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder event(Collection<Event> event) {
+            this.event = new ArrayList<>(event);
+            return this;
+        }
+
+        /**
          * Type of Party to be reimbursed: subscriber, provider, other.
          * 
          * @param payeeType
@@ -1215,6 +1416,70 @@ public class ClaimResponse extends DomainResource {
          */
         public Builder payeeType(CodeableConcept payeeType) {
             this.payeeType = payeeType;
+            return this;
+        }
+
+        /**
+         * Healthcare encounters related to this claim.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link Encounter}</li>
+         * </ul>
+         * 
+         * @param encounter
+         *     Encounters associated with the listed treatments
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder encounter(Reference... encounter) {
+            for (Reference value : encounter) {
+                this.encounter.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Healthcare encounters related to this claim.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link Encounter}</li>
+         * </ul>
+         * 
+         * @param encounter
+         *     Encounters associated with the listed treatments
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder encounter(Collection<Reference> encounter) {
+            this.encounter = new ArrayList<>(encounter);
+            return this;
+        }
+
+        /**
+         * A package billing code or bundle code used to group products and services to a particular health condition (such as 
+         * heart attack) which is based on a predetermined grouping code system.
+         * 
+         * @param diagnosisRelatedGroup
+         *     Package billing code
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder diagnosisRelatedGroup(CodeableConcept diagnosisRelatedGroup) {
+            this.diagnosisRelatedGroup = diagnosisRelatedGroup;
             return this;
         }
 
@@ -1609,7 +1874,6 @@ public class ClaimResponse extends DomainResource {
          * <li>use</li>
          * <li>patient</li>
          * <li>created</li>
-         * <li>insurer</li>
          * <li>outcome</li>
          * </ul>
          * 
@@ -1630,13 +1894,15 @@ public class ClaimResponse extends DomainResource {
         protected void validate(ClaimResponse claimResponse) {
             super.validate(claimResponse);
             ValidationSupport.checkList(claimResponse.identifier, "identifier", Identifier.class);
+            ValidationSupport.checkList(claimResponse.traceNumber, "traceNumber", Identifier.class);
             ValidationSupport.requireNonNull(claimResponse.status, "status");
             ValidationSupport.requireNonNull(claimResponse.type, "type");
             ValidationSupport.requireNonNull(claimResponse.use, "use");
             ValidationSupport.requireNonNull(claimResponse.patient, "patient");
             ValidationSupport.requireNonNull(claimResponse.created, "created");
-            ValidationSupport.requireNonNull(claimResponse.insurer, "insurer");
             ValidationSupport.requireNonNull(claimResponse.outcome, "outcome");
+            ValidationSupport.checkList(claimResponse.event, "event", Event.class);
+            ValidationSupport.checkList(claimResponse.encounter, "encounter", Reference.class);
             ValidationSupport.checkList(claimResponse.item, "item", Item.class);
             ValidationSupport.checkList(claimResponse.addItem, "addItem", AddItem.class);
             ValidationSupport.checkList(claimResponse.adjudication, "adjudication", ClaimResponse.Item.Adjudication.class);
@@ -1649,12 +1915,14 @@ public class ClaimResponse extends DomainResource {
             ValidationSupport.checkReferenceType(claimResponse.insurer, "insurer", "Organization");
             ValidationSupport.checkReferenceType(claimResponse.requestor, "requestor", "Practitioner", "PractitionerRole", "Organization");
             ValidationSupport.checkReferenceType(claimResponse.request, "request", "Claim");
+            ValidationSupport.checkReferenceType(claimResponse.encounter, "encounter", "Encounter");
             ValidationSupport.checkReferenceType(claimResponse.communicationRequest, "communicationRequest", "CommunicationRequest");
         }
 
         protected Builder from(ClaimResponse claimResponse) {
             super.from(claimResponse);
             identifier.addAll(claimResponse.identifier);
+            traceNumber.addAll(claimResponse.traceNumber);
             status = claimResponse.status;
             type = claimResponse.type;
             subType = claimResponse.subType;
@@ -1665,10 +1933,14 @@ public class ClaimResponse extends DomainResource {
             requestor = claimResponse.requestor;
             request = claimResponse.request;
             outcome = claimResponse.outcome;
+            decision = claimResponse.decision;
             disposition = claimResponse.disposition;
             preAuthRef = claimResponse.preAuthRef;
             preAuthPeriod = claimResponse.preAuthPeriod;
+            event.addAll(claimResponse.event);
             payeeType = claimResponse.payeeType;
+            encounter.addAll(claimResponse.encounter);
+            diagnosisRelatedGroup = claimResponse.diagnosisRelatedGroup;
             item.addAll(claimResponse.item);
             addItem.addAll(claimResponse.addItem);
             adjudication.addAll(claimResponse.adjudication);
@@ -1686,73 +1958,51 @@ public class ClaimResponse extends DomainResource {
     }
 
     /**
-     * A claim line. Either a simple (a product or service) or a 'group' of details which can also be a simple items or 
-     * groups of sub-details.
+     * Information code for an event with a corresponding date or period.
      */
-    public static class Item extends BackboneElement {
+    public static class Event extends BackboneElement {
+        @Binding(
+            bindingName = "DatesType",
+            strength = BindingStrength.Value.EXAMPLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/datestype"
+        )
         @Required
-        private final PositiveInt itemSequence;
-        private final List<PositiveInt> noteNumber;
+        private final CodeableConcept type;
+        @Choice({ DateTime.class, Period.class })
         @Required
-        private final List<Adjudication> adjudication;
-        private final List<Detail> detail;
+        private final org.linuxforhealth.fhir.model.type.Element when;
 
-        private Item(Builder builder) {
+        private Event(Builder builder) {
             super(builder);
-            itemSequence = builder.itemSequence;
-            noteNumber = Collections.unmodifiableList(builder.noteNumber);
-            adjudication = Collections.unmodifiableList(builder.adjudication);
-            detail = Collections.unmodifiableList(builder.detail);
+            type = builder.type;
+            when = builder.when;
         }
 
         /**
-         * A number to uniquely reference the claim item entries.
+         * A coded event such as when a service is expected or a card printed.
          * 
          * @return
-         *     An immutable object of type {@link PositiveInt} that is non-null.
+         *     An immutable object of type {@link CodeableConcept} that is non-null.
          */
-        public PositiveInt getItemSequence() {
-            return itemSequence;
+        public CodeableConcept getType() {
+            return type;
         }
 
         /**
-         * The numbers associated with notes below which apply to the adjudication of this item.
+         * A date or period in the past or future indicating when the event occurred or is expectd to occur.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link PositiveInt} that may be empty.
+         *     An immutable object of type {@link DateTime} or {@link Period} that is non-null.
          */
-        public List<PositiveInt> getNoteNumber() {
-            return noteNumber;
-        }
-
-        /**
-         * If this item is a group then the values here are a summary of the adjudication of the detail items. If this item is a 
-         * simple product or service then this is the result of the adjudication of this item.
-         * 
-         * @return
-         *     An unmodifiable list containing immutable objects of type {@link Adjudication} that is non-empty.
-         */
-        public List<Adjudication> getAdjudication() {
-            return adjudication;
-        }
-
-        /**
-         * A claim detail. Either a simple (a product or service) or a 'group' of sub-details which are simple items.
-         * 
-         * @return
-         *     An unmodifiable list containing immutable objects of type {@link Detail} that may be empty.
-         */
-        public List<Detail> getDetail() {
-            return detail;
+        public org.linuxforhealth.fhir.model.type.Element getWhen() {
+            return when;
         }
 
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                (itemSequence != null) || 
-                !noteNumber.isEmpty() || 
-                !adjudication.isEmpty() || 
-                !detail.isEmpty();
+                (type != null) || 
+                (when != null);
         }
 
         @Override
@@ -1764,10 +2014,8 @@ public class ClaimResponse extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(itemSequence, "itemSequence", visitor);
-                    accept(noteNumber, "noteNumber", visitor, PositiveInt.class);
-                    accept(adjudication, "adjudication", visitor, Adjudication.class);
-                    accept(detail, "detail", visitor, Detail.class);
+                    accept(type, "type", visitor);
+                    accept(when, "when", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -1785,14 +2033,12 @@ public class ClaimResponse extends DomainResource {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            Item other = (Item) obj;
+            Event other = (Event) obj;
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(itemSequence, other.itemSequence) && 
-                Objects.equals(noteNumber, other.noteNumber) && 
-                Objects.equals(adjudication, other.adjudication) && 
-                Objects.equals(detail, other.detail);
+                Objects.equals(type, other.type) && 
+                Objects.equals(when, other.when);
         }
 
         @Override
@@ -1802,10 +2048,8 @@ public class ClaimResponse extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    itemSequence, 
-                    noteNumber, 
-                    adjudication, 
-                    detail);
+                    type, 
+                    when);
                 hashCode = result;
             }
             return result;
@@ -1821,10 +2065,8 @@ public class ClaimResponse extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private PositiveInt itemSequence;
-            private List<PositiveInt> noteNumber = new ArrayList<>();
-            private List<Adjudication> adjudication = new ArrayList<>();
-            private List<Detail> detail = new ArrayList<>();
+            private CodeableConcept type;
+            private org.linuxforhealth.fhir.model.type.Element when;
 
             private Builder() {
                 super();
@@ -1847,7 +2089,7 @@ public class ClaimResponse extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1867,7 +2109,7 @@ public class ClaimResponse extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1892,7 +2134,7 @@ public class ClaimResponse extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1917,7 +2159,373 @@ public class ClaimResponse extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * A coded event such as when a service is expected or a card printed.
+             * 
+             * <p>This element is required.
+             * 
+             * @param type
+             *     Specific event
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder type(CodeableConcept type) {
+                this.type = type;
+                return this;
+            }
+
+            /**
+             * A date or period in the past or future indicating when the event occurred or is expectd to occur.
+             * 
+             * <p>This element is required.
+             * 
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link DateTime}</li>
+             * <li>{@link Period}</li>
+             * </ul>
+             * 
+             * @param when
+             *     Occurance date or period
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder when(org.linuxforhealth.fhir.model.type.Element when) {
+                this.when = when;
+                return this;
+            }
+
+            /**
+             * Build the {@link Event}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>type</li>
+             * <li>when</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link Event}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Event per the base specification
+             */
+            @Override
+            public Event build() {
+                Event event = new Event(this);
+                if (validating) {
+                    validate(event);
+                }
+                return event;
+            }
+
+            protected void validate(Event event) {
+                super.validate(event);
+                ValidationSupport.requireNonNull(event.type, "type");
+                ValidationSupport.requireChoiceElement(event.when, "when", DateTime.class, Period.class);
+                ValidationSupport.requireValueOrChildren(event);
+            }
+
+            protected Builder from(Event event) {
+                super.from(event);
+                type = event.type;
+                when = event.when;
+                return this;
+            }
+        }
+    }
+
+    /**
+     * A claim line. Either a simple (a product or service) or a 'group' of details which can also be a simple items or 
+     * groups of sub-details.
+     */
+    public static class Item extends BackboneElement {
+        @Required
+        private final PositiveInt itemSequence;
+        private final List<Identifier> traceNumber;
+        private final List<PositiveInt> noteNumber;
+        private final ReviewOutcome reviewOutcome;
+        private final List<Adjudication> adjudication;
+        private final List<Detail> detail;
+
+        private Item(Builder builder) {
+            super(builder);
+            itemSequence = builder.itemSequence;
+            traceNumber = Collections.unmodifiableList(builder.traceNumber);
+            noteNumber = Collections.unmodifiableList(builder.noteNumber);
+            reviewOutcome = builder.reviewOutcome;
+            adjudication = Collections.unmodifiableList(builder.adjudication);
+            detail = Collections.unmodifiableList(builder.detail);
+        }
+
+        /**
+         * A number to uniquely reference the claim item entries.
+         * 
+         * @return
+         *     An immutable object of type {@link PositiveInt} that is non-null.
+         */
+        public PositiveInt getItemSequence() {
+            return itemSequence;
+        }
+
+        /**
+         * Trace number for tracking purposes. May be defined at the jurisdiction level or between trading partners.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
+         */
+        public List<Identifier> getTraceNumber() {
+            return traceNumber;
+        }
+
+        /**
+         * The numbers associated with notes below which apply to the adjudication of this item.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link PositiveInt} that may be empty.
+         */
+        public List<PositiveInt> getNoteNumber() {
+            return noteNumber;
+        }
+
+        /**
+         * The high-level results of the adjudication if adjudication has been performed.
+         * 
+         * @return
+         *     An immutable object of type {@link ReviewOutcome} that may be null.
+         */
+        public ReviewOutcome getReviewOutcome() {
+            return reviewOutcome;
+        }
+
+        /**
+         * If this item is a group then the values here are a summary of the adjudication of the detail items. If this item is a 
+         * simple product or service then this is the result of the adjudication of this item.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link Adjudication} that may be empty.
+         */
+        public List<Adjudication> getAdjudication() {
+            return adjudication;
+        }
+
+        /**
+         * A claim detail. Either a simple (a product or service) or a 'group' of sub-details which are simple items.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link Detail} that may be empty.
+         */
+        public List<Detail> getDetail() {
+            return detail;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (itemSequence != null) || 
+                !traceNumber.isEmpty() || 
+                !noteNumber.isEmpty() || 
+                (reviewOutcome != null) || 
+                !adjudication.isEmpty() || 
+                !detail.isEmpty();
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(itemSequence, "itemSequence", visitor);
+                    accept(traceNumber, "traceNumber", visitor, Identifier.class);
+                    accept(noteNumber, "noteNumber", visitor, PositiveInt.class);
+                    accept(reviewOutcome, "reviewOutcome", visitor);
+                    accept(adjudication, "adjudication", visitor, Adjudication.class);
+                    accept(detail, "detail", visitor, Detail.class);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Item other = (Item) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(itemSequence, other.itemSequence) && 
+                Objects.equals(traceNumber, other.traceNumber) && 
+                Objects.equals(noteNumber, other.noteNumber) && 
+                Objects.equals(reviewOutcome, other.reviewOutcome) && 
+                Objects.equals(adjudication, other.adjudication) && 
+                Objects.equals(detail, other.detail);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    itemSequence, 
+                    traceNumber, 
+                    noteNumber, 
+                    reviewOutcome, 
+                    adjudication, 
+                    detail);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private PositiveInt itemSequence;
+            private List<Identifier> traceNumber = new ArrayList<>();
+            private List<PositiveInt> noteNumber = new ArrayList<>();
+            private ReviewOutcome reviewOutcome;
+            private List<Adjudication> adjudication = new ArrayList<>();
+            private List<Detail> detail = new ArrayList<>();
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1954,6 +2562,45 @@ public class ClaimResponse extends DomainResource {
              */
             public Builder itemSequence(PositiveInt itemSequence) {
                 this.itemSequence = itemSequence;
+                return this;
+            }
+
+            /**
+             * Trace number for tracking purposes. May be defined at the jurisdiction level or between trading partners.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param traceNumber
+             *     Number for tracking
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder traceNumber(Identifier... traceNumber) {
+                for (Identifier value : traceNumber) {
+                    this.traceNumber.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * Trace number for tracking purposes. May be defined at the jurisdiction level or between trading partners.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param traceNumber
+             *     Number for tracking
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder traceNumber(Collection<Identifier> traceNumber) {
+                this.traceNumber = new ArrayList<>(traceNumber);
                 return this;
             }
 
@@ -1997,13 +2644,25 @@ public class ClaimResponse extends DomainResource {
             }
 
             /**
+             * The high-level results of the adjudication if adjudication has been performed.
+             * 
+             * @param reviewOutcome
+             *     Adjudication results
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder reviewOutcome(ReviewOutcome reviewOutcome) {
+                this.reviewOutcome = reviewOutcome;
+                return this;
+            }
+
+            /**
              * If this item is a group then the values here are a summary of the adjudication of the detail items. If this item is a 
              * simple product or service then this is the result of the adjudication of this item.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * <p>This element is required.
              * 
              * @param adjudication
              *     Adjudication details
@@ -2024,8 +2683,6 @@ public class ClaimResponse extends DomainResource {
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * <p>This element is required.
              * 
              * @param adjudication
              *     Adjudication details
@@ -2086,7 +2743,6 @@ public class ClaimResponse extends DomainResource {
              * <p>Required elements:
              * <ul>
              * <li>itemSequence</li>
-             * <li>adjudication</li>
              * </ul>
              * 
              * @return
@@ -2106,8 +2762,9 @@ public class ClaimResponse extends DomainResource {
             protected void validate(Item item) {
                 super.validate(item);
                 ValidationSupport.requireNonNull(item.itemSequence, "itemSequence");
+                ValidationSupport.checkList(item.traceNumber, "traceNumber", Identifier.class);
                 ValidationSupport.checkList(item.noteNumber, "noteNumber", PositiveInt.class);
-                ValidationSupport.checkNonEmptyList(item.adjudication, "adjudication", Adjudication.class);
+                ValidationSupport.checkList(item.adjudication, "adjudication", Adjudication.class);
                 ValidationSupport.checkList(item.detail, "detail", Detail.class);
                 ValidationSupport.requireValueOrChildren(item);
             }
@@ -2115,10 +2772,405 @@ public class ClaimResponse extends DomainResource {
             protected Builder from(Item item) {
                 super.from(item);
                 itemSequence = item.itemSequence;
+                traceNumber.addAll(item.traceNumber);
                 noteNumber.addAll(item.noteNumber);
+                reviewOutcome = item.reviewOutcome;
                 adjudication.addAll(item.adjudication);
                 detail.addAll(item.detail);
                 return this;
+            }
+        }
+
+        /**
+         * The high-level results of the adjudication if adjudication has been performed.
+         */
+        public static class ReviewOutcome extends BackboneElement {
+            @Binding(
+                bindingName = "AdjudicationDecision",
+                strength = BindingStrength.Value.EXAMPLE,
+                valueSet = "http://hl7.org/fhir/ValueSet/claim-decision"
+            )
+            private final CodeableConcept decision;
+            @Binding(
+                bindingName = "AdjudicationDecisionReason",
+                strength = BindingStrength.Value.EXAMPLE,
+                valueSet = "http://hl7.org/fhir/ValueSet/claim-decision-reason"
+            )
+            private final List<CodeableConcept> reason;
+            private final String preAuthRef;
+            private final Period preAuthPeriod;
+
+            private ReviewOutcome(Builder builder) {
+                super(builder);
+                decision = builder.decision;
+                reason = Collections.unmodifiableList(builder.reason);
+                preAuthRef = builder.preAuthRef;
+                preAuthPeriod = builder.preAuthPeriod;
+            }
+
+            /**
+             * The result of the claim, predetermination, or preauthorization adjudication.
+             * 
+             * @return
+             *     An immutable object of type {@link CodeableConcept} that may be null.
+             */
+            public CodeableConcept getDecision() {
+                return decision;
+            }
+
+            /**
+             * The reasons for the result of the claim, predetermination, or preauthorization adjudication.
+             * 
+             * @return
+             *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+             */
+            public List<CodeableConcept> getReason() {
+                return reason;
+            }
+
+            /**
+             * Reference from the Insurer which is used in later communications which refers to this adjudication.
+             * 
+             * @return
+             *     An immutable object of type {@link String} that may be null.
+             */
+            public String getPreAuthRef() {
+                return preAuthRef;
+            }
+
+            /**
+             * The time frame during which this authorization is effective.
+             * 
+             * @return
+             *     An immutable object of type {@link Period} that may be null.
+             */
+            public Period getPreAuthPeriod() {
+                return preAuthPeriod;
+            }
+
+            @Override
+            public boolean hasChildren() {
+                return super.hasChildren() || 
+                    (decision != null) || 
+                    !reason.isEmpty() || 
+                    (preAuthRef != null) || 
+                    (preAuthPeriod != null);
+            }
+
+            @Override
+            public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                if (visitor.preVisit(this)) {
+                    visitor.visitStart(elementName, elementIndex, this);
+                    if (visitor.visit(elementName, elementIndex, this)) {
+                        // visit children
+                        accept(id, "id", visitor);
+                        accept(extension, "extension", visitor, Extension.class);
+                        accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                        accept(decision, "decision", visitor);
+                        accept(reason, "reason", visitor, CodeableConcept.class);
+                        accept(preAuthRef, "preAuthRef", visitor);
+                        accept(preAuthPeriod, "preAuthPeriod", visitor);
+                    }
+                    visitor.visitEnd(elementName, elementIndex, this);
+                    visitor.postVisit(this);
+                }
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj) {
+                    return true;
+                }
+                if (obj == null) {
+                    return false;
+                }
+                if (getClass() != obj.getClass()) {
+                    return false;
+                }
+                ReviewOutcome other = (ReviewOutcome) obj;
+                return Objects.equals(id, other.id) && 
+                    Objects.equals(extension, other.extension) && 
+                    Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(decision, other.decision) && 
+                    Objects.equals(reason, other.reason) && 
+                    Objects.equals(preAuthRef, other.preAuthRef) && 
+                    Objects.equals(preAuthPeriod, other.preAuthPeriod);
+            }
+
+            @Override
+            public int hashCode() {
+                int result = hashCode;
+                if (result == 0) {
+                    result = Objects.hash(id, 
+                        extension, 
+                        modifierExtension, 
+                        decision, 
+                        reason, 
+                        preAuthRef, 
+                        preAuthPeriod);
+                    hashCode = result;
+                }
+                return result;
+            }
+
+            @Override
+            public Builder toBuilder() {
+                return new Builder().from(this);
+            }
+
+            public static Builder builder() {
+                return new Builder();
+            }
+
+            public static class Builder extends BackboneElement.Builder {
+                private CodeableConcept decision;
+                private List<CodeableConcept> reason = new ArrayList<>();
+                private String preAuthRef;
+                private Period preAuthPeriod;
+
+                private Builder() {
+                    super();
+                }
+
+                /**
+                 * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                 * contain spaces.
+                 * 
+                 * @param id
+                 *     Unique id for inter-element referencing
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder id(java.lang.String id) {
+                    return (Builder) super.id(id);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder extension(Extension... extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder extension(Collection<Extension> extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder modifierExtension(Extension... modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * The result of the claim, predetermination, or preauthorization adjudication.
+                 * 
+                 * @param decision
+                 *     Result of the adjudication
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder decision(CodeableConcept decision) {
+                    this.decision = decision;
+                    return this;
+                }
+
+                /**
+                 * The reasons for the result of the claim, predetermination, or preauthorization adjudication.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param reason
+                 *     Reason for result of the adjudication
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder reason(CodeableConcept... reason) {
+                    for (CodeableConcept value : reason) {
+                        this.reason.add(value);
+                    }
+                    return this;
+                }
+
+                /**
+                 * The reasons for the result of the claim, predetermination, or preauthorization adjudication.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param reason
+                 *     Reason for result of the adjudication
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                public Builder reason(Collection<CodeableConcept> reason) {
+                    this.reason = new ArrayList<>(reason);
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code preAuthRef}.
+                 * 
+                 * @param preAuthRef
+                 *     Preauthorization reference
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #preAuthRef(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder preAuthRef(java.lang.String preAuthRef) {
+                    this.preAuthRef = (preAuthRef == null) ? null : String.of(preAuthRef);
+                    return this;
+                }
+
+                /**
+                 * Reference from the Insurer which is used in later communications which refers to this adjudication.
+                 * 
+                 * @param preAuthRef
+                 *     Preauthorization reference
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder preAuthRef(String preAuthRef) {
+                    this.preAuthRef = preAuthRef;
+                    return this;
+                }
+
+                /**
+                 * The time frame during which this authorization is effective.
+                 * 
+                 * @param preAuthPeriod
+                 *     Preauthorization reference effective period
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder preAuthPeriod(Period preAuthPeriod) {
+                    this.preAuthPeriod = preAuthPeriod;
+                    return this;
+                }
+
+                /**
+                 * Build the {@link ReviewOutcome}
+                 * 
+                 * @return
+                 *     An immutable object of type {@link ReviewOutcome}
+                 * @throws IllegalStateException
+                 *     if the current state cannot be built into a valid ReviewOutcome per the base specification
+                 */
+                @Override
+                public ReviewOutcome build() {
+                    ReviewOutcome reviewOutcome = new ReviewOutcome(this);
+                    if (validating) {
+                        validate(reviewOutcome);
+                    }
+                    return reviewOutcome;
+                }
+
+                protected void validate(ReviewOutcome reviewOutcome) {
+                    super.validate(reviewOutcome);
+                    ValidationSupport.checkList(reviewOutcome.reason, "reason", CodeableConcept.class);
+                    ValidationSupport.requireValueOrChildren(reviewOutcome);
+                }
+
+                protected Builder from(ReviewOutcome reviewOutcome) {
+                    super.from(reviewOutcome);
+                    decision = reviewOutcome.decision;
+                    reason.addAll(reviewOutcome.reason);
+                    preAuthRef = reviewOutcome.preAuthRef;
+                    preAuthPeriod = reviewOutcome.preAuthPeriod;
+                    return this;
+                }
             }
         }
 
@@ -2143,14 +3195,14 @@ public class ClaimResponse extends DomainResource {
             )
             private final CodeableConcept reason;
             private final Money amount;
-            private final Decimal value;
+            private final Quantity quantity;
 
             private Adjudication(Builder builder) {
                 super(builder);
                 category = builder.category;
                 reason = builder.reason;
                 amount = builder.amount;
-                value = builder.value;
+                quantity = builder.quantity;
             }
 
             /**
@@ -2189,10 +3241,10 @@ public class ClaimResponse extends DomainResource {
              * A non-monetary value associated with the category. Mutually exclusive to the amount element above.
              * 
              * @return
-             *     An immutable object of type {@link Decimal} that may be null.
+             *     An immutable object of type {@link Quantity} that may be null.
              */
-            public Decimal getValue() {
-                return value;
+            public Quantity getQuantity() {
+                return quantity;
             }
 
             @Override
@@ -2201,7 +3253,7 @@ public class ClaimResponse extends DomainResource {
                     (category != null) || 
                     (reason != null) || 
                     (amount != null) || 
-                    (value != null);
+                    (quantity != null);
             }
 
             @Override
@@ -2216,7 +3268,7 @@ public class ClaimResponse extends DomainResource {
                         accept(category, "category", visitor);
                         accept(reason, "reason", visitor);
                         accept(amount, "amount", visitor);
-                        accept(value, "value", visitor);
+                        accept(quantity, "quantity", visitor);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
                     visitor.postVisit(this);
@@ -2241,7 +3293,7 @@ public class ClaimResponse extends DomainResource {
                     Objects.equals(category, other.category) && 
                     Objects.equals(reason, other.reason) && 
                     Objects.equals(amount, other.amount) && 
-                    Objects.equals(value, other.value);
+                    Objects.equals(quantity, other.quantity);
             }
 
             @Override
@@ -2254,7 +3306,7 @@ public class ClaimResponse extends DomainResource {
                         category, 
                         reason, 
                         amount, 
-                        value);
+                        quantity);
                     hashCode = result;
                 }
                 return result;
@@ -2273,7 +3325,7 @@ public class ClaimResponse extends DomainResource {
                 private CodeableConcept category;
                 private CodeableConcept reason;
                 private Money amount;
-                private Decimal value;
+                private Quantity quantity;
 
                 private Builder() {
                     super();
@@ -2296,7 +3348,7 @@ public class ClaimResponse extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2316,7 +3368,7 @@ public class ClaimResponse extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2341,7 +3393,7 @@ public class ClaimResponse extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2366,7 +3418,7 @@ public class ClaimResponse extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2439,14 +3491,14 @@ public class ClaimResponse extends DomainResource {
                 /**
                  * A non-monetary value associated with the category. Mutually exclusive to the amount element above.
                  * 
-                 * @param value
+                 * @param quantity
                  *     Non-monetary value
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder value(Decimal value) {
-                    this.value = value;
+                public Builder quantity(Quantity quantity) {
+                    this.quantity = quantity;
                     return this;
                 }
 
@@ -2483,7 +3535,7 @@ public class ClaimResponse extends DomainResource {
                     category = adjudication.category;
                     reason = adjudication.reason;
                     amount = adjudication.amount;
-                    value = adjudication.value;
+                    quantity = adjudication.quantity;
                     return this;
                 }
             }
@@ -2495,15 +3547,18 @@ public class ClaimResponse extends DomainResource {
         public static class Detail extends BackboneElement {
             @Required
             private final PositiveInt detailSequence;
+            private final List<Identifier> traceNumber;
             private final List<PositiveInt> noteNumber;
-            @Required
+            private final ClaimResponse.Item.ReviewOutcome reviewOutcome;
             private final List<ClaimResponse.Item.Adjudication> adjudication;
             private final List<SubDetail> subDetail;
 
             private Detail(Builder builder) {
                 super(builder);
                 detailSequence = builder.detailSequence;
+                traceNumber = Collections.unmodifiableList(builder.traceNumber);
                 noteNumber = Collections.unmodifiableList(builder.noteNumber);
+                reviewOutcome = builder.reviewOutcome;
                 adjudication = Collections.unmodifiableList(builder.adjudication);
                 subDetail = Collections.unmodifiableList(builder.subDetail);
             }
@@ -2519,6 +3574,16 @@ public class ClaimResponse extends DomainResource {
             }
 
             /**
+             * Trace number for tracking purposes. May be defined at the jurisdiction level or between trading partners.
+             * 
+             * @return
+             *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
+             */
+            public List<Identifier> getTraceNumber() {
+                return traceNumber;
+            }
+
+            /**
              * The numbers associated with notes below which apply to the adjudication of this item.
              * 
              * @return
@@ -2529,10 +3594,20 @@ public class ClaimResponse extends DomainResource {
             }
 
             /**
+             * The high-level results of the adjudication if adjudication has been performed.
+             * 
+             * @return
+             *     An immutable object of type {@link ClaimResponse.Item.ReviewOutcome} that may be null.
+             */
+            public ClaimResponse.Item.ReviewOutcome getReviewOutcome() {
+                return reviewOutcome;
+            }
+
+            /**
              * The adjudication results.
              * 
              * @return
-             *     An unmodifiable list containing immutable objects of type {@link Adjudication} that is non-empty.
+             *     An unmodifiable list containing immutable objects of type {@link Adjudication} that may be empty.
              */
             public List<ClaimResponse.Item.Adjudication> getAdjudication() {
                 return adjudication;
@@ -2552,7 +3627,9 @@ public class ClaimResponse extends DomainResource {
             public boolean hasChildren() {
                 return super.hasChildren() || 
                     (detailSequence != null) || 
+                    !traceNumber.isEmpty() || 
                     !noteNumber.isEmpty() || 
+                    (reviewOutcome != null) || 
                     !adjudication.isEmpty() || 
                     !subDetail.isEmpty();
             }
@@ -2567,7 +3644,9 @@ public class ClaimResponse extends DomainResource {
                         accept(extension, "extension", visitor, Extension.class);
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                         accept(detailSequence, "detailSequence", visitor);
+                        accept(traceNumber, "traceNumber", visitor, Identifier.class);
                         accept(noteNumber, "noteNumber", visitor, PositiveInt.class);
+                        accept(reviewOutcome, "reviewOutcome", visitor);
                         accept(adjudication, "adjudication", visitor, ClaimResponse.Item.Adjudication.class);
                         accept(subDetail, "subDetail", visitor, SubDetail.class);
                     }
@@ -2592,7 +3671,9 @@ public class ClaimResponse extends DomainResource {
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
                     Objects.equals(detailSequence, other.detailSequence) && 
+                    Objects.equals(traceNumber, other.traceNumber) && 
                     Objects.equals(noteNumber, other.noteNumber) && 
+                    Objects.equals(reviewOutcome, other.reviewOutcome) && 
                     Objects.equals(adjudication, other.adjudication) && 
                     Objects.equals(subDetail, other.subDetail);
             }
@@ -2605,7 +3686,9 @@ public class ClaimResponse extends DomainResource {
                         extension, 
                         modifierExtension, 
                         detailSequence, 
+                        traceNumber, 
                         noteNumber, 
+                        reviewOutcome, 
                         adjudication, 
                         subDetail);
                     hashCode = result;
@@ -2624,7 +3707,9 @@ public class ClaimResponse extends DomainResource {
 
             public static class Builder extends BackboneElement.Builder {
                 private PositiveInt detailSequence;
+                private List<Identifier> traceNumber = new ArrayList<>();
                 private List<PositiveInt> noteNumber = new ArrayList<>();
+                private ClaimResponse.Item.ReviewOutcome reviewOutcome;
                 private List<ClaimResponse.Item.Adjudication> adjudication = new ArrayList<>();
                 private List<SubDetail> subDetail = new ArrayList<>();
 
@@ -2649,7 +3734,7 @@ public class ClaimResponse extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2669,7 +3754,7 @@ public class ClaimResponse extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2694,7 +3779,7 @@ public class ClaimResponse extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2719,7 +3804,7 @@ public class ClaimResponse extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2756,6 +3841,45 @@ public class ClaimResponse extends DomainResource {
                  */
                 public Builder detailSequence(PositiveInt detailSequence) {
                     this.detailSequence = detailSequence;
+                    return this;
+                }
+
+                /**
+                 * Trace number for tracking purposes. May be defined at the jurisdiction level or between trading partners.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param traceNumber
+                 *     Number for tracking
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder traceNumber(Identifier... traceNumber) {
+                    for (Identifier value : traceNumber) {
+                        this.traceNumber.add(value);
+                    }
+                    return this;
+                }
+
+                /**
+                 * Trace number for tracking purposes. May be defined at the jurisdiction level or between trading partners.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param traceNumber
+                 *     Number for tracking
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                public Builder traceNumber(Collection<Identifier> traceNumber) {
+                    this.traceNumber = new ArrayList<>(traceNumber);
                     return this;
                 }
 
@@ -2799,12 +3923,24 @@ public class ClaimResponse extends DomainResource {
                 }
 
                 /**
+                 * The high-level results of the adjudication if adjudication has been performed.
+                 * 
+                 * @param reviewOutcome
+                 *     Detail level adjudication results
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder reviewOutcome(ClaimResponse.Item.ReviewOutcome reviewOutcome) {
+                    this.reviewOutcome = reviewOutcome;
+                    return this;
+                }
+
+                /**
                  * The adjudication results.
                  * 
                  * <p>Adds new element(s) to the existing list.
                  * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * <p>This element is required.
                  * 
                  * @param adjudication
                  *     Detail level adjudication details
@@ -2824,8 +3960,6 @@ public class ClaimResponse extends DomainResource {
                  * 
                  * <p>Replaces the existing list with a new one containing elements from the Collection.
                  * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * <p>This element is required.
                  * 
                  * @param adjudication
                  *     Detail level adjudication details
@@ -2886,7 +4020,6 @@ public class ClaimResponse extends DomainResource {
                  * <p>Required elements:
                  * <ul>
                  * <li>detailSequence</li>
-                 * <li>adjudication</li>
                  * </ul>
                  * 
                  * @return
@@ -2906,8 +4039,9 @@ public class ClaimResponse extends DomainResource {
                 protected void validate(Detail detail) {
                     super.validate(detail);
                     ValidationSupport.requireNonNull(detail.detailSequence, "detailSequence");
+                    ValidationSupport.checkList(detail.traceNumber, "traceNumber", Identifier.class);
                     ValidationSupport.checkList(detail.noteNumber, "noteNumber", PositiveInt.class);
-                    ValidationSupport.checkNonEmptyList(detail.adjudication, "adjudication", ClaimResponse.Item.Adjudication.class);
+                    ValidationSupport.checkList(detail.adjudication, "adjudication", ClaimResponse.Item.Adjudication.class);
                     ValidationSupport.checkList(detail.subDetail, "subDetail", SubDetail.class);
                     ValidationSupport.requireValueOrChildren(detail);
                 }
@@ -2915,7 +4049,9 @@ public class ClaimResponse extends DomainResource {
                 protected Builder from(Detail detail) {
                     super.from(detail);
                     detailSequence = detail.detailSequence;
+                    traceNumber.addAll(detail.traceNumber);
                     noteNumber.addAll(detail.noteNumber);
+                    reviewOutcome = detail.reviewOutcome;
                     adjudication.addAll(detail.adjudication);
                     subDetail.addAll(detail.subDetail);
                     return this;
@@ -2928,13 +4064,17 @@ public class ClaimResponse extends DomainResource {
             public static class SubDetail extends BackboneElement {
                 @Required
                 private final PositiveInt subDetailSequence;
+                private final List<Identifier> traceNumber;
                 private final List<PositiveInt> noteNumber;
+                private final ClaimResponse.Item.ReviewOutcome reviewOutcome;
                 private final List<ClaimResponse.Item.Adjudication> adjudication;
 
                 private SubDetail(Builder builder) {
                     super(builder);
                     subDetailSequence = builder.subDetailSequence;
+                    traceNumber = Collections.unmodifiableList(builder.traceNumber);
                     noteNumber = Collections.unmodifiableList(builder.noteNumber);
+                    reviewOutcome = builder.reviewOutcome;
                     adjudication = Collections.unmodifiableList(builder.adjudication);
                 }
 
@@ -2949,6 +4089,16 @@ public class ClaimResponse extends DomainResource {
                 }
 
                 /**
+                 * Trace number for tracking purposes. May be defined at the jurisdiction level or between trading partners.
+                 * 
+                 * @return
+                 *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
+                 */
+                public List<Identifier> getTraceNumber() {
+                    return traceNumber;
+                }
+
+                /**
                  * The numbers associated with notes below which apply to the adjudication of this item.
                  * 
                  * @return
@@ -2956,6 +4106,16 @@ public class ClaimResponse extends DomainResource {
                  */
                 public List<PositiveInt> getNoteNumber() {
                     return noteNumber;
+                }
+
+                /**
+                 * The high-level results of the adjudication if adjudication has been performed.
+                 * 
+                 * @return
+                 *     An immutable object of type {@link ClaimResponse.Item.ReviewOutcome} that may be null.
+                 */
+                public ClaimResponse.Item.ReviewOutcome getReviewOutcome() {
+                    return reviewOutcome;
                 }
 
                 /**
@@ -2972,7 +4132,9 @@ public class ClaimResponse extends DomainResource {
                 public boolean hasChildren() {
                     return super.hasChildren() || 
                         (subDetailSequence != null) || 
+                        !traceNumber.isEmpty() || 
                         !noteNumber.isEmpty() || 
+                        (reviewOutcome != null) || 
                         !adjudication.isEmpty();
                 }
 
@@ -2986,7 +4148,9 @@ public class ClaimResponse extends DomainResource {
                             accept(extension, "extension", visitor, Extension.class);
                             accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                             accept(subDetailSequence, "subDetailSequence", visitor);
+                            accept(traceNumber, "traceNumber", visitor, Identifier.class);
                             accept(noteNumber, "noteNumber", visitor, PositiveInt.class);
+                            accept(reviewOutcome, "reviewOutcome", visitor);
                             accept(adjudication, "adjudication", visitor, ClaimResponse.Item.Adjudication.class);
                         }
                         visitor.visitEnd(elementName, elementIndex, this);
@@ -3010,7 +4174,9 @@ public class ClaimResponse extends DomainResource {
                         Objects.equals(extension, other.extension) && 
                         Objects.equals(modifierExtension, other.modifierExtension) && 
                         Objects.equals(subDetailSequence, other.subDetailSequence) && 
+                        Objects.equals(traceNumber, other.traceNumber) && 
                         Objects.equals(noteNumber, other.noteNumber) && 
+                        Objects.equals(reviewOutcome, other.reviewOutcome) && 
                         Objects.equals(adjudication, other.adjudication);
                 }
 
@@ -3022,7 +4188,9 @@ public class ClaimResponse extends DomainResource {
                             extension, 
                             modifierExtension, 
                             subDetailSequence, 
+                            traceNumber, 
                             noteNumber, 
+                            reviewOutcome, 
                             adjudication);
                         hashCode = result;
                     }
@@ -3040,7 +4208,9 @@ public class ClaimResponse extends DomainResource {
 
                 public static class Builder extends BackboneElement.Builder {
                     private PositiveInt subDetailSequence;
+                    private List<Identifier> traceNumber = new ArrayList<>();
                     private List<PositiveInt> noteNumber = new ArrayList<>();
+                    private ClaimResponse.Item.ReviewOutcome reviewOutcome;
                     private List<ClaimResponse.Item.Adjudication> adjudication = new ArrayList<>();
 
                     private Builder() {
@@ -3064,7 +4234,7 @@ public class ClaimResponse extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -3084,7 +4254,7 @@ public class ClaimResponse extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -3109,7 +4279,7 @@ public class ClaimResponse extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -3134,7 +4304,7 @@ public class ClaimResponse extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -3175,6 +4345,45 @@ public class ClaimResponse extends DomainResource {
                     }
 
                     /**
+                     * Trace number for tracking purposes. May be defined at the jurisdiction level or between trading partners.
+                     * 
+                     * <p>Adds new element(s) to the existing list.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param traceNumber
+                     *     Number for tracking
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder traceNumber(Identifier... traceNumber) {
+                        for (Identifier value : traceNumber) {
+                            this.traceNumber.add(value);
+                        }
+                        return this;
+                    }
+
+                    /**
+                     * Trace number for tracking purposes. May be defined at the jurisdiction level or between trading partners.
+                     * 
+                     * <p>Replaces the existing list with a new one containing elements from the Collection.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param traceNumber
+                     *     Number for tracking
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @throws NullPointerException
+                     *     If the passed collection is null
+                     */
+                    public Builder traceNumber(Collection<Identifier> traceNumber) {
+                        this.traceNumber = new ArrayList<>(traceNumber);
+                        return this;
+                    }
+
+                    /**
                      * The numbers associated with notes below which apply to the adjudication of this item.
                      * 
                      * <p>Adds new element(s) to the existing list.
@@ -3210,6 +4419,20 @@ public class ClaimResponse extends DomainResource {
                      */
                     public Builder noteNumber(Collection<PositiveInt> noteNumber) {
                         this.noteNumber = new ArrayList<>(noteNumber);
+                        return this;
+                    }
+
+                    /**
+                     * The high-level results of the adjudication if adjudication has been performed.
+                     * 
+                     * @param reviewOutcome
+                     *     Subdetail level adjudication results
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder reviewOutcome(ClaimResponse.Item.ReviewOutcome reviewOutcome) {
+                        this.reviewOutcome = reviewOutcome;
                         return this;
                     }
 
@@ -3277,6 +4500,7 @@ public class ClaimResponse extends DomainResource {
                     protected void validate(SubDetail subDetail) {
                         super.validate(subDetail);
                         ValidationSupport.requireNonNull(subDetail.subDetailSequence, "subDetailSequence");
+                        ValidationSupport.checkList(subDetail.traceNumber, "traceNumber", Identifier.class);
                         ValidationSupport.checkList(subDetail.noteNumber, "noteNumber", PositiveInt.class);
                         ValidationSupport.checkList(subDetail.adjudication, "adjudication", ClaimResponse.Item.Adjudication.class);
                         ValidationSupport.requireValueOrChildren(subDetail);
@@ -3285,7 +4509,9 @@ public class ClaimResponse extends DomainResource {
                     protected Builder from(SubDetail subDetail) {
                         super.from(subDetail);
                         subDetailSequence = subDetail.subDetailSequence;
+                        traceNumber.addAll(subDetail.traceNumber);
                         noteNumber.addAll(subDetail.noteNumber);
+                        reviewOutcome = subDetail.reviewOutcome;
                         adjudication.addAll(subDetail.adjudication);
                         return this;
                     }
@@ -3301,16 +4527,31 @@ public class ClaimResponse extends DomainResource {
         private final List<PositiveInt> itemSequence;
         private final List<PositiveInt> detailSequence;
         private final List<PositiveInt> subdetailSequence;
+        private final List<Identifier> traceNumber;
         @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization" })
         private final List<Reference> provider;
+        @Binding(
+            bindingName = "RevenueCenter",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "Codes for the revenue or cost centers supplying the service and/or products.",
+            valueSet = "http://hl7.org/fhir/ValueSet/ex-revenue-center"
+        )
+        private final CodeableConcept revenue;
         @Binding(
             bindingName = "ServiceProduct",
             strength = BindingStrength.Value.EXAMPLE,
             description = "Allowable service and product codes.",
             valueSet = "http://hl7.org/fhir/ValueSet/service-uscls"
         )
-        @Required
         private final CodeableConcept productOrService;
+        @Binding(
+            bindingName = "ServiceProduct",
+            strength = BindingStrength.Value.EXAMPLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/service-uscls"
+        )
+        private final CodeableConcept productOrServiceEnd;
+        @ReferenceTarget({ "DeviceRequest", "MedicationRequest", "NutritionOrder", "ServiceRequest", "SupplyRequest", "VisionPrescription" })
+        private final List<Reference> request;
         @Binding(
             bindingName = "Modifiers",
             strength = BindingStrength.Value.EXAMPLE,
@@ -3326,7 +4567,7 @@ public class ClaimResponse extends DomainResource {
         )
         private final List<CodeableConcept> programCode;
         @Choice({ Date.class, Period.class })
-        private final Element serviced;
+        private final org.linuxforhealth.fhir.model.type.Element serviced;
         @ReferenceTarget({ "Location" })
         @Choice({ CodeableConcept.class, Address.class, Reference.class })
         @Binding(
@@ -3335,27 +4576,15 @@ public class ClaimResponse extends DomainResource {
             description = "Place of service: pharmacy, school, prison, etc.",
             valueSet = "http://hl7.org/fhir/ValueSet/service-place"
         )
-        private final Element location;
+        private final org.linuxforhealth.fhir.model.type.Element location;
         private final SimpleQuantity quantity;
         private final Money unitPrice;
         private final Decimal factor;
+        private final Money tax;
         private final Money net;
-        @Binding(
-            bindingName = "OralSites",
-            strength = BindingStrength.Value.EXAMPLE,
-            description = "The code for the teeth, quadrant, sextant and arch.",
-            valueSet = "http://hl7.org/fhir/ValueSet/tooth"
-        )
-        private final CodeableConcept bodySite;
-        @Binding(
-            bindingName = "Surface",
-            strength = BindingStrength.Value.EXAMPLE,
-            description = "The code for the tooth surface and surface combinations.",
-            valueSet = "http://hl7.org/fhir/ValueSet/surface"
-        )
-        private final List<CodeableConcept> subSite;
+        private final List<BodySite> bodySite;
         private final List<PositiveInt> noteNumber;
-        @Required
+        private final ClaimResponse.Item.ReviewOutcome reviewOutcome;
         private final List<ClaimResponse.Item.Adjudication> adjudication;
         private final List<Detail> detail;
 
@@ -3364,8 +4593,12 @@ public class ClaimResponse extends DomainResource {
             itemSequence = Collections.unmodifiableList(builder.itemSequence);
             detailSequence = Collections.unmodifiableList(builder.detailSequence);
             subdetailSequence = Collections.unmodifiableList(builder.subdetailSequence);
+            traceNumber = Collections.unmodifiableList(builder.traceNumber);
             provider = Collections.unmodifiableList(builder.provider);
+            revenue = builder.revenue;
             productOrService = builder.productOrService;
+            productOrServiceEnd = builder.productOrServiceEnd;
+            request = Collections.unmodifiableList(builder.request);
             modifier = Collections.unmodifiableList(builder.modifier);
             programCode = Collections.unmodifiableList(builder.programCode);
             serviced = builder.serviced;
@@ -3373,10 +4606,11 @@ public class ClaimResponse extends DomainResource {
             quantity = builder.quantity;
             unitPrice = builder.unitPrice;
             factor = builder.factor;
+            tax = builder.tax;
             net = builder.net;
-            bodySite = builder.bodySite;
-            subSite = Collections.unmodifiableList(builder.subSite);
+            bodySite = Collections.unmodifiableList(builder.bodySite);
             noteNumber = Collections.unmodifiableList(builder.noteNumber);
+            reviewOutcome = builder.reviewOutcome;
             adjudication = Collections.unmodifiableList(builder.adjudication);
             detail = Collections.unmodifiableList(builder.detail);
         }
@@ -3412,6 +4646,16 @@ public class ClaimResponse extends DomainResource {
         }
 
         /**
+         * Trace number for tracking purposes. May be defined at the jurisdiction level or between trading partners.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
+         */
+        public List<Identifier> getTraceNumber() {
+            return traceNumber;
+        }
+
+        /**
          * The providers who are authorized for the services rendered to the patient.
          * 
          * @return
@@ -3422,14 +4666,49 @@ public class ClaimResponse extends DomainResource {
         }
 
         /**
-         * When the value is a group code then this item collects a set of related claim details, otherwise this contains the 
-         * product, service, drug or other billing code for the item.
+         * The type of revenue or cost center providing the product and/or service.
          * 
          * @return
-         *     An immutable object of type {@link CodeableConcept} that is non-null.
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getRevenue() {
+            return revenue;
+        }
+
+        /**
+         * When the value is a group code then this item collects a set of related item details, otherwise this contains the 
+         * product, service, drug or other billing code for the item. This element may be the start of a range of .
+         * productOrService codes used in conjunction with .productOrServiceEnd or it may be a solo element where .
+         * productOrServiceEnd is not used.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
          */
         public CodeableConcept getProductOrService() {
             return productOrService;
+        }
+
+        /**
+         * This contains the end of a range of product, service, drug or other billing codes for the item. This element is not 
+         * used when the .productOrService is a group code. This value may only be present when a .productOfService code has been 
+         * provided to convey the start of the range. Typically this value may be used only with preauthorizations and not with 
+         * claims.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getProductOrServiceEnd() {
+            return productOrServiceEnd;
+        }
+
+        /**
+         * Request or Referral for Goods or Service to be rendered.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+         */
+        public List<Reference> getRequest() {
+            return request;
         }
 
         /**
@@ -3458,7 +4737,7 @@ public class ClaimResponse extends DomainResource {
          * @return
          *     An immutable object of type {@link Date} or {@link Period} that may be null.
          */
-        public Element getServiced() {
+        public org.linuxforhealth.fhir.model.type.Element getServiced() {
             return serviced;
         }
 
@@ -3468,7 +4747,7 @@ public class ClaimResponse extends DomainResource {
          * @return
          *     An immutable object of type {@link CodeableConcept}, {@link Address} or {@link Reference} that may be null.
          */
-        public Element getLocation() {
+        public org.linuxforhealth.fhir.model.type.Element getLocation() {
             return location;
         }
 
@@ -3505,7 +4784,17 @@ public class ClaimResponse extends DomainResource {
         }
 
         /**
-         * The quantity times the unit price for an additional service or product or charge.
+         * The total of taxes applicable for this product or service.
+         * 
+         * @return
+         *     An immutable object of type {@link Money} that may be null.
+         */
+        public Money getTax() {
+            return tax;
+        }
+
+        /**
+         * The total amount claimed for the group (if a grouper) or the addItem. Net = unit price * quantity * factor.
          * 
          * @return
          *     An immutable object of type {@link Money} that may be null.
@@ -3515,23 +4804,13 @@ public class ClaimResponse extends DomainResource {
         }
 
         /**
-         * Physical service site on the patient (limb, tooth, etc.).
+         * Physical location where the service is performed or applies.
          * 
          * @return
-         *     An immutable object of type {@link CodeableConcept} that may be null.
+         *     An unmodifiable list containing immutable objects of type {@link BodySite} that may be empty.
          */
-        public CodeableConcept getBodySite() {
+        public List<BodySite> getBodySite() {
             return bodySite;
-        }
-
-        /**
-         * A region or surface of the bodySite, e.g. limb region or tooth surface(s).
-         * 
-         * @return
-         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
-         */
-        public List<CodeableConcept> getSubSite() {
-            return subSite;
         }
 
         /**
@@ -3545,10 +4824,20 @@ public class ClaimResponse extends DomainResource {
         }
 
         /**
+         * The high-level results of the adjudication if adjudication has been performed.
+         * 
+         * @return
+         *     An immutable object of type {@link ClaimResponse.Item.ReviewOutcome} that may be null.
+         */
+        public ClaimResponse.Item.ReviewOutcome getReviewOutcome() {
+            return reviewOutcome;
+        }
+
+        /**
          * The adjudication results.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link Adjudication} that is non-empty.
+         *     An unmodifiable list containing immutable objects of type {@link Adjudication} that may be empty.
          */
         public List<ClaimResponse.Item.Adjudication> getAdjudication() {
             return adjudication;
@@ -3570,8 +4859,12 @@ public class ClaimResponse extends DomainResource {
                 !itemSequence.isEmpty() || 
                 !detailSequence.isEmpty() || 
                 !subdetailSequence.isEmpty() || 
+                !traceNumber.isEmpty() || 
                 !provider.isEmpty() || 
+                (revenue != null) || 
                 (productOrService != null) || 
+                (productOrServiceEnd != null) || 
+                !request.isEmpty() || 
                 !modifier.isEmpty() || 
                 !programCode.isEmpty() || 
                 (serviced != null) || 
@@ -3579,10 +4872,11 @@ public class ClaimResponse extends DomainResource {
                 (quantity != null) || 
                 (unitPrice != null) || 
                 (factor != null) || 
+                (tax != null) || 
                 (net != null) || 
-                (bodySite != null) || 
-                !subSite.isEmpty() || 
+                !bodySite.isEmpty() || 
                 !noteNumber.isEmpty() || 
+                (reviewOutcome != null) || 
                 !adjudication.isEmpty() || 
                 !detail.isEmpty();
         }
@@ -3599,8 +4893,12 @@ public class ClaimResponse extends DomainResource {
                     accept(itemSequence, "itemSequence", visitor, PositiveInt.class);
                     accept(detailSequence, "detailSequence", visitor, PositiveInt.class);
                     accept(subdetailSequence, "subdetailSequence", visitor, PositiveInt.class);
+                    accept(traceNumber, "traceNumber", visitor, Identifier.class);
                     accept(provider, "provider", visitor, Reference.class);
+                    accept(revenue, "revenue", visitor);
                     accept(productOrService, "productOrService", visitor);
+                    accept(productOrServiceEnd, "productOrServiceEnd", visitor);
+                    accept(request, "request", visitor, Reference.class);
                     accept(modifier, "modifier", visitor, CodeableConcept.class);
                     accept(programCode, "programCode", visitor, CodeableConcept.class);
                     accept(serviced, "serviced", visitor);
@@ -3608,10 +4906,11 @@ public class ClaimResponse extends DomainResource {
                     accept(quantity, "quantity", visitor);
                     accept(unitPrice, "unitPrice", visitor);
                     accept(factor, "factor", visitor);
+                    accept(tax, "tax", visitor);
                     accept(net, "net", visitor);
-                    accept(bodySite, "bodySite", visitor);
-                    accept(subSite, "subSite", visitor, CodeableConcept.class);
+                    accept(bodySite, "bodySite", visitor, BodySite.class);
                     accept(noteNumber, "noteNumber", visitor, PositiveInt.class);
+                    accept(reviewOutcome, "reviewOutcome", visitor);
                     accept(adjudication, "adjudication", visitor, ClaimResponse.Item.Adjudication.class);
                     accept(detail, "detail", visitor, Detail.class);
                 }
@@ -3638,8 +4937,12 @@ public class ClaimResponse extends DomainResource {
                 Objects.equals(itemSequence, other.itemSequence) && 
                 Objects.equals(detailSequence, other.detailSequence) && 
                 Objects.equals(subdetailSequence, other.subdetailSequence) && 
+                Objects.equals(traceNumber, other.traceNumber) && 
                 Objects.equals(provider, other.provider) && 
+                Objects.equals(revenue, other.revenue) && 
                 Objects.equals(productOrService, other.productOrService) && 
+                Objects.equals(productOrServiceEnd, other.productOrServiceEnd) && 
+                Objects.equals(request, other.request) && 
                 Objects.equals(modifier, other.modifier) && 
                 Objects.equals(programCode, other.programCode) && 
                 Objects.equals(serviced, other.serviced) && 
@@ -3647,10 +4950,11 @@ public class ClaimResponse extends DomainResource {
                 Objects.equals(quantity, other.quantity) && 
                 Objects.equals(unitPrice, other.unitPrice) && 
                 Objects.equals(factor, other.factor) && 
+                Objects.equals(tax, other.tax) && 
                 Objects.equals(net, other.net) && 
                 Objects.equals(bodySite, other.bodySite) && 
-                Objects.equals(subSite, other.subSite) && 
                 Objects.equals(noteNumber, other.noteNumber) && 
+                Objects.equals(reviewOutcome, other.reviewOutcome) && 
                 Objects.equals(adjudication, other.adjudication) && 
                 Objects.equals(detail, other.detail);
         }
@@ -3665,8 +4969,12 @@ public class ClaimResponse extends DomainResource {
                     itemSequence, 
                     detailSequence, 
                     subdetailSequence, 
+                    traceNumber, 
                     provider, 
+                    revenue, 
                     productOrService, 
+                    productOrServiceEnd, 
+                    request, 
                     modifier, 
                     programCode, 
                     serviced, 
@@ -3674,10 +4982,11 @@ public class ClaimResponse extends DomainResource {
                     quantity, 
                     unitPrice, 
                     factor, 
+                    tax, 
                     net, 
                     bodySite, 
-                    subSite, 
                     noteNumber, 
+                    reviewOutcome, 
                     adjudication, 
                     detail);
                 hashCode = result;
@@ -3698,19 +5007,24 @@ public class ClaimResponse extends DomainResource {
             private List<PositiveInt> itemSequence = new ArrayList<>();
             private List<PositiveInt> detailSequence = new ArrayList<>();
             private List<PositiveInt> subdetailSequence = new ArrayList<>();
+            private List<Identifier> traceNumber = new ArrayList<>();
             private List<Reference> provider = new ArrayList<>();
+            private CodeableConcept revenue;
             private CodeableConcept productOrService;
+            private CodeableConcept productOrServiceEnd;
+            private List<Reference> request = new ArrayList<>();
             private List<CodeableConcept> modifier = new ArrayList<>();
             private List<CodeableConcept> programCode = new ArrayList<>();
-            private Element serviced;
-            private Element location;
+            private org.linuxforhealth.fhir.model.type.Element serviced;
+            private org.linuxforhealth.fhir.model.type.Element location;
             private SimpleQuantity quantity;
             private Money unitPrice;
             private Decimal factor;
+            private Money tax;
             private Money net;
-            private CodeableConcept bodySite;
-            private List<CodeableConcept> subSite = new ArrayList<>();
+            private List<BodySite> bodySite = new ArrayList<>();
             private List<PositiveInt> noteNumber = new ArrayList<>();
+            private ClaimResponse.Item.ReviewOutcome reviewOutcome;
             private List<ClaimResponse.Item.Adjudication> adjudication = new ArrayList<>();
             private List<Detail> detail = new ArrayList<>();
 
@@ -3735,7 +5049,7 @@ public class ClaimResponse extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3755,7 +5069,7 @@ public class ClaimResponse extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3780,7 +5094,7 @@ public class ClaimResponse extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3805,7 +5119,7 @@ public class ClaimResponse extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3947,6 +5261,45 @@ public class ClaimResponse extends DomainResource {
             }
 
             /**
+             * Trace number for tracking purposes. May be defined at the jurisdiction level or between trading partners.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param traceNumber
+             *     Number for tracking
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder traceNumber(Identifier... traceNumber) {
+                for (Identifier value : traceNumber) {
+                    this.traceNumber.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * Trace number for tracking purposes. May be defined at the jurisdiction level or between trading partners.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param traceNumber
+             *     Number for tracking
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder traceNumber(Collection<Identifier> traceNumber) {
+                this.traceNumber = new ArrayList<>(traceNumber);
+                return this;
+            }
+
+            /**
              * The providers who are authorized for the services rendered to the patient.
              * 
              * <p>Adds new element(s) to the existing list.
@@ -4000,10 +5353,24 @@ public class ClaimResponse extends DomainResource {
             }
 
             /**
-             * When the value is a group code then this item collects a set of related claim details, otherwise this contains the 
-             * product, service, drug or other billing code for the item.
+             * The type of revenue or cost center providing the product and/or service.
              * 
-             * <p>This element is required.
+             * @param revenue
+             *     Revenue or cost center code
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder revenue(CodeableConcept revenue) {
+                this.revenue = revenue;
+                return this;
+            }
+
+            /**
+             * When the value is a group code then this item collects a set of related item details, otherwise this contains the 
+             * product, service, drug or other billing code for the item. This element may be the start of a range of .
+             * productOrService codes used in conjunction with .productOrServiceEnd or it may be a solo element where .
+             * productOrServiceEnd is not used.
              * 
              * @param productOrService
              *     Billing, service, product, or drug code
@@ -4013,6 +5380,82 @@ public class ClaimResponse extends DomainResource {
              */
             public Builder productOrService(CodeableConcept productOrService) {
                 this.productOrService = productOrService;
+                return this;
+            }
+
+            /**
+             * This contains the end of a range of product, service, drug or other billing codes for the item. This element is not 
+             * used when the .productOrService is a group code. This value may only be present when a .productOfService code has been 
+             * provided to convey the start of the range. Typically this value may be used only with preauthorizations and not with 
+             * claims.
+             * 
+             * @param productOrServiceEnd
+             *     End of a range of codes
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder productOrServiceEnd(CodeableConcept productOrServiceEnd) {
+                this.productOrServiceEnd = productOrServiceEnd;
+                return this;
+            }
+
+            /**
+             * Request or Referral for Goods or Service to be rendered.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * <p>Allowed resource types for the references:
+             * <ul>
+             * <li>{@link DeviceRequest}</li>
+             * <li>{@link MedicationRequest}</li>
+             * <li>{@link NutritionOrder}</li>
+             * <li>{@link ServiceRequest}</li>
+             * <li>{@link SupplyRequest}</li>
+             * <li>{@link VisionPrescription}</li>
+             * </ul>
+             * 
+             * @param request
+             *     Request or Referral for Service
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder request(Reference... request) {
+                for (Reference value : request) {
+                    this.request.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * Request or Referral for Goods or Service to be rendered.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * <p>Allowed resource types for the references:
+             * <ul>
+             * <li>{@link DeviceRequest}</li>
+             * <li>{@link MedicationRequest}</li>
+             * <li>{@link NutritionOrder}</li>
+             * <li>{@link ServiceRequest}</li>
+             * <li>{@link SupplyRequest}</li>
+             * <li>{@link VisionPrescription}</li>
+             * </ul>
+             * 
+             * @param request
+             *     Request or Referral for Service
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder request(Collection<Reference> request) {
+                this.request = new ArrayList<>(request);
                 return this;
             }
 
@@ -4125,7 +5568,7 @@ public class ClaimResponse extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder serviced(Element serviced) {
+            public Builder serviced(org.linuxforhealth.fhir.model.type.Element serviced) {
                 this.serviced = serviced;
                 return this;
             }
@@ -4151,7 +5594,7 @@ public class ClaimResponse extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder location(Element location) {
+            public Builder location(org.linuxforhealth.fhir.model.type.Element location) {
                 this.location = location;
                 return this;
             }
@@ -4201,7 +5644,21 @@ public class ClaimResponse extends DomainResource {
             }
 
             /**
-             * The quantity times the unit price for an additional service or product or charge.
+             * The total of taxes applicable for this product or service.
+             * 
+             * @param tax
+             *     Total tax
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder tax(Money tax) {
+                this.tax = tax;
+                return this;
+            }
+
+            /**
+             * The total amount claimed for the group (if a grouper) or the addItem. Net = unit price * quantity * factor.
              * 
              * @param net
              *     Total item cost
@@ -4215,7 +5672,10 @@ public class ClaimResponse extends DomainResource {
             }
 
             /**
-             * Physical service site on the patient (limb, tooth, etc.).
+             * Physical location where the service is performed or applies.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param bodySite
              *     Anatomical location
@@ -4223,38 +5683,21 @@ public class ClaimResponse extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder bodySite(CodeableConcept bodySite) {
-                this.bodySite = bodySite;
-                return this;
-            }
-
-            /**
-             * A region or surface of the bodySite, e.g. limb region or tooth surface(s).
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param subSite
-             *     Anatomical sub-location
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder subSite(CodeableConcept... subSite) {
-                for (CodeableConcept value : subSite) {
-                    this.subSite.add(value);
+            public Builder bodySite(BodySite... bodySite) {
+                for (BodySite value : bodySite) {
+                    this.bodySite.add(value);
                 }
                 return this;
             }
 
             /**
-             * A region or surface of the bodySite, e.g. limb region or tooth surface(s).
+             * Physical location where the service is performed or applies.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * @param subSite
-             *     Anatomical sub-location
+             * @param bodySite
+             *     Anatomical location
              * 
              * @return
              *     A reference to this Builder instance
@@ -4262,8 +5705,8 @@ public class ClaimResponse extends DomainResource {
              * @throws NullPointerException
              *     If the passed collection is null
              */
-            public Builder subSite(Collection<CodeableConcept> subSite) {
-                this.subSite = new ArrayList<>(subSite);
+            public Builder bodySite(Collection<BodySite> bodySite) {
+                this.bodySite = new ArrayList<>(bodySite);
                 return this;
             }
 
@@ -4307,12 +5750,24 @@ public class ClaimResponse extends DomainResource {
             }
 
             /**
+             * The high-level results of the adjudication if adjudication has been performed.
+             * 
+             * @param reviewOutcome
+             *     Added items adjudication results
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder reviewOutcome(ClaimResponse.Item.ReviewOutcome reviewOutcome) {
+                this.reviewOutcome = reviewOutcome;
+                return this;
+            }
+
+            /**
              * The adjudication results.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * <p>This element is required.
              * 
              * @param adjudication
              *     Added items adjudication
@@ -4332,8 +5787,6 @@ public class ClaimResponse extends DomainResource {
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * <p>This element is required.
              * 
              * @param adjudication
              *     Added items adjudication
@@ -4391,12 +5844,6 @@ public class ClaimResponse extends DomainResource {
             /**
              * Build the {@link AddItem}
              * 
-             * <p>Required elements:
-             * <ul>
-             * <li>productOrService</li>
-             * <li>adjudication</li>
-             * </ul>
-             * 
              * @return
              *     An immutable object of type {@link AddItem}
              * @throws IllegalStateException
@@ -4416,17 +5863,19 @@ public class ClaimResponse extends DomainResource {
                 ValidationSupport.checkList(addItem.itemSequence, "itemSequence", PositiveInt.class);
                 ValidationSupport.checkList(addItem.detailSequence, "detailSequence", PositiveInt.class);
                 ValidationSupport.checkList(addItem.subdetailSequence, "subdetailSequence", PositiveInt.class);
+                ValidationSupport.checkList(addItem.traceNumber, "traceNumber", Identifier.class);
                 ValidationSupport.checkList(addItem.provider, "provider", Reference.class);
-                ValidationSupport.requireNonNull(addItem.productOrService, "productOrService");
+                ValidationSupport.checkList(addItem.request, "request", Reference.class);
                 ValidationSupport.checkList(addItem.modifier, "modifier", CodeableConcept.class);
                 ValidationSupport.checkList(addItem.programCode, "programCode", CodeableConcept.class);
                 ValidationSupport.choiceElement(addItem.serviced, "serviced", Date.class, Period.class);
                 ValidationSupport.choiceElement(addItem.location, "location", CodeableConcept.class, Address.class, Reference.class);
-                ValidationSupport.checkList(addItem.subSite, "subSite", CodeableConcept.class);
+                ValidationSupport.checkList(addItem.bodySite, "bodySite", BodySite.class);
                 ValidationSupport.checkList(addItem.noteNumber, "noteNumber", PositiveInt.class);
-                ValidationSupport.checkNonEmptyList(addItem.adjudication, "adjudication", ClaimResponse.Item.Adjudication.class);
+                ValidationSupport.checkList(addItem.adjudication, "adjudication", ClaimResponse.Item.Adjudication.class);
                 ValidationSupport.checkList(addItem.detail, "detail", Detail.class);
                 ValidationSupport.checkReferenceType(addItem.provider, "provider", "Practitioner", "PractitionerRole", "Organization");
+                ValidationSupport.checkReferenceType(addItem.request, "request", "DeviceRequest", "MedicationRequest", "NutritionOrder", "ServiceRequest", "SupplyRequest", "VisionPrescription");
                 ValidationSupport.checkReferenceType(addItem.location, "location", "Location");
                 ValidationSupport.requireValueOrChildren(addItem);
             }
@@ -4436,8 +5885,12 @@ public class ClaimResponse extends DomainResource {
                 itemSequence.addAll(addItem.itemSequence);
                 detailSequence.addAll(addItem.detailSequence);
                 subdetailSequence.addAll(addItem.subdetailSequence);
+                traceNumber.addAll(addItem.traceNumber);
                 provider.addAll(addItem.provider);
+                revenue = addItem.revenue;
                 productOrService = addItem.productOrService;
+                productOrServiceEnd = addItem.productOrServiceEnd;
+                request.addAll(addItem.request);
                 modifier.addAll(addItem.modifier);
                 programCode.addAll(addItem.programCode);
                 serviced = addItem.serviced;
@@ -4445,10 +5898,11 @@ public class ClaimResponse extends DomainResource {
                 quantity = addItem.quantity;
                 unitPrice = addItem.unitPrice;
                 factor = addItem.factor;
+                tax = addItem.tax;
                 net = addItem.net;
-                bodySite = addItem.bodySite;
-                subSite.addAll(addItem.subSite);
+                bodySite.addAll(addItem.bodySite);
                 noteNumber.addAll(addItem.noteNumber);
+                reviewOutcome = addItem.reviewOutcome;
                 adjudication.addAll(addItem.adjudication);
                 detail.addAll(addItem.detail);
                 return this;
@@ -4456,17 +5910,379 @@ public class ClaimResponse extends DomainResource {
         }
 
         /**
+         * Physical location where the service is performed or applies.
+         */
+        public static class BodySite extends BackboneElement {
+            @Binding(
+                bindingName = "OralSites",
+                strength = BindingStrength.Value.EXAMPLE,
+                valueSet = "http://hl7.org/fhir/ValueSet/tooth"
+            )
+            @Required
+            private final List<CodeableReference> site;
+            @Binding(
+                bindingName = "Surface",
+                strength = BindingStrength.Value.EXAMPLE,
+                valueSet = "http://hl7.org/fhir/ValueSet/surface"
+            )
+            private final List<CodeableConcept> subSite;
+
+            private BodySite(Builder builder) {
+                super(builder);
+                site = Collections.unmodifiableList(builder.site);
+                subSite = Collections.unmodifiableList(builder.subSite);
+            }
+
+            /**
+             * Physical service site on the patient (limb, tooth, etc.).
+             * 
+             * @return
+             *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that is non-empty.
+             */
+            public List<CodeableReference> getSite() {
+                return site;
+            }
+
+            /**
+             * A region or surface of the bodySite, e.g. limb region or tooth surface(s).
+             * 
+             * @return
+             *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+             */
+            public List<CodeableConcept> getSubSite() {
+                return subSite;
+            }
+
+            @Override
+            public boolean hasChildren() {
+                return super.hasChildren() || 
+                    !site.isEmpty() || 
+                    !subSite.isEmpty();
+            }
+
+            @Override
+            public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                if (visitor.preVisit(this)) {
+                    visitor.visitStart(elementName, elementIndex, this);
+                    if (visitor.visit(elementName, elementIndex, this)) {
+                        // visit children
+                        accept(id, "id", visitor);
+                        accept(extension, "extension", visitor, Extension.class);
+                        accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                        accept(site, "site", visitor, CodeableReference.class);
+                        accept(subSite, "subSite", visitor, CodeableConcept.class);
+                    }
+                    visitor.visitEnd(elementName, elementIndex, this);
+                    visitor.postVisit(this);
+                }
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj) {
+                    return true;
+                }
+                if (obj == null) {
+                    return false;
+                }
+                if (getClass() != obj.getClass()) {
+                    return false;
+                }
+                BodySite other = (BodySite) obj;
+                return Objects.equals(id, other.id) && 
+                    Objects.equals(extension, other.extension) && 
+                    Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(site, other.site) && 
+                    Objects.equals(subSite, other.subSite);
+            }
+
+            @Override
+            public int hashCode() {
+                int result = hashCode;
+                if (result == 0) {
+                    result = Objects.hash(id, 
+                        extension, 
+                        modifierExtension, 
+                        site, 
+                        subSite);
+                    hashCode = result;
+                }
+                return result;
+            }
+
+            @Override
+            public Builder toBuilder() {
+                return new Builder().from(this);
+            }
+
+            public static Builder builder() {
+                return new Builder();
+            }
+
+            public static class Builder extends BackboneElement.Builder {
+                private List<CodeableReference> site = new ArrayList<>();
+                private List<CodeableConcept> subSite = new ArrayList<>();
+
+                private Builder() {
+                    super();
+                }
+
+                /**
+                 * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                 * contain spaces.
+                 * 
+                 * @param id
+                 *     Unique id for inter-element referencing
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder id(java.lang.String id) {
+                    return (Builder) super.id(id);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder extension(Extension... extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder extension(Collection<Extension> extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder modifierExtension(Extension... modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * Physical service site on the patient (limb, tooth, etc.).
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * @param site
+                 *     Location
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder site(CodeableReference... site) {
+                    for (CodeableReference value : site) {
+                        this.site.add(value);
+                    }
+                    return this;
+                }
+
+                /**
+                 * Physical service site on the patient (limb, tooth, etc.).
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * @param site
+                 *     Location
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                public Builder site(Collection<CodeableReference> site) {
+                    this.site = new ArrayList<>(site);
+                    return this;
+                }
+
+                /**
+                 * A region or surface of the bodySite, e.g. limb region or tooth surface(s).
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param subSite
+                 *     Sub-location
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder subSite(CodeableConcept... subSite) {
+                    for (CodeableConcept value : subSite) {
+                        this.subSite.add(value);
+                    }
+                    return this;
+                }
+
+                /**
+                 * A region or surface of the bodySite, e.g. limb region or tooth surface(s).
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param subSite
+                 *     Sub-location
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                public Builder subSite(Collection<CodeableConcept> subSite) {
+                    this.subSite = new ArrayList<>(subSite);
+                    return this;
+                }
+
+                /**
+                 * Build the {@link BodySite}
+                 * 
+                 * <p>Required elements:
+                 * <ul>
+                 * <li>site</li>
+                 * </ul>
+                 * 
+                 * @return
+                 *     An immutable object of type {@link BodySite}
+                 * @throws IllegalStateException
+                 *     if the current state cannot be built into a valid BodySite per the base specification
+                 */
+                @Override
+                public BodySite build() {
+                    BodySite bodySite = new BodySite(this);
+                    if (validating) {
+                        validate(bodySite);
+                    }
+                    return bodySite;
+                }
+
+                protected void validate(BodySite bodySite) {
+                    super.validate(bodySite);
+                    ValidationSupport.checkNonEmptyList(bodySite.site, "site", CodeableReference.class);
+                    ValidationSupport.checkList(bodySite.subSite, "subSite", CodeableConcept.class);
+                    ValidationSupport.requireValueOrChildren(bodySite);
+                }
+
+                protected Builder from(BodySite bodySite) {
+                    super.from(bodySite);
+                    site.addAll(bodySite.site);
+                    subSite.addAll(bodySite.subSite);
+                    return this;
+                }
+            }
+        }
+
+        /**
          * The second-tier service adjudications for payor added services.
          */
         public static class Detail extends BackboneElement {
+            private final List<Identifier> traceNumber;
+            @Binding(
+                bindingName = "RevenueCenter",
+                strength = BindingStrength.Value.EXAMPLE,
+                description = "Codes for the revenue or cost centers supplying the service and/or products.",
+                valueSet = "http://hl7.org/fhir/ValueSet/ex-revenue-center"
+            )
+            private final CodeableConcept revenue;
             @Binding(
                 bindingName = "ServiceProduct",
                 strength = BindingStrength.Value.EXAMPLE,
                 description = "Allowable service and product codes.",
                 valueSet = "http://hl7.org/fhir/ValueSet/service-uscls"
             )
-            @Required
             private final CodeableConcept productOrService;
+            @Binding(
+                bindingName = "ServiceProduct",
+                strength = BindingStrength.Value.EXAMPLE,
+                valueSet = "http://hl7.org/fhir/ValueSet/service-uscls"
+            )
+            private final CodeableConcept productOrServiceEnd;
             @Binding(
                 bindingName = "Modifiers",
                 strength = BindingStrength.Value.EXAMPLE,
@@ -4477,34 +6293,75 @@ public class ClaimResponse extends DomainResource {
             private final SimpleQuantity quantity;
             private final Money unitPrice;
             private final Decimal factor;
+            private final Money tax;
             private final Money net;
             private final List<PositiveInt> noteNumber;
-            @Required
+            private final ClaimResponse.Item.ReviewOutcome reviewOutcome;
             private final List<ClaimResponse.Item.Adjudication> adjudication;
             private final List<SubDetail> subDetail;
 
             private Detail(Builder builder) {
                 super(builder);
+                traceNumber = Collections.unmodifiableList(builder.traceNumber);
+                revenue = builder.revenue;
                 productOrService = builder.productOrService;
+                productOrServiceEnd = builder.productOrServiceEnd;
                 modifier = Collections.unmodifiableList(builder.modifier);
                 quantity = builder.quantity;
                 unitPrice = builder.unitPrice;
                 factor = builder.factor;
+                tax = builder.tax;
                 net = builder.net;
                 noteNumber = Collections.unmodifiableList(builder.noteNumber);
+                reviewOutcome = builder.reviewOutcome;
                 adjudication = Collections.unmodifiableList(builder.adjudication);
                 subDetail = Collections.unmodifiableList(builder.subDetail);
             }
 
             /**
-             * When the value is a group code then this item collects a set of related claim details, otherwise this contains the 
-             * product, service, drug or other billing code for the item.
+             * Trace number for tracking purposes. May be defined at the jurisdiction level or between trading partners.
              * 
              * @return
-             *     An immutable object of type {@link CodeableConcept} that is non-null.
+             *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
+             */
+            public List<Identifier> getTraceNumber() {
+                return traceNumber;
+            }
+
+            /**
+             * The type of revenue or cost center providing the product and/or service.
+             * 
+             * @return
+             *     An immutable object of type {@link CodeableConcept} that may be null.
+             */
+            public CodeableConcept getRevenue() {
+                return revenue;
+            }
+
+            /**
+             * When the value is a group code then this item collects a set of related item details, otherwise this contains the 
+             * product, service, drug or other billing code for the item. This element may be the start of a range of .
+             * productOrService codes used in conjunction with .productOrServiceEnd or it may be a solo element where .
+             * productOrServiceEnd is not used.
+             * 
+             * @return
+             *     An immutable object of type {@link CodeableConcept} that may be null.
              */
             public CodeableConcept getProductOrService() {
                 return productOrService;
+            }
+
+            /**
+             * This contains the end of a range of product, service, drug or other billing codes for the item. This element is not 
+             * used when the .productOrService is a group code. This value may only be present when a .productOfService code has been 
+             * provided to convey the start of the range. Typically this value may be used only with preauthorizations and not with 
+             * claims.
+             * 
+             * @return
+             *     An immutable object of type {@link CodeableConcept} that may be null.
+             */
+            public CodeableConcept getProductOrServiceEnd() {
+                return productOrServiceEnd;
             }
 
             /**
@@ -4550,7 +6407,17 @@ public class ClaimResponse extends DomainResource {
             }
 
             /**
-             * The quantity times the unit price for an additional service or product or charge.
+             * The total of taxes applicable for this product or service.
+             * 
+             * @return
+             *     An immutable object of type {@link Money} that may be null.
+             */
+            public Money getTax() {
+                return tax;
+            }
+
+            /**
+             * The total amount claimed for the group (if a grouper) or the addItem.detail. Net = unit price * quantity * factor.
              * 
              * @return
              *     An immutable object of type {@link Money} that may be null.
@@ -4570,10 +6437,20 @@ public class ClaimResponse extends DomainResource {
             }
 
             /**
+             * The high-level results of the adjudication if adjudication has been performed.
+             * 
+             * @return
+             *     An immutable object of type {@link ClaimResponse.Item.ReviewOutcome} that may be null.
+             */
+            public ClaimResponse.Item.ReviewOutcome getReviewOutcome() {
+                return reviewOutcome;
+            }
+
+            /**
              * The adjudication results.
              * 
              * @return
-             *     An unmodifiable list containing immutable objects of type {@link Adjudication} that is non-empty.
+             *     An unmodifiable list containing immutable objects of type {@link Adjudication} that may be empty.
              */
             public List<ClaimResponse.Item.Adjudication> getAdjudication() {
                 return adjudication;
@@ -4592,13 +6469,18 @@ public class ClaimResponse extends DomainResource {
             @Override
             public boolean hasChildren() {
                 return super.hasChildren() || 
+                    !traceNumber.isEmpty() || 
+                    (revenue != null) || 
                     (productOrService != null) || 
+                    (productOrServiceEnd != null) || 
                     !modifier.isEmpty() || 
                     (quantity != null) || 
                     (unitPrice != null) || 
                     (factor != null) || 
+                    (tax != null) || 
                     (net != null) || 
                     !noteNumber.isEmpty() || 
+                    (reviewOutcome != null) || 
                     !adjudication.isEmpty() || 
                     !subDetail.isEmpty();
             }
@@ -4612,13 +6494,18 @@ public class ClaimResponse extends DomainResource {
                         accept(id, "id", visitor);
                         accept(extension, "extension", visitor, Extension.class);
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                        accept(traceNumber, "traceNumber", visitor, Identifier.class);
+                        accept(revenue, "revenue", visitor);
                         accept(productOrService, "productOrService", visitor);
+                        accept(productOrServiceEnd, "productOrServiceEnd", visitor);
                         accept(modifier, "modifier", visitor, CodeableConcept.class);
                         accept(quantity, "quantity", visitor);
                         accept(unitPrice, "unitPrice", visitor);
                         accept(factor, "factor", visitor);
+                        accept(tax, "tax", visitor);
                         accept(net, "net", visitor);
                         accept(noteNumber, "noteNumber", visitor, PositiveInt.class);
+                        accept(reviewOutcome, "reviewOutcome", visitor);
                         accept(adjudication, "adjudication", visitor, ClaimResponse.Item.Adjudication.class);
                         accept(subDetail, "subDetail", visitor, SubDetail.class);
                     }
@@ -4642,13 +6529,18 @@ public class ClaimResponse extends DomainResource {
                 return Objects.equals(id, other.id) && 
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(traceNumber, other.traceNumber) && 
+                    Objects.equals(revenue, other.revenue) && 
                     Objects.equals(productOrService, other.productOrService) && 
+                    Objects.equals(productOrServiceEnd, other.productOrServiceEnd) && 
                     Objects.equals(modifier, other.modifier) && 
                     Objects.equals(quantity, other.quantity) && 
                     Objects.equals(unitPrice, other.unitPrice) && 
                     Objects.equals(factor, other.factor) && 
+                    Objects.equals(tax, other.tax) && 
                     Objects.equals(net, other.net) && 
                     Objects.equals(noteNumber, other.noteNumber) && 
+                    Objects.equals(reviewOutcome, other.reviewOutcome) && 
                     Objects.equals(adjudication, other.adjudication) && 
                     Objects.equals(subDetail, other.subDetail);
             }
@@ -4660,13 +6552,18 @@ public class ClaimResponse extends DomainResource {
                     result = Objects.hash(id, 
                         extension, 
                         modifierExtension, 
+                        traceNumber, 
+                        revenue, 
                         productOrService, 
+                        productOrServiceEnd, 
                         modifier, 
                         quantity, 
                         unitPrice, 
                         factor, 
+                        tax, 
                         net, 
                         noteNumber, 
+                        reviewOutcome, 
                         adjudication, 
                         subDetail);
                     hashCode = result;
@@ -4684,13 +6581,18 @@ public class ClaimResponse extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
+                private List<Identifier> traceNumber = new ArrayList<>();
+                private CodeableConcept revenue;
                 private CodeableConcept productOrService;
+                private CodeableConcept productOrServiceEnd;
                 private List<CodeableConcept> modifier = new ArrayList<>();
                 private SimpleQuantity quantity;
                 private Money unitPrice;
                 private Decimal factor;
+                private Money tax;
                 private Money net;
                 private List<PositiveInt> noteNumber = new ArrayList<>();
+                private ClaimResponse.Item.ReviewOutcome reviewOutcome;
                 private List<ClaimResponse.Item.Adjudication> adjudication = new ArrayList<>();
                 private List<SubDetail> subDetail = new ArrayList<>();
 
@@ -4715,7 +6617,7 @@ public class ClaimResponse extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -4735,7 +6637,7 @@ public class ClaimResponse extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -4760,7 +6662,7 @@ public class ClaimResponse extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4785,7 +6687,7 @@ public class ClaimResponse extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4810,10 +6712,63 @@ public class ClaimResponse extends DomainResource {
                 }
 
                 /**
-                 * When the value is a group code then this item collects a set of related claim details, otherwise this contains the 
-                 * product, service, drug or other billing code for the item.
+                 * Trace number for tracking purposes. May be defined at the jurisdiction level or between trading partners.
                  * 
-                 * <p>This element is required.
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param traceNumber
+                 *     Number for tracking
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder traceNumber(Identifier... traceNumber) {
+                    for (Identifier value : traceNumber) {
+                        this.traceNumber.add(value);
+                    }
+                    return this;
+                }
+
+                /**
+                 * Trace number for tracking purposes. May be defined at the jurisdiction level or between trading partners.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param traceNumber
+                 *     Number for tracking
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                public Builder traceNumber(Collection<Identifier> traceNumber) {
+                    this.traceNumber = new ArrayList<>(traceNumber);
+                    return this;
+                }
+
+                /**
+                 * The type of revenue or cost center providing the product and/or service.
+                 * 
+                 * @param revenue
+                 *     Revenue or cost center code
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder revenue(CodeableConcept revenue) {
+                    this.revenue = revenue;
+                    return this;
+                }
+
+                /**
+                 * When the value is a group code then this item collects a set of related item details, otherwise this contains the 
+                 * product, service, drug or other billing code for the item. This element may be the start of a range of .
+                 * productOrService codes used in conjunction with .productOrServiceEnd or it may be a solo element where .
+                 * productOrServiceEnd is not used.
                  * 
                  * @param productOrService
                  *     Billing, service, product, or drug code
@@ -4823,6 +6778,23 @@ public class ClaimResponse extends DomainResource {
                  */
                 public Builder productOrService(CodeableConcept productOrService) {
                     this.productOrService = productOrService;
+                    return this;
+                }
+
+                /**
+                 * This contains the end of a range of product, service, drug or other billing codes for the item. This element is not 
+                 * used when the .productOrService is a group code. This value may only be present when a .productOfService code has been 
+                 * provided to convey the start of the range. Typically this value may be used only with preauthorizations and not with 
+                 * claims.
+                 * 
+                 * @param productOrServiceEnd
+                 *     End of a range of codes
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder productOrServiceEnd(CodeableConcept productOrServiceEnd) {
+                    this.productOrServiceEnd = productOrServiceEnd;
                     return this;
                 }
 
@@ -4910,7 +6882,21 @@ public class ClaimResponse extends DomainResource {
                 }
 
                 /**
-                 * The quantity times the unit price for an additional service or product or charge.
+                 * The total of taxes applicable for this product or service.
+                 * 
+                 * @param tax
+                 *     Total tax
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder tax(Money tax) {
+                    this.tax = tax;
+                    return this;
+                }
+
+                /**
+                 * The total amount claimed for the group (if a grouper) or the addItem.detail. Net = unit price * quantity * factor.
                  * 
                  * @param net
                  *     Total item cost
@@ -4963,12 +6949,24 @@ public class ClaimResponse extends DomainResource {
                 }
 
                 /**
+                 * The high-level results of the adjudication if adjudication has been performed.
+                 * 
+                 * @param reviewOutcome
+                 *     Added items detail level adjudication results
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder reviewOutcome(ClaimResponse.Item.ReviewOutcome reviewOutcome) {
+                    this.reviewOutcome = reviewOutcome;
+                    return this;
+                }
+
+                /**
                  * The adjudication results.
                  * 
                  * <p>Adds new element(s) to the existing list.
                  * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * <p>This element is required.
                  * 
                  * @param adjudication
                  *     Added items detail adjudication
@@ -4988,8 +6986,6 @@ public class ClaimResponse extends DomainResource {
                  * 
                  * <p>Replaces the existing list with a new one containing elements from the Collection.
                  * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * <p>This element is required.
                  * 
                  * @param adjudication
                  *     Added items detail adjudication
@@ -5047,12 +7043,6 @@ public class ClaimResponse extends DomainResource {
                 /**
                  * Build the {@link Detail}
                  * 
-                 * <p>Required elements:
-                 * <ul>
-                 * <li>productOrService</li>
-                 * <li>adjudication</li>
-                 * </ul>
-                 * 
                  * @return
                  *     An immutable object of type {@link Detail}
                  * @throws IllegalStateException
@@ -5069,23 +7059,28 @@ public class ClaimResponse extends DomainResource {
 
                 protected void validate(Detail detail) {
                     super.validate(detail);
-                    ValidationSupport.requireNonNull(detail.productOrService, "productOrService");
+                    ValidationSupport.checkList(detail.traceNumber, "traceNumber", Identifier.class);
                     ValidationSupport.checkList(detail.modifier, "modifier", CodeableConcept.class);
                     ValidationSupport.checkList(detail.noteNumber, "noteNumber", PositiveInt.class);
-                    ValidationSupport.checkNonEmptyList(detail.adjudication, "adjudication", ClaimResponse.Item.Adjudication.class);
+                    ValidationSupport.checkList(detail.adjudication, "adjudication", ClaimResponse.Item.Adjudication.class);
                     ValidationSupport.checkList(detail.subDetail, "subDetail", SubDetail.class);
                     ValidationSupport.requireValueOrChildren(detail);
                 }
 
                 protected Builder from(Detail detail) {
                     super.from(detail);
+                    traceNumber.addAll(detail.traceNumber);
+                    revenue = detail.revenue;
                     productOrService = detail.productOrService;
+                    productOrServiceEnd = detail.productOrServiceEnd;
                     modifier.addAll(detail.modifier);
                     quantity = detail.quantity;
                     unitPrice = detail.unitPrice;
                     factor = detail.factor;
+                    tax = detail.tax;
                     net = detail.net;
                     noteNumber.addAll(detail.noteNumber);
+                    reviewOutcome = detail.reviewOutcome;
                     adjudication.addAll(detail.adjudication);
                     subDetail.addAll(detail.subDetail);
                     return this;
@@ -5096,14 +7091,27 @@ public class ClaimResponse extends DomainResource {
              * The third-tier service adjudications for payor added services.
              */
             public static class SubDetail extends BackboneElement {
+                private final List<Identifier> traceNumber;
+                @Binding(
+                    bindingName = "RevenueCenter",
+                    strength = BindingStrength.Value.EXAMPLE,
+                    description = "Codes for the revenue or cost centers supplying the service and/or products.",
+                    valueSet = "http://hl7.org/fhir/ValueSet/ex-revenue-center"
+                )
+                private final CodeableConcept revenue;
                 @Binding(
                     bindingName = "ServiceProduct",
                     strength = BindingStrength.Value.EXAMPLE,
                     description = "Allowable service and product codes.",
                     valueSet = "http://hl7.org/fhir/ValueSet/service-uscls"
                 )
-                @Required
                 private final CodeableConcept productOrService;
+                @Binding(
+                    bindingName = "ServiceProduct",
+                    strength = BindingStrength.Value.EXAMPLE,
+                    valueSet = "http://hl7.org/fhir/ValueSet/service-uscls"
+                )
+                private final CodeableConcept productOrServiceEnd;
                 @Binding(
                     bindingName = "Modifiers",
                     strength = BindingStrength.Value.EXAMPLE,
@@ -5114,32 +7122,73 @@ public class ClaimResponse extends DomainResource {
                 private final SimpleQuantity quantity;
                 private final Money unitPrice;
                 private final Decimal factor;
+                private final Money tax;
                 private final Money net;
                 private final List<PositiveInt> noteNumber;
-                @Required
+                private final ClaimResponse.Item.ReviewOutcome reviewOutcome;
                 private final List<ClaimResponse.Item.Adjudication> adjudication;
 
                 private SubDetail(Builder builder) {
                     super(builder);
+                    traceNumber = Collections.unmodifiableList(builder.traceNumber);
+                    revenue = builder.revenue;
                     productOrService = builder.productOrService;
+                    productOrServiceEnd = builder.productOrServiceEnd;
                     modifier = Collections.unmodifiableList(builder.modifier);
                     quantity = builder.quantity;
                     unitPrice = builder.unitPrice;
                     factor = builder.factor;
+                    tax = builder.tax;
                     net = builder.net;
                     noteNumber = Collections.unmodifiableList(builder.noteNumber);
+                    reviewOutcome = builder.reviewOutcome;
                     adjudication = Collections.unmodifiableList(builder.adjudication);
                 }
 
                 /**
-                 * When the value is a group code then this item collects a set of related claim details, otherwise this contains the 
-                 * product, service, drug or other billing code for the item.
+                 * Trace number for tracking purposes. May be defined at the jurisdiction level or between trading partners.
                  * 
                  * @return
-                 *     An immutable object of type {@link CodeableConcept} that is non-null.
+                 *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
+                 */
+                public List<Identifier> getTraceNumber() {
+                    return traceNumber;
+                }
+
+                /**
+                 * The type of revenue or cost center providing the product and/or service.
+                 * 
+                 * @return
+                 *     An immutable object of type {@link CodeableConcept} that may be null.
+                 */
+                public CodeableConcept getRevenue() {
+                    return revenue;
+                }
+
+                /**
+                 * When the value is a group code then this item collects a set of related item details, otherwise this contains the 
+                 * product, service, drug or other billing code for the item. This element may be the start of a range of .
+                 * productOrService codes used in conjunction with .productOrServiceEnd or it may be a solo element where .
+                 * productOrServiceEnd is not used.
+                 * 
+                 * @return
+                 *     An immutable object of type {@link CodeableConcept} that may be null.
                  */
                 public CodeableConcept getProductOrService() {
                     return productOrService;
+                }
+
+                /**
+                 * This contains the end of a range of product, service, drug or other billing codes for the item. This element is not 
+                 * used when the .productOrService is a group code. This value may only be present when a .productOfService code has been 
+                 * provided to convey the start of the range. Typically this value may be used only with preauthorizations and not with 
+                 * claims.
+                 * 
+                 * @return
+                 *     An immutable object of type {@link CodeableConcept} that may be null.
+                 */
+                public CodeableConcept getProductOrServiceEnd() {
+                    return productOrServiceEnd;
                 }
 
                 /**
@@ -5185,7 +7234,17 @@ public class ClaimResponse extends DomainResource {
                 }
 
                 /**
-                 * The quantity times the unit price for an additional service or product or charge.
+                 * The total of taxes applicable for this product or service.
+                 * 
+                 * @return
+                 *     An immutable object of type {@link Money} that may be null.
+                 */
+                public Money getTax() {
+                    return tax;
+                }
+
+                /**
+                 * The total amount claimed for the addItem.detail.subDetail. Net = unit price * quantity * factor.
                  * 
                  * @return
                  *     An immutable object of type {@link Money} that may be null.
@@ -5205,10 +7264,20 @@ public class ClaimResponse extends DomainResource {
                 }
 
                 /**
+                 * The high-level results of the adjudication if adjudication has been performed.
+                 * 
+                 * @return
+                 *     An immutable object of type {@link ClaimResponse.Item.ReviewOutcome} that may be null.
+                 */
+                public ClaimResponse.Item.ReviewOutcome getReviewOutcome() {
+                    return reviewOutcome;
+                }
+
+                /**
                  * The adjudication results.
                  * 
                  * @return
-                 *     An unmodifiable list containing immutable objects of type {@link Adjudication} that is non-empty.
+                 *     An unmodifiable list containing immutable objects of type {@link Adjudication} that may be empty.
                  */
                 public List<ClaimResponse.Item.Adjudication> getAdjudication() {
                     return adjudication;
@@ -5217,13 +7286,18 @@ public class ClaimResponse extends DomainResource {
                 @Override
                 public boolean hasChildren() {
                     return super.hasChildren() || 
+                        !traceNumber.isEmpty() || 
+                        (revenue != null) || 
                         (productOrService != null) || 
+                        (productOrServiceEnd != null) || 
                         !modifier.isEmpty() || 
                         (quantity != null) || 
                         (unitPrice != null) || 
                         (factor != null) || 
+                        (tax != null) || 
                         (net != null) || 
                         !noteNumber.isEmpty() || 
+                        (reviewOutcome != null) || 
                         !adjudication.isEmpty();
                 }
 
@@ -5236,13 +7310,18 @@ public class ClaimResponse extends DomainResource {
                             accept(id, "id", visitor);
                             accept(extension, "extension", visitor, Extension.class);
                             accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                            accept(traceNumber, "traceNumber", visitor, Identifier.class);
+                            accept(revenue, "revenue", visitor);
                             accept(productOrService, "productOrService", visitor);
+                            accept(productOrServiceEnd, "productOrServiceEnd", visitor);
                             accept(modifier, "modifier", visitor, CodeableConcept.class);
                             accept(quantity, "quantity", visitor);
                             accept(unitPrice, "unitPrice", visitor);
                             accept(factor, "factor", visitor);
+                            accept(tax, "tax", visitor);
                             accept(net, "net", visitor);
                             accept(noteNumber, "noteNumber", visitor, PositiveInt.class);
+                            accept(reviewOutcome, "reviewOutcome", visitor);
                             accept(adjudication, "adjudication", visitor, ClaimResponse.Item.Adjudication.class);
                         }
                         visitor.visitEnd(elementName, elementIndex, this);
@@ -5265,13 +7344,18 @@ public class ClaimResponse extends DomainResource {
                     return Objects.equals(id, other.id) && 
                         Objects.equals(extension, other.extension) && 
                         Objects.equals(modifierExtension, other.modifierExtension) && 
+                        Objects.equals(traceNumber, other.traceNumber) && 
+                        Objects.equals(revenue, other.revenue) && 
                         Objects.equals(productOrService, other.productOrService) && 
+                        Objects.equals(productOrServiceEnd, other.productOrServiceEnd) && 
                         Objects.equals(modifier, other.modifier) && 
                         Objects.equals(quantity, other.quantity) && 
                         Objects.equals(unitPrice, other.unitPrice) && 
                         Objects.equals(factor, other.factor) && 
+                        Objects.equals(tax, other.tax) && 
                         Objects.equals(net, other.net) && 
                         Objects.equals(noteNumber, other.noteNumber) && 
+                        Objects.equals(reviewOutcome, other.reviewOutcome) && 
                         Objects.equals(adjudication, other.adjudication);
                 }
 
@@ -5282,13 +7366,18 @@ public class ClaimResponse extends DomainResource {
                         result = Objects.hash(id, 
                             extension, 
                             modifierExtension, 
+                            traceNumber, 
+                            revenue, 
                             productOrService, 
+                            productOrServiceEnd, 
                             modifier, 
                             quantity, 
                             unitPrice, 
                             factor, 
+                            tax, 
                             net, 
                             noteNumber, 
+                            reviewOutcome, 
                             adjudication);
                         hashCode = result;
                     }
@@ -5305,13 +7394,18 @@ public class ClaimResponse extends DomainResource {
                 }
 
                 public static class Builder extends BackboneElement.Builder {
+                    private List<Identifier> traceNumber = new ArrayList<>();
+                    private CodeableConcept revenue;
                     private CodeableConcept productOrService;
+                    private CodeableConcept productOrServiceEnd;
                     private List<CodeableConcept> modifier = new ArrayList<>();
                     private SimpleQuantity quantity;
                     private Money unitPrice;
                     private Decimal factor;
+                    private Money tax;
                     private Money net;
                     private List<PositiveInt> noteNumber = new ArrayList<>();
+                    private ClaimResponse.Item.ReviewOutcome reviewOutcome;
                     private List<ClaimResponse.Item.Adjudication> adjudication = new ArrayList<>();
 
                     private Builder() {
@@ -5335,7 +7429,7 @@ public class ClaimResponse extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -5355,7 +7449,7 @@ public class ClaimResponse extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -5380,7 +7474,7 @@ public class ClaimResponse extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -5405,7 +7499,7 @@ public class ClaimResponse extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -5430,10 +7524,63 @@ public class ClaimResponse extends DomainResource {
                     }
 
                     /**
-                     * When the value is a group code then this item collects a set of related claim details, otherwise this contains the 
-                     * product, service, drug or other billing code for the item.
+                     * Trace number for tracking purposes. May be defined at the jurisdiction level or between trading partners.
                      * 
-                     * <p>This element is required.
+                     * <p>Adds new element(s) to the existing list.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param traceNumber
+                     *     Number for tracking
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder traceNumber(Identifier... traceNumber) {
+                        for (Identifier value : traceNumber) {
+                            this.traceNumber.add(value);
+                        }
+                        return this;
+                    }
+
+                    /**
+                     * Trace number for tracking purposes. May be defined at the jurisdiction level or between trading partners.
+                     * 
+                     * <p>Replaces the existing list with a new one containing elements from the Collection.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param traceNumber
+                     *     Number for tracking
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @throws NullPointerException
+                     *     If the passed collection is null
+                     */
+                    public Builder traceNumber(Collection<Identifier> traceNumber) {
+                        this.traceNumber = new ArrayList<>(traceNumber);
+                        return this;
+                    }
+
+                    /**
+                     * The type of revenue or cost center providing the product and/or service.
+                     * 
+                     * @param revenue
+                     *     Revenue or cost center code
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder revenue(CodeableConcept revenue) {
+                        this.revenue = revenue;
+                        return this;
+                    }
+
+                    /**
+                     * When the value is a group code then this item collects a set of related item details, otherwise this contains the 
+                     * product, service, drug or other billing code for the item. This element may be the start of a range of .
+                     * productOrService codes used in conjunction with .productOrServiceEnd or it may be a solo element where .
+                     * productOrServiceEnd is not used.
                      * 
                      * @param productOrService
                      *     Billing, service, product, or drug code
@@ -5443,6 +7590,23 @@ public class ClaimResponse extends DomainResource {
                      */
                     public Builder productOrService(CodeableConcept productOrService) {
                         this.productOrService = productOrService;
+                        return this;
+                    }
+
+                    /**
+                     * This contains the end of a range of product, service, drug or other billing codes for the item. This element is not 
+                     * used when the .productOrService is a group code. This value may only be present when a .productOfService code has been 
+                     * provided to convey the start of the range. Typically this value may be used only with preauthorizations and not with 
+                     * claims.
+                     * 
+                     * @param productOrServiceEnd
+                     *     End of a range of codes
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder productOrServiceEnd(CodeableConcept productOrServiceEnd) {
+                        this.productOrServiceEnd = productOrServiceEnd;
                         return this;
                     }
 
@@ -5530,7 +7694,21 @@ public class ClaimResponse extends DomainResource {
                     }
 
                     /**
-                     * The quantity times the unit price for an additional service or product or charge.
+                     * The total of taxes applicable for this product or service.
+                     * 
+                     * @param tax
+                     *     Total tax
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder tax(Money tax) {
+                        this.tax = tax;
+                        return this;
+                    }
+
+                    /**
+                     * The total amount claimed for the addItem.detail.subDetail. Net = unit price * quantity * factor.
                      * 
                      * @param net
                      *     Total item cost
@@ -5583,15 +7761,27 @@ public class ClaimResponse extends DomainResource {
                     }
 
                     /**
+                     * The high-level results of the adjudication if adjudication has been performed.
+                     * 
+                     * @param reviewOutcome
+                     *     Added items subdetail level adjudication results
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder reviewOutcome(ClaimResponse.Item.ReviewOutcome reviewOutcome) {
+                        this.reviewOutcome = reviewOutcome;
+                        return this;
+                    }
+
+                    /**
                      * The adjudication results.
                      * 
                      * <p>Adds new element(s) to the existing list.
                      * If any of the elements are null, calling {@link #build()} will fail.
                      * 
-                     * <p>This element is required.
-                     * 
                      * @param adjudication
-                     *     Added items detail adjudication
+                     *     Added items subdetail adjudication
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -5609,10 +7799,8 @@ public class ClaimResponse extends DomainResource {
                      * <p>Replaces the existing list with a new one containing elements from the Collection.
                      * If any of the elements are null, calling {@link #build()} will fail.
                      * 
-                     * <p>This element is required.
-                     * 
                      * @param adjudication
-                     *     Added items detail adjudication
+                     *     Added items subdetail adjudication
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -5627,12 +7815,6 @@ public class ClaimResponse extends DomainResource {
 
                     /**
                      * Build the {@link SubDetail}
-                     * 
-                     * <p>Required elements:
-                     * <ul>
-                     * <li>productOrService</li>
-                     * <li>adjudication</li>
-                     * </ul>
                      * 
                      * @return
                      *     An immutable object of type {@link SubDetail}
@@ -5650,22 +7832,27 @@ public class ClaimResponse extends DomainResource {
 
                     protected void validate(SubDetail subDetail) {
                         super.validate(subDetail);
-                        ValidationSupport.requireNonNull(subDetail.productOrService, "productOrService");
+                        ValidationSupport.checkList(subDetail.traceNumber, "traceNumber", Identifier.class);
                         ValidationSupport.checkList(subDetail.modifier, "modifier", CodeableConcept.class);
                         ValidationSupport.checkList(subDetail.noteNumber, "noteNumber", PositiveInt.class);
-                        ValidationSupport.checkNonEmptyList(subDetail.adjudication, "adjudication", ClaimResponse.Item.Adjudication.class);
+                        ValidationSupport.checkList(subDetail.adjudication, "adjudication", ClaimResponse.Item.Adjudication.class);
                         ValidationSupport.requireValueOrChildren(subDetail);
                     }
 
                     protected Builder from(SubDetail subDetail) {
                         super.from(subDetail);
+                        traceNumber.addAll(subDetail.traceNumber);
+                        revenue = subDetail.revenue;
                         productOrService = subDetail.productOrService;
+                        productOrServiceEnd = subDetail.productOrServiceEnd;
                         modifier.addAll(subDetail.modifier);
                         quantity = subDetail.quantity;
                         unitPrice = subDetail.unitPrice;
                         factor = subDetail.factor;
+                        tax = subDetail.tax;
                         net = subDetail.net;
                         noteNumber.addAll(subDetail.noteNumber);
+                        reviewOutcome = subDetail.reviewOutcome;
                         adjudication.addAll(subDetail.adjudication);
                         return this;
                     }
@@ -5810,7 +7997,7 @@ public class ClaimResponse extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -5830,7 +8017,7 @@ public class ClaimResponse extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -5855,7 +8042,7 @@ public class ClaimResponse extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -5880,7 +8067,7 @@ public class ClaimResponse extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -6184,7 +8371,7 @@ public class ClaimResponse extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -6204,7 +8391,7 @@ public class ClaimResponse extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -6229,7 +8416,7 @@ public class ClaimResponse extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -6254,7 +8441,7 @@ public class ClaimResponse extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -6433,19 +8620,18 @@ public class ClaimResponse extends DomainResource {
         private final PositiveInt number;
         @Binding(
             bindingName = "NoteType",
-            strength = BindingStrength.Value.REQUIRED,
+            strength = BindingStrength.Value.EXTENSIBLE,
             description = "The presentation types of notes.",
-            valueSet = "http://hl7.org/fhir/ValueSet/note-type|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/note-type"
         )
-        private final NoteType type;
+        private final CodeableConcept type;
         @Required
         private final String text;
         @Binding(
             bindingName = "Language",
-            strength = BindingStrength.Value.PREFERRED,
-            description = "IETF language tag",
-            valueSet = "http://hl7.org/fhir/ValueSet/languages",
-            maxValueSet = "http://hl7.org/fhir/ValueSet/all-languages"
+            strength = BindingStrength.Value.REQUIRED,
+            description = "IETF language tag for a human language",
+            valueSet = "http://hl7.org/fhir/ValueSet/all-languages|5.0.0"
         )
         private final CodeableConcept language;
 
@@ -6471,9 +8657,9 @@ public class ClaimResponse extends DomainResource {
          * The business purpose of the note text.
          * 
          * @return
-         *     An immutable object of type {@link NoteType} that may be null.
+         *     An immutable object of type {@link CodeableConcept} that may be null.
          */
-        public NoteType getType() {
+        public CodeableConcept getType() {
             return type;
         }
 
@@ -6573,7 +8759,7 @@ public class ClaimResponse extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private PositiveInt number;
-            private NoteType type;
+            private CodeableConcept type;
             private String text;
             private CodeableConcept language;
 
@@ -6598,7 +8784,7 @@ public class ClaimResponse extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -6618,7 +8804,7 @@ public class ClaimResponse extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -6643,7 +8829,7 @@ public class ClaimResponse extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -6668,7 +8854,7 @@ public class ClaimResponse extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -6710,12 +8896,12 @@ public class ClaimResponse extends DomainResource {
              * The business purpose of the note text.
              * 
              * @param type
-             *     display | print | printoper
+             *     Note purpose
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder type(NoteType type) {
+            public Builder type(CodeableConcept type) {
                 this.type = type;
                 return this;
             }
@@ -6990,7 +9176,7 @@ public class ClaimResponse extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -7010,7 +9196,7 @@ public class ClaimResponse extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -7035,7 +9221,7 @@ public class ClaimResponse extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -7060,7 +9246,7 @@ public class ClaimResponse extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -7259,6 +9445,7 @@ public class ClaimResponse extends DomainResource {
         private final PositiveInt itemSequence;
         private final PositiveInt detailSequence;
         private final PositiveInt subDetailSequence;
+        @Summary
         @Binding(
             bindingName = "AdjudicationError",
             strength = BindingStrength.Value.EXAMPLE,
@@ -7267,6 +9454,8 @@ public class ClaimResponse extends DomainResource {
         )
         @Required
         private final CodeableConcept code;
+        @Summary
+        private final List<String> expression;
 
         private Error(Builder builder) {
             super(builder);
@@ -7274,6 +9463,7 @@ public class ClaimResponse extends DomainResource {
             detailSequence = builder.detailSequence;
             subDetailSequence = builder.subDetailSequence;
             code = builder.code;
+            expression = Collections.unmodifiableList(builder.expression);
         }
 
         /**
@@ -7319,13 +9509,25 @@ public class ClaimResponse extends DomainResource {
             return code;
         }
 
+        /**
+         * A [simple subset of FHIRPath](fhirpath.html#simple) limited to element names, repetition indicators and the default 
+         * child accessor that identifies one of the elements in the resource that caused this issue to be raised.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link String} that may be empty.
+         */
+        public List<String> getExpression() {
+            return expression;
+        }
+
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
                 (itemSequence != null) || 
                 (detailSequence != null) || 
                 (subDetailSequence != null) || 
-                (code != null);
+                (code != null) || 
+                !expression.isEmpty();
         }
 
         @Override
@@ -7341,6 +9543,7 @@ public class ClaimResponse extends DomainResource {
                     accept(detailSequence, "detailSequence", visitor);
                     accept(subDetailSequence, "subDetailSequence", visitor);
                     accept(code, "code", visitor);
+                    accept(expression, "expression", visitor, String.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -7365,7 +9568,8 @@ public class ClaimResponse extends DomainResource {
                 Objects.equals(itemSequence, other.itemSequence) && 
                 Objects.equals(detailSequence, other.detailSequence) && 
                 Objects.equals(subDetailSequence, other.subDetailSequence) && 
-                Objects.equals(code, other.code);
+                Objects.equals(code, other.code) && 
+                Objects.equals(expression, other.expression);
         }
 
         @Override
@@ -7378,7 +9582,8 @@ public class ClaimResponse extends DomainResource {
                     itemSequence, 
                     detailSequence, 
                     subDetailSequence, 
-                    code);
+                    code, 
+                    expression);
                 hashCode = result;
             }
             return result;
@@ -7398,6 +9603,7 @@ public class ClaimResponse extends DomainResource {
             private PositiveInt detailSequence;
             private PositiveInt subDetailSequence;
             private CodeableConcept code;
+            private List<String> expression = new ArrayList<>();
 
             private Builder() {
                 super();
@@ -7420,7 +9626,7 @@ public class ClaimResponse extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -7440,7 +9646,7 @@ public class ClaimResponse extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -7465,7 +9671,7 @@ public class ClaimResponse extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -7490,7 +9696,7 @@ public class ClaimResponse extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -7576,6 +9782,68 @@ public class ClaimResponse extends DomainResource {
             }
 
             /**
+             * Convenience method for setting {@code expression}.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param expression
+             *     FHIRPath of element(s) related to issue
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #expression(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder expression(java.lang.String... expression) {
+                for (java.lang.String value : expression) {
+                    this.expression.add((value == null) ? null : String.of(value));
+                }
+                return this;
+            }
+
+            /**
+             * A [simple subset of FHIRPath](fhirpath.html#simple) limited to element names, repetition indicators and the default 
+             * child accessor that identifies one of the elements in the resource that caused this issue to be raised.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param expression
+             *     FHIRPath of element(s) related to issue
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder expression(String... expression) {
+                for (String value : expression) {
+                    this.expression.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * A [simple subset of FHIRPath](fhirpath.html#simple) limited to element names, repetition indicators and the default 
+             * child accessor that identifies one of the elements in the resource that caused this issue to be raised.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param expression
+             *     FHIRPath of element(s) related to issue
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder expression(Collection<String> expression) {
+                this.expression = new ArrayList<>(expression);
+                return this;
+            }
+
+            /**
              * Build the {@link Error}
              * 
              * <p>Required elements:
@@ -7600,6 +9868,7 @@ public class ClaimResponse extends DomainResource {
             protected void validate(Error error) {
                 super.validate(error);
                 ValidationSupport.requireNonNull(error.code, "code");
+                ValidationSupport.checkList(error.expression, "expression", String.class);
                 ValidationSupport.requireValueOrChildren(error);
             }
 
@@ -7609,6 +9878,7 @@ public class ClaimResponse extends DomainResource {
                 detailSequence = error.detailSequence;
                 subDetailSequence = error.subDetailSequence;
                 code = error.code;
+                expression.addAll(error.expression);
                 return this;
             }
         }

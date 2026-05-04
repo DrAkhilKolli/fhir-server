@@ -24,7 +24,7 @@ import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.CodeSystemContentMode;
 import org.linuxforhealth.fhir.model.type.code.ExplanationOfBenefitStatus;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
-import org.linuxforhealth.fhir.model.type.code.RemittanceOutcome;
+import org.linuxforhealth.fhir.model.type.code.ClaimOutcome;
 import org.linuxforhealth.fhir.model.type.code.Use;
 import org.linuxforhealth.fhir.path.FHIRPathNode;
 import org.linuxforhealth.fhir.path.evaluator.FHIRPathEvaluator;
@@ -77,7 +77,7 @@ public class RepeatFunctionTest {
                 .created(DateTime.now())
                 .insurer(Reference.builder().type(Uri.of("Organization")).build())
                 .provider(Reference.builder().type(Uri.of("PractitionerRole")).build())
-                .outcome(RemittanceOutcome.PARTIAL)
+                .outcome(ClaimOutcome.PARTIAL)
                 .insurance(Insurance.builder()
                         .focal(false)
                         .coverage(Reference.builder().display("test").build())

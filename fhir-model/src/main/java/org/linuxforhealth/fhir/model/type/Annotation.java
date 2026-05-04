@@ -22,11 +22,11 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * A text note which also contains information about who made the statement and when.
  */
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Annotation extends Element {
+public class Annotation extends DataType {
     @Summary
-    @ReferenceTarget({ "Practitioner", "Patient", "RelatedPerson", "Organization" })
+    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Patient", "RelatedPerson", "Organization" })
     @Choice({ Reference.class, String.class })
-    private final Element author;
+    private final org.linuxforhealth.fhir.model.type.Element author;
     @Summary
     private final DateTime time;
     @Summary
@@ -46,7 +46,7 @@ public class Annotation extends Element {
      * @return
      *     An immutable object of type {@link Reference} or {@link String} that may be null.
      */
-    public Element getAuthor() {
+    public org.linuxforhealth.fhir.model.type.Element getAuthor() {
         return author;
     }
 
@@ -137,8 +137,8 @@ public class Annotation extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
-        private Element author;
+    public static class Builder extends DataType.Builder {
+        private org.linuxforhealth.fhir.model.type.Element author;
         private DateTime time;
         private Markdown text;
 
@@ -163,7 +163,7 @@ public class Annotation extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -183,7 +183,7 @@ public class Annotation extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -232,6 +232,7 @@ public class Annotation extends Element {
          * When of type {@link Reference}, the allowed resource types for this reference are:
          * <ul>
          * <li>{@link Practitioner}</li>
+         * <li>{@link PractitionerRole}</li>
          * <li>{@link Patient}</li>
          * <li>{@link RelatedPerson}</li>
          * <li>{@link Organization}</li>
@@ -243,7 +244,7 @@ public class Annotation extends Element {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder author(Element author) {
+        public Builder author(org.linuxforhealth.fhir.model.type.Element author) {
             this.author = author;
             return this;
         }
@@ -304,7 +305,7 @@ public class Annotation extends Element {
             super.validate(annotation);
             ValidationSupport.choiceElement(annotation.author, "author", Reference.class, String.class);
             ValidationSupport.requireNonNull(annotation.text, "text");
-            ValidationSupport.checkReferenceType(annotation.author, "author", "Practitioner", "Patient", "RelatedPerson", "Organization");
+            ValidationSupport.checkReferenceType(annotation.author, "author", "Practitioner", "PractitionerRole", "Patient", "RelatedPerson", "Organization");
             ValidationSupport.requireValueOrChildren(annotation);
         }
 

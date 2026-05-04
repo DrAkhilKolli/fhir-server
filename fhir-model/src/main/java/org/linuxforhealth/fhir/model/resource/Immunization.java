@@ -26,6 +26,7 @@ import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Element;
@@ -33,7 +34,6 @@ import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
-import org.linuxforhealth.fhir.model.type.PositiveInt;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.SimpleQuantity;
 import org.linuxforhealth.fhir.model.type.String;
@@ -48,22 +48,14 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * Describes the event of a patient being administered a vaccine or a record of an immunization as reported by a patient, 
  * a clinician or another party.
  * 
- * <p>Maturity level: FMM3 (Trial Use)
+ * <p>Maturity level: FMM5 (Trial Use)
  */
 @Maturity(
-    level = 3,
+    level = 5,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "imm-1",
-    level = "Rule",
-    location = "Immunization.education",
-    description = "One of documentType or reference SHALL be present",
-    expression = "documentType.exists() or reference.exists()",
-    source = "http://hl7.org/fhir/StructureDefinition/Immunization"
-)
-@Constraint(
-    id = "immunization-2",
+    id = "immunization-0",
     level = "Warning",
     location = "performer.function",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/immunization-function",
@@ -75,11 +67,14 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 public class Immunization extends DomainResource {
     private final List<Identifier> identifier;
     @Summary
+    @ReferenceTarget({ "CarePlan", "MedicationRequest", "ServiceRequest", "ImmunizationRecommendation" })
+    private final List<Reference> basedOn;
+    @Summary
     @Binding(
         bindingName = "ImmunizationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "x",
-        valueSet = "http://hl7.org/fhir/ValueSet/immunization-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/immunization-status|5.0.0"
     )
     @Required
     private final ImmunizationStatus status;
@@ -99,17 +94,21 @@ public class Immunization extends DomainResource {
     )
     @Required
     private final CodeableConcept vaccineCode;
+    private final CodeableReference administeredProduct;
+    private final CodeableReference manufacturer;
+    private final String lotNumber;
+    private final Date expirationDate;
     @Summary
     @ReferenceTarget({ "Patient" })
     @Required
     private final Reference patient;
     @ReferenceTarget({ "Encounter" })
     private final Reference encounter;
+    private final List<Reference> supportingInformation;
     @Summary
     @Choice({ DateTime.class, String.class })
     @Required
-    private final Element occurrence;
-    private final DateTime recorded;
+    private final org.linuxforhealth.fhir.model.type.Element occurrence;
     @Summary
     private final Boolean primarySource;
     @Binding(
@@ -118,13 +117,9 @@ public class Immunization extends DomainResource {
         description = "x",
         valueSet = "http://hl7.org/fhir/ValueSet/immunization-origin"
     )
-    private final CodeableConcept reportOrigin;
+    private final CodeableReference informationSource;
     @ReferenceTarget({ "Location" })
     private final Reference location;
-    @ReferenceTarget({ "Organization" })
-    private final Reference manufacturer;
-    private final String lotNumber;
-    private final Date expirationDate;
     @Binding(
         bindingName = "ImmunizationSite",
         strength = BindingStrength.Value.EXAMPLE,
@@ -150,9 +145,7 @@ public class Immunization extends DomainResource {
         description = "x",
         valueSet = "http://hl7.org/fhir/ValueSet/immunization-reason"
     )
-    private final List<CodeableConcept> reasonCode;
-    @ReferenceTarget({ "Condition", "Observation", "DiagnosticReport" })
-    private final List<Reference> reasonReference;
+    private final List<CodeableReference> reason;
     @Summary
     private final Boolean isSubpotent;
     @Binding(
@@ -162,14 +155,7 @@ public class Immunization extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/immunization-subpotent-reason"
     )
     private final List<CodeableConcept> subpotentReason;
-    private final List<Education> education;
-    @Binding(
-        bindingName = "ProgramEligibility",
-        strength = BindingStrength.Value.EXAMPLE,
-        description = "x",
-        valueSet = "http://hl7.org/fhir/ValueSet/immunization-program-eligibility"
-    )
-    private final List<CodeableConcept> programEligibility;
+    private final List<ProgramEligibility> programEligibility;
     @Binding(
         bindingName = "FundingSource",
         strength = BindingStrength.Value.EXAMPLE,
@@ -183,29 +169,29 @@ public class Immunization extends DomainResource {
     private Immunization(Builder builder) {
         super(builder);
         identifier = Collections.unmodifiableList(builder.identifier);
+        basedOn = Collections.unmodifiableList(builder.basedOn);
         status = builder.status;
         statusReason = builder.statusReason;
         vaccineCode = builder.vaccineCode;
-        patient = builder.patient;
-        encounter = builder.encounter;
-        occurrence = builder.occurrence;
-        recorded = builder.recorded;
-        primarySource = builder.primarySource;
-        reportOrigin = builder.reportOrigin;
-        location = builder.location;
+        administeredProduct = builder.administeredProduct;
         manufacturer = builder.manufacturer;
         lotNumber = builder.lotNumber;
         expirationDate = builder.expirationDate;
+        patient = builder.patient;
+        encounter = builder.encounter;
+        supportingInformation = Collections.unmodifiableList(builder.supportingInformation);
+        occurrence = builder.occurrence;
+        primarySource = builder.primarySource;
+        informationSource = builder.informationSource;
+        location = builder.location;
         site = builder.site;
         route = builder.route;
         doseQuantity = builder.doseQuantity;
         performer = Collections.unmodifiableList(builder.performer);
         note = Collections.unmodifiableList(builder.note);
-        reasonCode = Collections.unmodifiableList(builder.reasonCode);
-        reasonReference = Collections.unmodifiableList(builder.reasonReference);
+        reason = Collections.unmodifiableList(builder.reason);
         isSubpotent = builder.isSubpotent;
         subpotentReason = Collections.unmodifiableList(builder.subpotentReason);
-        education = Collections.unmodifiableList(builder.education);
         programEligibility = Collections.unmodifiableList(builder.programEligibility);
         fundingSource = builder.fundingSource;
         reaction = Collections.unmodifiableList(builder.reaction);
@@ -220,6 +206,16 @@ public class Immunization extends DomainResource {
      */
     public List<Identifier> getIdentifier() {
         return identifier;
+    }
+
+    /**
+     * A plan, order or recommendation fulfilled in whole or in part by this immunization.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getBasedOn() {
+        return basedOn;
     }
 
     /**
@@ -253,86 +249,24 @@ public class Immunization extends DomainResource {
     }
 
     /**
-     * The patient who either received or did not receive the immunization.
+     * An indication of which product was administered to the patient. This is typically a more detailed representation of 
+     * the concept conveyed by the vaccineCode data element. If a Medication resource is referenced, it may be to a stand-
+     * alone resource or a contained resource within the Immunization resource.
      * 
      * @return
-     *     An immutable object of type {@link Reference} that is non-null.
+     *     An immutable object of type {@link CodeableReference} that may be null.
      */
-    public Reference getPatient() {
-        return patient;
-    }
-
-    /**
-     * The visit or admission or other contact between patient and health care provider the immunization was performed as 
-     * part of.
-     * 
-     * @return
-     *     An immutable object of type {@link Reference} that may be null.
-     */
-    public Reference getEncounter() {
-        return encounter;
-    }
-
-    /**
-     * Date vaccine administered or was to be administered.
-     * 
-     * @return
-     *     An immutable object of type {@link DateTime} or {@link String} that is non-null.
-     */
-    public Element getOccurrence() {
-        return occurrence;
-    }
-
-    /**
-     * The date the occurrence of the immunization was first captured in the record - potentially significantly after the 
-     * occurrence of the event.
-     * 
-     * @return
-     *     An immutable object of type {@link DateTime} that may be null.
-     */
-    public DateTime getRecorded() {
-        return recorded;
-    }
-
-    /**
-     * An indication that the content of the record is based on information from the person who administered the vaccine. 
-     * This reflects the context under which the data was originally recorded.
-     * 
-     * @return
-     *     An immutable object of type {@link Boolean} that may be null.
-     */
-    public Boolean getPrimarySource() {
-        return primarySource;
-    }
-
-    /**
-     * The source of the data when the report of the immunization event is not based on information from the person who 
-     * administered the vaccine.
-     * 
-     * @return
-     *     An immutable object of type {@link CodeableConcept} that may be null.
-     */
-    public CodeableConcept getReportOrigin() {
-        return reportOrigin;
-    }
-
-    /**
-     * The service delivery location where the vaccine administration occurred.
-     * 
-     * @return
-     *     An immutable object of type {@link Reference} that may be null.
-     */
-    public Reference getLocation() {
-        return location;
+    public CodeableReference getAdministeredProduct() {
+        return administeredProduct;
     }
 
     /**
      * Name of vaccine manufacturer.
      * 
      * @return
-     *     An immutable object of type {@link Reference} that may be null.
+     *     An immutable object of type {@link CodeableReference} that may be null.
      */
-    public Reference getManufacturer() {
+    public CodeableReference getManufacturer() {
         return manufacturer;
     }
 
@@ -354,6 +288,84 @@ public class Immunization extends DomainResource {
      */
     public Date getExpirationDate() {
         return expirationDate;
+    }
+
+    /**
+     * The patient who either received or did not receive the immunization.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that is non-null.
+     */
+    public Reference getPatient() {
+        return patient;
+    }
+
+    /**
+     * The visit or admission or other contact between patient and health care provider the immunization was performed as 
+     * part of.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getEncounter() {
+        return encounter;
+    }
+
+    /**
+     * Additional information that is relevant to the immunization (e.g. for a vaccine recipient who is pregnant, the 
+     * gestational age of the fetus). The reason why a vaccine was given (e.g. occupation, underlying medical condition) 
+     * should be conveyed in Immunization.reason, not as supporting information. The reason why a vaccine was not given (e.g. 
+     * contraindication) should be conveyed in Immunization.statusReason, not as supporting information.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getSupportingInformation() {
+        return supportingInformation;
+    }
+
+    /**
+     * Date vaccine administered or was to be administered.
+     * 
+     * @return
+     *     An immutable object of type {@link DateTime} or {@link String} that is non-null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getOccurrence() {
+        return occurrence;
+    }
+
+    /**
+     * Indicates whether the data contained in the resource was captured by the individual/organization which was responsible 
+     * for the administration of the vaccine rather than as 'secondary reported' data documented by a third party. A value of 
+     * 'true' means this data originated with the individual/organization which was responsible for the administration of the 
+     * vaccine.
+     * 
+     * @return
+     *     An immutable object of type {@link Boolean} that may be null.
+     */
+    public Boolean getPrimarySource() {
+        return primarySource;
+    }
+
+    /**
+     * Typically the source of the data when the report of the immunization event is not based on information from the person 
+     * who administered the vaccine.
+     * 
+     * @return
+     *     An immutable object of type {@link CodeableReference} that may be null.
+     */
+    public CodeableReference getInformationSource() {
+        return informationSource;
+    }
+
+    /**
+     * The service delivery location where the vaccine administration occurred.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getLocation() {
+        return location;
     }
 
     /**
@@ -407,23 +419,14 @@ public class Immunization extends DomainResource {
     }
 
     /**
-     * Reasons why the vaccine was administered.
+     * Describes why the immunization occurred in coded or textual form, or Indicates another resource (Condition, 
+     * Observation or DiagnosticReport) whose existence justifies this immunization.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<CodeableConcept> getReasonCode() {
-        return reasonCode;
-    }
-
-    /**
-     * Condition, Observation or DiagnosticReport that supports why the immunization was administered.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-     */
-    public List<Reference> getReasonReference() {
-        return reasonReference;
+    public List<CodeableReference> getReason() {
+        return reason;
     }
 
     /**
@@ -447,22 +450,12 @@ public class Immunization extends DomainResource {
     }
 
     /**
-     * Educational material presented to the patient (or guardian) at the time of vaccine administration.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Education} that may be empty.
-     */
-    public List<Education> getEducation() {
-        return education;
-    }
-
-    /**
      * Indicates a patient's eligibility for a funding program.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link ProgramEligibility} that may be empty.
      */
-    public List<CodeableConcept> getProgramEligibility() {
+    public List<ProgramEligibility> getProgramEligibility() {
         return programEligibility;
     }
 
@@ -502,29 +495,29 @@ public class Immunization extends DomainResource {
     public boolean hasChildren() {
         return super.hasChildren() || 
             !identifier.isEmpty() || 
+            !basedOn.isEmpty() || 
             (status != null) || 
             (statusReason != null) || 
             (vaccineCode != null) || 
-            (patient != null) || 
-            (encounter != null) || 
-            (occurrence != null) || 
-            (recorded != null) || 
-            (primarySource != null) || 
-            (reportOrigin != null) || 
-            (location != null) || 
+            (administeredProduct != null) || 
             (manufacturer != null) || 
             (lotNumber != null) || 
             (expirationDate != null) || 
+            (patient != null) || 
+            (encounter != null) || 
+            !supportingInformation.isEmpty() || 
+            (occurrence != null) || 
+            (primarySource != null) || 
+            (informationSource != null) || 
+            (location != null) || 
             (site != null) || 
             (route != null) || 
             (doseQuantity != null) || 
             !performer.isEmpty() || 
             !note.isEmpty() || 
-            !reasonCode.isEmpty() || 
-            !reasonReference.isEmpty() || 
+            !reason.isEmpty() || 
             (isSubpotent != null) || 
             !subpotentReason.isEmpty() || 
-            !education.isEmpty() || 
             !programEligibility.isEmpty() || 
             (fundingSource != null) || 
             !reaction.isEmpty() || 
@@ -546,30 +539,30 @@ public class Immunization extends DomainResource {
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(identifier, "identifier", visitor, Identifier.class);
+                accept(basedOn, "basedOn", visitor, Reference.class);
                 accept(status, "status", visitor);
                 accept(statusReason, "statusReason", visitor);
                 accept(vaccineCode, "vaccineCode", visitor);
-                accept(patient, "patient", visitor);
-                accept(encounter, "encounter", visitor);
-                accept(occurrence, "occurrence", visitor);
-                accept(recorded, "recorded", visitor);
-                accept(primarySource, "primarySource", visitor);
-                accept(reportOrigin, "reportOrigin", visitor);
-                accept(location, "location", visitor);
+                accept(administeredProduct, "administeredProduct", visitor);
                 accept(manufacturer, "manufacturer", visitor);
                 accept(lotNumber, "lotNumber", visitor);
                 accept(expirationDate, "expirationDate", visitor);
+                accept(patient, "patient", visitor);
+                accept(encounter, "encounter", visitor);
+                accept(supportingInformation, "supportingInformation", visitor, Reference.class);
+                accept(occurrence, "occurrence", visitor);
+                accept(primarySource, "primarySource", visitor);
+                accept(informationSource, "informationSource", visitor);
+                accept(location, "location", visitor);
                 accept(site, "site", visitor);
                 accept(route, "route", visitor);
                 accept(doseQuantity, "doseQuantity", visitor);
                 accept(performer, "performer", visitor, Performer.class);
                 accept(note, "note", visitor, Annotation.class);
-                accept(reasonCode, "reasonCode", visitor, CodeableConcept.class);
-                accept(reasonReference, "reasonReference", visitor, Reference.class);
+                accept(reason, "reason", visitor, CodeableReference.class);
                 accept(isSubpotent, "isSubpotent", visitor);
                 accept(subpotentReason, "subpotentReason", visitor, CodeableConcept.class);
-                accept(education, "education", visitor, Education.class);
-                accept(programEligibility, "programEligibility", visitor, CodeableConcept.class);
+                accept(programEligibility, "programEligibility", visitor, ProgramEligibility.class);
                 accept(fundingSource, "fundingSource", visitor);
                 accept(reaction, "reaction", visitor, Reaction.class);
                 accept(protocolApplied, "protocolApplied", visitor, ProtocolApplied.class);
@@ -600,29 +593,29 @@ public class Immunization extends DomainResource {
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(identifier, other.identifier) && 
+            Objects.equals(basedOn, other.basedOn) && 
             Objects.equals(status, other.status) && 
             Objects.equals(statusReason, other.statusReason) && 
             Objects.equals(vaccineCode, other.vaccineCode) && 
-            Objects.equals(patient, other.patient) && 
-            Objects.equals(encounter, other.encounter) && 
-            Objects.equals(occurrence, other.occurrence) && 
-            Objects.equals(recorded, other.recorded) && 
-            Objects.equals(primarySource, other.primarySource) && 
-            Objects.equals(reportOrigin, other.reportOrigin) && 
-            Objects.equals(location, other.location) && 
+            Objects.equals(administeredProduct, other.administeredProduct) && 
             Objects.equals(manufacturer, other.manufacturer) && 
             Objects.equals(lotNumber, other.lotNumber) && 
             Objects.equals(expirationDate, other.expirationDate) && 
+            Objects.equals(patient, other.patient) && 
+            Objects.equals(encounter, other.encounter) && 
+            Objects.equals(supportingInformation, other.supportingInformation) && 
+            Objects.equals(occurrence, other.occurrence) && 
+            Objects.equals(primarySource, other.primarySource) && 
+            Objects.equals(informationSource, other.informationSource) && 
+            Objects.equals(location, other.location) && 
             Objects.equals(site, other.site) && 
             Objects.equals(route, other.route) && 
             Objects.equals(doseQuantity, other.doseQuantity) && 
             Objects.equals(performer, other.performer) && 
             Objects.equals(note, other.note) && 
-            Objects.equals(reasonCode, other.reasonCode) && 
-            Objects.equals(reasonReference, other.reasonReference) && 
+            Objects.equals(reason, other.reason) && 
             Objects.equals(isSubpotent, other.isSubpotent) && 
             Objects.equals(subpotentReason, other.subpotentReason) && 
-            Objects.equals(education, other.education) && 
             Objects.equals(programEligibility, other.programEligibility) && 
             Objects.equals(fundingSource, other.fundingSource) && 
             Objects.equals(reaction, other.reaction) && 
@@ -642,29 +635,29 @@ public class Immunization extends DomainResource {
                 extension, 
                 modifierExtension, 
                 identifier, 
+                basedOn, 
                 status, 
                 statusReason, 
                 vaccineCode, 
-                patient, 
-                encounter, 
-                occurrence, 
-                recorded, 
-                primarySource, 
-                reportOrigin, 
-                location, 
+                administeredProduct, 
                 manufacturer, 
                 lotNumber, 
                 expirationDate, 
+                patient, 
+                encounter, 
+                supportingInformation, 
+                occurrence, 
+                primarySource, 
+                informationSource, 
+                location, 
                 site, 
                 route, 
                 doseQuantity, 
                 performer, 
                 note, 
-                reasonCode, 
-                reasonReference, 
+                reason, 
                 isSubpotent, 
                 subpotentReason, 
-                education, 
                 programEligibility, 
                 fundingSource, 
                 reaction, 
@@ -685,30 +678,30 @@ public class Immunization extends DomainResource {
 
     public static class Builder extends DomainResource.Builder {
         private List<Identifier> identifier = new ArrayList<>();
+        private List<Reference> basedOn = new ArrayList<>();
         private ImmunizationStatus status;
         private CodeableConcept statusReason;
         private CodeableConcept vaccineCode;
-        private Reference patient;
-        private Reference encounter;
-        private Element occurrence;
-        private DateTime recorded;
-        private Boolean primarySource;
-        private CodeableConcept reportOrigin;
-        private Reference location;
-        private Reference manufacturer;
+        private CodeableReference administeredProduct;
+        private CodeableReference manufacturer;
         private String lotNumber;
         private Date expirationDate;
+        private Reference patient;
+        private Reference encounter;
+        private List<Reference> supportingInformation = new ArrayList<>();
+        private org.linuxforhealth.fhir.model.type.Element occurrence;
+        private Boolean primarySource;
+        private CodeableReference informationSource;
+        private Reference location;
         private CodeableConcept site;
         private CodeableConcept route;
         private SimpleQuantity doseQuantity;
         private List<Performer> performer = new ArrayList<>();
         private List<Annotation> note = new ArrayList<>();
-        private List<CodeableConcept> reasonCode = new ArrayList<>();
-        private List<Reference> reasonReference = new ArrayList<>();
+        private List<CodeableReference> reason = new ArrayList<>();
         private Boolean isSubpotent;
         private List<CodeableConcept> subpotentReason = new ArrayList<>();
-        private List<Education> education = new ArrayList<>();
-        private List<CodeableConcept> programEligibility = new ArrayList<>();
+        private List<ProgramEligibility> programEligibility = new ArrayList<>();
         private CodeableConcept fundingSource;
         private List<Reaction> reaction = new ArrayList<>();
         private List<ProtocolApplied> protocolApplied = new ArrayList<>();
@@ -795,7 +788,8 @@ public class Immunization extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -813,7 +807,8 @@ public class Immunization extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -834,7 +829,7 @@ public class Immunization extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -854,7 +849,7 @@ public class Immunization extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -879,9 +874,9 @@ public class Immunization extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -904,9 +899,9 @@ public class Immunization extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -968,6 +963,61 @@ public class Immunization extends DomainResource {
         }
 
         /**
+         * A plan, order or recommendation fulfilled in whole or in part by this immunization.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link CarePlan}</li>
+         * <li>{@link MedicationRequest}</li>
+         * <li>{@link ServiceRequest}</li>
+         * <li>{@link ImmunizationRecommendation}</li>
+         * </ul>
+         * 
+         * @param basedOn
+         *     Authority that the immunization event is based on
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder basedOn(Reference... basedOn) {
+            for (Reference value : basedOn) {
+                this.basedOn.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A plan, order or recommendation fulfilled in whole or in part by this immunization.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link CarePlan}</li>
+         * <li>{@link MedicationRequest}</li>
+         * <li>{@link ServiceRequest}</li>
+         * <li>{@link ImmunizationRecommendation}</li>
+         * </ul>
+         * 
+         * @param basedOn
+         *     Authority that the immunization event is based on
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder basedOn(Collection<Reference> basedOn) {
+            this.basedOn = new ArrayList<>(basedOn);
+            return this;
+        }
+
+        /**
          * Indicates the current status of the immunization event.
          * 
          * <p>This element is required.
@@ -987,7 +1037,7 @@ public class Immunization extends DomainResource {
          * Indicates the reason the immunization event was not performed.
          * 
          * @param statusReason
-         *     Reason not done
+         *     Reason for current status
          * 
          * @return
          *     A reference to this Builder instance
@@ -1003,7 +1053,7 @@ public class Immunization extends DomainResource {
          * <p>This element is required.
          * 
          * @param vaccineCode
-         *     Vaccine product administered
+         *     Vaccine administered
          * 
          * @return
          *     A reference to this Builder instance
@@ -1014,173 +1064,23 @@ public class Immunization extends DomainResource {
         }
 
         /**
-         * The patient who either received or did not receive the immunization.
+         * An indication of which product was administered to the patient. This is typically a more detailed representation of 
+         * the concept conveyed by the vaccineCode data element. If a Medication resource is referenced, it may be to a stand-
+         * alone resource or a contained resource within the Immunization resource.
          * 
-         * <p>This element is required.
-         * 
-         * <p>Allowed resource types for this reference:
-         * <ul>
-         * <li>{@link Patient}</li>
-         * </ul>
-         * 
-         * @param patient
-         *     Who was immunized
+         * @param administeredProduct
+         *     Product that was administered
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder patient(Reference patient) {
-            this.patient = patient;
-            return this;
-        }
-
-        /**
-         * The visit or admission or other contact between patient and health care provider the immunization was performed as 
-         * part of.
-         * 
-         * <p>Allowed resource types for this reference:
-         * <ul>
-         * <li>{@link Encounter}</li>
-         * </ul>
-         * 
-         * @param encounter
-         *     Encounter immunization was part of
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder encounter(Reference encounter) {
-            this.encounter = encounter;
-            return this;
-        }
-
-        /**
-         * Convenience method for setting {@code occurrence} with choice type String.
-         * 
-         * <p>This element is required.
-         * 
-         * @param occurrence
-         *     Vaccine administration date
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #occurrence(Element)
-         */
-        public Builder occurrence(java.lang.String occurrence) {
-            this.occurrence = (occurrence == null) ? null : String.of(occurrence);
-            return this;
-        }
-
-        /**
-         * Date vaccine administered or was to be administered.
-         * 
-         * <p>This element is required.
-         * 
-         * <p>This is a choice element with the following allowed types:
-         * <ul>
-         * <li>{@link DateTime}</li>
-         * <li>{@link String}</li>
-         * </ul>
-         * 
-         * @param occurrence
-         *     Vaccine administration date
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder occurrence(Element occurrence) {
-            this.occurrence = occurrence;
-            return this;
-        }
-
-        /**
-         * The date the occurrence of the immunization was first captured in the record - potentially significantly after the 
-         * occurrence of the event.
-         * 
-         * @param recorded
-         *     When the immunization was first captured in the subject's record
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder recorded(DateTime recorded) {
-            this.recorded = recorded;
-            return this;
-        }
-
-        /**
-         * Convenience method for setting {@code primarySource}.
-         * 
-         * @param primarySource
-         *     Indicates context the data was recorded in
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #primarySource(org.linuxforhealth.fhir.model.type.Boolean)
-         */
-        public Builder primarySource(java.lang.Boolean primarySource) {
-            this.primarySource = (primarySource == null) ? null : Boolean.of(primarySource);
-            return this;
-        }
-
-        /**
-         * An indication that the content of the record is based on information from the person who administered the vaccine. 
-         * This reflects the context under which the data was originally recorded.
-         * 
-         * @param primarySource
-         *     Indicates context the data was recorded in
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder primarySource(Boolean primarySource) {
-            this.primarySource = primarySource;
-            return this;
-        }
-
-        /**
-         * The source of the data when the report of the immunization event is not based on information from the person who 
-         * administered the vaccine.
-         * 
-         * @param reportOrigin
-         *     Indicates the source of a secondarily reported record
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder reportOrigin(CodeableConcept reportOrigin) {
-            this.reportOrigin = reportOrigin;
-            return this;
-        }
-
-        /**
-         * The service delivery location where the vaccine administration occurred.
-         * 
-         * <p>Allowed resource types for this reference:
-         * <ul>
-         * <li>{@link Location}</li>
-         * </ul>
-         * 
-         * @param location
-         *     Where immunization occurred
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder location(Reference location) {
-            this.location = location;
+        public Builder administeredProduct(CodeableReference administeredProduct) {
+            this.administeredProduct = administeredProduct;
             return this;
         }
 
         /**
          * Name of vaccine manufacturer.
-         * 
-         * <p>Allowed resource types for this reference:
-         * <ul>
-         * <li>{@link Organization}</li>
-         * </ul>
          * 
          * @param manufacturer
          *     Vaccine manufacturer
@@ -1188,7 +1088,7 @@ public class Immunization extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder manufacturer(Reference manufacturer) {
+        public Builder manufacturer(CodeableReference manufacturer) {
             this.manufacturer = manufacturer;
             return this;
         }
@@ -1250,6 +1150,199 @@ public class Immunization extends DomainResource {
          */
         public Builder expirationDate(Date expirationDate) {
             this.expirationDate = expirationDate;
+            return this;
+        }
+
+        /**
+         * The patient who either received or did not receive the immunization.
+         * 
+         * <p>This element is required.
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link Patient}</li>
+         * </ul>
+         * 
+         * @param patient
+         *     Who was immunized
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder patient(Reference patient) {
+            this.patient = patient;
+            return this;
+        }
+
+        /**
+         * The visit or admission or other contact between patient and health care provider the immunization was performed as 
+         * part of.
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link Encounter}</li>
+         * </ul>
+         * 
+         * @param encounter
+         *     Encounter immunization was part of
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder encounter(Reference encounter) {
+            this.encounter = encounter;
+            return this;
+        }
+
+        /**
+         * Additional information that is relevant to the immunization (e.g. for a vaccine recipient who is pregnant, the 
+         * gestational age of the fetus). The reason why a vaccine was given (e.g. occupation, underlying medical condition) 
+         * should be conveyed in Immunization.reason, not as supporting information. The reason why a vaccine was not given (e.g. 
+         * contraindication) should be conveyed in Immunization.statusReason, not as supporting information.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param supportingInformation
+         *     Additional information in support of the immunization
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder supportingInformation(Reference... supportingInformation) {
+            for (Reference value : supportingInformation) {
+                this.supportingInformation.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Additional information that is relevant to the immunization (e.g. for a vaccine recipient who is pregnant, the 
+         * gestational age of the fetus). The reason why a vaccine was given (e.g. occupation, underlying medical condition) 
+         * should be conveyed in Immunization.reason, not as supporting information. The reason why a vaccine was not given (e.g. 
+         * contraindication) should be conveyed in Immunization.statusReason, not as supporting information.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param supportingInformation
+         *     Additional information in support of the immunization
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder supportingInformation(Collection<Reference> supportingInformation) {
+            this.supportingInformation = new ArrayList<>(supportingInformation);
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code occurrence} with choice type String.
+         * 
+         * <p>This element is required.
+         * 
+         * @param occurrence
+         *     Vaccine administration date
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #occurrence(Element)
+         */
+        public Builder occurrence(java.lang.String occurrence) {
+            this.occurrence = (occurrence == null) ? null : String.of(occurrence);
+            return this;
+        }
+
+        /**
+         * Date vaccine administered or was to be administered.
+         * 
+         * <p>This element is required.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link DateTime}</li>
+         * <li>{@link String}</li>
+         * </ul>
+         * 
+         * @param occurrence
+         *     Vaccine administration date
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder occurrence(org.linuxforhealth.fhir.model.type.Element occurrence) {
+            this.occurrence = occurrence;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code primarySource}.
+         * 
+         * @param primarySource
+         *     Indicates context the data was captured in
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #primarySource(org.linuxforhealth.fhir.model.type.Boolean)
+         */
+        public Builder primarySource(java.lang.Boolean primarySource) {
+            this.primarySource = (primarySource == null) ? null : Boolean.of(primarySource);
+            return this;
+        }
+
+        /**
+         * Indicates whether the data contained in the resource was captured by the individual/organization which was responsible 
+         * for the administration of the vaccine rather than as 'secondary reported' data documented by a third party. A value of 
+         * 'true' means this data originated with the individual/organization which was responsible for the administration of the 
+         * vaccine.
+         * 
+         * @param primarySource
+         *     Indicates context the data was captured in
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder primarySource(Boolean primarySource) {
+            this.primarySource = primarySource;
+            return this;
+        }
+
+        /**
+         * Typically the source of the data when the report of the immunization event is not based on information from the person 
+         * who administered the vaccine.
+         * 
+         * @param informationSource
+         *     Indicates the source of a reported record
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder informationSource(CodeableReference informationSource) {
+            this.informationSource = informationSource;
+            return this;
+        }
+
+        /**
+         * The service delivery location where the vaccine administration occurred.
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link Location}</li>
+         * </ul>
+         * 
+         * @param location
+         *     Where immunization occurred
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder location(Reference location) {
+            this.location = location;
             return this;
         }
 
@@ -1374,31 +1467,33 @@ public class Immunization extends DomainResource {
         }
 
         /**
-         * Reasons why the vaccine was administered.
+         * Describes why the immunization occurred in coded or textual form, or Indicates another resource (Condition, 
+         * Observation or DiagnosticReport) whose existence justifies this immunization.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
+         * @param reason
          *     Why immunization occurred
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder reasonCode(CodeableConcept... reasonCode) {
-            for (CodeableConcept value : reasonCode) {
-                this.reasonCode.add(value);
+        public Builder reason(CodeableReference... reason) {
+            for (CodeableReference value : reason) {
+                this.reason.add(value);
             }
             return this;
         }
 
         /**
-         * Reasons why the vaccine was administered.
+         * Describes why the immunization occurred in coded or textual form, or Indicates another resource (Condition, 
+         * Observation or DiagnosticReport) whose existence justifies this immunization.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
+         * @param reason
          *     Why immunization occurred
          * 
          * @return
@@ -1407,61 +1502,8 @@ public class Immunization extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder reasonCode(Collection<CodeableConcept> reasonCode) {
-            this.reasonCode = new ArrayList<>(reasonCode);
-            return this;
-        }
-
-        /**
-         * Condition, Observation or DiagnosticReport that supports why the immunization was administered.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Why immunization occurred
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder reasonReference(Reference... reasonReference) {
-            for (Reference value : reasonReference) {
-                this.reasonReference.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Condition, Observation or DiagnosticReport that supports why the immunization was administered.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Why immunization occurred
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder reasonReference(Collection<Reference> reasonReference) {
-            this.reasonReference = new ArrayList<>(reasonReference);
+        public Builder reason(Collection<CodeableReference> reason) {
+            this.reason = new ArrayList<>(reason);
             return this;
         }
 
@@ -1535,58 +1577,19 @@ public class Immunization extends DomainResource {
         }
 
         /**
-         * Educational material presented to the patient (or guardian) at the time of vaccine administration.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param education
-         *     Educational material presented to patient
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder education(Education... education) {
-            for (Education value : education) {
-                this.education.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Educational material presented to the patient (or guardian) at the time of vaccine administration.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param education
-         *     Educational material presented to patient
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder education(Collection<Education> education) {
-            this.education = new ArrayList<>(education);
-            return this;
-        }
-
-        /**
          * Indicates a patient's eligibility for a funding program.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param programEligibility
-         *     Patient eligibility for a vaccination program
+         *     Patient eligibility for a specific vaccination program
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder programEligibility(CodeableConcept... programEligibility) {
-            for (CodeableConcept value : programEligibility) {
+        public Builder programEligibility(ProgramEligibility... programEligibility) {
+            for (ProgramEligibility value : programEligibility) {
                 this.programEligibility.add(value);
             }
             return this;
@@ -1599,7 +1602,7 @@ public class Immunization extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param programEligibility
-         *     Patient eligibility for a vaccination program
+         *     Patient eligibility for a specific vaccination program
          * 
          * @return
          *     A reference to this Builder instance
@@ -1607,7 +1610,7 @@ public class Immunization extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder programEligibility(Collection<CodeableConcept> programEligibility) {
+        public Builder programEligibility(Collection<ProgramEligibility> programEligibility) {
             this.programEligibility = new ArrayList<>(programEligibility);
             return this;
         }
@@ -1734,52 +1737,51 @@ public class Immunization extends DomainResource {
         protected void validate(Immunization immunization) {
             super.validate(immunization);
             ValidationSupport.checkList(immunization.identifier, "identifier", Identifier.class);
+            ValidationSupport.checkList(immunization.basedOn, "basedOn", Reference.class);
             ValidationSupport.requireNonNull(immunization.status, "status");
             ValidationSupport.requireNonNull(immunization.vaccineCode, "vaccineCode");
             ValidationSupport.requireNonNull(immunization.patient, "patient");
+            ValidationSupport.checkList(immunization.supportingInformation, "supportingInformation", Reference.class);
             ValidationSupport.requireChoiceElement(immunization.occurrence, "occurrence", DateTime.class, String.class);
             ValidationSupport.checkList(immunization.performer, "performer", Performer.class);
             ValidationSupport.checkList(immunization.note, "note", Annotation.class);
-            ValidationSupport.checkList(immunization.reasonCode, "reasonCode", CodeableConcept.class);
-            ValidationSupport.checkList(immunization.reasonReference, "reasonReference", Reference.class);
+            ValidationSupport.checkList(immunization.reason, "reason", CodeableReference.class);
             ValidationSupport.checkList(immunization.subpotentReason, "subpotentReason", CodeableConcept.class);
-            ValidationSupport.checkList(immunization.education, "education", Education.class);
-            ValidationSupport.checkList(immunization.programEligibility, "programEligibility", CodeableConcept.class);
+            ValidationSupport.checkList(immunization.programEligibility, "programEligibility", ProgramEligibility.class);
             ValidationSupport.checkList(immunization.reaction, "reaction", Reaction.class);
             ValidationSupport.checkList(immunization.protocolApplied, "protocolApplied", ProtocolApplied.class);
+            ValidationSupport.checkReferenceType(immunization.basedOn, "basedOn", "CarePlan", "MedicationRequest", "ServiceRequest", "ImmunizationRecommendation");
             ValidationSupport.checkReferenceType(immunization.patient, "patient", "Patient");
             ValidationSupport.checkReferenceType(immunization.encounter, "encounter", "Encounter");
             ValidationSupport.checkReferenceType(immunization.location, "location", "Location");
-            ValidationSupport.checkReferenceType(immunization.manufacturer, "manufacturer", "Organization");
-            ValidationSupport.checkReferenceType(immunization.reasonReference, "reasonReference", "Condition", "Observation", "DiagnosticReport");
         }
 
         protected Builder from(Immunization immunization) {
             super.from(immunization);
             identifier.addAll(immunization.identifier);
+            basedOn.addAll(immunization.basedOn);
             status = immunization.status;
             statusReason = immunization.statusReason;
             vaccineCode = immunization.vaccineCode;
-            patient = immunization.patient;
-            encounter = immunization.encounter;
-            occurrence = immunization.occurrence;
-            recorded = immunization.recorded;
-            primarySource = immunization.primarySource;
-            reportOrigin = immunization.reportOrigin;
-            location = immunization.location;
+            administeredProduct = immunization.administeredProduct;
             manufacturer = immunization.manufacturer;
             lotNumber = immunization.lotNumber;
             expirationDate = immunization.expirationDate;
+            patient = immunization.patient;
+            encounter = immunization.encounter;
+            supportingInformation.addAll(immunization.supportingInformation);
+            occurrence = immunization.occurrence;
+            primarySource = immunization.primarySource;
+            informationSource = immunization.informationSource;
+            location = immunization.location;
             site = immunization.site;
             route = immunization.route;
             doseQuantity = immunization.doseQuantity;
             performer.addAll(immunization.performer);
             note.addAll(immunization.note);
-            reasonCode.addAll(immunization.reasonCode);
-            reasonReference.addAll(immunization.reasonReference);
+            reason.addAll(immunization.reason);
             isSubpotent = immunization.isSubpotent;
             subpotentReason.addAll(immunization.subpotentReason);
-            education.addAll(immunization.education);
             programEligibility.addAll(immunization.programEligibility);
             fundingSource = immunization.fundingSource;
             reaction.addAll(immunization.reaction);
@@ -1801,7 +1803,7 @@ public class Immunization extends DomainResource {
         )
         private final CodeableConcept function;
         @Summary
-        @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization" })
+        @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "Patient", "RelatedPerson" })
         @Required
         private final Reference actor;
 
@@ -1922,7 +1924,7 @@ public class Immunization extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1942,7 +1944,7 @@ public class Immunization extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1967,7 +1969,7 @@ public class Immunization extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1992,7 +1994,7 @@ public class Immunization extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2040,6 +2042,8 @@ public class Immunization extends DomainResource {
              * <li>{@link Practitioner}</li>
              * <li>{@link PractitionerRole}</li>
              * <li>{@link Organization}</li>
+             * <li>{@link Patient}</li>
+             * <li>{@link RelatedPerson}</li>
              * </ul>
              * 
              * @param actor
@@ -2078,7 +2082,7 @@ public class Immunization extends DomainResource {
             protected void validate(Performer performer) {
                 super.validate(performer);
                 ValidationSupport.requireNonNull(performer.actor, "actor");
-                ValidationSupport.checkReferenceType(performer.actor, "actor", "Practitioner", "PractitionerRole", "Organization");
+                ValidationSupport.checkReferenceType(performer.actor, "actor", "Practitioner", "PractitionerRole", "Organization", "Patient", "RelatedPerson");
                 ValidationSupport.requireValueOrChildren(performer);
             }
 
@@ -2092,69 +2096,57 @@ public class Immunization extends DomainResource {
     }
 
     /**
-     * Educational material presented to the patient (or guardian) at the time of vaccine administration.
+     * Indicates a patient's eligibility for a funding program.
      */
-    public static class Education extends BackboneElement {
-        private final String documentType;
-        private final Uri reference;
-        private final DateTime publicationDate;
-        private final DateTime presentationDate;
+    public static class ProgramEligibility extends BackboneElement {
+        @Binding(
+            bindingName = "VaccineFundingProgram",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "x",
+            valueSet = "http://hl7.org/fhir/ValueSet/immunization-vaccine-funding-program"
+        )
+        @Required
+        private final CodeableConcept program;
+        @Binding(
+            bindingName = "ProgramEligibility",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "x",
+            valueSet = "http://hl7.org/fhir/ValueSet/immunization-program-eligibility"
+        )
+        @Required
+        private final CodeableConcept programStatus;
 
-        private Education(Builder builder) {
+        private ProgramEligibility(Builder builder) {
             super(builder);
-            documentType = builder.documentType;
-            reference = builder.reference;
-            publicationDate = builder.publicationDate;
-            presentationDate = builder.presentationDate;
+            program = builder.program;
+            programStatus = builder.programStatus;
         }
 
         /**
-         * Identifier of the material presented to the patient.
+         * Indicates which program the patient had their eligility evaluated for.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link CodeableConcept} that is non-null.
          */
-        public String getDocumentType() {
-            return documentType;
+        public CodeableConcept getProgram() {
+            return program;
         }
 
         /**
-         * Reference pointer to the educational material given to the patient if the information was on line.
+         * Indicates the patient's eligility status for for a specific payment program.
          * 
          * @return
-         *     An immutable object of type {@link Uri} that may be null.
+         *     An immutable object of type {@link CodeableConcept} that is non-null.
          */
-        public Uri getReference() {
-            return reference;
-        }
-
-        /**
-         * Date the educational material was published.
-         * 
-         * @return
-         *     An immutable object of type {@link DateTime} that may be null.
-         */
-        public DateTime getPublicationDate() {
-            return publicationDate;
-        }
-
-        /**
-         * Date the educational material was given to the patient.
-         * 
-         * @return
-         *     An immutable object of type {@link DateTime} that may be null.
-         */
-        public DateTime getPresentationDate() {
-            return presentationDate;
+        public CodeableConcept getProgramStatus() {
+            return programStatus;
         }
 
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                (documentType != null) || 
-                (reference != null) || 
-                (publicationDate != null) || 
-                (presentationDate != null);
+                (program != null) || 
+                (programStatus != null);
         }
 
         @Override
@@ -2166,10 +2158,8 @@ public class Immunization extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(documentType, "documentType", visitor);
-                    accept(reference, "reference", visitor);
-                    accept(publicationDate, "publicationDate", visitor);
-                    accept(presentationDate, "presentationDate", visitor);
+                    accept(program, "program", visitor);
+                    accept(programStatus, "programStatus", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -2187,14 +2177,12 @@ public class Immunization extends DomainResource {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            Education other = (Education) obj;
+            ProgramEligibility other = (ProgramEligibility) obj;
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(documentType, other.documentType) && 
-                Objects.equals(reference, other.reference) && 
-                Objects.equals(publicationDate, other.publicationDate) && 
-                Objects.equals(presentationDate, other.presentationDate);
+                Objects.equals(program, other.program) && 
+                Objects.equals(programStatus, other.programStatus);
         }
 
         @Override
@@ -2204,10 +2192,8 @@ public class Immunization extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    documentType, 
-                    reference, 
-                    publicationDate, 
-                    presentationDate);
+                    program, 
+                    programStatus);
                 hashCode = result;
             }
             return result;
@@ -2223,10 +2209,8 @@ public class Immunization extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private String documentType;
-            private Uri reference;
-            private DateTime publicationDate;
-            private DateTime presentationDate;
+            private CodeableConcept program;
+            private CodeableConcept programStatus;
 
             private Builder() {
                 super();
@@ -2249,7 +2233,7 @@ public class Immunization extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2269,7 +2253,7 @@ public class Immunization extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2294,7 +2278,7 @@ public class Immunization extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2319,7 +2303,7 @@ public class Immunization extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2344,105 +2328,71 @@ public class Immunization extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code documentType}.
+             * Indicates which program the patient had their eligility evaluated for.
              * 
-             * @param documentType
-             *     Educational material document identifier
+             * <p>This element is required.
              * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #documentType(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder documentType(java.lang.String documentType) {
-                this.documentType = (documentType == null) ? null : String.of(documentType);
-                return this;
-            }
-
-            /**
-             * Identifier of the material presented to the patient.
-             * 
-             * @param documentType
-             *     Educational material document identifier
+             * @param program
+             *     The program that eligibility is declared for
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder documentType(String documentType) {
-                this.documentType = documentType;
+            public Builder program(CodeableConcept program) {
+                this.program = program;
                 return this;
             }
 
             /**
-             * Reference pointer to the educational material given to the patient if the information was on line.
+             * Indicates the patient's eligility status for for a specific payment program.
              * 
-             * @param reference
-             *     Educational material reference pointer
+             * <p>This element is required.
+             * 
+             * @param programStatus
+             *     The patient's eligibility status for the program
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder reference(Uri reference) {
-                this.reference = reference;
+            public Builder programStatus(CodeableConcept programStatus) {
+                this.programStatus = programStatus;
                 return this;
             }
 
             /**
-             * Date the educational material was published.
+             * Build the {@link ProgramEligibility}
              * 
-             * @param publicationDate
-             *     Educational material publication date
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder publicationDate(DateTime publicationDate) {
-                this.publicationDate = publicationDate;
-                return this;
-            }
-
-            /**
-             * Date the educational material was given to the patient.
-             * 
-             * @param presentationDate
-             *     Educational material presentation date
+             * <p>Required elements:
+             * <ul>
+             * <li>program</li>
+             * <li>programStatus</li>
+             * </ul>
              * 
              * @return
-             *     A reference to this Builder instance
-             */
-            public Builder presentationDate(DateTime presentationDate) {
-                this.presentationDate = presentationDate;
-                return this;
-            }
-
-            /**
-             * Build the {@link Education}
-             * 
-             * @return
-             *     An immutable object of type {@link Education}
+             *     An immutable object of type {@link ProgramEligibility}
              * @throws IllegalStateException
-             *     if the current state cannot be built into a valid Education per the base specification
+             *     if the current state cannot be built into a valid ProgramEligibility per the base specification
              */
             @Override
-            public Education build() {
-                Education education = new Education(this);
+            public ProgramEligibility build() {
+                ProgramEligibility programEligibility = new ProgramEligibility(this);
                 if (validating) {
-                    validate(education);
+                    validate(programEligibility);
                 }
-                return education;
+                return programEligibility;
             }
 
-            protected void validate(Education education) {
-                super.validate(education);
-                ValidationSupport.requireValueOrChildren(education);
+            protected void validate(ProgramEligibility programEligibility) {
+                super.validate(programEligibility);
+                ValidationSupport.requireNonNull(programEligibility.program, "program");
+                ValidationSupport.requireNonNull(programEligibility.programStatus, "programStatus");
+                ValidationSupport.requireValueOrChildren(programEligibility);
             }
 
-            protected Builder from(Education education) {
-                super.from(education);
-                documentType = education.documentType;
-                reference = education.reference;
-                publicationDate = education.publicationDate;
-                presentationDate = education.presentationDate;
+            protected Builder from(ProgramEligibility programEligibility) {
+                super.from(programEligibility);
+                program = programEligibility.program;
+                programStatus = programEligibility.programStatus;
                 return this;
             }
         }
@@ -2453,14 +2403,13 @@ public class Immunization extends DomainResource {
      */
     public static class Reaction extends BackboneElement {
         private final DateTime date;
-        @ReferenceTarget({ "Observation" })
-        private final Reference detail;
+        private final CodeableReference manifestation;
         private final Boolean reported;
 
         private Reaction(Builder builder) {
             super(builder);
             date = builder.date;
-            detail = builder.detail;
+            manifestation = builder.manifestation;
             reported = builder.reported;
         }
 
@@ -2478,10 +2427,10 @@ public class Immunization extends DomainResource {
          * Details of the reaction.
          * 
          * @return
-         *     An immutable object of type {@link Reference} that may be null.
+         *     An immutable object of type {@link CodeableReference} that may be null.
          */
-        public Reference getDetail() {
-            return detail;
+        public CodeableReference getManifestation() {
+            return manifestation;
         }
 
         /**
@@ -2498,7 +2447,7 @@ public class Immunization extends DomainResource {
         public boolean hasChildren() {
             return super.hasChildren() || 
                 (date != null) || 
-                (detail != null) || 
+                (manifestation != null) || 
                 (reported != null);
         }
 
@@ -2512,7 +2461,7 @@ public class Immunization extends DomainResource {
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(date, "date", visitor);
-                    accept(detail, "detail", visitor);
+                    accept(manifestation, "manifestation", visitor);
                     accept(reported, "reported", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
@@ -2536,7 +2485,7 @@ public class Immunization extends DomainResource {
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(date, other.date) && 
-                Objects.equals(detail, other.detail) && 
+                Objects.equals(manifestation, other.manifestation) && 
                 Objects.equals(reported, other.reported);
         }
 
@@ -2548,7 +2497,7 @@ public class Immunization extends DomainResource {
                     extension, 
                     modifierExtension, 
                     date, 
-                    detail, 
+                    manifestation, 
                     reported);
                 hashCode = result;
             }
@@ -2566,7 +2515,7 @@ public class Immunization extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private DateTime date;
-            private Reference detail;
+            private CodeableReference manifestation;
             private Boolean reported;
 
             private Builder() {
@@ -2590,7 +2539,7 @@ public class Immunization extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2610,7 +2559,7 @@ public class Immunization extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2635,7 +2584,7 @@ public class Immunization extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2660,7 +2609,7 @@ public class Immunization extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2701,19 +2650,14 @@ public class Immunization extends DomainResource {
             /**
              * Details of the reaction.
              * 
-             * <p>Allowed resource types for this reference:
-             * <ul>
-             * <li>{@link Observation}</li>
-             * </ul>
-             * 
-             * @param detail
+             * @param manifestation
              *     Additional information on reaction
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder detail(Reference detail) {
-                this.detail = detail;
+            public Builder manifestation(CodeableReference manifestation) {
+                this.manifestation = manifestation;
                 return this;
             }
 
@@ -2766,14 +2710,13 @@ public class Immunization extends DomainResource {
 
             protected void validate(Reaction reaction) {
                 super.validate(reaction);
-                ValidationSupport.checkReferenceType(reaction.detail, "detail", "Observation");
                 ValidationSupport.requireValueOrChildren(reaction);
             }
 
             protected Builder from(Reaction reaction) {
                 super.from(reaction);
                 date = reaction.date;
-                detail = reaction.detail;
+                manifestation = reaction.manifestation;
                 reported = reaction.reported;
                 return this;
             }
@@ -2794,11 +2737,9 @@ public class Immunization extends DomainResource {
             valueSet = "http://hl7.org/fhir/ValueSet/immunization-target-disease"
         )
         private final List<CodeableConcept> targetDisease;
-        @Choice({ PositiveInt.class, String.class })
         @Required
-        private final Element doseNumber;
-        @Choice({ PositiveInt.class, String.class })
-        private final Element seriesDoses;
+        private final String doseNumber;
+        private final String seriesDoses;
 
         private ProtocolApplied(Builder builder) {
             super(builder);
@@ -2840,22 +2781,22 @@ public class Immunization extends DomainResource {
         }
 
         /**
-         * Nominal position in a series.
+         * Nominal position in a series as intended by the practitioner administering the dose.
          * 
          * @return
-         *     An immutable object of type {@link PositiveInt} or {@link String} that is non-null.
+         *     An immutable object of type {@link String} that is non-null.
          */
-        public Element getDoseNumber() {
+        public String getDoseNumber() {
             return doseNumber;
         }
 
         /**
-         * The recommended number of doses to achieve immunity.
+         * The recommended number of doses to achieve immunity as intended by the practitioner administering the dose.
          * 
          * @return
-         *     An immutable object of type {@link PositiveInt} or {@link String} that may be null.
+         *     An immutable object of type {@link String} that may be null.
          */
-        public Element getSeriesDoses() {
+        public String getSeriesDoses() {
             return seriesDoses;
         }
 
@@ -2941,8 +2882,8 @@ public class Immunization extends DomainResource {
             private String series;
             private Reference authority;
             private List<CodeableConcept> targetDisease = new ArrayList<>();
-            private Element doseNumber;
-            private Element seriesDoses;
+            private String doseNumber;
+            private String seriesDoses;
 
             private Builder() {
                 super();
@@ -2965,7 +2906,7 @@ public class Immunization extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2985,7 +2926,7 @@ public class Immunization extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3010,7 +2951,7 @@ public class Immunization extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3035,7 +2976,7 @@ public class Immunization extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3115,7 +3056,7 @@ public class Immunization extends DomainResource {
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param targetDisease
-             *     Vaccine preventatable disease being targetted
+             *     Vaccine preventatable disease being targeted
              * 
              * @return
              *     A reference to this Builder instance
@@ -3134,7 +3075,7 @@ public class Immunization extends DomainResource {
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param targetDisease
-             *     Vaccine preventatable disease being targetted
+             *     Vaccine preventatable disease being targeted
              * 
              * @return
              *     A reference to this Builder instance
@@ -3148,7 +3089,7 @@ public class Immunization extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code doseNumber} with choice type String.
+             * Convenience method for setting {@code doseNumber}.
              * 
              * <p>This element is required.
              * 
@@ -3158,7 +3099,7 @@ public class Immunization extends DomainResource {
              * @return
              *     A reference to this Builder instance
              * 
-             * @see #doseNumber(Element)
+             * @see #doseNumber(org.linuxforhealth.fhir.model.type.String)
              */
             public Builder doseNumber(java.lang.String doseNumber) {
                 this.doseNumber = (doseNumber == null) ? null : String.of(doseNumber);
@@ -3166,15 +3107,9 @@ public class Immunization extends DomainResource {
             }
 
             /**
-             * Nominal position in a series.
+             * Nominal position in a series as intended by the practitioner administering the dose.
              * 
              * <p>This element is required.
-             * 
-             * <p>This is a choice element with the following allowed types:
-             * <ul>
-             * <li>{@link PositiveInt}</li>
-             * <li>{@link String}</li>
-             * </ul>
              * 
              * @param doseNumber
              *     Dose number within series
@@ -3182,13 +3117,13 @@ public class Immunization extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder doseNumber(Element doseNumber) {
+            public Builder doseNumber(String doseNumber) {
                 this.doseNumber = doseNumber;
                 return this;
             }
 
             /**
-             * Convenience method for setting {@code seriesDoses} with choice type String.
+             * Convenience method for setting {@code seriesDoses}.
              * 
              * @param seriesDoses
              *     Recommended number of doses for immunity
@@ -3196,7 +3131,7 @@ public class Immunization extends DomainResource {
              * @return
              *     A reference to this Builder instance
              * 
-             * @see #seriesDoses(Element)
+             * @see #seriesDoses(org.linuxforhealth.fhir.model.type.String)
              */
             public Builder seriesDoses(java.lang.String seriesDoses) {
                 this.seriesDoses = (seriesDoses == null) ? null : String.of(seriesDoses);
@@ -3204,13 +3139,7 @@ public class Immunization extends DomainResource {
             }
 
             /**
-             * The recommended number of doses to achieve immunity.
-             * 
-             * <p>This is a choice element with the following allowed types:
-             * <ul>
-             * <li>{@link PositiveInt}</li>
-             * <li>{@link String}</li>
-             * </ul>
+             * The recommended number of doses to achieve immunity as intended by the practitioner administering the dose.
              * 
              * @param seriesDoses
              *     Recommended number of doses for immunity
@@ -3218,7 +3147,7 @@ public class Immunization extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder seriesDoses(Element seriesDoses) {
+            public Builder seriesDoses(String seriesDoses) {
                 this.seriesDoses = seriesDoses;
                 return this;
             }
@@ -3248,8 +3177,7 @@ public class Immunization extends DomainResource {
             protected void validate(ProtocolApplied protocolApplied) {
                 super.validate(protocolApplied);
                 ValidationSupport.checkList(protocolApplied.targetDisease, "targetDisease", CodeableConcept.class);
-                ValidationSupport.requireChoiceElement(protocolApplied.doseNumber, "doseNumber", PositiveInt.class, String.class);
-                ValidationSupport.choiceElement(protocolApplied.seriesDoses, "seriesDoses", PositiveInt.class, String.class);
+                ValidationSupport.requireNonNull(protocolApplied.doseNumber, "doseNumber");
                 ValidationSupport.checkReferenceType(protocolApplied.authority, "authority", "Organization");
                 ValidationSupport.requireValueOrChildren(protocolApplied);
             }

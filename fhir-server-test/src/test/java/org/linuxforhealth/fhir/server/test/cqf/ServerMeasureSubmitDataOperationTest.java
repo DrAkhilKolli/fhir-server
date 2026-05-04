@@ -32,6 +32,7 @@ import org.linuxforhealth.fhir.model.test.TestUtil;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.Coding;
+import org.linuxforhealth.fhir.model.type.CodeableConcept;
 import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.HumanName;
@@ -68,8 +69,8 @@ public class ServerMeasureSubmitDataOperationTest extends BaseMeasureOperationTe
         Encounter encounter = Encounter.builder()
                 .id("submitdata-encounter")
                 .meta(Meta.builder().versionId(Id.of("1")).lastUpdated(Instant.now()).build())
-                .status(EncounterStatus.FINISHED)
-                .clazz(Coding.builder().code(Code.of("wellness")).build())
+                .status(EncounterStatus.COMPLETED)
+                .clazz(CodeableConcept.builder().coding(Coding.builder().code(Code.of("wellness")).build()).build())
                 .subject( Reference.builder().reference(string("Patient/" + patient.getId())).build() )
                 .build();
 
@@ -119,16 +120,16 @@ public class ServerMeasureSubmitDataOperationTest extends BaseMeasureOperationTe
         Encounter encounter = Encounter.builder()
                 .id("submitdata-encounter")
                 .meta(Meta.builder().versionId(Id.of("1")).lastUpdated(Instant.now()).build())
-                .status(EncounterStatus.FINISHED)
-                .clazz(Coding.builder().code(Code.of("wellness")).build())
+                .status(EncounterStatus.COMPLETED)
+                .clazz(CodeableConcept.builder().coding(Coding.builder().code(Code.of("wellness")).build()).build())
                 .subject( Reference.builder().reference(string("Patient/" + patient.getId())).build() )
                 .build();
 
         Encounter encounter2 = Encounter.builder()
                 .id("submitdata-encounter")
                 .meta(Meta.builder().versionId(Id.of("2")).lastUpdated(Instant.now()).build())
-                .status(EncounterStatus.FINISHED)
-                .clazz(Coding.builder().code(Code.of("wellness")).build())
+                .status(EncounterStatus.COMPLETED)
+                .clazz(CodeableConcept.builder().coding(Coding.builder().code(Code.of("wellness")).build()).build())
                 .subject( Reference.builder().reference(string("Patient/" + patient.getId())).build() )
                 .build();
 

@@ -23,12 +23,12 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "per-1",
     level = "Rule",
     location = "(base)",
-    description = "If present, start SHALL have a lower value than end",
-    expression = "start.hasValue().not() or end.hasValue().not() or (start <= end)",
+    description = "If present, start SHALL have a lower or equal value than end",
+    expression = "start.hasValue().not() or end.hasValue().not() or (start.lowBoundary() <= end.highBoundary())",
     source = "http://hl7.org/fhir/StructureDefinition/Period"
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Period extends Element {
+public class Period extends DataType {
     @Summary
     private final DateTime start;
     @Summary
@@ -125,7 +125,7 @@ public class Period extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private DateTime start;
         private DateTime end;
 
@@ -150,7 +150,7 @@ public class Period extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -170,7 +170,7 @@ public class Period extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 

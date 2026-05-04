@@ -15,6 +15,7 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
+import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.Required;
@@ -24,9 +25,11 @@ import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
 import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.DateTime;
+import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Markdown;
@@ -40,8 +43,9 @@ import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.CriteriaNotExistsBehavior;
 import org.linuxforhealth.fhir.model.type.code.MethodCode;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
+import org.linuxforhealth.fhir.model.type.code.SearchComparator;
+import org.linuxforhealth.fhir.model.type.code.SearchModifierCode;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
-import org.linuxforhealth.fhir.model.type.code.SubscriptionTopicFilterBySearchModifier;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
@@ -49,14 +53,23 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * Describes a stream of resource state changes or events and annotated with labels useful to filter projections from 
  * this topic.
  * 
- * <p>Maturity level: FMM0 (draft)
+ * <p>Maturity level: FMM2 (Trial Use)
  */
 @Maturity(
-    level = 0,
-    status = StandardsStatus.Value.DRAFT
+    level = 2,
+    status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
     id = "subscriptionTopic-0",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/SubscriptionTopic",
+    generated = true
+)
+@Constraint(
+    id = "subscriptionTopic-1",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
@@ -65,38 +78,38 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "subscriptionTopic-1",
-    level = "Warning",
-    location = "resourceTrigger.resource",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/defined-types",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/defined-types', 'extensible')",
-    source = "http://hl7.org/fhir/StructureDefinition/SubscriptionTopic",
-    generated = true
-)
-@Constraint(
     id = "subscriptionTopic-2",
     level = "Warning",
-    location = "eventTrigger.resource",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/defined-types",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/defined-types', 'extensible')",
+    location = "resourceTrigger.resource",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/subscription-types",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/subscription-types', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/SubscriptionTopic",
     generated = true
 )
 @Constraint(
     id = "subscriptionTopic-3",
     level = "Warning",
-    location = "canFilterBy.resource",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/defined-types",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/defined-types', 'extensible')",
+    location = "eventTrigger.resource",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/subscription-types",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/subscription-types', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/SubscriptionTopic",
     generated = true
 )
 @Constraint(
     id = "subscriptionTopic-4",
     level = "Warning",
+    location = "canFilterBy.resource",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/subscription-types",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/subscription-types', 'extensible')",
+    source = "http://hl7.org/fhir/StructureDefinition/SubscriptionTopic",
+    generated = true
+)
+@Constraint(
+    id = "subscriptionTopic-5",
+    level = "Warning",
     location = "notificationShape.resource",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/defined-types",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/defined-types', 'extensible')",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/subscription-types",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/subscription-types', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/SubscriptionTopic",
     generated = true
 )
@@ -110,6 +123,15 @@ public class SubscriptionTopic extends DomainResource {
     @Summary
     private final String version;
     @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+    @Summary
+    private final String name;
+    @Summary
     private final String title;
     @Summary
     private final List<Canonical> derivedFrom;
@@ -118,7 +140,7 @@ public class SubscriptionTopic extends DomainResource {
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -143,6 +165,7 @@ public class SubscriptionTopic extends DomainResource {
     private final List<CodeableConcept> jurisdiction;
     private final Markdown purpose;
     private final Markdown copyright;
+    private final String copyrightLabel;
     private final Date approvalDate;
     private final Date lastReviewDate;
     @Summary
@@ -161,6 +184,8 @@ public class SubscriptionTopic extends DomainResource {
         url = builder.url;
         identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
+        name = builder.name;
         title = builder.title;
         derivedFrom = Collections.unmodifiableList(builder.derivedFrom);
         status = builder.status;
@@ -173,6 +198,7 @@ public class SubscriptionTopic extends DomainResource {
         jurisdiction = Collections.unmodifiableList(builder.jurisdiction);
         purpose = builder.purpose;
         copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
         approvalDate = builder.approvalDate;
         lastReviewDate = builder.lastReviewDate;
         effectivePeriod = builder.effectivePeriod;
@@ -185,9 +211,8 @@ public class SubscriptionTopic extends DomainResource {
     /**
      * An absolute URI that is used to identify this subscription topic when it is referenced in a specification, model, 
      * design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal 
-     * address at which at which an authoritative instance of this subscription topic is (or will be) published. This URL can 
-     * be the target of a canonical reference. It SHALL remain the same when the subscription topic is stored on different 
-     * servers.
+     * address at which an authoritative instance of this subscription topic is (or will be) published. This URL can be the 
+     * target of a canonical reference. It SHALL remain the same when the subscription topic is stored on different servers.
      * 
      * @return
      *     An immutable object of type {@link Uri} that is non-null.
@@ -221,7 +246,28 @@ public class SubscriptionTopic extends DomainResource {
     }
 
     /**
-     * A short, descriptive, user-friendly title for the SubscriptionTopic, for example, "admission".
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
+    }
+
+    /**
+     * A natural language name identifying the subscription topic This name should be usable as an identifier for the module 
+     * by machine processing applications such as code generation.
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * A short, descriptive, user-friendly title for the subscription topic. For example, "admission".
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -263,8 +309,9 @@ public class SubscriptionTopic extends DomainResource {
     }
 
     /**
-     * For draft definitions, indicates the date of initial creation. For active definitions, represents the date of 
-     * activation. For withdrawn definitions, indicates the date of withdrawal.
+     * The date (and optionally time) when the subscription topic was last significantly changed. The date must change when 
+     * the business version changes and it must change if the status code changes. In addition, it should change when the 
+     * substantive content of the subscription topic changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -343,6 +390,17 @@ public class SubscriptionTopic extends DomainResource {
      */
     public Markdown getCopyright() {
         return copyright;
+    }
+
+    /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
     }
 
     /**
@@ -426,6 +484,8 @@ public class SubscriptionTopic extends DomainResource {
             (url != null) || 
             !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
+            (name != null) || 
             (title != null) || 
             !derivedFrom.isEmpty() || 
             (status != null) || 
@@ -438,6 +498,7 @@ public class SubscriptionTopic extends DomainResource {
             !jurisdiction.isEmpty() || 
             (purpose != null) || 
             (copyright != null) || 
+            (copyrightLabel != null) || 
             (approvalDate != null) || 
             (lastReviewDate != null) || 
             (effectivePeriod != null) || 
@@ -464,6 +525,8 @@ public class SubscriptionTopic extends DomainResource {
                 accept(url, "url", visitor);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
+                accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(derivedFrom, "derivedFrom", visitor, Canonical.class);
                 accept(status, "status", visitor);
@@ -476,6 +539,7 @@ public class SubscriptionTopic extends DomainResource {
                 accept(jurisdiction, "jurisdiction", visitor, CodeableConcept.class);
                 accept(purpose, "purpose", visitor);
                 accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
                 accept(approvalDate, "approvalDate", visitor);
                 accept(lastReviewDate, "lastReviewDate", visitor);
                 accept(effectivePeriod, "effectivePeriod", visitor);
@@ -512,6 +576,8 @@ public class SubscriptionTopic extends DomainResource {
             Objects.equals(url, other.url) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
+            Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(derivedFrom, other.derivedFrom) && 
             Objects.equals(status, other.status) && 
@@ -524,6 +590,7 @@ public class SubscriptionTopic extends DomainResource {
             Objects.equals(jurisdiction, other.jurisdiction) && 
             Objects.equals(purpose, other.purpose) && 
             Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
             Objects.equals(approvalDate, other.approvalDate) && 
             Objects.equals(lastReviewDate, other.lastReviewDate) && 
             Objects.equals(effectivePeriod, other.effectivePeriod) && 
@@ -548,6 +615,8 @@ public class SubscriptionTopic extends DomainResource {
                 url, 
                 identifier, 
                 version, 
+                versionAlgorithm, 
+                name, 
                 title, 
                 derivedFrom, 
                 status, 
@@ -560,6 +629,7 @@ public class SubscriptionTopic extends DomainResource {
                 jurisdiction, 
                 purpose, 
                 copyright, 
+                copyrightLabel, 
                 approvalDate, 
                 lastReviewDate, 
                 effectivePeriod, 
@@ -585,6 +655,8 @@ public class SubscriptionTopic extends DomainResource {
         private Uri url;
         private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+        private String name;
         private String title;
         private List<Canonical> derivedFrom = new ArrayList<>();
         private PublicationStatus status;
@@ -597,6 +669,7 @@ public class SubscriptionTopic extends DomainResource {
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
         private Markdown purpose;
         private Markdown copyright;
+        private String copyrightLabel;
         private Date approvalDate;
         private Date lastReviewDate;
         private Period effectivePeriod;
@@ -687,7 +760,8 @@ public class SubscriptionTopic extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -705,7 +779,8 @@ public class SubscriptionTopic extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -726,7 +801,7 @@ public class SubscriptionTopic extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -746,7 +821,7 @@ public class SubscriptionTopic extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -771,9 +846,9 @@ public class SubscriptionTopic extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -796,9 +871,9 @@ public class SubscriptionTopic extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -823,14 +898,13 @@ public class SubscriptionTopic extends DomainResource {
         /**
          * An absolute URI that is used to identify this subscription topic when it is referenced in a specification, model, 
          * design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal 
-         * address at which at which an authoritative instance of this subscription topic is (or will be) published. This URL can 
-         * be the target of a canonical reference. It SHALL remain the same when the subscription topic is stored on different 
-         * servers.
+         * address at which an authoritative instance of this subscription topic is (or will be) published. This URL can be the 
+         * target of a canonical reference. It SHALL remain the same when the subscription topic is stored on different servers.
          * 
          * <p>This element is required.
          * 
          * @param url
-         *     Canonical identifier for this subscription topic definition, represented as a URI (globally unique)
+         *     Canonical identifier for this subscription topic, represented as an absolute URI (globally unique)
          * 
          * @return
          *     A reference to this Builder instance
@@ -848,7 +922,7 @@ public class SubscriptionTopic extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param identifier
-         *     Business Identifier for this subscription topic
+         *     Business identifier for subscription topic
          * 
          * @return
          *     A reference to this Builder instance
@@ -868,7 +942,7 @@ public class SubscriptionTopic extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param identifier
-         *     Business Identifier for this subscription topic
+         *     Business identifier for subscription topic
          * 
          * @return
          *     A reference to this Builder instance
@@ -915,10 +989,77 @@ public class SubscriptionTopic extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code name}.
+         * 
+         * @param name
+         *     Name for this subscription topic (computer friendly)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #name(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder name(java.lang.String name) {
+            this.name = (name == null) ? null : String.of(name);
+            return this;
+        }
+
+        /**
+         * A natural language name identifying the subscription topic This name should be usable as an identifier for the module 
+         * by machine processing applications such as code generation.
+         * 
+         * @param name
+         *     Name for this subscription topic (computer friendly)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        /**
          * Convenience method for setting {@code title}.
          * 
          * @param title
-         *     Name for this subscription topic (Human friendly)
+         *     Name for this subscription topic (human friendly)
          * 
          * @return
          *     A reference to this Builder instance
@@ -931,10 +1072,10 @@ public class SubscriptionTopic extends DomainResource {
         }
 
         /**
-         * A short, descriptive, user-friendly title for the SubscriptionTopic, for example, "admission".
+         * A short, descriptive, user-friendly title for the subscription topic. For example, "admission".
          * 
          * @param title
-         *     Name for this subscription topic (Human friendly)
+         *     Name for this subscription topic (human friendly)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1033,8 +1174,9 @@ public class SubscriptionTopic extends DomainResource {
         }
 
         /**
-         * For draft definitions, indicates the date of initial creation. For active definitions, represents the date of 
-         * activation. For withdrawn definitions, indicates the date of withdrawal.
+         * The date (and optionally time) when the subscription topic was last significantly changed. The date must change when 
+         * the business version changes and it must change if the status code changes. In addition, it should change when the 
+         * substantive content of the subscription topic changes.
          * 
          * @param date
          *     Date status first applied
@@ -1236,6 +1378,37 @@ public class SubscriptionTopic extends DomainResource {
          */
         public Builder copyright(Markdown copyright) {
             this.copyright = copyright;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
             return this;
         }
 
@@ -1504,6 +1677,7 @@ public class SubscriptionTopic extends DomainResource {
             super.validate(subscriptionTopic);
             ValidationSupport.requireNonNull(subscriptionTopic.url, "url");
             ValidationSupport.checkList(subscriptionTopic.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(subscriptionTopic.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.checkList(subscriptionTopic.derivedFrom, "derivedFrom", Canonical.class);
             ValidationSupport.requireNonNull(subscriptionTopic.status, "status");
             ValidationSupport.checkList(subscriptionTopic.contact, "contact", ContactDetail.class);
@@ -1520,6 +1694,8 @@ public class SubscriptionTopic extends DomainResource {
             url = subscriptionTopic.url;
             identifier.addAll(subscriptionTopic.identifier);
             version = subscriptionTopic.version;
+            versionAlgorithm = subscriptionTopic.versionAlgorithm;
+            name = subscriptionTopic.name;
             title = subscriptionTopic.title;
             derivedFrom.addAll(subscriptionTopic.derivedFrom);
             status = subscriptionTopic.status;
@@ -1532,6 +1708,7 @@ public class SubscriptionTopic extends DomainResource {
             jurisdiction.addAll(subscriptionTopic.jurisdiction);
             purpose = subscriptionTopic.purpose;
             copyright = subscriptionTopic.copyright;
+            copyrightLabel = subscriptionTopic.copyrightLabel;
             approvalDate = subscriptionTopic.approvalDate;
             lastReviewDate = subscriptionTopic.lastReviewDate;
             effectivePeriod = subscriptionTopic.effectivePeriod;
@@ -1553,10 +1730,10 @@ public class SubscriptionTopic extends DomainResource {
         private final Markdown description;
         @Summary
         @Binding(
-            bindingName = "FHIRDefinedTypeExt",
+            bindingName = "FHIRTypes",
             strength = BindingStrength.Value.EXTENSIBLE,
-            description = "Either a resource or a data type, including logical model types.",
-            valueSet = "http://hl7.org/fhir/ValueSet/defined-types"
+            description = "A type of resource, or a Reference (from all versions)",
+            valueSet = "http://hl7.org/fhir/ValueSet/subscription-types"
         )
         @Required
         private final Uri resource;
@@ -1565,7 +1742,7 @@ public class SubscriptionTopic extends DomainResource {
             bindingName = "MethodCode",
             strength = BindingStrength.Value.REQUIRED,
             description = "FHIR RESTful interaction used to filter a resource-based SubscriptionTopic trigger.",
-            valueSet = "http://hl7.org/fhir/ValueSet/interaction-trigger|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/interaction-trigger|5.0.0"
         )
         private final List<MethodCode> supportedInteraction;
         @Summary
@@ -1608,7 +1785,7 @@ public class SubscriptionTopic extends DomainResource {
 
         /**
          * The FHIR RESTful interaction which can be used to trigger a notification for the SubscriptionTopic. Multiple values 
-         * are considered OR joined (e.g., CREATE or UPDATE).
+         * are considered OR joined (e.g., CREATE or UPDATE). If not present, all supported interactions are assumed.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link MethodCode} that may be empty.
@@ -1744,7 +1921,7 @@ public class SubscriptionTopic extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1764,7 +1941,7 @@ public class SubscriptionTopic extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1789,7 +1966,7 @@ public class SubscriptionTopic extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1814,7 +1991,7 @@ public class SubscriptionTopic extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1874,7 +2051,7 @@ public class SubscriptionTopic extends DomainResource {
 
             /**
              * The FHIR RESTful interaction which can be used to trigger a notification for the SubscriptionTopic. Multiple values 
-             * are considered OR joined (e.g., CREATE or UPDATE).
+             * are considered OR joined (e.g., CREATE or UPDATE). If not present, all supported interactions are assumed.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -1894,7 +2071,7 @@ public class SubscriptionTopic extends DomainResource {
 
             /**
              * The FHIR RESTful interaction which can be used to trigger a notification for the SubscriptionTopic. Multiple values 
-             * are considered OR joined (e.g., CREATE or UPDATE).
+             * are considered OR joined (e.g., CREATE or UPDATE). If not present, all supported interactions are assumed.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -2010,7 +2187,7 @@ public class SubscriptionTopic extends DomainResource {
                 bindingName = "CriteriaNotExistsBehavior",
                 strength = BindingStrength.Value.REQUIRED,
                 description = "Behavior a server can exhibit when a criteria state does not exist (e.g., state prior to a create or after a delete).",
-                valueSet = "http://hl7.org/fhir/ValueSet/subscriptiontopic-cr-behavior|4.3.0"
+                valueSet = "http://hl7.org/fhir/ValueSet/subscriptiontopic-cr-behavior|5.0.0"
             )
             private final CriteriaNotExistsBehavior resultForCreate;
             @Summary
@@ -2020,7 +2197,7 @@ public class SubscriptionTopic extends DomainResource {
                 bindingName = "CriteriaNotExistsBehavior",
                 strength = BindingStrength.Value.REQUIRED,
                 description = "Behavior a server can exhibit when a criteria state does not exist (e.g., state prior to a create or after a delete).",
-                valueSet = "http://hl7.org/fhir/ValueSet/subscriptiontopic-cr-behavior|4.3.0"
+                valueSet = "http://hl7.org/fhir/ValueSet/subscriptiontopic-cr-behavior|5.0.0"
             )
             private final CriteriaNotExistsBehavior resultForDelete;
             @Summary
@@ -2046,7 +2223,8 @@ public class SubscriptionTopic extends DomainResource {
             }
 
             /**
-             * For "create" interactions, should the "previous" criteria count as an automatic pass or an automatic fail.
+             * For `create` interactions, should the `previous` criteria count as an automatic pass or an automatic fail. If not 
+             * present, the testing behavior during `create` interactions is unspecified (server discretion).
              * 
              * @return
              *     An immutable object of type {@link CriteriaNotExistsBehavior} that may be null.
@@ -2066,7 +2244,8 @@ public class SubscriptionTopic extends DomainResource {
             }
 
             /**
-             * For "delete" interactions, should the "current" criteria count as an automatic pass or an automatic fail.
+             * For 'delete' interactions, should the 'current' query criteria count as an automatic pass or an automatic fail. If not 
+             * present, the testing behavior during `delete` interactions is unspecified (server discretion).
              * 
              * @return
              *     An immutable object of type {@link CriteriaNotExistsBehavior} that may be null.
@@ -2076,8 +2255,9 @@ public class SubscriptionTopic extends DomainResource {
             }
 
             /**
-             * If set to true, both current and previous criteria must evaluate true to trigger a notification for this topic. 
-             * Otherwise a notification for this topic will be triggered if either one evaluates to true.
+             * If set to `true`, both the `current` and `previous` query criteria must evaluate `true` to trigger a notification for 
+             * this topic. If set to `false` or not present, a notification for this topic will be triggered if either the `current` 
+             * or `previous` tests evaluate to `true`.
              * 
              * @return
              *     An immutable object of type {@link Boolean} that may be null.
@@ -2192,7 +2372,7 @@ public class SubscriptionTopic extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2212,7 +2392,7 @@ public class SubscriptionTopic extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2237,7 +2417,7 @@ public class SubscriptionTopic extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2262,7 +2442,7 @@ public class SubscriptionTopic extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2317,7 +2497,8 @@ public class SubscriptionTopic extends DomainResource {
                 }
 
                 /**
-                 * For "create" interactions, should the "previous" criteria count as an automatic pass or an automatic fail.
+                 * For `create` interactions, should the `previous` criteria count as an automatic pass or an automatic fail. If not 
+                 * present, the testing behavior during `create` interactions is unspecified (server discretion).
                  * 
                  * @param resultForCreate
                  *     test-passes | test-fails
@@ -2361,7 +2542,8 @@ public class SubscriptionTopic extends DomainResource {
                 }
 
                 /**
-                 * For "delete" interactions, should the "current" criteria count as an automatic pass or an automatic fail.
+                 * For 'delete' interactions, should the 'current' query criteria count as an automatic pass or an automatic fail. If not 
+                 * present, the testing behavior during `delete` interactions is unspecified (server discretion).
                  * 
                  * @param resultForDelete
                  *     test-passes | test-fails
@@ -2391,8 +2573,9 @@ public class SubscriptionTopic extends DomainResource {
                 }
 
                 /**
-                 * If set to true, both current and previous criteria must evaluate true to trigger a notification for this topic. 
-                 * Otherwise a notification for this topic will be triggered if either one evaluates to true.
+                 * If set to `true`, both the `current` and `previous` query criteria must evaluate `true` to trigger a notification for 
+                 * this topic. If set to `false` or not present, a notification for this topic will be triggered if either the `current` 
+                 * or `previous` tests evaluate to `true`.
                  * 
                  * @param requireBoth
                  *     Both must be true flag
@@ -2450,17 +2633,17 @@ public class SubscriptionTopic extends DomainResource {
         @Binding(
             bindingName = "SubscriptionTopicEventTrigger",
             strength = BindingStrength.Value.EXAMPLE,
-            description = "FHIR Value set/code system definition for HL7 v2 table 0003 (EVENT TYPE CODE).",
+            description = "FHIR Value set/code system definition for HL7 V2 table 0003 (EVENT TYPE CODE).",
             valueSet = "http://terminology.hl7.org/ValueSet/v2-0003"
         )
         @Required
         private final CodeableConcept event;
         @Summary
         @Binding(
-            bindingName = "FHIRDefinedTypeExt",
+            bindingName = "FHIRTypes",
             strength = BindingStrength.Value.EXTENSIBLE,
-            description = "Either a resource or a data type, including logical model types.",
-            valueSet = "http://hl7.org/fhir/ValueSet/defined-types"
+            description = "A type of resource, or a Reference (from all versions)",
+            valueSet = "http://hl7.org/fhir/ValueSet/subscription-types"
         )
         @Required
         private final Uri resource;
@@ -2603,7 +2786,7 @@ public class SubscriptionTopic extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2623,7 +2806,7 @@ public class SubscriptionTopic extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2648,7 +2831,7 @@ public class SubscriptionTopic extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2673,7 +2856,7 @@ public class SubscriptionTopic extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2797,10 +2980,10 @@ public class SubscriptionTopic extends DomainResource {
         private final Markdown description;
         @Summary
         @Binding(
-            bindingName = "FHIRDefinedTypeExt",
+            bindingName = "FHIRTypes",
             strength = BindingStrength.Value.EXTENSIBLE,
-            description = "Either a resource or a data type, including logical model types.",
-            valueSet = "http://hl7.org/fhir/ValueSet/defined-types"
+            description = "A type of resource, or a Reference (from all versions)",
+            valueSet = "http://hl7.org/fhir/ValueSet/subscription-types"
         )
         private final Uri resource;
         @Summary
@@ -2808,14 +2991,20 @@ public class SubscriptionTopic extends DomainResource {
         private final String filterParameter;
         @Summary
         private final Uri filterDefinition;
-        @Summary
         @Binding(
-            bindingName = "SubscriptionTopicFilterBySearchModifier",
+            bindingName = "SearchComparator",
             strength = BindingStrength.Value.REQUIRED,
-            description = "Operator to apply to filter label.",
-            valueSet = "http://hl7.org/fhir/ValueSet/subscription-search-modifier|4.3.0"
+            description = "Search Comparator Codes supported in this filter.",
+            valueSet = "http://hl7.org/fhir/ValueSet/search-comparator|5.0.0"
         )
-        private final List<SubscriptionTopicFilterBySearchModifier> modifier;
+        private final List<SearchComparator> comparator;
+        @Binding(
+            bindingName = "SearchModifierCode",
+            strength = BindingStrength.Value.REQUIRED,
+            description = "Search Modifier Codes supported in this filter.",
+            valueSet = "http://hl7.org/fhir/ValueSet/search-modifier-code|5.0.0"
+        )
+        private final List<SearchModifierCode> modifier;
 
         private CanFilterBy(Builder builder) {
             super(builder);
@@ -2823,6 +3012,7 @@ public class SubscriptionTopic extends DomainResource {
             resource = builder.resource;
             filterParameter = builder.filterParameter;
             filterDefinition = builder.filterDefinition;
+            comparator = Collections.unmodifiableList(builder.comparator);
             modifier = Collections.unmodifiableList(builder.modifier);
         }
 
@@ -2871,14 +3061,22 @@ public class SubscriptionTopic extends DomainResource {
         }
 
         /**
-         * Allowable operators to apply when determining matches (Search Modifiers). If the filterParameter is a SearchParameter, 
-         * this list of modifiers SHALL be a strict subset of the modifiers defined on that SearchParameter.
+         * Comparators allowed for the filter parameter.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link SubscriptionTopicFilterBySearchModifier} that may be 
-         *     empty.
+         *     An unmodifiable list containing immutable objects of type {@link SearchComparator} that may be empty.
          */
-        public List<SubscriptionTopicFilterBySearchModifier> getModifier() {
+        public List<SearchComparator> getComparator() {
+            return comparator;
+        }
+
+        /**
+         * Modifiers allowed for the filter parameter.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link SearchModifierCode} that may be empty.
+         */
+        public List<SearchModifierCode> getModifier() {
             return modifier;
         }
 
@@ -2889,6 +3087,7 @@ public class SubscriptionTopic extends DomainResource {
                 (resource != null) || 
                 (filterParameter != null) || 
                 (filterDefinition != null) || 
+                !comparator.isEmpty() || 
                 !modifier.isEmpty();
         }
 
@@ -2905,7 +3104,8 @@ public class SubscriptionTopic extends DomainResource {
                     accept(resource, "resource", visitor);
                     accept(filterParameter, "filterParameter", visitor);
                     accept(filterDefinition, "filterDefinition", visitor);
-                    accept(modifier, "modifier", visitor, SubscriptionTopicFilterBySearchModifier.class);
+                    accept(comparator, "comparator", visitor, SearchComparator.class);
+                    accept(modifier, "modifier", visitor, SearchModifierCode.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -2931,6 +3131,7 @@ public class SubscriptionTopic extends DomainResource {
                 Objects.equals(resource, other.resource) && 
                 Objects.equals(filterParameter, other.filterParameter) && 
                 Objects.equals(filterDefinition, other.filterDefinition) && 
+                Objects.equals(comparator, other.comparator) && 
                 Objects.equals(modifier, other.modifier);
         }
 
@@ -2945,6 +3146,7 @@ public class SubscriptionTopic extends DomainResource {
                     resource, 
                     filterParameter, 
                     filterDefinition, 
+                    comparator, 
                     modifier);
                 hashCode = result;
             }
@@ -2965,7 +3167,8 @@ public class SubscriptionTopic extends DomainResource {
             private Uri resource;
             private String filterParameter;
             private Uri filterDefinition;
-            private List<SubscriptionTopicFilterBySearchModifier> modifier = new ArrayList<>();
+            private List<SearchComparator> comparator = new ArrayList<>();
+            private List<SearchModifierCode> modifier = new ArrayList<>();
 
             private Builder() {
                 super();
@@ -2988,7 +3191,7 @@ public class SubscriptionTopic extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3008,7 +3211,7 @@ public class SubscriptionTopic extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3033,7 +3236,7 @@ public class SubscriptionTopic extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3058,7 +3261,7 @@ public class SubscriptionTopic extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3165,34 +3368,32 @@ public class SubscriptionTopic extends DomainResource {
             }
 
             /**
-             * Allowable operators to apply when determining matches (Search Modifiers). If the filterParameter is a SearchParameter, 
-             * this list of modifiers SHALL be a strict subset of the modifiers defined on that SearchParameter.
+             * Comparators allowed for the filter parameter.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * @param modifier
-             *     = | eq | ne | gt | lt | ge | le | sa | eb | ap | above | below | in | not-in | of-type
+             * @param comparator
+             *     eq | ne | gt | lt | ge | le | sa | eb | ap
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder modifier(SubscriptionTopicFilterBySearchModifier... modifier) {
-                for (SubscriptionTopicFilterBySearchModifier value : modifier) {
-                    this.modifier.add(value);
+            public Builder comparator(SearchComparator... comparator) {
+                for (SearchComparator value : comparator) {
+                    this.comparator.add(value);
                 }
                 return this;
             }
 
             /**
-             * Allowable operators to apply when determining matches (Search Modifiers). If the filterParameter is a SearchParameter, 
-             * this list of modifiers SHALL be a strict subset of the modifiers defined on that SearchParameter.
+             * Comparators allowed for the filter parameter.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * @param modifier
-             *     = | eq | ne | gt | lt | ge | le | sa | eb | ap | above | below | in | not-in | of-type
+             * @param comparator
+             *     eq | ne | gt | lt | ge | le | sa | eb | ap
              * 
              * @return
              *     A reference to this Builder instance
@@ -3200,7 +3401,48 @@ public class SubscriptionTopic extends DomainResource {
              * @throws NullPointerException
              *     If the passed collection is null
              */
-            public Builder modifier(Collection<SubscriptionTopicFilterBySearchModifier> modifier) {
+            public Builder comparator(Collection<SearchComparator> comparator) {
+                this.comparator = new ArrayList<>(comparator);
+                return this;
+            }
+
+            /**
+             * Modifiers allowed for the filter parameter.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifier
+             *     missing | exact | contains | not | text | in | not-in | below | above | type | identifier | of-type | code-text | text-
+             *     advanced | iterate
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder modifier(SearchModifierCode... modifier) {
+                for (SearchModifierCode value : modifier) {
+                    this.modifier.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * Modifiers allowed for the filter parameter.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifier
+             *     missing | exact | contains | not | text | in | not-in | below | above | type | identifier | of-type | code-text | text-
+             *     advanced | iterate
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder modifier(Collection<SearchModifierCode> modifier) {
                 this.modifier = new ArrayList<>(modifier);
                 return this;
             }
@@ -3230,7 +3472,8 @@ public class SubscriptionTopic extends DomainResource {
             protected void validate(CanFilterBy canFilterBy) {
                 super.validate(canFilterBy);
                 ValidationSupport.requireNonNull(canFilterBy.filterParameter, "filterParameter");
-                ValidationSupport.checkList(canFilterBy.modifier, "modifier", SubscriptionTopicFilterBySearchModifier.class);
+                ValidationSupport.checkList(canFilterBy.comparator, "comparator", SearchComparator.class);
+                ValidationSupport.checkList(canFilterBy.modifier, "modifier", SearchModifierCode.class);
                 ValidationSupport.requireValueOrChildren(canFilterBy);
             }
 
@@ -3240,6 +3483,7 @@ public class SubscriptionTopic extends DomainResource {
                 resource = canFilterBy.resource;
                 filterParameter = canFilterBy.filterParameter;
                 filterDefinition = canFilterBy.filterDefinition;
+                comparator.addAll(canFilterBy.comparator);
                 modifier.addAll(canFilterBy.modifier);
                 return this;
             }
@@ -3252,10 +3496,10 @@ public class SubscriptionTopic extends DomainResource {
     public static class NotificationShape extends BackboneElement {
         @Summary
         @Binding(
-            bindingName = "FHIRDefinedTypeExt",
+            bindingName = "FHIRTypes",
             strength = BindingStrength.Value.EXTENSIBLE,
-            description = "Either a resource or a data type, including logical model types.",
-            valueSet = "http://hl7.org/fhir/ValueSet/defined-types"
+            description = "A type of resource, or a Reference (from all versions)",
+            valueSet = "http://hl7.org/fhir/ValueSet/subscription-types"
         )
         @Required
         private final Uri resource;
@@ -3272,9 +3516,10 @@ public class SubscriptionTopic extends DomainResource {
         }
 
         /**
-         * URL of the Resource that is the type used in this shape. This is the "focus" of the topic (or one of them if there are 
-         * more than one) and the root resource for this shape definition. It will be the same, a generality, or a specificity of 
-         * SubscriptionTopic.resourceTrigger.resource or SubscriptionTopic.eventTrigger.resource when they are present.
+         * URL of the Resource that is the type used in this shape. This is the 'focus' resource of the topic (or one of them if 
+         * there are more than one) and the root resource for this shape definition. It will be the same, a generality, or a 
+         * specificity of SubscriptionTopic.resourceTrigger.resource or SubscriptionTopic.eventTrigger.resource when they are 
+         * present.
          * 
          * @return
          *     An immutable object of type {@link Uri} that is non-null.
@@ -3403,7 +3648,7 @@ public class SubscriptionTopic extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3423,7 +3668,7 @@ public class SubscriptionTopic extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3448,7 +3693,7 @@ public class SubscriptionTopic extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3473,7 +3718,7 @@ public class SubscriptionTopic extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3498,9 +3743,10 @@ public class SubscriptionTopic extends DomainResource {
             }
 
             /**
-             * URL of the Resource that is the type used in this shape. This is the "focus" of the topic (or one of them if there are 
-             * more than one) and the root resource for this shape definition. It will be the same, a generality, or a specificity of 
-             * SubscriptionTopic.resourceTrigger.resource or SubscriptionTopic.eventTrigger.resource when they are present.
+             * URL of the Resource that is the type used in this shape. This is the 'focus' resource of the topic (or one of them if 
+             * there are more than one) and the root resource for this shape definition. It will be the same, a generality, or a 
+             * specificity of SubscriptionTopic.resourceTrigger.resource or SubscriptionTopic.eventTrigger.resource when they are 
+             * present.
              * 
              * <p>This element is required.
              * 

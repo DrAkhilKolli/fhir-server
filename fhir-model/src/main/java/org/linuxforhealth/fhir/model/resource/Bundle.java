@@ -60,23 +60,39 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Rule",
     location = "(base)",
     description = "entry.search only when a search",
-    expression = "entry.search.empty() or (type = 'searchset')",
+    expression = "(type = 'searchset') or entry.search.empty()",
     source = "http://hl7.org/fhir/StructureDefinition/Bundle"
 )
 @Constraint(
-    id = "bdl-3",
+    id = "bdl-3a",
     level = "Rule",
     location = "(base)",
-    description = "entry.request mandatory for batch/transaction/history, otherwise prohibited",
-    expression = "entry.all(request.exists() = (%resource.type = 'batch' or %resource.type = 'transaction' or %resource.type = 'history'))",
+    description = "For collections of type document, message, searchset or collection, all entries must contain resources, and not have request or response elements",
+    expression = "type in ('document' | 'message' | 'searchset' | 'collection') implies entry.all(resource.exists() and request.empty() and response.empty())",
     source = "http://hl7.org/fhir/StructureDefinition/Bundle"
 )
 @Constraint(
-    id = "bdl-4",
+    id = "bdl-3b",
     level = "Rule",
     location = "(base)",
-    description = "entry.response mandatory for batch-response/transaction-response/history, otherwise prohibited",
-    expression = "entry.all(response.exists() = (%resource.type = 'batch-response' or %resource.type = 'transaction-response' or %resource.type = 'history'))",
+    description = "For collections of type history, all entries must contain request or response elements, and resources if the method is POST, PUT or PATCH",
+    expression = "type = 'history' implies entry.all(request.exists() and response.exists() and ((request.method in ('POST' | 'PATCH' | 'PUT')) = resource.exists()))",
+    source = "http://hl7.org/fhir/StructureDefinition/Bundle"
+)
+@Constraint(
+    id = "bdl-3c",
+    level = "Rule",
+    location = "(base)",
+    description = "For collections of type transaction or batch, all entries must contain request elements, and resources if the method is POST, PUT or PATCH",
+    expression = "type in ('transaction' | 'batch') implies entry.all(request.method.exists() and ((request.method in ('POST' | 'PATCH' | 'PUT')) = resource.exists()))",
+    source = "http://hl7.org/fhir/StructureDefinition/Bundle"
+)
+@Constraint(
+    id = "bdl-3d",
+    level = "Rule",
+    location = "(base)",
+    description = "For collections of type transaction-response or batch-response, all entries must contain response elements",
+    expression = "type in ('transaction-response' | 'batch-response') implies entry.all(response.exists())",
     source = "http://hl7.org/fhir/StructureDefinition/Bundle"
 )
 @Constraint(
@@ -92,7 +108,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Rule",
     location = "(base)",
     description = "FullUrl must be unique in a bundle, or else entries with the same fullUrl must have different meta.versionId (except in history bundles)",
-    expression = "(type = 'history') or entry.where(fullUrl.exists()).select(fullUrl&resource.meta.versionId).isDistinct()",
+    expression = "(type = 'history') or entry.where(fullUrl.exists()).select(fullUrl&iif(resource.meta.versionId.exists(), resource.meta.versionId, '')).isDistinct()",
     source = "http://hl7.org/fhir/StructureDefinition/Bundle"
 )
 @Constraint(
@@ -135,6 +151,54 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     expression = "type = 'message' implies entry.first().resource.is(MessageHeader)",
     source = "http://hl7.org/fhir/StructureDefinition/Bundle"
 )
+@Constraint(
+    id = "bdl-13",
+    level = "Rule",
+    location = "(base)",
+    description = "A subscription-notification must have a SubscriptionStatus as the first resource",
+    expression = "type = 'subscription-notification' implies entry.first().resource.is(SubscriptionStatus)",
+    source = "http://hl7.org/fhir/StructureDefinition/Bundle"
+)
+@Constraint(
+    id = "bdl-14",
+    level = "Rule",
+    location = "(base)",
+    description = "entry.request.method PATCH not allowed for history",
+    expression = "type = 'history' implies entry.request.method != 'PATCH'",
+    source = "http://hl7.org/fhir/StructureDefinition/Bundle"
+)
+@Constraint(
+    id = "bdl-15",
+    level = "Rule",
+    location = "(base)",
+    description = "Bundle resources where type is not transaction, transaction-response, batch, or batch-response or when the request is a POST SHALL have Bundle.entry.fullUrl populated",
+    expression = "type='transaction' or type='transaction-response' or type='batch' or type='batch-response' or entry.all(fullUrl.exists() or request.method='POST')",
+    source = "http://hl7.org/fhir/StructureDefinition/Bundle"
+)
+@Constraint(
+    id = "bdl-16",
+    level = "Rule",
+    location = "(base)",
+    description = "Issue.severity for all issues within the OperationOutcome must be either 'information' or 'warning'.",
+    expression = "issues.exists() implies (issues.issue.severity = 'information' or issues.issue.severity = 'warning')",
+    source = "http://hl7.org/fhir/StructureDefinition/Bundle"
+)
+@Constraint(
+    id = "bdl-17",
+    level = "Rule",
+    location = "(base)",
+    description = "Use and meaning of issues for documents has not been validated because the content will not be rendered in the document.",
+    expression = "type = 'document' implies issues.empty()",
+    source = "http://hl7.org/fhir/StructureDefinition/Bundle"
+)
+@Constraint(
+    id = "bdl-18",
+    level = "Rule",
+    location = "(base)",
+    description = "Self link is required for searchsets.",
+    expression = "type = 'searchset' implies link.where(relation = 'self' and url.exists()).exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/Bundle"
+)
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class Bundle extends Resource {
     @Summary
@@ -144,7 +208,7 @@ public class Bundle extends Resource {
         bindingName = "BundleType",
         strength = BindingStrength.Value.REQUIRED,
         description = "Indicates the purpose of a bundle - how it is intended to be used.",
-        valueSet = "http://hl7.org/fhir/ValueSet/bundle-type|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/bundle-type|5.0.0"
     )
     @Required
     private final BundleType type;
@@ -158,6 +222,8 @@ public class Bundle extends Resource {
     private final List<Entry> entry;
     @Summary
     private final Signature signature;
+    @Summary
+    private final OperationOutcome issues;
 
     private Bundle(Builder builder) {
         super(builder);
@@ -168,6 +234,7 @@ public class Bundle extends Resource {
         link = Collections.unmodifiableList(builder.link);
         entry = Collections.unmodifiableList(builder.entry);
         signature = builder.signature;
+        issues = builder.issues;
     }
 
     /**
@@ -201,9 +268,9 @@ public class Bundle extends Resource {
     }
 
     /**
-     * If a set of search matches, this is the total number of entries of type 'match' across all pages in the search. It 
-     * does not include search.mode = 'include' or 'outcome' entries and it does not provide a count of the number of entries 
-     * in the Bundle.
+     * If a set of search matches, this is the (potentially estimated) total number of entries of type 'match' across all 
+     * pages in the search. It does not include search.mode = 'include' or 'outcome' entries and it does not provide a count 
+     * of the number of entries in the Bundle.
      * 
      * @return
      *     An immutable object of type {@link UnsignedInt} that may be null.
@@ -234,13 +301,23 @@ public class Bundle extends Resource {
     }
 
     /**
-     * Digital Signature - base64 encoded. XML-DSig or a JWT.
+     * Digital Signature - base64 encoded. XML-DSig or a JWS.
      * 
      * @return
      *     An immutable object of type {@link Signature} that may be null.
      */
     public Signature getSignature() {
         return signature;
+    }
+
+    /**
+     * Captures issues and warnings that relate to the construction of the Bundle and the content within it.
+     * 
+     * @return
+     *     An immutable object of type {@link OperationOutcome} that may be null.
+     */
+    public OperationOutcome getIssues() {
+        return issues;
     }
 
     @Override
@@ -252,7 +329,8 @@ public class Bundle extends Resource {
             (total != null) || 
             !link.isEmpty() || 
             !entry.isEmpty() || 
-            (signature != null);
+            (signature != null) || 
+            (issues != null);
     }
 
     @Override
@@ -272,6 +350,7 @@ public class Bundle extends Resource {
                 accept(link, "link", visitor, Link.class);
                 accept(entry, "entry", visitor, Entry.class);
                 accept(signature, "signature", visitor);
+                accept(issues, "issues", visitor);
             }
             visitor.visitEnd(elementName, elementIndex, this);
             visitor.postVisit(this);
@@ -300,7 +379,8 @@ public class Bundle extends Resource {
             Objects.equals(total, other.total) && 
             Objects.equals(link, other.link) && 
             Objects.equals(entry, other.entry) && 
-            Objects.equals(signature, other.signature);
+            Objects.equals(signature, other.signature) && 
+            Objects.equals(issues, other.issues);
     }
 
     @Override
@@ -317,7 +397,8 @@ public class Bundle extends Resource {
                 total, 
                 link, 
                 entry, 
-                signature);
+                signature, 
+                issues);
             hashCode = result;
         }
         return result;
@@ -340,6 +421,7 @@ public class Bundle extends Resource {
         private List<Link> link = new ArrayList<>();
         private List<Entry> entry = new ArrayList<>();
         private Signature signature;
+        private OperationOutcome issues;
 
         private Builder() {
             super();
@@ -424,7 +506,8 @@ public class Bundle extends Resource {
          * <p>This element is required.
          * 
          * @param type
-         *     document | message | transaction | transaction-response | batch | batch-response | history | searchset | collection
+         *     document | message | transaction | transaction-response | batch | batch-response | history | searchset | collection | 
+         *     subscription-notification
          * 
          * @return
          *     A reference to this Builder instance
@@ -465,9 +548,9 @@ public class Bundle extends Resource {
         }
 
         /**
-         * If a set of search matches, this is the total number of entries of type 'match' across all pages in the search. It 
-         * does not include search.mode = 'include' or 'outcome' entries and it does not provide a count of the number of entries 
-         * in the Bundle.
+         * If a set of search matches, this is the (potentially estimated) total number of entries of type 'match' across all 
+         * pages in the search. It does not include search.mode = 'include' or 'outcome' entries and it does not provide a count 
+         * of the number of entries in the Bundle.
          * 
          * @param total
          *     If search, the total number of matches
@@ -561,7 +644,7 @@ public class Bundle extends Resource {
         }
 
         /**
-         * Digital Signature - base64 encoded. XML-DSig or a JWT.
+         * Digital Signature - base64 encoded. XML-DSig or a JWS.
          * 
          * @param signature
          *     Digital Signature
@@ -571,6 +654,20 @@ public class Bundle extends Resource {
          */
         public Builder signature(Signature signature) {
             this.signature = signature;
+            return this;
+        }
+
+        /**
+         * Captures issues and warnings that relate to the construction of the Bundle and the content within it.
+         * 
+         * @param issues
+         *     Issues with the Bundle
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder issues(OperationOutcome issues) {
+            this.issues = issues;
             return this;
         }
 
@@ -612,6 +709,7 @@ public class Bundle extends Resource {
             link.addAll(bundle.link);
             entry.addAll(bundle.entry);
             signature = bundle.signature;
+            issues = bundle.issues;
             return this;
         }
     }
@@ -621,8 +719,12 @@ public class Bundle extends Resource {
      */
     public static class Link extends BackboneElement {
         @Summary
+        @Binding(
+            strength = BindingStrength.Value.REQUIRED,
+            valueSet = "http://hl7.org/fhir/ValueSet/iana-link-relations|5.0.0"
+        )
         @Required
-        private final String relation;
+        private final Code relation;
         @Summary
         @Required
         private final Uri url;
@@ -639,9 +741,9 @@ public class Bundle extends Resource {
          * 1).
          * 
          * @return
-         *     An immutable object of type {@link String} that is non-null.
+         *     An immutable object of type {@link Code} that is non-null.
          */
-        public String getRelation() {
+        public Code getRelation() {
             return relation;
         }
 
@@ -722,7 +824,7 @@ public class Bundle extends Resource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private String relation;
+            private Code relation;
             private Uri url;
 
             private Builder() {
@@ -746,7 +848,7 @@ public class Bundle extends Resource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -766,7 +868,7 @@ public class Bundle extends Resource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -791,7 +893,7 @@ public class Bundle extends Resource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -816,7 +918,7 @@ public class Bundle extends Resource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -841,24 +943,6 @@ public class Bundle extends Resource {
             }
 
             /**
-             * Convenience method for setting {@code relation}.
-             * 
-             * <p>This element is required.
-             * 
-             * @param relation
-             *     See http://www.iana.org/assignments/link-relations/link-relations.xhtml#link-relations-1
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #relation(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder relation(java.lang.String relation) {
-                this.relation = (relation == null) ? null : String.of(relation);
-                return this;
-            }
-
-            /**
              * A name which details the functional use for this link - see [http://www.iana.org/assignments/link-relations/link-
              * relations.xhtml#link-relations-1](http://www.iana.org/assignments/link-relations/link-relations.xhtml#link-relations-
              * 1).
@@ -871,7 +955,7 @@ public class Bundle extends Resource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder relation(String relation) {
+            public Builder relation(Code relation) {
                 this.relation = relation;
                 return this;
             }
@@ -970,12 +1054,15 @@ public class Bundle extends Resource {
         }
 
         /**
-         * The Absolute URL for the resource. The fullUrl SHALL NOT disagree with the id in the resource - i.e. if the fullUrl is 
-         * not a urn:uuid, the URL shall be version-independent URL consistent with the Resource.id. The fullUrl is a version 
-         * independent reference to the resource. The fullUrl element SHALL have a value except that: 
-         * * fullUrl can be empty on a POST (although it does not need to when specifying a temporary id for reference in the 
-         * bundle)
-         * * Results from operations might involve resources that are not identified.
+         * The Absolute URL for the resource. Except for transactions and batches, each entry in a Bundle must have a fullUrl. 
+         * The fullUrl SHALL NOT disagree with the id in the resource - i.e. if the fullUrl is not a urn:uuid, the URL shall be 
+         * version-independent URL consistent with the Resource.id. The fullUrl is a version independent reference to the 
+         * resource. Even when not required, fullUrl MAY be set to a urn:uuid to allow referencing entries in a transaction. The 
+         * fullUrl can be an arbitrary URI and is not limited to urn:uuid, urn:oid, http, and https. The fullUrl element SHALL 
+         * have a value except when: 
+         * * invoking a create
+         * * invoking or responding to an operation where the body is not a single identified resource
+         * * invoking or returning the results of a search or history operation.
          * 
          * @return
          *     An immutable object of type {@link Uri} that may be null.
@@ -985,7 +1072,9 @@ public class Bundle extends Resource {
         }
 
         /**
-         * The Resource for the entry. The purpose/meaning of the resource is determined by the Bundle.type.
+         * The Resource for the entry. The purpose/meaning of the resource is determined by the Bundle.type. This is allowed to 
+         * be a Parameters resource if and only if it is referenced by something else within the Bundle that provides 
+         * context/meaning.
          * 
          * @return
          *     An immutable object of type {@link Resource} that may be null.
@@ -1137,7 +1226,7 @@ public class Bundle extends Resource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1157,7 +1246,7 @@ public class Bundle extends Resource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1182,7 +1271,7 @@ public class Bundle extends Resource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1207,7 +1296,7 @@ public class Bundle extends Resource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1271,15 +1360,18 @@ public class Bundle extends Resource {
             }
 
             /**
-             * The Absolute URL for the resource. The fullUrl SHALL NOT disagree with the id in the resource - i.e. if the fullUrl is 
-             * not a urn:uuid, the URL shall be version-independent URL consistent with the Resource.id. The fullUrl is a version 
-             * independent reference to the resource. The fullUrl element SHALL have a value except that: 
-             * * fullUrl can be empty on a POST (although it does not need to when specifying a temporary id for reference in the 
-             * bundle)
-             * * Results from operations might involve resources that are not identified.
+             * The Absolute URL for the resource. Except for transactions and batches, each entry in a Bundle must have a fullUrl. 
+             * The fullUrl SHALL NOT disagree with the id in the resource - i.e. if the fullUrl is not a urn:uuid, the URL shall be 
+             * version-independent URL consistent with the Resource.id. The fullUrl is a version independent reference to the 
+             * resource. Even when not required, fullUrl MAY be set to a urn:uuid to allow referencing entries in a transaction. The 
+             * fullUrl can be an arbitrary URI and is not limited to urn:uuid, urn:oid, http, and https. The fullUrl element SHALL 
+             * have a value except when: 
+             * * invoking a create
+             * * invoking or responding to an operation where the body is not a single identified resource
+             * * invoking or returning the results of a search or history operation.
              * 
              * @param fullUrl
-             *     URI for resource (Absolute URL server address or URI for UUID/OID)
+             *     URI for resource (e.g. the absolute URL server address, URI for UUID/OID, etc.)
              * 
              * @return
              *     A reference to this Builder instance
@@ -1290,7 +1382,9 @@ public class Bundle extends Resource {
             }
 
             /**
-             * The Resource for the entry. The purpose/meaning of the resource is determined by the Bundle.type.
+             * The Resource for the entry. The purpose/meaning of the resource is determined by the Bundle.type. This is allowed to 
+             * be a Parameters resource if and only if it is referenced by something else within the Bundle that provides 
+             * context/meaning.
              * 
              * @param resource
              *     A resource in the bundle
@@ -1391,7 +1485,7 @@ public class Bundle extends Resource {
                 bindingName = "SearchEntryMode",
                 strength = BindingStrength.Value.REQUIRED,
                 description = "Why an entry is in the result set - whether it's included as a match or because of an _include requirement, or to convey information or warning information about the search process.",
-                valueSet = "http://hl7.org/fhir/ValueSet/search-entry-mode|4.3.0"
+                valueSet = "http://hl7.org/fhir/ValueSet/search-entry-mode|5.0.0"
             )
             private final SearchEntryMode mode;
             @Summary
@@ -1515,7 +1609,7 @@ public class Bundle extends Resource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1535,7 +1629,7 @@ public class Bundle extends Resource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1560,7 +1654,7 @@ public class Bundle extends Resource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -1585,7 +1679,7 @@ public class Bundle extends Resource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -1614,7 +1708,7 @@ public class Bundle extends Resource {
                  * convey information or warning information about the search process.
                  * 
                  * @param mode
-                 *     match | include | outcome - why this is in the result set
+                 *     match | include - why this is in the result set
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -1679,7 +1773,7 @@ public class Bundle extends Resource {
                 bindingName = "HTTPVerb",
                 strength = BindingStrength.Value.REQUIRED,
                 description = "HTTP verbs (in the HTTP command line). See [HTTP rfc](https://tools.ietf.org/html/rfc7231) for details.",
-                valueSet = "http://hl7.org/fhir/ValueSet/http-verb|4.3.0"
+                valueSet = "http://hl7.org/fhir/ValueSet/http-verb|5.0.0"
             )
             @Required
             private final HTTPVerb method;
@@ -1882,7 +1976,7 @@ public class Bundle extends Resource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1902,7 +1996,7 @@ public class Bundle extends Resource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1927,7 +2021,7 @@ public class Bundle extends Resource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -1952,7 +2046,7 @@ public class Bundle extends Resource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2013,7 +2107,7 @@ public class Bundle extends Resource {
                  * Convenience method for setting {@code ifNoneMatch}.
                  * 
                  * @param ifNoneMatch
-                 *     For managing cache currency
+                 *     For managing cache validation
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -2030,7 +2124,7 @@ public class Bundle extends Resource {
                  * html#cread).
                  * 
                  * @param ifNoneMatch
-                 *     For managing cache currency
+                 *     For managing cache validation
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -2361,7 +2455,7 @@ public class Bundle extends Resource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2381,7 +2475,7 @@ public class Bundle extends Resource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2406,7 +2500,7 @@ public class Bundle extends Resource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2431,7 +2525,7 @@ public class Bundle extends Resource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 

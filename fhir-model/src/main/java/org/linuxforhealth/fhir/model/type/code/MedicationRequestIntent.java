@@ -67,15 +67,16 @@ public class MedicationRequestIntent extends Code {
     /**
      * Instance Order
      * 
-     * <p>The request represents an instance for the particular order, for example a medication administration record.
+     * <p>The request represents an instance for the particular order and is used to generate a schedule of requests on a 
+     * medication administration record (MAR).
      */
     public static final MedicationRequestIntent INSTANCE_ORDER = MedicationRequestIntent.builder().value(Value.INSTANCE_ORDER).build();
 
     /**
      * Option
      * 
-     * <p>The request represents a component or option for a RequestGroup that establishes timing, conditionality and/or 
-     * other constraints among a set of requests.
+     * <p>The request represents a component or option for a RequestOrchestration that establishes timing, conditionality 
+     * and/or other constraints among a set of requests.
      */
     public static final MedicationRequestIntent OPTION = MedicationRequestIntent.builder().value(Value.OPTION).build();
 
@@ -293,15 +294,16 @@ public class MedicationRequestIntent extends Code {
         /**
          * Instance Order
          * 
-         * <p>The request represents an instance for the particular order, for example a medication administration record.
+         * <p>The request represents an instance for the particular order and is used to generate a schedule of requests on a 
+         * medication administration record (MAR).
          */
         INSTANCE_ORDER("instance-order"),
 
         /**
          * Option
          * 
-         * <p>The request represents a component or option for a RequestGroup that establishes timing, conditionality and/or 
-         * other constraints among a set of requests.
+         * <p>The request represents a component or option for a RequestOrchestration that establishes timing, conditionality 
+         * and/or other constraints among a set of requests.
          */
         OPTION("option");
 

@@ -19,11 +19,67 @@ import javax.annotation.Generated;
 @System("http://hl7.org/fhir/event-status")
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class ClinicalImpressionStatus extends Code {
+    /**
+     * Preparation
+     * 
+     * <p>The core event has not started yet, but some staging activities have begun (e.g. surgical suite preparation). 
+     * Preparation stages may be tracked for billing purposes.
+     */
+    public static final ClinicalImpressionStatus PREPARATION = ClinicalImpressionStatus.builder().value(Value.PREPARATION).build();
+
+    /**
+     * In Progress
+     * 
+     * <p>The event is currently occurring.
+     */
     public static final ClinicalImpressionStatus IN_PROGRESS = ClinicalImpressionStatus.builder().value(Value.IN_PROGRESS).build();
 
+    /**
+     * Not Done
+     * 
+     * <p>The event was terminated prior to any activity beyond preparation. I.e. The 'main' activity has not yet begun. The 
+     * boundary between preparatory and the 'main' activity is context-specific.
+     */
+    public static final ClinicalImpressionStatus NOT_DONE = ClinicalImpressionStatus.builder().value(Value.NOT_DONE).build();
+
+    /**
+     * On Hold
+     * 
+     * <p>The event has been temporarily stopped but is expected to resume in the future.
+     */
+    public static final ClinicalImpressionStatus ON_HOLD = ClinicalImpressionStatus.builder().value(Value.ON_HOLD).build();
+
+    /**
+     * Stopped
+     * 
+     * <p>The event was terminated prior to the full completion of the intended activity but after at least some of the 
+     * 'main' activity (beyond preparation) has occurred.
+     */
+    public static final ClinicalImpressionStatus STOPPED = ClinicalImpressionStatus.builder().value(Value.STOPPED).build();
+
+    /**
+     * Completed
+     * 
+     * <p>The event has now concluded.
+     */
     public static final ClinicalImpressionStatus COMPLETED = ClinicalImpressionStatus.builder().value(Value.COMPLETED).build();
 
+    /**
+     * Entered in Error
+     * 
+     * <p>This electronic record should never have existed, though it is possible that real-world decisions were based on it. 
+     * (If real-world activity has occurred, the status should be "stopped" rather than "entered-in-error".).
+     */
     public static final ClinicalImpressionStatus ENTERED_IN_ERROR = ClinicalImpressionStatus.builder().value(Value.ENTERED_IN_ERROR).build();
+
+    /**
+     * Unknown
+     * 
+     * <p>The authoring/source system does not know which of the status values currently applies for this event. Note: This 
+     * concept is not to be used for "other" - one of the listed statuses is presumed to apply, but the authoring/source 
+     * system does not know which.
+     */
+    public static final ClinicalImpressionStatus UNKNOWN = ClinicalImpressionStatus.builder().value(Value.UNKNOWN).build();
 
     private volatile int hashCode;
 
@@ -43,12 +99,22 @@ public class ClinicalImpressionStatus extends Code {
      */
     public static ClinicalImpressionStatus of(Value value) {
         switch (value) {
+        case PREPARATION:
+            return PREPARATION;
         case IN_PROGRESS:
             return IN_PROGRESS;
+        case NOT_DONE:
+            return NOT_DONE;
+        case ON_HOLD:
+            return ON_HOLD;
+        case STOPPED:
+            return STOPPED;
         case COMPLETED:
             return COMPLETED;
         case ENTERED_IN_ERROR:
             return ENTERED_IN_ERROR;
+        case UNKNOWN:
+            return UNKNOWN;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -181,11 +247,67 @@ public class ClinicalImpressionStatus extends Code {
     }
 
     public enum Value {
+        /**
+         * Preparation
+         * 
+         * <p>The core event has not started yet, but some staging activities have begun (e.g. surgical suite preparation). 
+         * Preparation stages may be tracked for billing purposes.
+         */
+        PREPARATION("preparation"),
+
+        /**
+         * In Progress
+         * 
+         * <p>The event is currently occurring.
+         */
         IN_PROGRESS("in-progress"),
 
+        /**
+         * Not Done
+         * 
+         * <p>The event was terminated prior to any activity beyond preparation. I.e. The 'main' activity has not yet begun. The 
+         * boundary between preparatory and the 'main' activity is context-specific.
+         */
+        NOT_DONE("not-done"),
+
+        /**
+         * On Hold
+         * 
+         * <p>The event has been temporarily stopped but is expected to resume in the future.
+         */
+        ON_HOLD("on-hold"),
+
+        /**
+         * Stopped
+         * 
+         * <p>The event was terminated prior to the full completion of the intended activity but after at least some of the 
+         * 'main' activity (beyond preparation) has occurred.
+         */
+        STOPPED("stopped"),
+
+        /**
+         * Completed
+         * 
+         * <p>The event has now concluded.
+         */
         COMPLETED("completed"),
 
-        ENTERED_IN_ERROR("entered-in-error");
+        /**
+         * Entered in Error
+         * 
+         * <p>This electronic record should never have existed, though it is possible that real-world decisions were based on it. 
+         * (If real-world activity has occurred, the status should be "stopped" rather than "entered-in-error".).
+         */
+        ENTERED_IN_ERROR("entered-in-error"),
+
+        /**
+         * Unknown
+         * 
+         * <p>The authoring/source system does not know which of the status values currently applies for this event. Note: This 
+         * concept is not to be used for "other" - one of the listed statuses is presumed to apply, but the authoring/source 
+         * system does not know which.
+         */
+        UNKNOWN("unknown");
 
         private final java.lang.String value;
 
@@ -216,12 +338,22 @@ public class ClinicalImpressionStatus extends Code {
                 return null;
             }
             switch (value) {
+            case "preparation":
+                return PREPARATION;
             case "in-progress":
                 return IN_PROGRESS;
+            case "not-done":
+                return NOT_DONE;
+            case "on-hold":
+                return ON_HOLD;
+            case "stopped":
+                return STOPPED;
             case "completed":
                 return COMPLETED;
             case "entered-in-error":
                 return ENTERED_IN_ERROR;
+            case "unknown":
+                return UNKNOWN;
             default:
                 throw new IllegalArgumentException(value);
             }

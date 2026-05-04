@@ -18,7 +18,6 @@ import org.linuxforhealth.fhir.model.annotation.Binding;
 import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
-import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
@@ -26,11 +25,13 @@ import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Id;
+import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
@@ -42,7 +43,6 @@ import org.linuxforhealth.fhir.model.type.UsageContext;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.FHIRVersion;
 import org.linuxforhealth.fhir.model.type.code.GuidePageGeneration;
-import org.linuxforhealth.fhir.model.type.code.GuideParameterCode;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
 import org.linuxforhealth.fhir.model.type.code.ResourceTypeCode;
 import org.linuxforhealth.fhir.model.type.code.SPDXLicense;
@@ -55,18 +55,26 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * resources. This resource is used to gather all the parts of an implementation guide into a logical whole and to 
  * publish a computable definition of all the parts.
  * 
- * <p>Maturity level: FMM1 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 1,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "ig-0",
+    id = "cnl-0",
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
+    source = "http://hl7.org/fhir/StructureDefinition/ImplementationGuide"
+)
+@Constraint(
+    id = "cnl-1",
+    level = "Warning",
+    location = "ImplementationGuide.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
     source = "http://hl7.org/fhir/StructureDefinition/ImplementationGuide"
 )
 @Constraint(
@@ -81,16 +89,42 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "ig-2",
     level = "Rule",
     location = "(base)",
-    description = "If a resource has a fhirVersion, it must be oe of the versions defined for the Implementation Guide",
+    description = "If a resource has a fhirVersion, it must be one of the versions defined for the Implementation Guide",
     expression = "definition.resource.fhirVersion.all(%context.fhirVersion contains $this)",
     source = "http://hl7.org/fhir/StructureDefinition/ImplementationGuide"
 )
 @Constraint(
-    id = "implementationGuide-3",
+    id = "ig-3",
+    level = "Rule",
+    location = "ImplementationGuide.definition.page",
+    description = "Source must be absent if 'generated' is generated",
+    expression = "generation='generated' implies source.empty()",
+    source = "http://hl7.org/fhir/StructureDefinition/ImplementationGuide"
+)
+@Constraint(
+    id = "implementationGuide-4",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/ImplementationGuide",
+    generated = true
+)
+@Constraint(
+    id = "implementationGuide-5",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
     expression = "jurisdiction.exists() implies (jurisdiction.all(memberOf('http://hl7.org/fhir/ValueSet/jurisdiction', 'extensible')))",
+    source = "http://hl7.org/fhir/StructureDefinition/ImplementationGuide",
+    generated = true
+)
+@Constraint(
+    id = "implementationGuide-6",
+    level = "Warning",
+    location = "definition.parameter.code",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/guide-parameter-code",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/guide-parameter-code', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/ImplementationGuide",
     generated = true
 )
@@ -100,7 +134,16 @@ public class ImplementationGuide extends DomainResource {
     @Required
     private final Uri url;
     @Summary
+    private final List<Identifier> identifier;
+    @Summary
     private final String version;
+    @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
     @Summary
     @Required
     private final String name;
@@ -111,7 +154,7 @@ public class ImplementationGuide extends DomainResource {
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -134,7 +177,9 @@ public class ImplementationGuide extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/jurisdiction"
     )
     private final List<CodeableConcept> jurisdiction;
+    private final Markdown purpose;
     private final Markdown copyright;
+    private final String copyrightLabel;
     @Summary
     @Required
     private final Id packageId;
@@ -143,7 +188,7 @@ public class ImplementationGuide extends DomainResource {
         bindingName = "SPDXLicense",
         strength = BindingStrength.Value.REQUIRED,
         description = "The license that applies to an Implementation Guide (using an SPDX license Identifiers, or 'not-open-source'). The binding is required but new SPDX license Identifiers are allowed to be used (https://spdx.org/licenses/).",
-        valueSet = "http://hl7.org/fhir/ValueSet/spdx-license|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/spdx-license|5.0.0"
     )
     private final SPDXLicense license;
     @Summary
@@ -151,7 +196,7 @@ public class ImplementationGuide extends DomainResource {
         bindingName = "FHIRVersion",
         strength = BindingStrength.Value.REQUIRED,
         description = "All published FHIR Versions.",
-        valueSet = "http://hl7.org/fhir/ValueSet/FHIR-version|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/FHIR-version|5.0.0"
     )
     @Required
     private final List<FHIRVersion> fhirVersion;
@@ -165,7 +210,9 @@ public class ImplementationGuide extends DomainResource {
     private ImplementationGuide(Builder builder) {
         super(builder);
         url = builder.url;
+        identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
         title = builder.title;
         status = builder.status;
@@ -176,7 +223,9 @@ public class ImplementationGuide extends DomainResource {
         description = builder.description;
         useContext = Collections.unmodifiableList(builder.useContext);
         jurisdiction = Collections.unmodifiableList(builder.jurisdiction);
+        purpose = builder.purpose;
         copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
         packageId = builder.packageId;
         license = builder.license;
         fhirVersion = Collections.unmodifiableList(builder.fhirVersion);
@@ -189,15 +238,25 @@ public class ImplementationGuide extends DomainResource {
     /**
      * An absolute URI that is used to identify this implementation guide when it is referenced in a specification, model, 
      * design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal 
-     * address at which at which an authoritative instance of this implementation guide is (or will be) published. This URL 
-     * can be the target of a canonical reference. It SHALL remain the same when the implementation guide is stored on 
-     * different servers.
+     * address at which an authoritative instance of this implementation guide is (or will be) published. This URL can be the 
+     * target of a canonical reference. It SHALL remain the same when the implementation guide is stored on different servers.
      * 
      * @return
      *     An immutable object of type {@link Uri} that is non-null.
      */
     public Uri getUrl() {
         return url;
+    }
+
+    /**
+     * A formal identifier that is used to identify this implementation guide when it is represented in other formats, or 
+     * referenced in a specification, model, design or an instance.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
+     */
+    public List<Identifier> getIdentifier() {
+        return identifier;
     }
 
     /**
@@ -211,6 +270,16 @@ public class ImplementationGuide extends DomainResource {
      */
     public String getVersion() {
         return version;
+    }
+
+    /**
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
     }
 
     /**
@@ -256,9 +325,9 @@ public class ImplementationGuide extends DomainResource {
     }
 
     /**
-     * The date (and optionally time) when the implementation guide was published. The date must change when the business 
-     * version changes and it must change if the status code changes. In addition, it should change when the substantive 
-     * content of the implementation guide changes.
+     * The date (and optionally time) when the implementation guide was last significantly changed. The date must change when 
+     * the business version changes and it must change if the status code changes. In addition, it should change when the 
+     * substantive content of the implementation guide changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -268,7 +337,8 @@ public class ImplementationGuide extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the implementation guide.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the implementation 
+     * guide.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -320,6 +390,16 @@ public class ImplementationGuide extends DomainResource {
     }
 
     /**
+     * Explanation of why this implementation guide is needed and why it has been designed as it has.
+     * 
+     * @return
+     *     An immutable object of type {@link Markdown} that may be null.
+     */
+    public Markdown getPurpose() {
+        return purpose;
+    }
+
+    /**
      * A copyright statement relating to the implementation guide and/or its contents. Copyright statements are generally 
      * legal restrictions on the use and publishing of the implementation guide.
      * 
@@ -328,6 +408,17 @@ public class ImplementationGuide extends DomainResource {
      */
     public Markdown getCopyright() {
         return copyright;
+    }
+
+    /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
     }
 
     /**
@@ -355,7 +446,7 @@ public class ImplementationGuide extends DomainResource {
     /**
      * The version(s) of the FHIR specification that this ImplementationGuide targets - e.g. describes how to use. The value 
      * of this element is the formal version of the specification, without the revision number, e.g. [publication].[major].
-     * [minor], which is 4.3.0-cibuild. for this version.
+     * [minor], which is 4.6.0. for this version.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link FHIRVersion} that is non-empty.
@@ -409,7 +500,9 @@ public class ImplementationGuide extends DomainResource {
     public boolean hasChildren() {
         return super.hasChildren() || 
             (url != null) || 
+            !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
             (title != null) || 
             (status != null) || 
@@ -420,7 +513,9 @@ public class ImplementationGuide extends DomainResource {
             (description != null) || 
             !useContext.isEmpty() || 
             !jurisdiction.isEmpty() || 
+            (purpose != null) || 
             (copyright != null) || 
+            (copyrightLabel != null) || 
             (packageId != null) || 
             (license != null) || 
             !fhirVersion.isEmpty() || 
@@ -445,7 +540,9 @@ public class ImplementationGuide extends DomainResource {
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(url, "url", visitor);
+                accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(status, "status", visitor);
@@ -456,7 +553,9 @@ public class ImplementationGuide extends DomainResource {
                 accept(description, "description", visitor);
                 accept(useContext, "useContext", visitor, UsageContext.class);
                 accept(jurisdiction, "jurisdiction", visitor, CodeableConcept.class);
+                accept(purpose, "purpose", visitor);
                 accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
                 accept(packageId, "packageId", visitor);
                 accept(license, "license", visitor);
                 accept(fhirVersion, "fhirVersion", visitor, FHIRVersion.class);
@@ -491,7 +590,9 @@ public class ImplementationGuide extends DomainResource {
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(url, other.url) && 
+            Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(status, other.status) && 
@@ -502,7 +603,9 @@ public class ImplementationGuide extends DomainResource {
             Objects.equals(description, other.description) && 
             Objects.equals(useContext, other.useContext) && 
             Objects.equals(jurisdiction, other.jurisdiction) && 
+            Objects.equals(purpose, other.purpose) && 
             Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
             Objects.equals(packageId, other.packageId) && 
             Objects.equals(license, other.license) && 
             Objects.equals(fhirVersion, other.fhirVersion) && 
@@ -525,7 +628,9 @@ public class ImplementationGuide extends DomainResource {
                 extension, 
                 modifierExtension, 
                 url, 
+                identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
                 title, 
                 status, 
@@ -536,7 +641,9 @@ public class ImplementationGuide extends DomainResource {
                 description, 
                 useContext, 
                 jurisdiction, 
+                purpose, 
                 copyright, 
+                copyrightLabel, 
                 packageId, 
                 license, 
                 fhirVersion, 
@@ -560,7 +667,9 @@ public class ImplementationGuide extends DomainResource {
 
     public static class Builder extends DomainResource.Builder {
         private Uri url;
+        private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
         private String title;
         private PublicationStatus status;
@@ -571,7 +680,9 @@ public class ImplementationGuide extends DomainResource {
         private Markdown description;
         private List<UsageContext> useContext = new ArrayList<>();
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
+        private Markdown purpose;
         private Markdown copyright;
+        private String copyrightLabel;
         private Id packageId;
         private SPDXLicense license;
         private List<FHIRVersion> fhirVersion = new ArrayList<>();
@@ -662,7 +773,8 @@ public class ImplementationGuide extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -680,7 +792,8 @@ public class ImplementationGuide extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -701,7 +814,7 @@ public class ImplementationGuide extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -721,7 +834,7 @@ public class ImplementationGuide extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -746,9 +859,9 @@ public class ImplementationGuide extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -771,9 +884,9 @@ public class ImplementationGuide extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -798,9 +911,8 @@ public class ImplementationGuide extends DomainResource {
         /**
          * An absolute URI that is used to identify this implementation guide when it is referenced in a specification, model, 
          * design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal 
-         * address at which at which an authoritative instance of this implementation guide is (or will be) published. This URL 
-         * can be the target of a canonical reference. It SHALL remain the same when the implementation guide is stored on 
-         * different servers.
+         * address at which an authoritative instance of this implementation guide is (or will be) published. This URL can be the 
+         * target of a canonical reference. It SHALL remain the same when the implementation guide is stored on different servers.
          * 
          * <p>This element is required.
          * 
@@ -812,6 +924,47 @@ public class ImplementationGuide extends DomainResource {
          */
         public Builder url(Uri url) {
             this.url = url;
+            return this;
+        }
+
+        /**
+         * A formal identifier that is used to identify this implementation guide when it is represented in other formats, or 
+         * referenced in a specification, model, design or an instance.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param identifier
+         *     Additional identifier for the implementation guide (business identifier)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder identifier(Identifier... identifier) {
+            for (Identifier value : identifier) {
+                this.identifier.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A formal identifier that is used to identify this implementation guide when it is represented in other formats, or 
+         * referenced in a specification, model, design or an instance.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param identifier
+         *     Additional identifier for the implementation guide (business identifier)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder identifier(Collection<Identifier> identifier) {
+            this.identifier = new ArrayList<>(identifier);
             return this;
         }
 
@@ -845,6 +998,42 @@ public class ImplementationGuide extends DomainResource {
          */
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
             return this;
         }
 
@@ -961,9 +1150,9 @@ public class ImplementationGuide extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the implementation guide was published. The date must change when the business 
-         * version changes and it must change if the status code changes. In addition, it should change when the substantive 
-         * content of the implementation guide changes.
+         * The date (and optionally time) when the implementation guide was last significantly changed. The date must change when 
+         * the business version changes and it must change if the status code changes. In addition, it should change when the 
+         * substantive content of the implementation guide changes.
          * 
          * @param date
          *     Date last changed
@@ -980,7 +1169,7 @@ public class ImplementationGuide extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -993,10 +1182,11 @@ public class ImplementationGuide extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the implementation guide.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the implementation 
+         * guide.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1142,6 +1332,20 @@ public class ImplementationGuide extends DomainResource {
         }
 
         /**
+         * Explanation of why this implementation guide is needed and why it has been designed as it has.
+         * 
+         * @param purpose
+         *     Why this implementation guide is defined
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder purpose(Markdown purpose) {
+            this.purpose = purpose;
+            return this;
+        }
+
+        /**
          * A copyright statement relating to the implementation guide and/or its contents. Copyright statements are generally 
          * legal restrictions on the use and publishing of the implementation guide.
          * 
@@ -1153,6 +1357,37 @@ public class ImplementationGuide extends DomainResource {
          */
         public Builder copyright(Markdown copyright) {
             this.copyright = copyright;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
             return this;
         }
 
@@ -1191,7 +1426,7 @@ public class ImplementationGuide extends DomainResource {
         /**
          * The version(s) of the FHIR specification that this ImplementationGuide targets - e.g. describes how to use. The value 
          * of this element is the formal version of the specification, without the revision number, e.g. [publication].[major].
-         * [minor], which is 4.3.0-cibuild. for this version.
+         * [minor], which is 4.6.0. for this version.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1214,7 +1449,7 @@ public class ImplementationGuide extends DomainResource {
         /**
          * The version(s) of the FHIR specification that this ImplementationGuide targets - e.g. describes how to use. The value 
          * of this element is the formal version of the specification, without the revision number, e.g. [publication].[major].
-         * [minor], which is 4.3.0-cibuild. for this version.
+         * [minor], which is 4.6.0. for this version.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1372,6 +1607,8 @@ public class ImplementationGuide extends DomainResource {
         protected void validate(ImplementationGuide implementationGuide) {
             super.validate(implementationGuide);
             ValidationSupport.requireNonNull(implementationGuide.url, "url");
+            ValidationSupport.checkList(implementationGuide.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(implementationGuide.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.requireNonNull(implementationGuide.name, "name");
             ValidationSupport.requireNonNull(implementationGuide.status, "status");
             ValidationSupport.checkList(implementationGuide.contact, "contact", ContactDetail.class);
@@ -1386,7 +1623,9 @@ public class ImplementationGuide extends DomainResource {
         protected Builder from(ImplementationGuide implementationGuide) {
             super.from(implementationGuide);
             url = implementationGuide.url;
+            identifier.addAll(implementationGuide.identifier);
             version = implementationGuide.version;
+            versionAlgorithm = implementationGuide.versionAlgorithm;
             name = implementationGuide.name;
             title = implementationGuide.title;
             status = implementationGuide.status;
@@ -1397,7 +1636,9 @@ public class ImplementationGuide extends DomainResource {
             description = implementationGuide.description;
             useContext.addAll(implementationGuide.useContext);
             jurisdiction.addAll(implementationGuide.jurisdiction);
+            purpose = implementationGuide.purpose;
             copyright = implementationGuide.copyright;
+            copyrightLabel = implementationGuide.copyrightLabel;
             packageId = implementationGuide.packageId;
             license = implementationGuide.license;
             fhirVersion.addAll(implementationGuide.fhirVersion);
@@ -1421,12 +1662,14 @@ public class ImplementationGuide extends DomainResource {
         private final Id packageId;
         @Summary
         private final String version;
+        private final Markdown reason;
 
         private DependsOn(Builder builder) {
             super(builder);
             uri = builder.uri;
             packageId = builder.packageId;
             version = builder.version;
+            reason = builder.reason;
         }
 
         /**
@@ -1459,12 +1702,23 @@ public class ImplementationGuide extends DomainResource {
             return version;
         }
 
+        /**
+         * A description explaining the nature of the dependency on the listed IG.
+         * 
+         * @return
+         *     An immutable object of type {@link Markdown} that may be null.
+         */
+        public Markdown getReason() {
+            return reason;
+        }
+
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
                 (uri != null) || 
                 (packageId != null) || 
-                (version != null);
+                (version != null) || 
+                (reason != null);
         }
 
         @Override
@@ -1479,6 +1733,7 @@ public class ImplementationGuide extends DomainResource {
                     accept(uri, "uri", visitor);
                     accept(packageId, "packageId", visitor);
                     accept(version, "version", visitor);
+                    accept(reason, "reason", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -1502,7 +1757,8 @@ public class ImplementationGuide extends DomainResource {
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(uri, other.uri) && 
                 Objects.equals(packageId, other.packageId) && 
-                Objects.equals(version, other.version);
+                Objects.equals(version, other.version) && 
+                Objects.equals(reason, other.reason);
         }
 
         @Override
@@ -1514,7 +1770,8 @@ public class ImplementationGuide extends DomainResource {
                     modifierExtension, 
                     uri, 
                     packageId, 
-                    version);
+                    version, 
+                    reason);
                 hashCode = result;
             }
             return result;
@@ -1533,6 +1790,7 @@ public class ImplementationGuide extends DomainResource {
             private Canonical uri;
             private Id packageId;
             private String version;
+            private Markdown reason;
 
             private Builder() {
                 super();
@@ -1555,7 +1813,7 @@ public class ImplementationGuide extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1575,7 +1833,7 @@ public class ImplementationGuide extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1600,7 +1858,7 @@ public class ImplementationGuide extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1625,7 +1883,7 @@ public class ImplementationGuide extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1710,6 +1968,20 @@ public class ImplementationGuide extends DomainResource {
             }
 
             /**
+             * A description explaining the nature of the dependency on the listed IG.
+             * 
+             * @param reason
+             *     Why dependency exists
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder reason(Markdown reason) {
+                this.reason = reason;
+                return this;
+            }
+
+            /**
              * Build the {@link DependsOn}
              * 
              * <p>Required elements:
@@ -1742,6 +2014,7 @@ public class ImplementationGuide extends DomainResource {
                 uri = dependsOn.uri;
                 packageId = dependsOn.packageId;
                 version = dependsOn.version;
+                reason = dependsOn.reason;
                 return this;
             }
         }
@@ -1756,7 +2029,7 @@ public class ImplementationGuide extends DomainResource {
             bindingName = "ResourceType",
             strength = BindingStrength.Value.REQUIRED,
             description = "One of the resource types defined as part of this version of FHIR.",
-            valueSet = "http://hl7.org/fhir/ValueSet/resource-types|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/resource-types|5.0.0"
         )
         @Required
         private final ResourceTypeCode type;
@@ -1881,7 +2154,7 @@ public class ImplementationGuide extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1901,7 +2174,7 @@ public class ImplementationGuide extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1926,7 +2199,7 @@ public class ImplementationGuide extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1951,7 +2224,7 @@ public class ImplementationGuide extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2051,7 +2324,6 @@ public class ImplementationGuide extends DomainResource {
      */
     public static class Definition extends BackboneElement {
         private final List<Grouping> grouping;
-        @Required
         private final List<Resource> resource;
         private final Page page;
         private final List<Parameter> parameter;
@@ -2082,7 +2354,7 @@ public class ImplementationGuide extends DomainResource {
          * example resource.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link Resource} that is non-empty.
+         *     An unmodifiable list containing immutable objects of type {@link Resource} that may be empty.
          */
         public List<Resource> getResource() {
             return resource;
@@ -2099,7 +2371,8 @@ public class ImplementationGuide extends DomainResource {
         }
 
         /**
-         * Defines how IG is built by tools.
+         * A set of parameters that defines how the implementation guide is built. The parameters are defined by the relevant 
+         * tools that build the implementation guides.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link Parameter} that may be empty.
@@ -2224,7 +2497,7 @@ public class ImplementationGuide extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2244,7 +2517,7 @@ public class ImplementationGuide extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2269,7 +2542,7 @@ public class ImplementationGuide extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2294,7 +2567,7 @@ public class ImplementationGuide extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2365,8 +2638,6 @@ public class ImplementationGuide extends DomainResource {
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * <p>This element is required.
-             * 
              * @param resource
              *     Resource in the implementation guide
              * 
@@ -2387,8 +2658,6 @@ public class ImplementationGuide extends DomainResource {
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * <p>This element is required.
              * 
              * @param resource
              *     Resource in the implementation guide
@@ -2419,7 +2688,8 @@ public class ImplementationGuide extends DomainResource {
             }
 
             /**
-             * Defines how IG is built by tools.
+             * A set of parameters that defines how the implementation guide is built. The parameters are defined by the relevant 
+             * tools that build the implementation guides.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -2438,7 +2708,8 @@ public class ImplementationGuide extends DomainResource {
             }
 
             /**
-             * Defines how IG is built by tools.
+             * A set of parameters that defines how the implementation guide is built. The parameters are defined by the relevant 
+             * tools that build the implementation guides.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -2499,11 +2770,6 @@ public class ImplementationGuide extends DomainResource {
             /**
              * Build the {@link Definition}
              * 
-             * <p>Required elements:
-             * <ul>
-             * <li>resource</li>
-             * </ul>
-             * 
              * @return
              *     An immutable object of type {@link Definition}
              * @throws IllegalStateException
@@ -2521,7 +2787,7 @@ public class ImplementationGuide extends DomainResource {
             protected void validate(Definition definition) {
                 super.validate(definition);
                 ValidationSupport.checkList(definition.grouping, "grouping", Grouping.class);
-                ValidationSupport.checkNonEmptyList(definition.resource, "resource", Resource.class);
+                ValidationSupport.checkList(definition.resource, "resource", Resource.class);
                 ValidationSupport.checkList(definition.parameter, "parameter", Parameter.class);
                 ValidationSupport.checkList(definition.template, "template", Template.class);
                 ValidationSupport.requireValueOrChildren(definition);
@@ -2544,7 +2810,7 @@ public class ImplementationGuide extends DomainResource {
         public static class Grouping extends BackboneElement {
             @Required
             private final String name;
-            private final String description;
+            private final Markdown description;
 
             private Grouping(Builder builder) {
                 super(builder);
@@ -2566,9 +2832,9 @@ public class ImplementationGuide extends DomainResource {
              * Human readable text describing the package.
              * 
              * @return
-             *     An immutable object of type {@link String} that may be null.
+             *     An immutable object of type {@link Markdown} that may be null.
              */
-            public String getDescription() {
+            public Markdown getDescription() {
                 return description;
             }
 
@@ -2640,7 +2906,7 @@ public class ImplementationGuide extends DomainResource {
 
             public static class Builder extends BackboneElement.Builder {
                 private String name;
-                private String description;
+                private Markdown description;
 
                 private Builder() {
                     super();
@@ -2663,7 +2929,7 @@ public class ImplementationGuide extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2683,7 +2949,7 @@ public class ImplementationGuide extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2708,7 +2974,7 @@ public class ImplementationGuide extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2733,7 +2999,7 @@ public class ImplementationGuide extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2792,22 +3058,6 @@ public class ImplementationGuide extends DomainResource {
                 }
 
                 /**
-                 * Convenience method for setting {@code description}.
-                 * 
-                 * @param description
-                 *     Human readable text describing the package
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @see #description(org.linuxforhealth.fhir.model.type.String)
-                 */
-                public Builder description(java.lang.String description) {
-                    this.description = (description == null) ? null : String.of(description);
-                    return this;
-                }
-
-                /**
                  * Human readable text describing the package.
                  * 
                  * @param description
@@ -2816,7 +3066,7 @@ public class ImplementationGuide extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder description(String description) {
+                public Builder description(Markdown description) {
                     this.description = description;
                     return this;
                 }
@@ -2870,13 +3120,13 @@ public class ImplementationGuide extends DomainResource {
                 bindingName = "FHIRVersion",
                 strength = BindingStrength.Value.REQUIRED,
                 description = "All published FHIR Versions.",
-                valueSet = "http://hl7.org/fhir/ValueSet/FHIR-version|4.3.0"
+                valueSet = "http://hl7.org/fhir/ValueSet/FHIR-version|5.0.0"
             )
             private final List<FHIRVersion> fhirVersion;
             private final String name;
-            private final String description;
-            @Choice({ Boolean.class, Canonical.class })
-            private final Element example;
+            private final Markdown description;
+            private final Boolean isExample;
+            private final List<Canonical> profile;
             private final Id groupingId;
 
             private Resource(Builder builder) {
@@ -2885,7 +3135,8 @@ public class ImplementationGuide extends DomainResource {
                 fhirVersion = Collections.unmodifiableList(builder.fhirVersion);
                 name = builder.name;
                 description = builder.description;
-                example = builder.example;
+                isExample = builder.isExample;
+                profile = Collections.unmodifiableList(builder.profile);
                 groupingId = builder.groupingId;
             }
 
@@ -2925,21 +3176,30 @@ public class ImplementationGuide extends DomainResource {
              * A description of the reason that a resource has been included in the implementation guide.
              * 
              * @return
-             *     An immutable object of type {@link String} that may be null.
+             *     An immutable object of type {@link Markdown} that may be null.
              */
-            public String getDescription() {
+            public Markdown getDescription() {
                 return description;
             }
 
             /**
-             * If true or a reference, indicates the resource is an example instance. If a reference is present, indicates that the 
-             * example is an example of the specified profile.
+             * If true, indicates the resource is an example instance.
              * 
              * @return
-             *     An immutable object of type {@link Boolean} or {@link Canonical} that may be null.
+             *     An immutable object of type {@link Boolean} that may be null.
              */
-            public Element getExample() {
-                return example;
+            public Boolean getIsExample() {
+                return isExample;
+            }
+
+            /**
+             * If present, indicates profile(s) the instance is valid against.
+             * 
+             * @return
+             *     An unmodifiable list containing immutable objects of type {@link Canonical} that may be empty.
+             */
+            public List<Canonical> getProfile() {
+                return profile;
             }
 
             /**
@@ -2959,7 +3219,8 @@ public class ImplementationGuide extends DomainResource {
                     !fhirVersion.isEmpty() || 
                     (name != null) || 
                     (description != null) || 
-                    (example != null) || 
+                    (isExample != null) || 
+                    !profile.isEmpty() || 
                     (groupingId != null);
             }
 
@@ -2976,7 +3237,8 @@ public class ImplementationGuide extends DomainResource {
                         accept(fhirVersion, "fhirVersion", visitor, FHIRVersion.class);
                         accept(name, "name", visitor);
                         accept(description, "description", visitor);
-                        accept(example, "example", visitor);
+                        accept(isExample, "isExample", visitor);
+                        accept(profile, "profile", visitor, Canonical.class);
                         accept(groupingId, "groupingId", visitor);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
@@ -3003,7 +3265,8 @@ public class ImplementationGuide extends DomainResource {
                     Objects.equals(fhirVersion, other.fhirVersion) && 
                     Objects.equals(name, other.name) && 
                     Objects.equals(description, other.description) && 
-                    Objects.equals(example, other.example) && 
+                    Objects.equals(isExample, other.isExample) && 
+                    Objects.equals(profile, other.profile) && 
                     Objects.equals(groupingId, other.groupingId);
             }
 
@@ -3018,7 +3281,8 @@ public class ImplementationGuide extends DomainResource {
                         fhirVersion, 
                         name, 
                         description, 
-                        example, 
+                        isExample, 
+                        profile, 
                         groupingId);
                     hashCode = result;
                 }
@@ -3038,8 +3302,9 @@ public class ImplementationGuide extends DomainResource {
                 private Reference reference;
                 private List<FHIRVersion> fhirVersion = new ArrayList<>();
                 private String name;
-                private String description;
-                private Element example;
+                private Markdown description;
+                private Boolean isExample;
+                private List<Canonical> profile = new ArrayList<>();
                 private Id groupingId;
 
                 private Builder() {
@@ -3063,7 +3328,7 @@ public class ImplementationGuide extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3083,7 +3348,7 @@ public class ImplementationGuide extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3108,7 +3373,7 @@ public class ImplementationGuide extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3133,7 +3398,7 @@ public class ImplementationGuide extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3218,7 +3483,7 @@ public class ImplementationGuide extends DomainResource {
                  * Convenience method for setting {@code name}.
                  * 
                  * @param name
-                 *     Human Name for the resource
+                 *     Human readable name for the resource
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -3235,29 +3500,13 @@ public class ImplementationGuide extends DomainResource {
                  * resource (e.g. ValueSet.name).
                  * 
                  * @param name
-                 *     Human Name for the resource
+                 *     Human readable name for the resource
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
                 public Builder name(String name) {
                     this.name = name;
-                    return this;
-                }
-
-                /**
-                 * Convenience method for setting {@code description}.
-                 * 
-                 * @param description
-                 *     Reason why included in guide
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @see #description(org.linuxforhealth.fhir.model.type.String)
-                 */
-                public Builder description(java.lang.String description) {
-                    this.description = (description == null) ? null : String.of(description);
                     return this;
                 }
 
@@ -3270,45 +3519,77 @@ public class ImplementationGuide extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder description(String description) {
+                public Builder description(Markdown description) {
                     this.description = description;
                     return this;
                 }
 
                 /**
-                 * Convenience method for setting {@code example} with choice type Boolean.
+                 * Convenience method for setting {@code isExample}.
                  * 
-                 * @param example
-                 *     Is an example/What is this an example of?
+                 * @param isExample
+                 *     Is this an example
                  * 
                  * @return
                  *     A reference to this Builder instance
                  * 
-                 * @see #example(Element)
+                 * @see #isExample(org.linuxforhealth.fhir.model.type.Boolean)
                  */
-                public Builder example(java.lang.Boolean example) {
-                    this.example = (example == null) ? null : Boolean.of(example);
+                public Builder isExample(java.lang.Boolean isExample) {
+                    this.isExample = (isExample == null) ? null : Boolean.of(isExample);
                     return this;
                 }
 
                 /**
-                 * If true or a reference, indicates the resource is an example instance. If a reference is present, indicates that the 
-                 * example is an example of the specified profile.
+                 * If true, indicates the resource is an example instance.
                  * 
-                 * <p>This is a choice element with the following allowed types:
-                 * <ul>
-                 * <li>{@link Boolean}</li>
-                 * <li>{@link Canonical}</li>
-                 * </ul>
-                 * 
-                 * @param example
-                 *     Is an example/What is this an example of?
+                 * @param isExample
+                 *     Is this an example
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder example(Element example) {
-                    this.example = example;
+                public Builder isExample(Boolean isExample) {
+                    this.isExample = isExample;
+                    return this;
+                }
+
+                /**
+                 * If present, indicates profile(s) the instance is valid against.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param profile
+                 *     Profile(s) this is an example of
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder profile(Canonical... profile) {
+                    for (Canonical value : profile) {
+                        this.profile.add(value);
+                    }
+                    return this;
+                }
+
+                /**
+                 * If present, indicates profile(s) the instance is valid against.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param profile
+                 *     Profile(s) this is an example of
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                public Builder profile(Collection<Canonical> profile) {
+                    this.profile = new ArrayList<>(profile);
                     return this;
                 }
 
@@ -3352,7 +3633,7 @@ public class ImplementationGuide extends DomainResource {
                     super.validate(resource);
                     ValidationSupport.requireNonNull(resource.reference, "reference");
                     ValidationSupport.checkList(resource.fhirVersion, "fhirVersion", FHIRVersion.class);
-                    ValidationSupport.choiceElement(resource.example, "example", Boolean.class, Canonical.class);
+                    ValidationSupport.checkList(resource.profile, "profile", Canonical.class);
                     ValidationSupport.requireValueOrChildren(resource);
                 }
 
@@ -3362,7 +3643,8 @@ public class ImplementationGuide extends DomainResource {
                     fhirVersion.addAll(resource.fhirVersion);
                     name = resource.name;
                     description = resource.description;
-                    example = resource.example;
+                    isExample = resource.isExample;
+                    profile.addAll(resource.profile);
                     groupingId = resource.groupingId;
                     return this;
                 }
@@ -3373,17 +3655,17 @@ public class ImplementationGuide extends DomainResource {
          * A page / section in the implementation guide. The root page is the implementation guide home page.
          */
         public static class Page extends BackboneElement {
-            @ReferenceTarget({ "Binary" })
-            @Choice({ Url.class, Reference.class })
+            @Choice({ Url.class, String.class, Markdown.class })
+            private final org.linuxforhealth.fhir.model.type.Element source;
             @Required
-            private final Element name;
+            private final Url name;
             @Required
             private final String title;
             @Binding(
                 bindingName = "GuidePageGeneration",
                 strength = BindingStrength.Value.REQUIRED,
                 description = "A code that indicates how the page is generated.",
-                valueSet = "http://hl7.org/fhir/ValueSet/guide-page-generation|4.3.0"
+                valueSet = "http://hl7.org/fhir/ValueSet/guide-page-generation|5.0.0"
             )
             @Required
             private final GuidePageGeneration generation;
@@ -3391,6 +3673,7 @@ public class ImplementationGuide extends DomainResource {
 
             private Page(Builder builder) {
                 super(builder);
+                source = builder.source;
                 name = builder.name;
                 title = builder.title;
                 generation = builder.generation;
@@ -3398,12 +3681,22 @@ public class ImplementationGuide extends DomainResource {
             }
 
             /**
-             * The source address for the page.
+             * Indicates the URL or the actual content to provide for the page.
              * 
              * @return
-             *     An immutable object of type {@link Url} or {@link Reference} that is non-null.
+             *     An immutable object of type {@link Url}, {@link String} or {@link Markdown} that may be null.
              */
-            public Element getName() {
+            public org.linuxforhealth.fhir.model.type.Element getSource() {
+                return source;
+            }
+
+            /**
+             * The url by which the page should be known when published.
+             * 
+             * @return
+             *     An immutable object of type {@link Url} that is non-null.
+             */
+            public Url getName() {
                 return name;
             }
 
@@ -3440,6 +3733,7 @@ public class ImplementationGuide extends DomainResource {
             @Override
             public boolean hasChildren() {
                 return super.hasChildren() || 
+                    (source != null) || 
                     (name != null) || 
                     (title != null) || 
                     (generation != null) || 
@@ -3455,6 +3749,7 @@ public class ImplementationGuide extends DomainResource {
                         accept(id, "id", visitor);
                         accept(extension, "extension", visitor, Extension.class);
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                        accept(source, "source", visitor);
                         accept(name, "name", visitor);
                         accept(title, "title", visitor);
                         accept(generation, "generation", visitor);
@@ -3480,6 +3775,7 @@ public class ImplementationGuide extends DomainResource {
                 return Objects.equals(id, other.id) && 
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(source, other.source) && 
                     Objects.equals(name, other.name) && 
                     Objects.equals(title, other.title) && 
                     Objects.equals(generation, other.generation) && 
@@ -3493,6 +3789,7 @@ public class ImplementationGuide extends DomainResource {
                     result = Objects.hash(id, 
                         extension, 
                         modifierExtension, 
+                        source, 
                         name, 
                         title, 
                         generation, 
@@ -3512,7 +3809,8 @@ public class ImplementationGuide extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private Element name;
+                private org.linuxforhealth.fhir.model.type.Element source;
+                private Url name;
                 private String title;
                 private GuidePageGeneration generation;
                 private List<ImplementationGuide.Definition.Page> page = new ArrayList<>();
@@ -3538,7 +3836,7 @@ public class ImplementationGuide extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3558,7 +3856,7 @@ public class ImplementationGuide extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3583,7 +3881,7 @@ public class ImplementationGuide extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3608,7 +3906,7 @@ public class ImplementationGuide extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3633,28 +3931,54 @@ public class ImplementationGuide extends DomainResource {
                 }
 
                 /**
-                 * The source address for the page.
+                 * Convenience method for setting {@code source} with choice type String.
                  * 
-                 * <p>This element is required.
+                 * @param source
+                 *     Source for page
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #source(Element)
+                 */
+                public Builder source(java.lang.String source) {
+                    this.source = (source == null) ? null : String.of(source);
+                    return this;
+                }
+
+                /**
+                 * Indicates the URL or the actual content to provide for the page.
                  * 
                  * <p>This is a choice element with the following allowed types:
                  * <ul>
                  * <li>{@link Url}</li>
-                 * <li>{@link Reference}</li>
+                 * <li>{@link String}</li>
+                 * <li>{@link Markdown}</li>
                  * </ul>
                  * 
-                 * When of type {@link Reference}, the allowed resource types for this reference are:
-                 * <ul>
-                 * <li>{@link Binary}</li>
-                 * </ul>
-                 * 
-                 * @param name
-                 *     Where to find that page
+                 * @param source
+                 *     Source for page
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder name(Element name) {
+                public Builder source(org.linuxforhealth.fhir.model.type.Element source) {
+                    this.source = source;
+                    return this;
+                }
+
+                /**
+                 * The url by which the page should be known when published.
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * @param name
+                 *     Name of the page when published
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder name(Url name) {
                     this.name = name;
                     return this;
                 }
@@ -3774,16 +4098,17 @@ public class ImplementationGuide extends DomainResource {
 
                 protected void validate(Page page) {
                     super.validate(page);
-                    ValidationSupport.requireChoiceElement(page.name, "name", Url.class, Reference.class);
+                    ValidationSupport.choiceElement(page.source, "source", Url.class, String.class, Markdown.class);
+                    ValidationSupport.requireNonNull(page.name, "name");
                     ValidationSupport.requireNonNull(page.title, "title");
                     ValidationSupport.requireNonNull(page.generation, "generation");
                     ValidationSupport.checkList(page.page, "page", ImplementationGuide.Definition.Page.class);
-                    ValidationSupport.checkReferenceType(page.name, "name", "Binary");
                     ValidationSupport.requireValueOrChildren(page);
                 }
 
                 protected Builder from(Page page) {
                     super.from(page);
+                    source = page.source;
                     name = page.name;
                     title = page.title;
                     generation = page.generation;
@@ -3794,17 +4119,16 @@ public class ImplementationGuide extends DomainResource {
         }
 
         /**
-         * Defines how IG is built by tools.
+         * A set of parameters that defines how the implementation guide is built. The parameters are defined by the relevant 
+         * tools that build the implementation guides.
          */
         public static class Parameter extends BackboneElement {
             @Binding(
-                bindingName = "GuideParameterCode",
-                strength = BindingStrength.Value.REQUIRED,
-                description = "Code of parameter that is input to the guide.",
-                valueSet = "http://hl7.org/fhir/ValueSet/guide-parameter-code|4.3.0"
+                strength = BindingStrength.Value.EXTENSIBLE,
+                valueSet = "http://hl7.org/fhir/ValueSet/guide-parameter-code"
             )
             @Required
-            private final GuideParameterCode code;
+            private final Coding code;
             @Required
             private final String value;
 
@@ -3815,13 +4139,12 @@ public class ImplementationGuide extends DomainResource {
             }
 
             /**
-             * apply | path-resource | path-pages | path-tx-cache | expansion-parameter | rule-broken-links | generate-xml | generate-
-             * json | generate-turtle | html-template.
+             * A tool-specific code that defines the parameter.
              * 
              * @return
-             *     An immutable object of type {@link GuideParameterCode} that is non-null.
+             *     An immutable object of type {@link Coding} that is non-null.
              */
-            public GuideParameterCode getCode() {
+            public Coding getCode() {
                 return code;
             }
 
@@ -3902,7 +4225,7 @@ public class ImplementationGuide extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private GuideParameterCode code;
+                private Coding code;
                 private String value;
 
                 private Builder() {
@@ -3926,7 +4249,7 @@ public class ImplementationGuide extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3946,7 +4269,7 @@ public class ImplementationGuide extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3971,7 +4294,7 @@ public class ImplementationGuide extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3996,7 +4319,7 @@ public class ImplementationGuide extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4021,19 +4344,17 @@ public class ImplementationGuide extends DomainResource {
                 }
 
                 /**
-                 * apply | path-resource | path-pages | path-tx-cache | expansion-parameter | rule-broken-links | generate-xml | generate-
-                 * json | generate-turtle | html-template.
+                 * A tool-specific code that defines the parameter.
                  * 
                  * <p>This element is required.
                  * 
                  * @param code
-                 *     apply | path-resource | path-pages | path-tx-cache | expansion-parameter | rule-broken-links | generate-xml | generate-
-                 *     json | generate-turtle | html-template
+                 *     Code that identifies parameter
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder code(GuideParameterCode code) {
+                public Builder code(Coding code) {
                     this.code = code;
                     return this;
                 }
@@ -4254,7 +4575,7 @@ public class ImplementationGuide extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -4274,7 +4595,7 @@ public class ImplementationGuide extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -4299,7 +4620,7 @@ public class ImplementationGuide extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4324,7 +4645,7 @@ public class ImplementationGuide extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4650,7 +4971,7 @@ public class ImplementationGuide extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4670,7 +4991,7 @@ public class ImplementationGuide extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4695,7 +5016,7 @@ public class ImplementationGuide extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4720,7 +5041,7 @@ public class ImplementationGuide extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -5017,14 +5338,15 @@ public class ImplementationGuide extends DomainResource {
             @Summary
             @Required
             private final Reference reference;
-            @Choice({ Boolean.class, Canonical.class })
-            private final Element example;
+            private final Boolean isExample;
+            private final List<Canonical> profile;
             private final Url relativePath;
 
             private Resource(Builder builder) {
                 super(builder);
                 reference = builder.reference;
-                example = builder.example;
+                isExample = builder.isExample;
+                profile = Collections.unmodifiableList(builder.profile);
                 relativePath = builder.relativePath;
             }
 
@@ -5039,14 +5361,23 @@ public class ImplementationGuide extends DomainResource {
             }
 
             /**
-             * If true or a reference, indicates the resource is an example instance. If a reference is present, indicates that the 
-             * example is an example of the specified profile.
+             * If true, indicates the resource is an example instance.
              * 
              * @return
-             *     An immutable object of type {@link Boolean} or {@link Canonical} that may be null.
+             *     An immutable object of type {@link Boolean} that may be null.
              */
-            public Element getExample() {
-                return example;
+            public Boolean getIsExample() {
+                return isExample;
+            }
+
+            /**
+             * If present, indicates profile(s) the instance is valid against.
+             * 
+             * @return
+             *     An unmodifiable list containing immutable objects of type {@link Canonical} that may be empty.
+             */
+            public List<Canonical> getProfile() {
+                return profile;
             }
 
             /**
@@ -5063,7 +5394,8 @@ public class ImplementationGuide extends DomainResource {
             public boolean hasChildren() {
                 return super.hasChildren() || 
                     (reference != null) || 
-                    (example != null) || 
+                    (isExample != null) || 
+                    !profile.isEmpty() || 
                     (relativePath != null);
             }
 
@@ -5077,7 +5409,8 @@ public class ImplementationGuide extends DomainResource {
                         accept(extension, "extension", visitor, Extension.class);
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                         accept(reference, "reference", visitor);
-                        accept(example, "example", visitor);
+                        accept(isExample, "isExample", visitor);
+                        accept(profile, "profile", visitor, Canonical.class);
                         accept(relativePath, "relativePath", visitor);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
@@ -5101,7 +5434,8 @@ public class ImplementationGuide extends DomainResource {
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
                     Objects.equals(reference, other.reference) && 
-                    Objects.equals(example, other.example) && 
+                    Objects.equals(isExample, other.isExample) && 
+                    Objects.equals(profile, other.profile) && 
                     Objects.equals(relativePath, other.relativePath);
             }
 
@@ -5113,7 +5447,8 @@ public class ImplementationGuide extends DomainResource {
                         extension, 
                         modifierExtension, 
                         reference, 
-                        example, 
+                        isExample, 
+                        profile, 
                         relativePath);
                     hashCode = result;
                 }
@@ -5131,7 +5466,8 @@ public class ImplementationGuide extends DomainResource {
 
             public static class Builder extends BackboneElement.Builder {
                 private Reference reference;
-                private Element example;
+                private Boolean isExample;
+                private List<Canonical> profile = new ArrayList<>();
                 private Url relativePath;
 
                 private Builder() {
@@ -5155,7 +5491,7 @@ public class ImplementationGuide extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5175,7 +5511,7 @@ public class ImplementationGuide extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5200,7 +5536,7 @@ public class ImplementationGuide extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5225,7 +5561,7 @@ public class ImplementationGuide extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5266,39 +5602,71 @@ public class ImplementationGuide extends DomainResource {
                 }
 
                 /**
-                 * Convenience method for setting {@code example} with choice type Boolean.
+                 * Convenience method for setting {@code isExample}.
                  * 
-                 * @param example
-                 *     Is an example/What is this an example of?
+                 * @param isExample
+                 *     Is this an example
                  * 
                  * @return
                  *     A reference to this Builder instance
                  * 
-                 * @see #example(Element)
+                 * @see #isExample(org.linuxforhealth.fhir.model.type.Boolean)
                  */
-                public Builder example(java.lang.Boolean example) {
-                    this.example = (example == null) ? null : Boolean.of(example);
+                public Builder isExample(java.lang.Boolean isExample) {
+                    this.isExample = (isExample == null) ? null : Boolean.of(isExample);
                     return this;
                 }
 
                 /**
-                 * If true or a reference, indicates the resource is an example instance. If a reference is present, indicates that the 
-                 * example is an example of the specified profile.
+                 * If true, indicates the resource is an example instance.
                  * 
-                 * <p>This is a choice element with the following allowed types:
-                 * <ul>
-                 * <li>{@link Boolean}</li>
-                 * <li>{@link Canonical}</li>
-                 * </ul>
-                 * 
-                 * @param example
-                 *     Is an example/What is this an example of?
+                 * @param isExample
+                 *     Is this an example
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder example(Element example) {
-                    this.example = example;
+                public Builder isExample(Boolean isExample) {
+                    this.isExample = isExample;
+                    return this;
+                }
+
+                /**
+                 * If present, indicates profile(s) the instance is valid against.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param profile
+                 *     Profile(s) this is an example of
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder profile(Canonical... profile) {
+                    for (Canonical value : profile) {
+                        this.profile.add(value);
+                    }
+                    return this;
+                }
+
+                /**
+                 * If present, indicates profile(s) the instance is valid against.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param profile
+                 *     Profile(s) this is an example of
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                public Builder profile(Collection<Canonical> profile) {
+                    this.profile = new ArrayList<>(profile);
                     return this;
                 }
 
@@ -5341,14 +5709,15 @@ public class ImplementationGuide extends DomainResource {
                 protected void validate(Resource resource) {
                     super.validate(resource);
                     ValidationSupport.requireNonNull(resource.reference, "reference");
-                    ValidationSupport.choiceElement(resource.example, "example", Boolean.class, Canonical.class);
+                    ValidationSupport.checkList(resource.profile, "profile", Canonical.class);
                     ValidationSupport.requireValueOrChildren(resource);
                 }
 
                 protected Builder from(Resource resource) {
                     super.from(resource);
                     reference = resource.reference;
-                    example = resource.example;
+                    isExample = resource.isExample;
+                    profile.addAll(resource.profile);
                     relativePath = resource.relativePath;
                     return this;
                 }
@@ -5497,7 +5866,7 @@ public class ImplementationGuide extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5517,7 +5886,7 @@ public class ImplementationGuide extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5542,7 +5911,7 @@ public class ImplementationGuide extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5567,7 +5936,7 @@ public class ImplementationGuide extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 

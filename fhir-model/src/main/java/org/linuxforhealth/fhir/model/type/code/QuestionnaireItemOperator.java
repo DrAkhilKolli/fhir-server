@@ -22,49 +22,50 @@ public class QuestionnaireItemOperator extends Code {
     /**
      * Exists
      * 
-     * <p>True if whether an answer exists is equal to the enableWhen answer (which must be a boolean).
+     * <p>True if the determination of 'whether an answer exists for the question' is equal to the enableWhen answer (which 
+     * must be a boolean).
      */
     public static final QuestionnaireItemOperator EXISTS = QuestionnaireItemOperator.builder().value(Value.EXISTS).build();
 
     /**
      * Equals
      * 
-     * <p>True if whether at least one answer has a value that is equal to the enableWhen answer.
+     * <p>True if at least one answer has a value that is equal to the enableWhen answer.
      */
     public static final QuestionnaireItemOperator EQUALS = QuestionnaireItemOperator.builder().value(Value.EQUALS).build();
 
     /**
      * Not Equals
      * 
-     * <p>True if whether at least no answer has a value that is equal to the enableWhen answer.
+     * <p>True if no answer has a value that is equal to the enableWhen answer.
      */
     public static final QuestionnaireItemOperator NOT_EQUALS = QuestionnaireItemOperator.builder().value(Value.NOT_EQUALS).build();
 
     /**
      * Greater Than
      * 
-     * <p>True if whether at least no answer has a value that is greater than the enableWhen answer.
+     * <p>True if at least one answer has a value that is greater than the enableWhen answer.
      */
     public static final QuestionnaireItemOperator GREATER_THAN = QuestionnaireItemOperator.builder().value(Value.GREATER_THAN).build();
 
     /**
      * Less Than
      * 
-     * <p>True if whether at least no answer has a value that is less than the enableWhen answer.
+     * <p>True if at least one answer has a value that is less than the enableWhen answer.
      */
     public static final QuestionnaireItemOperator LESS_THAN = QuestionnaireItemOperator.builder().value(Value.LESS_THAN).build();
 
     /**
      * Greater or Equals
      * 
-     * <p>True if whether at least no answer has a value that is greater or equal to the enableWhen answer.
+     * <p>True if at least one answer has a value that is greater or equal to the enableWhen answer.
      */
     public static final QuestionnaireItemOperator GREATER_OR_EQUALS = QuestionnaireItemOperator.builder().value(Value.GREATER_OR_EQUALS).build();
 
     /**
      * Less or Equals
      * 
-     * <p>True if whether at least no answer has a value that is less or equal to the enableWhen answer.
+     * <p>True if at least one answer has a value that is less or equal to the enableWhen answer.
      */
     public static final QuestionnaireItemOperator LESS_OR_EQUALS = QuestionnaireItemOperator.builder().value(Value.LESS_OR_EQUALS).build();
 
@@ -235,49 +236,50 @@ public class QuestionnaireItemOperator extends Code {
         /**
          * Exists
          * 
-         * <p>True if whether an answer exists is equal to the enableWhen answer (which must be a boolean).
+         * <p>True if the determination of 'whether an answer exists for the question' is equal to the enableWhen answer (which 
+         * must be a boolean).
          */
         EXISTS("exists"),
 
         /**
          * Equals
          * 
-         * <p>True if whether at least one answer has a value that is equal to the enableWhen answer.
+         * <p>True if at least one answer has a value that is equal to the enableWhen answer.
          */
         EQUALS("="),
 
         /**
          * Not Equals
          * 
-         * <p>True if whether at least no answer has a value that is equal to the enableWhen answer.
+         * <p>True if no answer has a value that is equal to the enableWhen answer.
          */
         NOT_EQUALS("!="),
 
         /**
          * Greater Than
          * 
-         * <p>True if whether at least no answer has a value that is greater than the enableWhen answer.
+         * <p>True if at least one answer has a value that is greater than the enableWhen answer.
          */
         GREATER_THAN(">"),
 
         /**
          * Less Than
          * 
-         * <p>True if whether at least no answer has a value that is less than the enableWhen answer.
+         * <p>True if at least one answer has a value that is less than the enableWhen answer.
          */
         LESS_THAN("<"),
 
         /**
          * Greater or Equals
          * 
-         * <p>True if whether at least no answer has a value that is greater or equal to the enableWhen answer.
+         * <p>True if at least one answer has a value that is greater or equal to the enableWhen answer.
          */
         GREATER_OR_EQUALS(">="),
 
         /**
          * Less or Equals
          * 
-         * <p>True if whether at least no answer has a value that is less or equal to the enableWhen answer.
+         * <p>True if at least one answer has a value that is less or equal to the enableWhen answer.
          */
         LESS_OR_EQUALS("<=");
 

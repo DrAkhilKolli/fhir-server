@@ -40,6 +40,7 @@ import org.linuxforhealth.fhir.model.test.TestUtil;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactPoint;
 import org.linuxforhealth.fhir.model.type.Date;
@@ -260,7 +261,7 @@ public class SearchReverseChainTest extends FHIRServerTestBase {
                 .status(ProcedureStatus.COMPLETED)
                 .subject(Reference.builder().reference(of("Patient/" + patient1Id)).build())
                 .basedOn(Reference.builder().reference(of("CarePlan/" + tag)).build())
-                .performed(DateTime.of(now.toString()))
+                .occurrence(DateTime.of(now.toString()))
                 .instantiatesUri(Uri.of("1" + tag))
                 .code(CodeableConcept.builder().coding(Coding.builder().code(Code.of("1" + tag)).build()).build())
                 .build();
@@ -293,7 +294,7 @@ public class SearchReverseChainTest extends FHIRServerTestBase {
                 .status(ProcedureStatus.COMPLETED)
                 .subject(reference)
                 .basedOn(Reference.builder().reference(of("ServiceRequest/" + tag)).build())
-                .performed(DateTime.of(now.minus(1, ChronoUnit.DAYS).toString()))
+                .occurrence(DateTime.of(now.minus(1, ChronoUnit.DAYS).toString()))
                 .instantiatesUri(Uri.of("2" + tag))
                 .code(CodeableConcept.builder().coding(Coding.builder().code(Code.of("2" + tag)).build()).build())
                 .build();
@@ -321,10 +322,10 @@ public class SearchReverseChainTest extends FHIRServerTestBase {
         // Build a new Encounter and add reason-reference reference to procedure.
         Encounter encounter = TestUtil.getMinimalResource(Encounter.class);
         encounter = encounter.toBuilder()
-                .status(EncounterStatus.FINISHED)
-                .reasonReference(Reference.builder().reference(of("Procedure/" + procedure1Id)).build())
+                .status(EncounterStatus.COMPLETED)
+                .reason(Encounter.Reason.builder().value(CodeableReference.builder().reference(Reference.builder().reference(of("Procedure/" + procedure1Id)).build()).build()).build())
                 .serviceProvider(Reference.builder().reference(of("Organization/" + organization1Id)).build())
-                .period(Period.builder().start(DateTime.of(now.toString())).end(DateTime.of(now.toString())).build())
+                .actualPeriod(Period.builder().start(DateTime.of(now.toString())).end(DateTime.of(now.toString())).build())
                 .length(Duration.builder().system(Uri.of("http://unitsofmeasure.org")).code(Code.of("s")).value(Decimal.of("1" + tag)).build())
                 .type(CodeableConcept.builder().coding(Coding.builder().code(Code.of("1" + tag)).build()).build())
                 .build();
@@ -352,10 +353,10 @@ public class SearchReverseChainTest extends FHIRServerTestBase {
         // Build a new Encounter and add reason-reference reference to procedure.
         Encounter encounter = TestUtil.getMinimalResource(Encounter.class);
         encounter = encounter.toBuilder()
-                .status(EncounterStatus.FINISHED)
-                .reasonReference(Reference.builder().reference(of("Procedure/" + procedure2Id)).build())
+                .status(EncounterStatus.COMPLETED)
+                .reason(Encounter.Reason.builder().value(CodeableReference.builder().reference(Reference.builder().reference(of("Procedure/" + procedure2Id)).build()).build()).build())
                 .serviceProvider(Reference.builder().reference(of("Organization/" + organization2Id)).build())
-                .period(Period.builder().start(DateTime.of(now.minus(1, ChronoUnit.DAYS).toString())).end(DateTime.of(now.minus(1, ChronoUnit.DAYS).toString())).build())
+                .actualPeriod(Period.builder().start(DateTime.of(now.minus(1, ChronoUnit.DAYS).toString())).end(DateTime.of(now.minus(1, ChronoUnit.DAYS).toString())).build())
                 .length(Duration.builder().system(Uri.of("http://unitsofmeasure.org")).code(Code.of("s")).value(Decimal.of("2" + tag)).build())
                 .type(CodeableConcept.builder().coding(Coding.builder().code(Code.of("2" + tag)).build()).build())
                 .build();
@@ -792,7 +793,7 @@ public class SearchReverseChainTest extends FHIRServerTestBase {
         Response response =
                 target.path("Patient")
                 .queryParam("_tag", tag)
-                .queryParam("_has:Procedure:subject:_has:Encounter:reason-reference:status", EncounterStatus.FINISHED.getValue())
+                .queryParam("_has:Procedure:subject:_has:Encounter:reason-reference:status", EncounterStatus.COMPLETED.getValue())
                 .request(FHIRMediaType.APPLICATION_FHIR_JSON)
                 .get();
         assertResponse(response, Response.Status.OK.getStatusCode());

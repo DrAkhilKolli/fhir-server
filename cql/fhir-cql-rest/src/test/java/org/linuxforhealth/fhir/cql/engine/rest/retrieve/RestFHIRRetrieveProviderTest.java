@@ -135,7 +135,7 @@ public class RestFHIRRetrieveProviderTest extends R4RestFHIRTest {
         Condition c = Condition.builder().id("c1").subject(Reference.builder().reference(org.linuxforhealth.fhir.model.type.String.of("Patient/123")).build()).build();
 
         Bundle page1 =
-                Bundle.builder().type(BundleType.SEARCHSET).total(UnsignedInt.of(1)).entry(Bundle.Entry.builder().resource(c).build()).link(Link.builder().relation(org.linuxforhealth.fhir.model.type.String.of("next")).url(Uri.of(getBaseUrl()
+                Bundle.builder().type(BundleType.SEARCHSET).total(UnsignedInt.of(1)).entry(Bundle.Entry.builder().resource(c).build()).link(Link.builder().relation(org.linuxforhealth.fhir.model.type.Code.of("next")).url(Uri.of(getBaseUrl()
                         + "/Condition?subject:Patient=123&_page=2")).build()).build();
 
         Bundle page2 = Bundle.builder().type(BundleType.SEARCHSET).total(UnsignedInt.of(1)).entry(Bundle.Entry.builder().resource(c).build()).build();

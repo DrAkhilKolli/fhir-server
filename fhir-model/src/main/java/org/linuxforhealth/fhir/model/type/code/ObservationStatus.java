@@ -37,7 +37,7 @@ public class ObservationStatus extends Code {
      * Final
      * 
      * <p>The observation is complete and there are no further actions needed. Additional information such "released", 
-     * "signed", etc would be represented using [Provenance](provenance.html) which provides not only the act but also the 
+     * "signed", etc. would be represented using [Provenance](provenance.html) which provides not only the act but also the 
      * actors and dates and other related data. These act states would be associated with an observation status of 
      * `preliminary` until they are all completed and then a status of `final` would be applied.
      */
@@ -268,7 +268,7 @@ public class ObservationStatus extends Code {
          * Final
          * 
          * <p>The observation is complete and there are no further actions needed. Additional information such "released", 
-         * "signed", etc would be represented using [Provenance](provenance.html) which provides not only the act but also the 
+         * "signed", etc. would be represented using [Provenance](provenance.html) which provides not only the act but also the 
          * actors and dates and other related data. These act states would be associated with an observation status of 
          * `preliminary` until they are all completed and then a status of `final` would be applied.
          */

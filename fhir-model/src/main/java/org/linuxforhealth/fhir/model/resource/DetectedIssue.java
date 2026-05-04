@@ -21,6 +21,7 @@ import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
+import org.linuxforhealth.fhir.model.type.Annotation;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
@@ -28,11 +29,11 @@ import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
+import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
 import org.linuxforhealth.fhir.model.type.Reference;
-import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.DetectedIssueSeverity;
@@ -43,16 +44,25 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
  * Indicates an actual or potential clinical issue with or between one or more active or proposed clinical actions for a 
- * patient; e.g. Drug-drug interaction, Ineffective treatment frequency, Procedure-condition conflict, etc.
+ * patient; e.g. Drug-drug interaction, Ineffective treatment frequency, Procedure-condition conflict, gaps in care, etc.
  * 
- * <p>Maturity level: FMM1 (Trial Use)
+ * <p>Maturity level: FMM2 (Trial Use)
  */
 @Maturity(
-    level = 1,
+    level = 2,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
     id = "detectedIssue-0",
+    level = "Warning",
+    location = "(base)",
+    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/detectedissue-category",
+    expression = "category.exists() implies (category.all(memberOf('http://hl7.org/fhir/ValueSet/detectedissue-category', 'preferred')))",
+    source = "http://hl7.org/fhir/StructureDefinition/DetectedIssue",
+    generated = true
+)
+@Constraint(
+    id = "detectedIssue-1",
     level = "Warning",
     location = "(base)",
     description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/detectedissue-category",
@@ -61,7 +71,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "detectedIssue-1",
+    id = "detectedIssue-2",
     level = "Warning",
     location = "mitigation.action",
     description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/detectedissue-mitigation-action",
@@ -78,15 +88,22 @@ public class DetectedIssue extends DomainResource {
         bindingName = "DetectedIssueStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "Indicates the status of the identified issue.",
-        valueSet = "http://hl7.org/fhir/ValueSet/observation-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/detectedissue-status|5.0.0"
     )
     @Required
     private final DetectedIssueStatus status;
+    @Binding(
+        bindingName = "DetectedIssueCategory",
+        strength = BindingStrength.Value.PREFERRED,
+        description = "Codes for high level detected issue categories.",
+        valueSet = "http://hl7.org/fhir/ValueSet/detectedissue-category"
+    )
+    private final List<CodeableConcept> category;
     @Summary
     @Binding(
         bindingName = "DetectedIssueCategory",
         strength = BindingStrength.Value.PREFERRED,
-        description = "Codes identifying the general type of detected issue; e.g. Drug-drug interaction, Timing issue, Duplicate therapy, etc.",
+        description = "Codes identifying the type of detected issue; e.g. Drug-drug interaction, Timing issue, Duplicate therapy, etc.",
         valueSet = "http://hl7.org/fhir/ValueSet/detectedissue-category"
     )
     private final CodeableConcept code;
@@ -95,22 +112,25 @@ public class DetectedIssue extends DomainResource {
         bindingName = "DetectedIssueSeverity",
         strength = BindingStrength.Value.REQUIRED,
         description = "Indicates the potential degree of impact of the identified issue on the patient.",
-        valueSet = "http://hl7.org/fhir/ValueSet/detectedissue-severity|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/detectedissue-severity|5.0.0"
     )
     private final DetectedIssueSeverity severity;
     @Summary
-    @ReferenceTarget({ "Patient" })
-    private final Reference patient;
+    @ReferenceTarget({ "Patient", "Group", "Device", "Location", "Organization", "Procedure", "Practitioner", "Medication", "Substance", "BiologicallyDerivedProduct", "NutritionProduct" })
+    private final Reference subject;
+    @Summary
+    @ReferenceTarget({ "Encounter" })
+    private final Reference encounter;
     @Summary
     @Choice({ DateTime.class, Period.class })
-    private final Element identified;
+    private final org.linuxforhealth.fhir.model.type.Element identified;
     @Summary
-    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Device" })
+    @ReferenceTarget({ "Patient", "RelatedPerson", "Practitioner", "PractitionerRole", "Device" })
     private final Reference author;
     @Summary
     private final List<Reference> implicated;
     private final List<Evidence> evidence;
-    private final String detail;
+    private final Markdown detail;
     private final Uri reference;
     private final List<Mitigation> mitigation;
 
@@ -118,9 +138,11 @@ public class DetectedIssue extends DomainResource {
         super(builder);
         identifier = Collections.unmodifiableList(builder.identifier);
         status = builder.status;
+        category = Collections.unmodifiableList(builder.category);
         code = builder.code;
         severity = builder.severity;
-        patient = builder.patient;
+        subject = builder.subject;
+        encounter = builder.encounter;
         identified = builder.identified;
         author = builder.author;
         implicated = Collections.unmodifiableList(builder.implicated);
@@ -151,7 +173,17 @@ public class DetectedIssue extends DomainResource {
     }
 
     /**
-     * Identifies the general type of issue identified.
+     * A code that classifies the general type of detected issue.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     */
+    public List<CodeableConcept> getCategory() {
+        return category;
+    }
+
+    /**
+     * Identifies the specific type of issue identified.
      * 
      * @return
      *     An immutable object of type {@link CodeableConcept} that may be null.
@@ -171,13 +203,23 @@ public class DetectedIssue extends DomainResource {
     }
 
     /**
-     * Indicates the patient whose record the detected issue is associated with.
+     * Indicates the subject whose record the detected issue is associated with.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
      */
-    public Reference getPatient() {
-        return patient;
+    public Reference getSubject() {
+        return subject;
+    }
+
+    /**
+     * The encounter during which this issue was detected.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getEncounter() {
+        return encounter;
     }
 
     /**
@@ -186,7 +228,7 @@ public class DetectedIssue extends DomainResource {
      * @return
      *     An immutable object of type {@link DateTime} or {@link Period} that may be null.
      */
-    public Element getIdentified() {
+    public org.linuxforhealth.fhir.model.type.Element getIdentified() {
         return identified;
     }
 
@@ -226,9 +268,9 @@ public class DetectedIssue extends DomainResource {
      * A textual explanation of the detected issue.
      * 
      * @return
-     *     An immutable object of type {@link String} that may be null.
+     *     An immutable object of type {@link Markdown} that may be null.
      */
-    public String getDetail() {
+    public Markdown getDetail() {
         return detail;
     }
 
@@ -259,9 +301,11 @@ public class DetectedIssue extends DomainResource {
         return super.hasChildren() || 
             !identifier.isEmpty() || 
             (status != null) || 
+            !category.isEmpty() || 
             (code != null) || 
             (severity != null) || 
-            (patient != null) || 
+            (subject != null) || 
+            (encounter != null) || 
             (identified != null) || 
             (author != null) || 
             !implicated.isEmpty() || 
@@ -287,9 +331,11 @@ public class DetectedIssue extends DomainResource {
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(status, "status", visitor);
+                accept(category, "category", visitor, CodeableConcept.class);
                 accept(code, "code", visitor);
                 accept(severity, "severity", visitor);
-                accept(patient, "patient", visitor);
+                accept(subject, "subject", visitor);
+                accept(encounter, "encounter", visitor);
                 accept(identified, "identified", visitor);
                 accept(author, "author", visitor);
                 accept(implicated, "implicated", visitor, Reference.class);
@@ -325,9 +371,11 @@ public class DetectedIssue extends DomainResource {
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(status, other.status) && 
+            Objects.equals(category, other.category) && 
             Objects.equals(code, other.code) && 
             Objects.equals(severity, other.severity) && 
-            Objects.equals(patient, other.patient) && 
+            Objects.equals(subject, other.subject) && 
+            Objects.equals(encounter, other.encounter) && 
             Objects.equals(identified, other.identified) && 
             Objects.equals(author, other.author) && 
             Objects.equals(implicated, other.implicated) && 
@@ -351,9 +399,11 @@ public class DetectedIssue extends DomainResource {
                 modifierExtension, 
                 identifier, 
                 status, 
+                category, 
                 code, 
                 severity, 
-                patient, 
+                subject, 
+                encounter, 
                 identified, 
                 author, 
                 implicated, 
@@ -378,14 +428,16 @@ public class DetectedIssue extends DomainResource {
     public static class Builder extends DomainResource.Builder {
         private List<Identifier> identifier = new ArrayList<>();
         private DetectedIssueStatus status;
+        private List<CodeableConcept> category = new ArrayList<>();
         private CodeableConcept code;
         private DetectedIssueSeverity severity;
-        private Reference patient;
-        private Element identified;
+        private Reference subject;
+        private Reference encounter;
+        private org.linuxforhealth.fhir.model.type.Element identified;
         private Reference author;
         private List<Reference> implicated = new ArrayList<>();
         private List<Evidence> evidence = new ArrayList<>();
-        private String detail;
+        private Markdown detail;
         private Uri reference;
         private List<Mitigation> mitigation = new ArrayList<>();
 
@@ -471,7 +523,8 @@ public class DetectedIssue extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -489,7 +542,8 @@ public class DetectedIssue extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -510,7 +564,7 @@ public class DetectedIssue extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -530,7 +584,7 @@ public class DetectedIssue extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -555,9 +609,9 @@ public class DetectedIssue extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -580,9 +634,9 @@ public class DetectedIssue extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -649,7 +703,7 @@ public class DetectedIssue extends DomainResource {
          * <p>This element is required.
          * 
          * @param status
-         *     registered | preliminary | final | amended +
+         *     preliminary | final | entered-in-error | mitigated
          * 
          * @return
          *     A reference to this Builder instance
@@ -660,10 +714,49 @@ public class DetectedIssue extends DomainResource {
         }
 
         /**
-         * Identifies the general type of issue identified.
+         * A code that classifies the general type of detected issue.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param category
+         *     Type of detected issue, e.g. drug-drug, duplicate therapy, etc
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder category(CodeableConcept... category) {
+            for (CodeableConcept value : category) {
+                this.category.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A code that classifies the general type of detected issue.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param category
+         *     Type of detected issue, e.g. drug-drug, duplicate therapy, etc
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder category(Collection<CodeableConcept> category) {
+            this.category = new ArrayList<>(category);
+            return this;
+        }
+
+        /**
+         * Identifies the specific type of issue identified.
          * 
          * @param code
-         *     Issue Category, e.g. drug-drug, duplicate therapy, etc.
+         *     Specific type of detected issue, e.g. drug-drug, duplicate therapy, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -688,21 +781,50 @@ public class DetectedIssue extends DomainResource {
         }
 
         /**
-         * Indicates the patient whose record the detected issue is associated with.
+         * Indicates the subject whose record the detected issue is associated with.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
          * <li>{@link Patient}</li>
+         * <li>{@link Group}</li>
+         * <li>{@link Device}</li>
+         * <li>{@link Location}</li>
+         * <li>{@link Organization}</li>
+         * <li>{@link Procedure}</li>
+         * <li>{@link Practitioner}</li>
+         * <li>{@link Medication}</li>
+         * <li>{@link Substance}</li>
+         * <li>{@link BiologicallyDerivedProduct}</li>
+         * <li>{@link NutritionProduct}</li>
          * </ul>
          * 
-         * @param patient
-         *     Associated patient
+         * @param subject
+         *     Associated subject
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder patient(Reference patient) {
-            this.patient = patient;
+        public Builder subject(Reference subject) {
+            this.subject = subject;
+            return this;
+        }
+
+        /**
+         * The encounter during which this issue was detected.
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link Encounter}</li>
+         * </ul>
+         * 
+         * @param encounter
+         *     Encounter detected issue is part of
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder encounter(Reference encounter) {
+            this.encounter = encounter;
             return this;
         }
 
@@ -721,7 +843,7 @@ public class DetectedIssue extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder identified(Element identified) {
+        public Builder identified(org.linuxforhealth.fhir.model.type.Element identified) {
             this.identified = identified;
             return this;
         }
@@ -732,6 +854,8 @@ public class DetectedIssue extends DomainResource {
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
+         * <li>{@link Patient}</li>
+         * <li>{@link RelatedPerson}</li>
          * <li>{@link Practitioner}</li>
          * <li>{@link PractitionerRole}</li>
          * <li>{@link Device}</li>
@@ -829,22 +953,6 @@ public class DetectedIssue extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code detail}.
-         * 
-         * @param detail
-         *     Description and context
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #detail(org.linuxforhealth.fhir.model.type.String)
-         */
-        public Builder detail(java.lang.String detail) {
-            this.detail = (detail == null) ? null : String.of(detail);
-            return this;
-        }
-
-        /**
          * A textual explanation of the detected issue.
          * 
          * @param detail
@@ -853,7 +961,7 @@ public class DetectedIssue extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder detail(String detail) {
+        public Builder detail(Markdown detail) {
             this.detail = detail;
             return this;
         }
@@ -941,21 +1049,25 @@ public class DetectedIssue extends DomainResource {
             super.validate(detectedIssue);
             ValidationSupport.checkList(detectedIssue.identifier, "identifier", Identifier.class);
             ValidationSupport.requireNonNull(detectedIssue.status, "status");
+            ValidationSupport.checkList(detectedIssue.category, "category", CodeableConcept.class);
             ValidationSupport.choiceElement(detectedIssue.identified, "identified", DateTime.class, Period.class);
             ValidationSupport.checkList(detectedIssue.implicated, "implicated", Reference.class);
             ValidationSupport.checkList(detectedIssue.evidence, "evidence", Evidence.class);
             ValidationSupport.checkList(detectedIssue.mitigation, "mitigation", Mitigation.class);
-            ValidationSupport.checkReferenceType(detectedIssue.patient, "patient", "Patient");
-            ValidationSupport.checkReferenceType(detectedIssue.author, "author", "Practitioner", "PractitionerRole", "Device");
+            ValidationSupport.checkReferenceType(detectedIssue.subject, "subject", "Patient", "Group", "Device", "Location", "Organization", "Procedure", "Practitioner", "Medication", "Substance", "BiologicallyDerivedProduct", "NutritionProduct");
+            ValidationSupport.checkReferenceType(detectedIssue.encounter, "encounter", "Encounter");
+            ValidationSupport.checkReferenceType(detectedIssue.author, "author", "Patient", "RelatedPerson", "Practitioner", "PractitionerRole", "Device");
         }
 
         protected Builder from(DetectedIssue detectedIssue) {
             super.from(detectedIssue);
             identifier.addAll(detectedIssue.identifier);
             status = detectedIssue.status;
+            category.addAll(detectedIssue.category);
             code = detectedIssue.code;
             severity = detectedIssue.severity;
-            patient = detectedIssue.patient;
+            subject = detectedIssue.subject;
+            encounter = detectedIssue.encounter;
             identified = detectedIssue.identified;
             author = detectedIssue.author;
             implicated.addAll(detectedIssue.implicated);
@@ -1098,7 +1210,7 @@ public class DetectedIssue extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1118,7 +1230,7 @@ public class DetectedIssue extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1143,7 +1255,7 @@ public class DetectedIssue extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1168,7 +1280,7 @@ public class DetectedIssue extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1320,12 +1432,14 @@ public class DetectedIssue extends DomainResource {
         private final DateTime date;
         @ReferenceTarget({ "Practitioner", "PractitionerRole" })
         private final Reference author;
+        private final List<Annotation> note;
 
         private Mitigation(Builder builder) {
             super(builder);
             action = builder.action;
             date = builder.date;
             author = builder.author;
+            note = Collections.unmodifiableList(builder.note);
         }
 
         /**
@@ -1359,12 +1473,24 @@ public class DetectedIssue extends DomainResource {
             return author;
         }
 
+        /**
+         * Clinicians may add additional notes or justifications about the mitigation action. For example, patient can have this 
+         * drug because they have had it before without any issues. Multiple justifications may be provided.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link Annotation} that may be empty.
+         */
+        public List<Annotation> getNote() {
+            return note;
+        }
+
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
                 (action != null) || 
                 (date != null) || 
-                (author != null);
+                (author != null) || 
+                !note.isEmpty();
         }
 
         @Override
@@ -1379,6 +1505,7 @@ public class DetectedIssue extends DomainResource {
                     accept(action, "action", visitor);
                     accept(date, "date", visitor);
                     accept(author, "author", visitor);
+                    accept(note, "note", visitor, Annotation.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -1402,7 +1529,8 @@ public class DetectedIssue extends DomainResource {
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(action, other.action) && 
                 Objects.equals(date, other.date) && 
-                Objects.equals(author, other.author);
+                Objects.equals(author, other.author) && 
+                Objects.equals(note, other.note);
         }
 
         @Override
@@ -1414,7 +1542,8 @@ public class DetectedIssue extends DomainResource {
                     modifierExtension, 
                     action, 
                     date, 
-                    author);
+                    author, 
+                    note);
                 hashCode = result;
             }
             return result;
@@ -1433,6 +1562,7 @@ public class DetectedIssue extends DomainResource {
             private CodeableConcept action;
             private DateTime date;
             private Reference author;
+            private List<Annotation> note = new ArrayList<>();
 
             private Builder() {
                 super();
@@ -1455,7 +1585,7 @@ public class DetectedIssue extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1475,7 +1605,7 @@ public class DetectedIssue extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1500,7 +1630,7 @@ public class DetectedIssue extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1525,7 +1655,7 @@ public class DetectedIssue extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1601,6 +1731,47 @@ public class DetectedIssue extends DomainResource {
             }
 
             /**
+             * Clinicians may add additional notes or justifications about the mitigation action. For example, patient can have this 
+             * drug because they have had it before without any issues. Multiple justifications may be provided.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param note
+             *     Additional notes about the mitigation
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder note(Annotation... note) {
+                for (Annotation value : note) {
+                    this.note.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * Clinicians may add additional notes or justifications about the mitigation action. For example, patient can have this 
+             * drug because they have had it before without any issues. Multiple justifications may be provided.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param note
+             *     Additional notes about the mitigation
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder note(Collection<Annotation> note) {
+                this.note = new ArrayList<>(note);
+                return this;
+            }
+
+            /**
              * Build the {@link Mitigation}
              * 
              * <p>Required elements:
@@ -1625,6 +1796,7 @@ public class DetectedIssue extends DomainResource {
             protected void validate(Mitigation mitigation) {
                 super.validate(mitigation);
                 ValidationSupport.requireNonNull(mitigation.action, "action");
+                ValidationSupport.checkList(mitigation.note, "note", Annotation.class);
                 ValidationSupport.checkReferenceType(mitigation.author, "author", "Practitioner", "PractitionerRole");
                 ValidationSupport.requireValueOrChildren(mitigation);
             }
@@ -1634,6 +1806,7 @@ public class DetectedIssue extends DomainResource {
                 action = mitigation.action;
                 date = mitigation.date;
                 author = mitigation.author;
+                note.addAll(mitigation.note);
                 return this;
             }
         }

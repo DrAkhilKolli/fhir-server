@@ -13,7 +13,8 @@ package org.linuxforhealth.fhir.core;
  */
 public enum FHIRVersionParam {
     VERSION_40("4.0"),
-    VERSION_43("4.3");
+    VERSION_43("4.3"),
+    VERSION_50("5.0");
 
     private final String value;
 
@@ -53,6 +54,8 @@ public enum FHIRVersionParam {
             return VERSION_40;
         case "4.3":
             return VERSION_43;
+        case "5.0":
+            return VERSION_50;
         default:
             throw new IllegalArgumentException(value);
         }

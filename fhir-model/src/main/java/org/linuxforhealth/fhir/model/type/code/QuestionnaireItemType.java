@@ -51,14 +51,18 @@ public class QuestionnaireItemType extends Code {
     /**
      * Decimal
      * 
-     * <p>Question with is a real number answer (valueDecimal).
+     * <p>Question with is a real number answer (valueDecimal). There is an extension 'http://hl7.
+     * org/fhir/StructureDefinition/questionnaire-unit' that can be used to computably convey the unit of measure associated 
+     * with the answer for use when performing data extraction to an element of type Quantity.
      */
     public static final QuestionnaireItemType DECIMAL = QuestionnaireItemType.builder().value(Value.DECIMAL).build();
 
     /**
      * Integer
      * 
-     * <p>Question with an integer answer (valueInteger).
+     * <p>Question with an integer answer (valueInteger). There is an extension 'http://hl7.
+     * org/fhir/StructureDefinition/questionnaire-unit' that can be used to computably convey the unit of measure associated 
+     * with the answer for use when performing data extraction to an element of type Quantity.
      */
     public static final QuestionnaireItemType INTEGER = QuestionnaireItemType.builder().value(Value.INTEGER).build();
 
@@ -86,7 +90,8 @@ public class QuestionnaireItemType extends Code {
     /**
      * String
      * 
-     * <p>Question with a short (few words to short sentence) free-text entry answer (valueString).
+     * <p>Question with a short (few words to short sentence) free-text entry answer (valueString). Strings SHOULD NOT 
+     * contain carriage return or newline characters. If multi-line answers are needed, use the 'text' type.
      */
     public static final QuestionnaireItemType STRING = QuestionnaireItemType.builder().value(Value.STRING).build();
 
@@ -105,20 +110,11 @@ public class QuestionnaireItemType extends Code {
     public static final QuestionnaireItemType URL = QuestionnaireItemType.builder().value(Value.URL).build();
 
     /**
-     * Choice
+     * Coding
      * 
-     * <p>Question with a Coding drawn from a list of possible answers (specified in either the answerOption property, or via 
-     * the valueset referenced in the answerValueSet property) as an answer (valueCoding).
+     * <p>Question with a Coding - generally drawn from a list of possible answers (valueCoding)
      */
-    public static final QuestionnaireItemType CHOICE = QuestionnaireItemType.builder().value(Value.CHOICE).build();
-
-    /**
-     * Open Choice
-     * 
-     * <p>Answer is a Coding drawn from a list of possible answers (as with the choice type) or a free-text entry in a string 
-     * (valueCoding or valueString).
-     */
-    public static final QuestionnaireItemType OPEN_CHOICE = QuestionnaireItemType.builder().value(Value.OPEN_CHOICE).build();
+    public static final QuestionnaireItemType CODING = QuestionnaireItemType.builder().value(Value.CODING).build();
 
     /**
      * Attachment
@@ -137,9 +133,10 @@ public class QuestionnaireItemType extends Code {
     /**
      * Quantity
      * 
-     * <p>Question with a combination of a numeric value and unit, potentially with a comparator (&lt;, &gt;, etc.) as an 
-     * answer. (valueQuantity) There is an extension 'http://hl7.org/fhir/StructureDefinition/questionnaire-unit' that can be 
-     * used to define what unit should be captured (or the unit that has a ucum conversion from the provided unit).
+     * <p>Question with a combination of a numeric value and unit as an answer. (valueSimpleQuantity) There are two 
+     * extensions ('http://hl7.org/fhir/StructureDefinition/questionnaire-unitOption' and 'http://hl7.
+     * org/fhir/StructureDefinition/questionnaire-unitValueSet') that can be used to define what unit should be selected for 
+     * the Quantity.code and Quantity.system.
      */
     public static final QuestionnaireItemType QUANTITY = QuestionnaireItemType.builder().value(Value.QUANTITY).build();
 
@@ -185,10 +182,8 @@ public class QuestionnaireItemType extends Code {
             return TEXT;
         case URL:
             return URL;
-        case CHOICE:
-            return CHOICE;
-        case OPEN_CHOICE:
-            return OPEN_CHOICE;
+        case CODING:
+            return CODING;
         case ATTACHMENT:
             return ATTACHMENT;
         case REFERENCE:
@@ -359,14 +354,18 @@ public class QuestionnaireItemType extends Code {
         /**
          * Decimal
          * 
-         * <p>Question with is a real number answer (valueDecimal).
+         * <p>Question with is a real number answer (valueDecimal). There is an extension 'http://hl7.
+         * org/fhir/StructureDefinition/questionnaire-unit' that can be used to computably convey the unit of measure associated 
+         * with the answer for use when performing data extraction to an element of type Quantity.
          */
         DECIMAL("decimal"),
 
         /**
          * Integer
          * 
-         * <p>Question with an integer answer (valueInteger).
+         * <p>Question with an integer answer (valueInteger). There is an extension 'http://hl7.
+         * org/fhir/StructureDefinition/questionnaire-unit' that can be used to computably convey the unit of measure associated 
+         * with the answer for use when performing data extraction to an element of type Quantity.
          */
         INTEGER("integer"),
 
@@ -394,7 +393,8 @@ public class QuestionnaireItemType extends Code {
         /**
          * String
          * 
-         * <p>Question with a short (few words to short sentence) free-text entry answer (valueString).
+         * <p>Question with a short (few words to short sentence) free-text entry answer (valueString). Strings SHOULD NOT 
+         * contain carriage return or newline characters. If multi-line answers are needed, use the 'text' type.
          */
         STRING("string"),
 
@@ -413,20 +413,11 @@ public class QuestionnaireItemType extends Code {
         URL("url"),
 
         /**
-         * Choice
+         * Coding
          * 
-         * <p>Question with a Coding drawn from a list of possible answers (specified in either the answerOption property, or via 
-         * the valueset referenced in the answerValueSet property) as an answer (valueCoding).
+         * <p>Question with a Coding - generally drawn from a list of possible answers (valueCoding)
          */
-        CHOICE("choice"),
-
-        /**
-         * Open Choice
-         * 
-         * <p>Answer is a Coding drawn from a list of possible answers (as with the choice type) or a free-text entry in a string 
-         * (valueCoding or valueString).
-         */
-        OPEN_CHOICE("open-choice"),
+        CODING("coding"),
 
         /**
          * Attachment
@@ -445,9 +436,10 @@ public class QuestionnaireItemType extends Code {
         /**
          * Quantity
          * 
-         * <p>Question with a combination of a numeric value and unit, potentially with a comparator (&lt;, &gt;, etc.) as an 
-         * answer. (valueQuantity) There is an extension 'http://hl7.org/fhir/StructureDefinition/questionnaire-unit' that can be 
-         * used to define what unit should be captured (or the unit that has a ucum conversion from the provided unit).
+         * <p>Question with a combination of a numeric value and unit as an answer. (valueSimpleQuantity) There are two 
+         * extensions ('http://hl7.org/fhir/StructureDefinition/questionnaire-unitOption' and 'http://hl7.
+         * org/fhir/StructureDefinition/questionnaire-unitValueSet') that can be used to define what unit should be selected for 
+         * the Quantity.code and Quantity.system.
          */
         QUANTITY("quantity");
 
@@ -504,10 +496,8 @@ public class QuestionnaireItemType extends Code {
                 return TEXT;
             case "url":
                 return URL;
-            case "choice":
-                return CHOICE;
-            case "open-choice":
-                return OPEN_CHOICE;
+            case "coding":
+                return CODING;
             case "attachment":
                 return ATTACHMENT;
             case "reference":

@@ -40,6 +40,7 @@ import org.linuxforhealth.fhir.core.HTTPReturnPreference;
 import org.linuxforhealth.fhir.exception.FHIROperationException;
 import org.linuxforhealth.fhir.model.resource.Bundle;
 import org.linuxforhealth.fhir.model.resource.Condition;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.resource.Encounter;
 import org.linuxforhealth.fhir.model.resource.OperationOutcome;
 import org.linuxforhealth.fhir.model.resource.OperationOutcome.Issue;
@@ -866,13 +867,19 @@ public class FHIRRestHelperTest {
         FHIRRestHelper helper = new FHIRRestHelper(persistence, searchHelper);
 
         Encounter encounter = Encounter.builder()
-                .status(EncounterStatus.FINISHED)
-                .clazz(Coding.builder()
-                    .code(Code.of("AMB"))
-                    .build())
-                .reasonReference(Reference.builder()
-                    .reference(string("urn:2"))
-                    .build())
+                .status(EncounterStatus.COMPLETED)
+                .clazz(java.util.List.of(CodeableConcept.builder()
+                    .coding(Coding.builder()
+                        .code(Code.of("AMB"))
+                        .build())
+                    .build()))
+                .reason(Encounter.Reason.builder()
+                        .value(CodeableReference.builder()
+                            .reference(Reference.builder()
+                                .reference(string("urn:2"))
+                                .build())
+                            .build())
+                        .build())
                 .build();
         Bundle.Entry.Request bundleEntryRequest = Bundle.Entry.Request.builder()
                 .method(HTTPVerb.POST)
@@ -923,7 +930,7 @@ public class FHIRRestHelperTest {
                 assertEquals(response.getLocation().getValue(), "Encounter/generated-0/_history/1");
                 assertEquals(response.getStatus().getValue(), Integer.toString(Response.Status.CREATED.getStatusCode()));
                 Encounter returnedEncounter = (Encounter) entry.getResource();
-                assertEquals(returnedEncounter.getReasonReference().get(0).getReference().getValue(), "Procedure/generated-1");
+                assertEquals(returnedEncounter.getReason().get(0).getValue().get(0).getReference().getReference().getValue(), "Procedure/generated-1");
             } else if (response.getLocation().getValue().startsWith("Procedure")) {
                 assertEquals(response.getLocation().getValue(), "Procedure/generated-1/_history/1");
                 assertEquals(response.getStatus().getValue(), Integer.toString(Response.Status.CREATED.getStatusCode()));
@@ -1087,16 +1094,26 @@ public class FHIRRestHelperTest {
         FHIRRestHelper helper = new FHIRRestHelper(persistence, searchHelper);
 
         Encounter encounter = Encounter.builder()
-                .status(EncounterStatus.FINISHED)
-                .clazz(Coding.builder()
-                    .code(Code.of("AMB"))
-                    .build())
-                .reasonReference(Reference.builder()
-                    .reference(string("urn:2"))
-                    .build(),
-                    Reference.builder()
-                    .reference(string("urn:5"))
-                    .build())
+                .status(EncounterStatus.COMPLETED)
+                .clazz(java.util.List.of(CodeableConcept.builder()
+                    .coding(Coding.builder()
+                        .code(Code.of("AMB"))
+                        .build())
+                    .build()))
+                .reason(Encounter.Reason.builder()
+                        .value(CodeableReference.builder()
+                            .reference(Reference.builder()
+                                .reference(string("urn:2"))
+                                .build())
+                            .build())
+                        .build())
+                .reason(Encounter.Reason.builder()
+                        .value(CodeableReference.builder()
+                            .reference(Reference.builder()
+                                .reference(string("urn:5"))
+                                .build())
+                            .build())
+                        .build())
                 .build();
         Bundle.Entry.Request bundleEntryRequest = Bundle.Entry.Request.builder()
                 .method(HTTPVerb.POST)
@@ -1116,9 +1133,11 @@ public class FHIRRestHelperTest {
                 .encounter(Reference.builder()
                     .reference(string("urn:1"))
                     .build())
-                .reasonReference(Reference.builder()
-                    .reference(string("urn:5"))
-                    .build())
+                .reason(CodeableReference.builder()
+                        .reference(Reference.builder()
+                            .reference(string("urn:5"))
+                            .build())
+                        .build())
                 .build();
         Bundle.Entry.Request bundleEntryRequest2 = Bundle.Entry.Request.builder()
                 .method(HTTPVerb.POST)
@@ -1165,9 +1184,9 @@ public class FHIRRestHelperTest {
                 .encounter(Reference.builder()
                     .reference(string("urn:1"))
                     .build())
-                .evidence(Condition.Evidence.builder()
-                    .detail(Reference.builder()
-                        .reference(string("urn:2"))
+                .evidence(CodeableReference.builder()
+                    .reference(Reference.builder()
+                        .reference(string("urn:5"))
                         .build())
                     .build())
                 .build();
@@ -1201,15 +1220,15 @@ public class FHIRRestHelperTest {
                 assertEquals(response.getLocation().getValue(), "Encounter/generated-0/_history/1");
                 assertEquals(Integer.toString(Response.Status.CREATED.getStatusCode()), response.getStatus().getValue());
                 Encounter returnedEncounter = (Encounter) entry.getResource();
-                assertEquals(returnedEncounter.getReasonReference().get(0).getReference().getValue(), "Procedure/generated-1");
-                assertEquals(returnedEncounter.getReasonReference().get(1).getReference().getValue(), "Condition/generated-4");
+                assertEquals(returnedEncounter.getReason().get(0).getValue().get(0).getReference().getReference().getValue(), "Procedure/generated-1");
+                assertEquals(returnedEncounter.getReason().get(1).getValue().get(0).getReference().getReference().getValue(), "Condition/generated-4");
             } else if (response.getLocation().getValue().startsWith("Procedure")) {
                 assertEquals(response.getLocation().getValue(), "Procedure/generated-1/_history/1");
                 assertEquals(Integer.toString(Response.Status.CREATED.getStatusCode()), response.getStatus().getValue());
                 Procedure returnedProcedure = (Procedure) entry.getResource();
                 assertEquals(returnedProcedure.getEncounter().getReference().getValue(), "Encounter/generated-0");
                 assertEquals(returnedProcedure.getSubject().getReference().getValue(), "Patient/generated-2");
-                assertEquals(returnedProcedure.getReasonReference().get(0).getReference().getValue(), "Condition/generated-4");
+                assertEquals(returnedProcedure.getReason().get(0).getReference().getReference().getValue(), "Condition/generated-4");
             } else if (response.getLocation().getValue().startsWith("Patient")) {
                 assertEquals(response.getLocation().getValue(), "Patient/generated-2/_history/1");
                 assertEquals(Integer.toString(Response.Status.CREATED.getStatusCode()), response.getStatus().getValue());
@@ -1224,7 +1243,7 @@ public class FHIRRestHelperTest {
                 Condition returnedCondition = (Condition) entry.getResource();
                 assertEquals(returnedCondition.getEncounter().getReference().getValue(), "Encounter/generated-0");
                 assertEquals(returnedCondition.getSubject().getReference().getValue(), "Patient/generated-2");
-                assertEquals(returnedCondition.getEvidence().get(0).getDetail().get(0).getReference().getValue(), "Procedure/generated-1");
+                assertEquals(returnedCondition.getEvidence().get(0).getReference().getReference().getValue(), "Procedure/generated-1");
             } else {
                 fail();
             }
@@ -1621,13 +1640,19 @@ public class FHIRRestHelperTest {
 
         Encounter encounter = Encounter.builder()
                 .id("1")
-                .status(EncounterStatus.FINISHED)
-                .clazz(Coding.builder()
-                    .code(Code.of("AMB"))
-                    .build())
-                .reasonReference(Reference.builder()
-                    .reference(string("urn:2"))
-                    .build())
+                .status(EncounterStatus.COMPLETED)
+                .clazz(java.util.List.of(CodeableConcept.builder()
+                    .coding(Coding.builder()
+                        .code(Code.of("AMB"))
+                        .build())
+                    .build()))
+                .reason(Encounter.Reason.builder()
+                        .value(CodeableReference.builder()
+                            .reference(Reference.builder()
+                                .reference(string("urn:2"))
+                                .build())
+                            .build())
+                        .build())
                 .build();
         Bundle.Entry.Request bundleEntryRequest = Bundle.Entry.Request.builder()
                 .method(HTTPVerb.PUT)
@@ -1679,7 +1704,7 @@ public class FHIRRestHelperTest {
                 assertEquals(response.getLocation().getValue(), "Encounter/1/_history/2");
                 assertEquals(response.getStatus().getValue(), Integer.toString(Response.Status.OK.getStatusCode()));
                 Encounter returnedEncounter = (Encounter) entry.getResource();
-                assertEquals(returnedEncounter.getReasonReference().get(0).getReference().getValue(), "Procedure/2");
+                assertEquals(returnedEncounter.getReason().get(0).getValue().get(0).getReference().getReference().getValue(), "Procedure/2");
             } else if (response.getLocation().getValue().startsWith("Procedure")) {
                 assertEquals(response.getLocation().getValue(), "Procedure/2/_history/2");
                 assertEquals(response.getStatus().getValue(), Integer.toString(Response.Status.OK.getStatusCode()));
@@ -1921,16 +1946,26 @@ public class FHIRRestHelperTest {
 
         Encounter encounter = Encounter.builder()
                 .id("1")
-                .status(EncounterStatus.FINISHED)
-                .clazz(Coding.builder()
-                    .code(Code.of("AMB"))
-                    .build())
-                .reasonReference(Reference.builder()
-                    .reference(string("urn:2"))
-                    .build(),
-                    Reference.builder()
-                    .reference(string("urn:5"))
-                    .build())
+                .status(EncounterStatus.COMPLETED)
+                .clazz(java.util.List.of(CodeableConcept.builder()
+                    .coding(Coding.builder()
+                        .code(Code.of("AMB"))
+                        .build())
+                    .build()))
+                .reason(Encounter.Reason.builder()
+                        .value(CodeableReference.builder()
+                            .reference(Reference.builder()
+                                .reference(string("urn:2"))
+                                .build())
+                            .build())
+                        .build())
+                .reason(Encounter.Reason.builder()
+                        .value(CodeableReference.builder()
+                            .reference(Reference.builder()
+                                .reference(string("urn:5"))
+                                .build())
+                            .build())
+                        .build())
                 .build();
         Bundle.Entry.Request bundleEntryRequest = Bundle.Entry.Request.builder()
                 .method(HTTPVerb.PUT)
@@ -1951,9 +1986,11 @@ public class FHIRRestHelperTest {
                 .encounter(Reference.builder()
                     .reference(string("urn:1"))
                     .build())
-                .reasonReference(Reference.builder()
-                    .reference(string("urn:5"))
-                    .build())
+                .reason(CodeableReference.builder()
+                        .reference(Reference.builder()
+                            .reference(string("urn:5"))
+                            .build())
+                        .build())
                 .build();
         Bundle.Entry.Request bundleEntryRequest2 = Bundle.Entry.Request.builder()
                 .method(HTTPVerb.PUT)
@@ -2003,9 +2040,9 @@ public class FHIRRestHelperTest {
                 .encounter(Reference.builder()
                     .reference(string("urn:1"))
                     .build())
-                .evidence(Condition.Evidence.builder()
-                    .detail(Reference.builder()
-                        .reference(string("urn:2"))
+                .evidence(CodeableReference.builder()
+                    .reference(Reference.builder()
+                        .reference(string("urn:5"))
                         .build())
                     .build())
                 .build();
@@ -2039,15 +2076,15 @@ public class FHIRRestHelperTest {
                 assertEquals("Encounter/1/_history/2", response.getLocation().getValue());
                 assertEquals(Integer.toString(Response.Status.OK.getStatusCode()), response.getStatus().getValue());
                 Encounter returnedEncounter = (Encounter) entry.getResource();
-                assertEquals("Procedure/2", returnedEncounter.getReasonReference().get(0).getReference().getValue());
-                assertEquals("Condition/5", returnedEncounter.getReasonReference().get(1).getReference().getValue());
+                assertEquals("Procedure/2", returnedEncounter.getReason().get(0).getValue().get(0).getReference().getReference().getValue());
+                assertEquals("Condition/5", returnedEncounter.getReason().get(1).getValue().get(0).getReference().getReference().getValue());
             } else if (response.getLocation().getValue().startsWith("Procedure")) {
                 assertEquals("Procedure/2/_history/2", response.getLocation().getValue());
                 assertEquals(Integer.toString(Response.Status.OK.getStatusCode()), response.getStatus().getValue());
                 Procedure returnedProcedure = (Procedure) entry.getResource();
                 assertEquals("Encounter/1", returnedProcedure.getEncounter().getReference().getValue());
                 assertEquals("Patient/3", returnedProcedure.getSubject().getReference().getValue());
-                assertEquals("Condition/5", returnedProcedure.getReasonReference().get(0).getReference().getValue());
+                assertEquals("Condition/5", returnedProcedure.getReason().get(0).getReference().getReference().getValue());
             } else if (response.getLocation().getValue().startsWith("Patient")) {
                 assertEquals("Patient/3/_history/2", response.getLocation().getValue());
                 assertEquals(Integer.toString(Response.Status.OK.getStatusCode()), response.getStatus().getValue());
@@ -2062,7 +2099,7 @@ public class FHIRRestHelperTest {
                 Condition returnedCondition = (Condition) entry.getResource();
                 assertEquals("Encounter/1", returnedCondition.getEncounter().getReference().getValue());
                 assertEquals("Patient/3", returnedCondition.getSubject().getReference().getValue());
-                assertEquals("Procedure/2", returnedCondition.getEvidence().get(0).getDetail().get(0).getReference().getValue());
+                assertEquals("Procedure/2", returnedCondition.getEvidence().get(0).getReference().getReference().getValue());
             } else {
                 fail();
             }
@@ -2148,13 +2185,19 @@ public class FHIRRestHelperTest {
 
         Encounter encounter = Encounter.builder()
                 .id("1")
-                .status(EncounterStatus.FINISHED)
-                .clazz(Coding.builder()
-                    .code(Code.of("AMB"))
-                    .build())
-                .reasonReference(Reference.builder()
-                    .reference(string("urn:2"))
-                    .build())
+                .status(EncounterStatus.COMPLETED)
+                .clazz(java.util.List.of(CodeableConcept.builder()
+                    .coding(Coding.builder()
+                        .code(Code.of("AMB"))
+                        .build())
+                    .build()))
+                .reason(Encounter.Reason.builder()
+                        .value(CodeableReference.builder()
+                            .reference(Reference.builder()
+                                .reference(string("urn:2"))
+                                .build())
+                            .build())
+                        .build())
                 .build();
         Bundle.Entry.Request bundleEntryRequest = Bundle.Entry.Request.builder()
                 .method(HTTPVerb.PUT)
@@ -2206,7 +2249,7 @@ public class FHIRRestHelperTest {
                 assertEquals(response.getLocation().getValue(), "Encounter/1/_history/2");
                 assertEquals(response.getStatus().getValue(), Integer.toString(Response.Status.OK.getStatusCode()));
                 Encounter returnedEncounter = (Encounter) entry.getResource();
-                assertEquals(returnedEncounter.getReasonReference().get(0).getReference().getValue(), "Procedure/generated-0");
+                assertEquals(returnedEncounter.getReason().get(0).getValue().get(0).getReference().getReference().getValue(), "Procedure/generated-0");
             } else if (response.getLocation().getValue().startsWith("Procedure")) {
                 assertEquals(response.getLocation().getValue(), "Procedure/generated-0/_history/1");
                 assertEquals(response.getStatus().getValue(), Integer.toString(Response.Status.CREATED.getStatusCode()));
@@ -2234,16 +2277,26 @@ public class FHIRRestHelperTest {
 
         Encounter encounter = Encounter.builder()
                 .id("1")
-                .status(EncounterStatus.FINISHED)
-                .clazz(Coding.builder()
-                    .code(Code.of("AMB"))
-                    .build())
-                .reasonReference(Reference.builder()
-                    .reference(string("urn:2"))
-                    .build(),
-                    Reference.builder()
-                    .reference(string("urn:5"))
-                    .build())
+                .status(EncounterStatus.COMPLETED)
+                .clazz(java.util.List.of(CodeableConcept.builder()
+                    .coding(Coding.builder()
+                        .code(Code.of("AMB"))
+                        .build())
+                    .build()))
+                .reason(Encounter.Reason.builder()
+                        .value(CodeableReference.builder()
+                            .reference(Reference.builder()
+                                .reference(string("urn:2"))
+                                .build())
+                            .build())
+                        .build())
+                .reason(Encounter.Reason.builder()
+                        .value(CodeableReference.builder()
+                            .reference(Reference.builder()
+                                .reference(string("urn:5"))
+                                .build())
+                            .build())
+                        .build())
                 .build();
         Bundle.Entry.Request bundleEntryRequest = Bundle.Entry.Request.builder()
                 .method(HTTPVerb.PUT)
@@ -2263,9 +2316,11 @@ public class FHIRRestHelperTest {
                 .encounter(Reference.builder()
                     .reference(string("urn:1"))
                     .build())
-                .reasonReference(Reference.builder()
-                    .reference(string("urn:5"))
-                    .build())
+                .reason(CodeableReference.builder()
+                        .reference(Reference.builder()
+                            .reference(string("urn:5"))
+                            .build())
+                        .build())
                 .build();
         Bundle.Entry.Request bundleEntryRequest2 = Bundle.Entry.Request.builder()
                 .method(HTTPVerb.POST)
@@ -2327,9 +2382,9 @@ public class FHIRRestHelperTest {
                 .encounter(Reference.builder()
                     .reference(string("urn:1"))
                     .build())
-                .evidence(Condition.Evidence.builder()
-                    .detail(Reference.builder()
-                        .reference(string("urn:2"))
+                .evidence(CodeableReference.builder()
+                    .reference(Reference.builder()
+                        .reference(string("urn:5"))
                         .build())
                     .build())
                 .build();
@@ -2377,15 +2432,15 @@ public class FHIRRestHelperTest {
                 assertEquals(response.getLocation().getValue(), "Encounter/1/_history/2");
                 assertEquals(Integer.toString(Response.Status.OK.getStatusCode()), response.getStatus().getValue());
                 Encounter returnedEncounter = (Encounter) entry.getResource();
-                assertEquals(returnedEncounter.getReasonReference().get(0).getReference().getValue(), "Procedure/generated-0");
-                assertEquals(returnedEncounter.getReasonReference().get(1).getReference().getValue(), "Condition/generated-2");
+                assertEquals(returnedEncounter.getReason().get(0).getValue().get(0).getReference().getReference().getValue(), "Procedure/generated-0");
+                assertEquals(returnedEncounter.getReason().get(1).getValue().get(0).getReference().getReference().getValue(), "Condition/generated-2");
             } else if (response.getLocation().getValue().startsWith("Procedure")) {
                 assertEquals(response.getLocation().getValue(), "Procedure/generated-0/_history/1");
                 assertEquals(Integer.toString(Response.Status.CREATED.getStatusCode()), response.getStatus().getValue());
                 Procedure returnedProcedure = (Procedure) entry.getResource();
                 assertEquals(returnedProcedure.getEncounter().getReference().getValue(), "Encounter/1");
                 assertEquals(returnedProcedure.getSubject().getReference().getValue(), "Patient/generated-1");
-                assertEquals(returnedProcedure.getReasonReference().get(0).getReference().getValue(), "Condition/generated-2");
+                assertEquals(returnedProcedure.getReason().get(0).getReference().getReference().getValue(), "Condition/generated-2");
             } else if (response.getLocation().getValue().startsWith("Patient")) {
                 assertEquals(response.getLocation().getValue(), "Patient/generated-1/_history/1");
                 assertEquals(Integer.toString(Response.Status.CREATED.getStatusCode()), response.getStatus().getValue());
@@ -2403,7 +2458,7 @@ public class FHIRRestHelperTest {
                 Condition returnedCondition = (Condition) entry.getResource();
                 assertEquals(returnedCondition.getEncounter().getReference().getValue(), "Encounter/1");
                 assertEquals(returnedCondition.getSubject().getReference().getValue(), "Patient/generated-1");
-                assertEquals(returnedCondition.getEvidence().get(0).getDetail().get(0).getReference().getValue(), "Procedure/generated-0");
+                assertEquals(returnedCondition.getEvidence().get(0).getReference().getReference().getValue(), "Procedure/generated-0");
             } else if (response.getLocation().getValue().startsWith("Organization")) {
                 assertEquals(response.getLocation().getValue(), "Organization/6/_history/2");
                 assertEquals(response.getStatus().getValue(), Integer.toString(Response.Status.OK.getStatusCode()));
@@ -2694,16 +2749,26 @@ public class FHIRRestHelperTest {
         FHIRRestHelper helper = new FHIRRestHelper(persistence, searchHelper);
 
         Encounter encounter = Encounter.builder()
-                .status(EncounterStatus.FINISHED)
-                .clazz(Coding.builder()
-                    .code(Code.of("AMB"))
-                    .build())
-                .reasonReference(Reference.builder()
-                    .reference(string("Procedure/1"))
-                    .build(),
-                    Reference.builder()
-                    .reference(string("Condition/1"))
-                    .build())
+                .status(EncounterStatus.COMPLETED)
+                .clazz(java.util.List.of(CodeableConcept.builder()
+                    .coding(Coding.builder()
+                        .code(Code.of("AMB"))
+                        .build())
+                    .build()))
+                .reason(Encounter.Reason.builder()
+                        .value(CodeableReference.builder()
+                            .reference(Reference.builder()
+                                .reference(string("Procedure/1"))
+                                .build())
+                            .build())
+                        .build())
+                .reason(Encounter.Reason.builder()
+                        .value(CodeableReference.builder()
+                            .reference(Reference.builder()
+                                .reference(string("Condition/1"))
+                                .build())
+                            .build())
+                        .build())
                 .build();
         Bundle.Entry.Request bundleEntryRequest = Bundle.Entry.Request.builder()
                 .method(HTTPVerb.POST)
@@ -2723,9 +2788,11 @@ public class FHIRRestHelperTest {
                 .encounter(Reference.builder()
                     .reference(string("https://test.com/fhir-server/api/v4/Encounter/1"))
                     .build())
-                .reasonReference(Reference.builder()
-                    .reference(string("urn:5"))
-                    .build())
+                .reason(CodeableReference.builder()
+                        .reference(Reference.builder()
+                            .reference(string("urn:5"))
+                            .build())
+                        .build())
                 .build();
         Bundle.Entry.Request bundleEntryRequest2 = Bundle.Entry.Request.builder()
                 .method(HTTPVerb.POST)
@@ -2772,9 +2839,9 @@ public class FHIRRestHelperTest {
                 .encounter(Reference.builder()
                     .reference(string("Encounter/1"))
                     .build())
-                .evidence(Condition.Evidence.builder()
-                    .detail(Reference.builder()
-                        .reference(string("urn:2"))
+                .evidence(CodeableReference.builder()
+                    .reference(Reference.builder()
+                        .reference(string("urn:5"))
                         .build())
                     .build())
                 .build();
@@ -2808,15 +2875,15 @@ public class FHIRRestHelperTest {
                 assertEquals(response.getLocation().getValue(), "Encounter/generated-0/_history/1");
                 assertEquals(Integer.toString(Response.Status.CREATED.getStatusCode()), response.getStatus().getValue());
                 Encounter returnedEncounter = (Encounter) entry.getResource();
-                assertEquals(returnedEncounter.getReasonReference().get(0).getReference().getValue(), "Procedure/1");
-                assertEquals(returnedEncounter.getReasonReference().get(1).getReference().getValue(), "Condition/generated-4");
+                assertEquals(returnedEncounter.getReason().get(0).getValue().get(0).getReference().getReference().getValue(), "Procedure/1");
+                assertEquals(returnedEncounter.getReason().get(1).getValue().get(0).getReference().getReference().getValue(), "Condition/generated-4");
             } else if (response.getLocation().getValue().startsWith("Procedure")) {
                 assertEquals(response.getLocation().getValue(), "Procedure/generated-1/_history/1");
                 assertEquals(Integer.toString(Response.Status.CREATED.getStatusCode()), response.getStatus().getValue());
                 Procedure returnedProcedure = (Procedure) entry.getResource();
                 assertEquals(returnedProcedure.getEncounter().getReference().getValue(), "Encounter/generated-0");
                 assertEquals(returnedProcedure.getSubject().getReference().getValue(), "Patient/generated-2");
-                assertEquals(returnedProcedure.getReasonReference().get(0).getReference().getValue(), "urn:5");
+                assertEquals(returnedProcedure.getReason().get(0).getReference().getReference().getValue(), "urn:5");
             } else if (response.getLocation().getValue().startsWith("Patient")) {
                 assertEquals(response.getLocation().getValue(), "Patient/generated-2/_history/1");
                 assertEquals(Integer.toString(Response.Status.CREATED.getStatusCode()), response.getStatus().getValue());
@@ -2831,7 +2898,7 @@ public class FHIRRestHelperTest {
                 Condition returnedCondition = (Condition) entry.getResource();
                 assertEquals(returnedCondition.getEncounter().getReference().getValue(), "Encounter/generated-0");
                 assertEquals(returnedCondition.getSubject().getReference().getValue(), "Patient/generated-2");
-                assertEquals(returnedCondition.getEvidence().get(0).getDetail().get(0).getReference().getValue(), "urn:2");
+                assertEquals(returnedCondition.getEvidence().get(0).getReference().getReference().getValue(), "urn:2");
             } else {
                 fail();
             }
@@ -2848,16 +2915,26 @@ public class FHIRRestHelperTest {
         FHIRRestHelper helper = new FHIRRestHelper(persistence, searchHelper);
 
         Encounter encounter = Encounter.builder()
-                .status(EncounterStatus.FINISHED)
-                .clazz(Coding.builder()
-                    .code(Code.of("AMB"))
-                    .build())
-                .reasonReference(Reference.builder()
-                    .reference(string("resource:1"))
-                    .build(),
-                    Reference.builder()
-                    .reference(string("resource:4"))
-                    .build())
+                .status(EncounterStatus.COMPLETED)
+                .clazz(java.util.List.of(CodeableConcept.builder()
+                    .coding(Coding.builder()
+                        .code(Code.of("AMB"))
+                        .build())
+                    .build()))
+                .reason(Encounter.Reason.builder()
+                        .value(CodeableReference.builder()
+                            .reference(Reference.builder()
+                                .reference(string("resource:1"))
+                                .build())
+                            .build())
+                        .build())
+                .reason(Encounter.Reason.builder()
+                        .value(CodeableReference.builder()
+                            .reference(Reference.builder()
+                                .reference(string("resource:4"))
+                                .build())
+                            .build())
+                        .build())
                 .build();
         Bundle.Entry.Request bundleEntryRequest = Bundle.Entry.Request.builder()
                 .method(HTTPVerb.POST)
@@ -2877,9 +2954,11 @@ public class FHIRRestHelperTest {
                 .encounter(Reference.builder()
                     .reference(string("resource:0"))
                     .build())
-                .reasonReference(Reference.builder()
-                    .reference(string("resource:4"))
-                    .build())
+                .reason(CodeableReference.builder()
+                        .reference(Reference.builder()
+                            .reference(string("resource:4"))
+                            .build())
+                        .build())
                 .build();
         Bundle.Entry.Request bundleEntryRequest2 = Bundle.Entry.Request.builder()
                 .method(HTTPVerb.POST)
@@ -2926,9 +3005,9 @@ public class FHIRRestHelperTest {
                 .encounter(Reference.builder()
                     .reference(string("resource:0"))
                     .build())
-                .evidence(Condition.Evidence.builder()
-                    .detail(Reference.builder()
-                        .reference(string("resource:1"))
+                .evidence(CodeableReference.builder()
+                    .reference(Reference.builder()
+                        .reference(string("resource:4"))
                         .build())
                     .build())
                 .build();
@@ -2962,15 +3041,15 @@ public class FHIRRestHelperTest {
                 assertEquals(response.getLocation().getValue(), "Encounter/generated-0/_history/1");
                 assertEquals(Integer.toString(Response.Status.CREATED.getStatusCode()), response.getStatus().getValue());
                 Encounter returnedEncounter = (Encounter) entry.getResource();
-                assertEquals(returnedEncounter.getReasonReference().get(0).getReference().getValue(), "Procedure/generated-1");
-                assertEquals(returnedEncounter.getReasonReference().get(1).getReference().getValue(), "Condition/generated-4");
+                assertEquals(returnedEncounter.getReason().get(0).getValue().get(0).getReference().getReference().getValue(), "Procedure/generated-1");
+                assertEquals(returnedEncounter.getReason().get(1).getValue().get(0).getReference().getReference().getValue(), "Condition/generated-4");
             } else if (response.getLocation().getValue().startsWith("Procedure")) {
                 assertEquals(response.getLocation().getValue(), "Procedure/generated-1/_history/1");
                 assertEquals(Integer.toString(Response.Status.CREATED.getStatusCode()), response.getStatus().getValue());
                 Procedure returnedProcedure = (Procedure) entry.getResource();
                 assertEquals(returnedProcedure.getEncounter().getReference().getValue(), "Encounter/generated-0");
                 assertEquals(returnedProcedure.getSubject().getReference().getValue(), "Patient/generated-2");
-                assertEquals(returnedProcedure.getReasonReference().get(0).getReference().getValue(), "Condition/generated-4");
+                assertEquals(returnedProcedure.getReason().get(0).getReference().getReference().getValue(), "Condition/generated-4");
             } else if (response.getLocation().getValue().startsWith("Patient")) {
                 assertEquals(response.getLocation().getValue(), "Patient/generated-2/_history/1");
                 assertEquals(Integer.toString(Response.Status.CREATED.getStatusCode()), response.getStatus().getValue());
@@ -2984,7 +3063,7 @@ public class FHIRRestHelperTest {
                 assertEquals(Integer.toString(Response.Status.CREATED.getStatusCode()), response.getStatus().getValue());
                 Condition returnedCondition = (Condition) entry.getResource();
                 assertEquals(returnedCondition.getEncounter().getReference().getValue(), "Encounter/generated-0");
-                assertEquals(returnedCondition.getEvidence().get(0).getDetail().get(0).getReference().getValue(), "Procedure/generated-1");
+                assertEquals(returnedCondition.getEvidence().get(0).getReference().getReference().getValue(), "Procedure/generated-1");
                 assertEquals(returnedCondition.getSubject().getReference().getValue(), "Patient/generated-2");
             } else {
                 fail();

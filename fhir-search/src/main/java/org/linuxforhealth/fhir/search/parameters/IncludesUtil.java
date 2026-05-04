@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 import org.linuxforhealth.fhir.config.FHIRConfigHelper;
 import org.linuxforhealth.fhir.core.ResourceType;
 import org.linuxforhealth.fhir.model.resource.SearchParameter;
-import org.linuxforhealth.fhir.model.type.code.ResourceTypeCode;
+import org.linuxforhealth.fhir.model.type.code.FHIRTypes;
 import org.linuxforhealth.fhir.model.type.code.SearchParamType.Value;
 import org.linuxforhealth.fhir.search.util.SearchHelper;
 
@@ -68,7 +68,7 @@ public class IncludesUtil {
             }
 
             String expression = sp.getExpression().getValue();
-            for (ResourceTypeCode target : sp.getTarget()) {
+            for (FHIRTypes target : sp.getTarget()) {
                 // The search parameter target types come from the possible types of the target reference
                 // and don't take into account any "is X" filters from within the expression,
                 // so we use this heuristic to avoid adding the code when expression filtering applies
@@ -79,8 +79,11 @@ public class IncludesUtil {
                     }
                 }
 
-                codesByType.computeIfAbsent(target.getValueAsEnum(), rt -> new ArrayList<>())
-                        .add(entry.getKey());
+                ResourceType resourceType = ResourceType.from(target.getValue());
+                if (resourceType != null) {
+                    codesByType.computeIfAbsent(resourceType, rt -> new ArrayList<>())
+                            .add(entry.getKey());
+                }
             }
         }
         return codesByType;

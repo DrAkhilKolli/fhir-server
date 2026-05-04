@@ -2517,7 +2517,7 @@ public class FHIRRestHelper implements FHIRResourceHelpers {
         selfUri = addParameterToUrl(selfUri, SearchConstants.LAST_ID, lastId);
         // create 'self' link
         Bundle.Link selfLink = Bundle.Link.builder()
-                .relation(string("self"))
+                .relation(Code.of("self"))
                 .url(Url.of(selfUri))
                 .build();
         bundleBuilder.link(selfLink);
@@ -2554,7 +2554,7 @@ public class FHIRRestHelper implements FHIRResourceHelpers {
 
                 // create 'next' link
                 Bundle.Link nextLink =
-                        Bundle.Link.builder().relation(string("next")).url(Url.of(nextLinkUrl)).build();
+                        Bundle.Link.builder().relation(Code.of("next")).url(Url.of(nextLinkUrl)).build();
                 bundleBuilder.link(nextLink);
             }
 
@@ -2588,7 +2588,7 @@ public class FHIRRestHelper implements FHIRResourceHelpers {
 
                 // create 'previous' link
                 Bundle.Link prevLink =
-                        Bundle.Link.builder().relation(string("previous")).url(Url.of(prevLinkUrl)).build();
+                        Bundle.Link.builder().relation(Code.of("previous")).url(Url.of(prevLinkUrl)).build();
                 bundleBuilder.link(prevLink);
             }
         }
@@ -3350,7 +3350,7 @@ public class FHIRRestHelper implements FHIRResourceHelpers {
 
             Bundle.Link.Builder linkBuilder = Bundle.Link.builder();
             linkBuilder.url(Uri.of(nextRequest.toString()));
-            linkBuilder.relation(org.linuxforhealth.fhir.model.type.String.of("next"));
+            linkBuilder.relation(Code.of("next"));
 
             bundleBuilder.link(linkBuilder.build());
         }
@@ -3399,7 +3399,7 @@ public class FHIRRestHelper implements FHIRResourceHelpers {
 
         Bundle.Link.Builder linkBuilder = Bundle.Link.builder();
         linkBuilder.url(Uri.of(selfRequest.toString()));
-        linkBuilder.relation(org.linuxforhealth.fhir.model.type.String.of("self"));
+        linkBuilder.relation(Code.of("self"));
         bundleBuilder.link(linkBuilder.build());
         bundleBuilder.type(BundleType.HISTORY);
         Bundle bundle = bundleBuilder.build();

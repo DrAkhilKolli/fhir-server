@@ -29,9 +29,7 @@ public class EncounterLocationStatus extends Code {
     /**
      * Active
      * 
-     * <p>The patient is currently at this location, or was between the period specified.
-
-A system may update these records 
+     * <p>The patient is currently at this location, or was between the period specified.A system may update these records 
      * when the patient leaves the location to either reserved, or completed.
      */
     public static final EncounterLocationStatus ACTIVE = EncounterLocationStatus.builder().value(Value.ACTIVE).build();
@@ -46,9 +44,7 @@ A system may update these records
     /**
      * Completed
      * 
-     * <p>The patient was at this location during the period specified.
-
-Not to be used when the patient is currently at the 
+     * <p>The patient was at this location during the period specified.Not to be used when the patient is currently at the 
      * location.
      */
     public static final EncounterLocationStatus COMPLETED = EncounterLocationStatus.builder().value(Value.COMPLETED).build();
@@ -221,9 +217,7 @@ Not to be used when the patient is currently at the
         /**
          * Active
          * 
-         * <p>The patient is currently at this location, or was between the period specified.
-
-A system may update these records 
+         * <p>The patient is currently at this location, or was between the period specified.A system may update these records 
          * when the patient leaves the location to either reserved, or completed.
          */
         ACTIVE("active"),
@@ -238,9 +232,7 @@ A system may update these records
         /**
          * Completed
          * 
-         * <p>The patient was at this location during the period specified.
-
-Not to be used when the patient is currently at the 
+         * <p>The patient was at this location during the period specified.Not to be used when the patient is currently at the 
          * location.
          */
         COMPLETED("completed");

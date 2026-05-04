@@ -55,6 +55,14 @@ public class UDIEntryType extends Code {
     public static final UDIEntryType SELF_REPORTED = UDIEntryType.builder().value(Value.SELF_REPORTED).build();
 
     /**
+     * Electronic Transmission
+     * 
+     * <p>The UDI information was received electronically from the device through a communication protocol, such as the IEEE 
+     * 11073 20601 version 4 exchange protocol over Bluetooth or USB.
+     */
+    public static final UDIEntryType ELECTRONIC_TRANSMISSION = UDIEntryType.builder().value(Value.ELECTRONIC_TRANSMISSION).build();
+
+    /**
      * Unknown
      * 
      * <p>The method of data capture has not been determined.
@@ -89,6 +97,8 @@ public class UDIEntryType extends Code {
             return CARD;
         case SELF_REPORTED:
             return SELF_REPORTED;
+        case ELECTRONIC_TRANSMISSION:
+            return ELECTRONIC_TRANSMISSION;
         case UNKNOWN:
             return UNKNOWN;
         default:
@@ -259,6 +269,14 @@ public class UDIEntryType extends Code {
         SELF_REPORTED("self-reported"),
 
         /**
+         * Electronic Transmission
+         * 
+         * <p>The UDI information was received electronically from the device through a communication protocol, such as the IEEE 
+         * 11073 20601 version 4 exchange protocol over Bluetooth or USB.
+         */
+        ELECTRONIC_TRANSMISSION("electronic-transmission"),
+
+        /**
          * Unknown
          * 
          * <p>The method of data capture has not been determined.
@@ -304,6 +322,8 @@ public class UDIEntryType extends Code {
                 return CARD;
             case "self-reported":
                 return SELF_REPORTED;
+            case "electronic-transmission":
+                return ELECTRONIC_TRANSMISSION;
             case "unknown":
                 return UNKNOWN;
             default:

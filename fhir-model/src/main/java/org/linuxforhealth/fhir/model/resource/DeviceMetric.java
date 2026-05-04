@@ -28,21 +28,20 @@ import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Instant;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
+import org.linuxforhealth.fhir.model.type.Quantity;
 import org.linuxforhealth.fhir.model.type.Reference;
-import org.linuxforhealth.fhir.model.type.Timing;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.DeviceMetricCalibrationState;
 import org.linuxforhealth.fhir.model.type.code.DeviceMetricCalibrationType;
 import org.linuxforhealth.fhir.model.type.code.DeviceMetricCategory;
-import org.linuxforhealth.fhir.model.type.code.DeviceMetricColor;
 import org.linuxforhealth.fhir.model.type.code.DeviceMetricOperationalStatus;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
- * Describes a measurement, calculation or setting capability of a medical device.
+ * Describes a measurement, calculation or setting capability of a device.
  * 
  * <p>Maturity level: FMM1 (Trial Use)
  */
@@ -63,8 +62,8 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "deviceMetric-1",
     level = "Warning",
     location = "(base)",
-    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/devicemetric-type",
-    expression = "unit.exists() implies (unit.memberOf('http://hl7.org/fhir/ValueSet/devicemetric-type', 'preferred'))",
+    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/ucum-units",
+    expression = "unit.exists() implies (unit.memberOf('http://hl7.org/fhir/ValueSet/ucum-units', 'preferred'))",
     source = "http://hl7.org/fhir/StructureDefinition/DeviceMetric",
     generated = true
 )
@@ -86,43 +85,37 @@ public class DeviceMetric extends DomainResource {
         bindingName = "MetricUnit",
         strength = BindingStrength.Value.PREFERRED,
         description = "IEEE 11073-10101",
-        valueSet = "http://hl7.org/fhir/ValueSet/devicemetric-type"
+        valueSet = "http://hl7.org/fhir/ValueSet/ucum-units"
     )
     private final CodeableConcept unit;
     @Summary
     @ReferenceTarget({ "Device" })
-    private final Reference source;
-    @Summary
-    @ReferenceTarget({ "Device" })
-    private final Reference parent;
+    @Required
+    private final Reference device;
     @Summary
     @Binding(
         bindingName = "DeviceMetricOperationalStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "Describes the operational status of the DeviceMetric.",
-        valueSet = "http://hl7.org/fhir/ValueSet/metric-operational-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/metric-operational-status|5.0.0"
     )
     private final DeviceMetricOperationalStatus operationalStatus;
-    @Summary
     @Binding(
-        bindingName = "DeviceMetricColor",
         strength = BindingStrength.Value.REQUIRED,
         description = "Describes the typical color of representation.",
-        valueSet = "http://hl7.org/fhir/ValueSet/metric-color|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/color-codes|5.0.0"
     )
-    private final DeviceMetricColor color;
+    private final Code color;
     @Summary
     @Binding(
         bindingName = "DeviceMetricCategory",
         strength = BindingStrength.Value.REQUIRED,
         description = "Describes the category of the metric.",
-        valueSet = "http://hl7.org/fhir/ValueSet/metric-category|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/metric-category|5.0.0"
     )
     @Required
     private final DeviceMetricCategory category;
-    @Summary
-    private final Timing measurementPeriod;
-    @Summary
+    private final Quantity measurementFrequency;
     private final List<Calibration> calibration;
 
     private DeviceMetric(Builder builder) {
@@ -130,18 +123,17 @@ public class DeviceMetric extends DomainResource {
         identifier = Collections.unmodifiableList(builder.identifier);
         type = builder.type;
         unit = builder.unit;
-        source = builder.source;
-        parent = builder.parent;
+        device = builder.device;
         operationalStatus = builder.operationalStatus;
         color = builder.color;
         category = builder.category;
-        measurementPeriod = builder.measurementPeriod;
+        measurementFrequency = builder.measurementFrequency;
         calibration = Collections.unmodifiableList(builder.calibration);
     }
 
     /**
-     * Unique instance identifiers assigned to a device by the device or gateway software, manufacturers, other organizations 
-     * or owners. For example: handle ID.
+     * Instance identifiers assigned to a device, by the device or gateway software, manufacturers, other organizations or 
+     * owners. For example, handle ID.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
@@ -171,27 +163,13 @@ public class DeviceMetric extends DomainResource {
     }
 
     /**
-     * Describes the link to the Device that this DeviceMetric belongs to and that contains administrative device information 
-     * such as manufacturer, serial number, etc.
+     * Describes the link to the Device. This is also known as a channel device.
      * 
      * @return
-     *     An immutable object of type {@link Reference} that may be null.
+     *     An immutable object of type {@link Reference} that is non-null.
      */
-    public Reference getSource() {
-        return source;
-    }
-
-    /**
-     * Describes the link to the Device that this DeviceMetric belongs to and that provide information about the location of 
-     * this DeviceMetric in the containment structure of the parent Device. An example would be a Device that represents a 
-     * Channel. This reference can be used by a client application to distinguish DeviceMetrics that have the same type, but 
-     * should be interpreted based on their containment location.
-     * 
-     * @return
-     *     An immutable object of type {@link Reference} that may be null.
-     */
-    public Reference getParent() {
-        return parent;
+    public Reference getDevice() {
+        return device;
     }
 
     /**
@@ -205,14 +183,14 @@ public class DeviceMetric extends DomainResource {
     }
 
     /**
-     * Describes the color representation for the metric. This is often used to aid clinicians to track and identify 
-     * parameter types by color. In practice, consider a Patient Monitor that has ECG/HR and Pleth for example; the 
-     * parameters are displayed in different characteristic colors, such as HR-blue, BP-green, and PR and SpO2- magenta.
+     * The preferred color associated with the metric (e.g., display color). This is often used to aid clinicians to track 
+     * and identify parameter types by color. In practice, consider a Patient Monitor that has ECG/HR and Pleth; the metrics 
+     * are displayed in different characteristic colors, such as HR in blue, BP in green, and PR and SpO2 in magenta.
      * 
      * @return
-     *     An immutable object of type {@link DeviceMetricColor} that may be null.
+     *     An immutable object of type {@link Code} that may be null.
      */
-    public DeviceMetricColor getColor() {
+    public Code getColor() {
         return color;
     }
 
@@ -228,17 +206,17 @@ public class DeviceMetric extends DomainResource {
     }
 
     /**
-     * Describes the measurement repetition time. This is not necessarily the same as the update period. The measurement 
-     * repetition time can range from milliseconds up to hours. An example for a measurement repetition time in the range of 
-     * milliseconds is the sampling rate of an ECG. An example for a measurement repetition time in the range of hours is a 
-     * NIBP that is triggered automatically every hour. The update period may be different than the measurement repetition 
-     * time, if the device does not update the published observed value with the same frequency as it was measured.
+     * The frequency at which the metric is taken or recorded. Devices measure metrics at a wide range of frequencies; for 
+     * example, an ECG might sample measurements in the millisecond range, while an NIBP might trigger only once an hour. 
+     * Less often, the measurementFrequency may be based on a unit other than time, such as distance (e.g. for a measuring 
+     * wheel). The update period may be different than the measurement frequency, if the device does not update the published 
+     * observed value with the same frequency as it was measured.
      * 
      * @return
-     *     An immutable object of type {@link Timing} that may be null.
+     *     An immutable object of type {@link Quantity} that may be null.
      */
-    public Timing getMeasurementPeriod() {
-        return measurementPeriod;
+    public Quantity getMeasurementFrequency() {
+        return measurementFrequency;
     }
 
     /**
@@ -257,12 +235,11 @@ public class DeviceMetric extends DomainResource {
             !identifier.isEmpty() || 
             (type != null) || 
             (unit != null) || 
-            (source != null) || 
-            (parent != null) || 
+            (device != null) || 
             (operationalStatus != null) || 
             (color != null) || 
             (category != null) || 
-            (measurementPeriod != null) || 
+            (measurementFrequency != null) || 
             !calibration.isEmpty();
     }
 
@@ -283,12 +260,11 @@ public class DeviceMetric extends DomainResource {
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(type, "type", visitor);
                 accept(unit, "unit", visitor);
-                accept(source, "source", visitor);
-                accept(parent, "parent", visitor);
+                accept(device, "device", visitor);
                 accept(operationalStatus, "operationalStatus", visitor);
                 accept(color, "color", visitor);
                 accept(category, "category", visitor);
-                accept(measurementPeriod, "measurementPeriod", visitor);
+                accept(measurementFrequency, "measurementFrequency", visitor);
                 accept(calibration, "calibration", visitor, Calibration.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
@@ -319,12 +295,11 @@ public class DeviceMetric extends DomainResource {
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(type, other.type) && 
             Objects.equals(unit, other.unit) && 
-            Objects.equals(source, other.source) && 
-            Objects.equals(parent, other.parent) && 
+            Objects.equals(device, other.device) && 
             Objects.equals(operationalStatus, other.operationalStatus) && 
             Objects.equals(color, other.color) && 
             Objects.equals(category, other.category) && 
-            Objects.equals(measurementPeriod, other.measurementPeriod) && 
+            Objects.equals(measurementFrequency, other.measurementFrequency) && 
             Objects.equals(calibration, other.calibration);
     }
 
@@ -343,12 +318,11 @@ public class DeviceMetric extends DomainResource {
                 identifier, 
                 type, 
                 unit, 
-                source, 
-                parent, 
+                device, 
                 operationalStatus, 
                 color, 
                 category, 
-                measurementPeriod, 
+                measurementFrequency, 
                 calibration);
             hashCode = result;
         }
@@ -368,12 +342,11 @@ public class DeviceMetric extends DomainResource {
         private List<Identifier> identifier = new ArrayList<>();
         private CodeableConcept type;
         private CodeableConcept unit;
-        private Reference source;
-        private Reference parent;
+        private Reference device;
         private DeviceMetricOperationalStatus operationalStatus;
-        private DeviceMetricColor color;
+        private Code color;
         private DeviceMetricCategory category;
-        private Timing measurementPeriod;
+        private Quantity measurementFrequency;
         private List<Calibration> calibration = new ArrayList<>();
 
         private Builder() {
@@ -458,7 +431,8 @@ public class DeviceMetric extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -476,7 +450,8 @@ public class DeviceMetric extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -497,7 +472,7 @@ public class DeviceMetric extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -517,7 +492,7 @@ public class DeviceMetric extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -542,9 +517,9 @@ public class DeviceMetric extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -567,9 +542,9 @@ public class DeviceMetric extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -592,8 +567,8 @@ public class DeviceMetric extends DomainResource {
         }
 
         /**
-         * Unique instance identifiers assigned to a device by the device or gateway software, manufacturers, other organizations 
-         * or owners. For example: handle ID.
+         * Instance identifiers assigned to a device, by the device or gateway software, manufacturers, other organizations or 
+         * owners. For example, handle ID.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -612,8 +587,8 @@ public class DeviceMetric extends DomainResource {
         }
 
         /**
-         * Unique instance identifiers assigned to a device by the device or gateway software, manufacturers, other organizations 
-         * or owners. For example: handle ID.
+         * Instance identifiers assigned to a device, by the device or gateway software, manufacturers, other organizations or 
+         * owners. For example, handle ID.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -663,44 +638,23 @@ public class DeviceMetric extends DomainResource {
         }
 
         /**
-         * Describes the link to the Device that this DeviceMetric belongs to and that contains administrative device information 
-         * such as manufacturer, serial number, etc.
+         * Describes the link to the Device. This is also known as a channel device.
+         * 
+         * <p>This element is required.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
          * <li>{@link Device}</li>
          * </ul>
          * 
-         * @param source
-         *     Describes the link to the source Device
+         * @param device
+         *     Describes the link to the Device
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder source(Reference source) {
-            this.source = source;
-            return this;
-        }
-
-        /**
-         * Describes the link to the Device that this DeviceMetric belongs to and that provide information about the location of 
-         * this DeviceMetric in the containment structure of the parent Device. An example would be a Device that represents a 
-         * Channel. This reference can be used by a client application to distinguish DeviceMetrics that have the same type, but 
-         * should be interpreted based on their containment location.
-         * 
-         * <p>Allowed resource types for this reference:
-         * <ul>
-         * <li>{@link Device}</li>
-         * </ul>
-         * 
-         * @param parent
-         *     Describes the link to the parent Device
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder parent(Reference parent) {
-            this.parent = parent;
+        public Builder device(Reference device) {
+            this.device = device;
             return this;
         }
 
@@ -719,17 +673,17 @@ public class DeviceMetric extends DomainResource {
         }
 
         /**
-         * Describes the color representation for the metric. This is often used to aid clinicians to track and identify 
-         * parameter types by color. In practice, consider a Patient Monitor that has ECG/HR and Pleth for example; the 
-         * parameters are displayed in different characteristic colors, such as HR-blue, BP-green, and PR and SpO2- magenta.
+         * The preferred color associated with the metric (e.g., display color). This is often used to aid clinicians to track 
+         * and identify parameter types by color. In practice, consider a Patient Monitor that has ECG/HR and Pleth; the metrics 
+         * are displayed in different characteristic colors, such as HR in blue, BP in green, and PR and SpO2 in magenta.
          * 
          * @param color
-         *     black | red | green | yellow | blue | magenta | cyan | white
+         *     Color name (from CSS4) or #RRGGBB code
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder color(DeviceMetricColor color) {
+        public Builder color(Code color) {
             this.color = color;
             return this;
         }
@@ -752,20 +706,20 @@ public class DeviceMetric extends DomainResource {
         }
 
         /**
-         * Describes the measurement repetition time. This is not necessarily the same as the update period. The measurement 
-         * repetition time can range from milliseconds up to hours. An example for a measurement repetition time in the range of 
-         * milliseconds is the sampling rate of an ECG. An example for a measurement repetition time in the range of hours is a 
-         * NIBP that is triggered automatically every hour. The update period may be different than the measurement repetition 
-         * time, if the device does not update the published observed value with the same frequency as it was measured.
+         * The frequency at which the metric is taken or recorded. Devices measure metrics at a wide range of frequencies; for 
+         * example, an ECG might sample measurements in the millisecond range, while an NIBP might trigger only once an hour. 
+         * Less often, the measurementFrequency may be based on a unit other than time, such as distance (e.g. for a measuring 
+         * wheel). The update period may be different than the measurement frequency, if the device does not update the published 
+         * observed value with the same frequency as it was measured.
          * 
-         * @param measurementPeriod
-         *     Describes the measurement repetition time
+         * @param measurementFrequency
+         *     Indicates how often the metric is taken or recorded
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder measurementPeriod(Timing measurementPeriod) {
-            this.measurementPeriod = measurementPeriod;
+        public Builder measurementFrequency(Quantity measurementFrequency) {
+            this.measurementFrequency = measurementFrequency;
             return this;
         }
 
@@ -814,6 +768,7 @@ public class DeviceMetric extends DomainResource {
          * <p>Required elements:
          * <ul>
          * <li>type</li>
+         * <li>device</li>
          * <li>category</li>
          * </ul>
          * 
@@ -835,10 +790,10 @@ public class DeviceMetric extends DomainResource {
             super.validate(deviceMetric);
             ValidationSupport.checkList(deviceMetric.identifier, "identifier", Identifier.class);
             ValidationSupport.requireNonNull(deviceMetric.type, "type");
+            ValidationSupport.requireNonNull(deviceMetric.device, "device");
             ValidationSupport.requireNonNull(deviceMetric.category, "category");
             ValidationSupport.checkList(deviceMetric.calibration, "calibration", Calibration.class);
-            ValidationSupport.checkReferenceType(deviceMetric.source, "source", "Device");
-            ValidationSupport.checkReferenceType(deviceMetric.parent, "parent", "Device");
+            ValidationSupport.checkReferenceType(deviceMetric.device, "device", "Device");
         }
 
         protected Builder from(DeviceMetric deviceMetric) {
@@ -846,12 +801,11 @@ public class DeviceMetric extends DomainResource {
             identifier.addAll(deviceMetric.identifier);
             type = deviceMetric.type;
             unit = deviceMetric.unit;
-            source = deviceMetric.source;
-            parent = deviceMetric.parent;
+            device = deviceMetric.device;
             operationalStatus = deviceMetric.operationalStatus;
             color = deviceMetric.color;
             category = deviceMetric.category;
-            measurementPeriod = deviceMetric.measurementPeriod;
+            measurementFrequency = deviceMetric.measurementFrequency;
             calibration.addAll(deviceMetric.calibration);
             return this;
         }
@@ -861,23 +815,20 @@ public class DeviceMetric extends DomainResource {
      * Describes the calibrations that have been performed or that are required to be performed.
      */
     public static class Calibration extends BackboneElement {
-        @Summary
         @Binding(
             bindingName = "DeviceMetricCalibrationType",
             strength = BindingStrength.Value.REQUIRED,
             description = "Describes the type of a metric calibration.",
-            valueSet = "http://hl7.org/fhir/ValueSet/metric-calibration-type|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/metric-calibration-type|5.0.0"
         )
         private final DeviceMetricCalibrationType type;
-        @Summary
         @Binding(
             bindingName = "DeviceMetricCalibrationState",
             strength = BindingStrength.Value.REQUIRED,
             description = "Describes the state of a metric calibration.",
-            valueSet = "http://hl7.org/fhir/ValueSet/metric-calibration-state|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/metric-calibration-state|5.0.0"
         )
         private final DeviceMetricCalibrationState state;
-        @Summary
         private final Instant time;
 
         private Calibration(Builder builder) {
@@ -1013,7 +964,7 @@ public class DeviceMetric extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1033,7 +984,7 @@ public class DeviceMetric extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1058,7 +1009,7 @@ public class DeviceMetric extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1083,7 +1034,7 @@ public class DeviceMetric extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 

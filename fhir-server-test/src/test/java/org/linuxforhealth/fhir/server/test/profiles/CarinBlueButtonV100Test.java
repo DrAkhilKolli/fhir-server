@@ -172,7 +172,7 @@ public class CarinBlueButtonV100Test extends ProfilesTestBaseV2 {
         Reference org45ref = Reference.builder()
                 .reference(org.linuxforhealth.fhir.model.type.String.of("Organization/" + organizationOrg45Id))
                 .build();
-        coverage = coverage.toBuilder().payor(Arrays.asList(org45ref)).build();
+        coverage = coverage.toBuilder().insurer(org45ref).build();
 
         coverageId = buildAndAssertOnResource("Coverage", coverage);
     }

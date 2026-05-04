@@ -20,18 +20,18 @@ import javax.annotation.Generated;
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class ActionRelationshipType extends Code {
     /**
-     * Before Start
-     * 
-     * <p>The action must be performed before the start of the related action.
-     */
-    public static final ActionRelationshipType BEFORE_START = ActionRelationshipType.builder().value(Value.BEFORE_START).build();
-
-    /**
      * Before
      * 
      * <p>The action must be performed before the related action.
      */
     public static final ActionRelationshipType BEFORE = ActionRelationshipType.builder().value(Value.BEFORE).build();
+
+    /**
+     * Before Start
+     * 
+     * <p>The action must be performed before the start of the related action.
+     */
+    public static final ActionRelationshipType BEFORE_START = ActionRelationshipType.builder().value(Value.BEFORE_START).build();
 
     /**
      * Before End
@@ -41,18 +41,18 @@ public class ActionRelationshipType extends Code {
     public static final ActionRelationshipType BEFORE_END = ActionRelationshipType.builder().value(Value.BEFORE_END).build();
 
     /**
-     * Concurrent With Start
-     * 
-     * <p>The action must be performed concurrent with the start of the related action.
-     */
-    public static final ActionRelationshipType CONCURRENT_WITH_START = ActionRelationshipType.builder().value(Value.CONCURRENT_WITH_START).build();
-
-    /**
      * Concurrent
      * 
      * <p>The action must be performed concurrent with the related action.
      */
     public static final ActionRelationshipType CONCURRENT = ActionRelationshipType.builder().value(Value.CONCURRENT).build();
+
+    /**
+     * Concurrent With Start
+     * 
+     * <p>The action must be performed concurrent with the start of the related action.
+     */
+    public static final ActionRelationshipType CONCURRENT_WITH_START = ActionRelationshipType.builder().value(Value.CONCURRENT_WITH_START).build();
 
     /**
      * Concurrent With End
@@ -62,18 +62,18 @@ public class ActionRelationshipType extends Code {
     public static final ActionRelationshipType CONCURRENT_WITH_END = ActionRelationshipType.builder().value(Value.CONCURRENT_WITH_END).build();
 
     /**
-     * After Start
-     * 
-     * <p>The action must be performed after the start of the related action.
-     */
-    public static final ActionRelationshipType AFTER_START = ActionRelationshipType.builder().value(Value.AFTER_START).build();
-
-    /**
      * After
      * 
      * <p>The action must be performed after the related action.
      */
     public static final ActionRelationshipType AFTER = ActionRelationshipType.builder().value(Value.AFTER).build();
+
+    /**
+     * After Start
+     * 
+     * <p>The action must be performed after the start of the related action.
+     */
+    public static final ActionRelationshipType AFTER_START = ActionRelationshipType.builder().value(Value.AFTER_START).build();
 
     /**
      * After End
@@ -100,22 +100,22 @@ public class ActionRelationshipType extends Code {
      */
     public static ActionRelationshipType of(Value value) {
         switch (value) {
-        case BEFORE_START:
-            return BEFORE_START;
         case BEFORE:
             return BEFORE;
+        case BEFORE_START:
+            return BEFORE_START;
         case BEFORE_END:
             return BEFORE_END;
-        case CONCURRENT_WITH_START:
-            return CONCURRENT_WITH_START;
         case CONCURRENT:
             return CONCURRENT;
+        case CONCURRENT_WITH_START:
+            return CONCURRENT_WITH_START;
         case CONCURRENT_WITH_END:
             return CONCURRENT_WITH_END;
-        case AFTER_START:
-            return AFTER_START;
         case AFTER:
             return AFTER;
+        case AFTER_START:
+            return AFTER_START;
         case AFTER_END:
             return AFTER_END;
         default:
@@ -251,18 +251,18 @@ public class ActionRelationshipType extends Code {
 
     public enum Value {
         /**
-         * Before Start
-         * 
-         * <p>The action must be performed before the start of the related action.
-         */
-        BEFORE_START("before-start"),
-
-        /**
          * Before
          * 
          * <p>The action must be performed before the related action.
          */
         BEFORE("before"),
+
+        /**
+         * Before Start
+         * 
+         * <p>The action must be performed before the start of the related action.
+         */
+        BEFORE_START("before-start"),
 
         /**
          * Before End
@@ -272,18 +272,18 @@ public class ActionRelationshipType extends Code {
         BEFORE_END("before-end"),
 
         /**
-         * Concurrent With Start
-         * 
-         * <p>The action must be performed concurrent with the start of the related action.
-         */
-        CONCURRENT_WITH_START("concurrent-with-start"),
-
-        /**
          * Concurrent
          * 
          * <p>The action must be performed concurrent with the related action.
          */
         CONCURRENT("concurrent"),
+
+        /**
+         * Concurrent With Start
+         * 
+         * <p>The action must be performed concurrent with the start of the related action.
+         */
+        CONCURRENT_WITH_START("concurrent-with-start"),
 
         /**
          * Concurrent With End
@@ -293,18 +293,18 @@ public class ActionRelationshipType extends Code {
         CONCURRENT_WITH_END("concurrent-with-end"),
 
         /**
-         * After Start
-         * 
-         * <p>The action must be performed after the start of the related action.
-         */
-        AFTER_START("after-start"),
-
-        /**
          * After
          * 
          * <p>The action must be performed after the related action.
          */
         AFTER("after"),
+
+        /**
+         * After Start
+         * 
+         * <p>The action must be performed after the start of the related action.
+         */
+        AFTER_START("after-start"),
 
         /**
          * After End
@@ -342,22 +342,22 @@ public class ActionRelationshipType extends Code {
                 return null;
             }
             switch (value) {
-            case "before-start":
-                return BEFORE_START;
             case "before":
                 return BEFORE;
+            case "before-start":
+                return BEFORE_START;
             case "before-end":
                 return BEFORE_END;
-            case "concurrent-with-start":
-                return CONCURRENT_WITH_START;
             case "concurrent":
                 return CONCURRENT;
+            case "concurrent-with-start":
+                return CONCURRENT_WITH_START;
             case "concurrent-with-end":
                 return CONCURRENT_WITH_END;
-            case "after-start":
-                return AFTER_START;
             case "after":
                 return AFTER;
+            case "after-start":
+                return AFTER_START;
             case "after-end":
                 return AFTER_END;
             default:

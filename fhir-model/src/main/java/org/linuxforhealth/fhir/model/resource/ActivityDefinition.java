@@ -27,6 +27,8 @@ import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
+import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
 import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.DateTime;
@@ -62,10 +64,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * This resource allows for the definition of some activity to be performed, independent of a particular patient, 
  * practitioner, or other performance context.
  * 
- * <p>Maturity level: FMM3 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 3,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
@@ -73,20 +75,37 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
     source = "http://hl7.org/fhir/StructureDefinition/ActivityDefinition"
 )
 @Constraint(
-    id = "activityDefinition-1",
+    id = "cnl-1",
+    level = "Warning",
+    location = "ActivityDefinition.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
+    source = "http://hl7.org/fhir/StructureDefinition/ActivityDefinition"
+)
+@Constraint(
+    id = "activityDefinition-2",
     level = "Warning",
     location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/subject-type",
-    expression = "subject.as(CodeableConcept).exists() implies (subject.as(CodeableConcept).memberOf('http://hl7.org/fhir/ValueSet/subject-type', 'extensible'))",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
     source = "http://hl7.org/fhir/StructureDefinition/ActivityDefinition",
     generated = true
 )
 @Constraint(
-    id = "activityDefinition-2",
+    id = "activityDefinition-3",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/participant-resource-types",
+    expression = "subject.as(CodeableConcept).exists() implies (subject.as(CodeableConcept).memberOf('http://hl7.org/fhir/ValueSet/participant-resource-types', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/ActivityDefinition",
+    generated = true
+)
+@Constraint(
+    id = "activityDefinition-4",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
@@ -103,6 +122,13 @@ public class ActivityDefinition extends DomainResource {
     @Summary
     private final String version;
     @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+    @Summary
     private final String name;
     @Summary
     private final String title;
@@ -112,21 +138,21 @@ public class ActivityDefinition extends DomainResource {
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
     @Summary
     private final Boolean experimental;
-    @ReferenceTarget({ "Group" })
+    @ReferenceTarget({ "Group", "MedicinalProductDefinition", "SubstanceDefinition", "AdministrableProductDefinition", "ManufacturedItemDefinition", "PackagedProductDefinition", "EvidenceVariable" })
     @Choice({ CodeableConcept.class, Reference.class, Canonical.class })
     @Binding(
         bindingName = "SubjectType",
         strength = BindingStrength.Value.EXTENSIBLE,
         description = "The possible types of subjects for an activity (E.g. Patient, Practitioner, Organization, Location, etc.).",
-        valueSet = "http://hl7.org/fhir/ValueSet/subject-type"
+        valueSet = "http://hl7.org/fhir/ValueSet/participant-resource-types"
     )
-    private final Element subject;
+    private final org.linuxforhealth.fhir.model.type.Element subject;
     @Summary
     private final DateTime date;
     @Summary
@@ -146,8 +172,9 @@ public class ActivityDefinition extends DomainResource {
     )
     private final List<CodeableConcept> jurisdiction;
     private final Markdown purpose;
-    private final String usage;
+    private final Markdown usage;
     private final Markdown copyright;
+    private final String copyrightLabel;
     private final Date approvalDate;
     private final Date lastReviewDate;
     @Summary
@@ -170,7 +197,7 @@ public class ActivityDefinition extends DomainResource {
         bindingName = "ActivityDefinitionKind",
         strength = BindingStrength.Value.REQUIRED,
         description = "The kind of activity the definition is describing.",
-        valueSet = "http://hl7.org/fhir/ValueSet/request-resource-types|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/request-resource-types|5.0.0"
     )
     private final ActivityDefinitionKind kind;
     private final Canonical profile;
@@ -186,24 +213,32 @@ public class ActivityDefinition extends DomainResource {
         bindingName = "RequestIntent",
         strength = BindingStrength.Value.REQUIRED,
         description = "Codes indicating the degree of authority/intentionality associated with a request.",
-        valueSet = "http://hl7.org/fhir/ValueSet/request-intent|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/request-intent|5.0.0"
     )
     private final RequestIntent intent;
     @Binding(
         bindingName = "RequestPriority",
         strength = BindingStrength.Value.REQUIRED,
         description = "Identifies the level of importance to be assigned to actioning the request.",
-        valueSet = "http://hl7.org/fhir/ValueSet/request-priority|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/request-priority|5.0.0"
     )
     private final RequestPriority priority;
     @Summary
     private final Boolean doNotPerform;
-    @Choice({ Timing.class, DateTime.class, Age.class, Period.class, Range.class, Duration.class })
-    private final Element timing;
-    @ReferenceTarget({ "Location" })
-    private final Reference location;
+    @Choice({ Timing.class, Age.class, Range.class, Duration.class })
+    private final org.linuxforhealth.fhir.model.type.Element timing;
+    @Summary
+    @Choice({ Boolean.class, CodeableConcept.class })
+    @Binding(
+        bindingName = "ProcedureAsNeededReason",
+        strength = BindingStrength.Value.EXAMPLE,
+        description = "A coded concept identifying the pre-condition that should hold prior to performing a procedure.  For example \"pain\", \"on flare-up\", etc.",
+        valueSet = "http://hl7.org/fhir/ValueSet/medication-as-needed-reason"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element asNeeded;
+    private final CodeableReference location;
     private final List<Participant> participant;
-    @ReferenceTarget({ "Medication", "Substance", "Ingredient" })
+    @ReferenceTarget({ "Medication", "Ingredient", "Substance", "SubstanceDefinition" })
     @Choice({ Reference.class, CodeableConcept.class })
     @Binding(
         bindingName = "ActivityProduct",
@@ -211,7 +246,7 @@ public class ActivityDefinition extends DomainResource {
         description = "Code describing the type of substance or medication.",
         valueSet = "http://hl7.org/fhir/ValueSet/medication-codes"
     )
-    private final Element product;
+    private final org.linuxforhealth.fhir.model.type.Element product;
     private final SimpleQuantity quantity;
     private final List<Dosage> dosage;
     @Binding(
@@ -221,12 +256,9 @@ public class ActivityDefinition extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/body-site"
     )
     private final List<CodeableConcept> bodySite;
-    @ReferenceTarget({ "SpecimenDefinition" })
-    private final List<Reference> specimenRequirement;
-    @ReferenceTarget({ "ObservationDefinition" })
-    private final List<Reference> observationRequirement;
-    @ReferenceTarget({ "ObservationDefinition" })
-    private final List<Reference> observationResultRequirement;
+    private final List<Canonical> specimenRequirement;
+    private final List<Canonical> observationRequirement;
+    private final List<Canonical> observationResultRequirement;
     private final Canonical transform;
     private final List<DynamicValue> dynamicValue;
 
@@ -235,6 +267,7 @@ public class ActivityDefinition extends DomainResource {
         url = builder.url;
         identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
         title = builder.title;
         subtitle = builder.subtitle;
@@ -250,6 +283,7 @@ public class ActivityDefinition extends DomainResource {
         purpose = builder.purpose;
         usage = builder.usage;
         copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
         approvalDate = builder.approvalDate;
         lastReviewDate = builder.lastReviewDate;
         effectivePeriod = builder.effectivePeriod;
@@ -267,6 +301,7 @@ public class ActivityDefinition extends DomainResource {
         priority = builder.priority;
         doNotPerform = builder.doNotPerform;
         timing = builder.timing;
+        asNeeded = builder.asNeeded;
         location = builder.location;
         participant = Collections.unmodifiableList(builder.participant);
         product = builder.product;
@@ -283,9 +318,8 @@ public class ActivityDefinition extends DomainResource {
     /**
      * An absolute URI that is used to identify this activity definition when it is referenced in a specification, model, 
      * design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal 
-     * address at which at which an authoritative instance of this activity definition is (or will be) published. This URL 
-     * can be the target of a canonical reference. It SHALL remain the same when the activity definition is stored on 
-     * different servers.
+     * address at which an authoritative instance of this activity definition is (or will be) published. This URL can be the 
+     * target of a canonical reference. It SHALL remain the same when the activity definition is stored on different servers.
      * 
      * @return
      *     An immutable object of type {@link Uri} that may be null.
@@ -319,6 +353,16 @@ public class ActivityDefinition extends DomainResource {
      */
     public String getVersion() {
         return version;
+    }
+
+    /**
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
     }
 
     /**
@@ -382,14 +426,14 @@ public class ActivityDefinition extends DomainResource {
      * @return
      *     An immutable object of type {@link CodeableConcept}, {@link Reference} or {@link Canonical} that may be null.
      */
-    public Element getSubject() {
+    public org.linuxforhealth.fhir.model.type.Element getSubject() {
         return subject;
     }
 
     /**
-     * The date (and optionally time) when the activity definition was published. The date must change when the business 
-     * version changes and it must change if the status code changes. In addition, it should change when the substantive 
-     * content of the activity definition changes.
+     * The date (and optionally time) when the activity definition was last significantly changed. The date must change when 
+     * the business version changes and it must change if the status code changes. In addition, it should change when the 
+     * substantive content of the activity definition changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -399,7 +443,8 @@ public class ActivityDefinition extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the activity definition.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the activity 
+     * definition.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -464,9 +509,9 @@ public class ActivityDefinition extends DomainResource {
      * A detailed description of how the activity definition is used from a clinical perspective.
      * 
      * @return
-     *     An immutable object of type {@link String} that may be null.
+     *     An immutable object of type {@link Markdown} that may be null.
      */
-    public String getUsage() {
+    public Markdown getUsage() {
         return usage;
     }
 
@@ -479,6 +524,17 @@ public class ActivityDefinition extends DomainResource {
      */
     public Markdown getCopyright() {
         return copyright;
+    }
+
+    /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
     }
 
     /**
@@ -545,7 +601,8 @@ public class ActivityDefinition extends DomainResource {
     }
 
     /**
-     * An individual or organization primarily responsible for review of some aspect of the content.
+     * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+     * content.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
@@ -555,7 +612,8 @@ public class ActivityDefinition extends DomainResource {
     }
 
     /**
-     * An individual or organization responsible for officially endorsing the content for use in some setting.
+     * An individual or organization asserted by the publisher to be responsible for officially endorsing the content for use 
+     * in some setting.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
@@ -586,7 +644,7 @@ public class ActivityDefinition extends DomainResource {
 
     /**
      * A description of the kind of resource the activity definition is representing. For example, a MedicationRequest, a 
-     * ServiceRequest, or a CommunicationRequest. Typically, but not always, this is a Request resource.
+     * ServiceRequest, or a CommunicationRequest.
      * 
      * @return
      *     An immutable object of type {@link ActivityDefinitionKind} that may be null.
@@ -649,23 +707,33 @@ public class ActivityDefinition extends DomainResource {
     }
 
     /**
-     * The period, timing or frequency upon which the described activity is to occur.
+     * The timing or frequency upon which the described activity is to occur.
      * 
      * @return
-     *     An immutable object of type {@link Timing}, {@link DateTime}, {@link Age}, {@link Period}, {@link Range} or {@link 
-     *     Duration} that may be null.
+     *     An immutable object of type {@link Timing}, {@link Age}, {@link Range} or {@link Duration} that may be null.
      */
-    public Element getTiming() {
+    public org.linuxforhealth.fhir.model.type.Element getTiming() {
         return timing;
+    }
+
+    /**
+     * If a CodeableConcept is present, it indicates the pre-condition for performing the service. For example "pain", "on 
+     * flare-up", etc.
+     * 
+     * @return
+     *     An immutable object of type {@link Boolean} or {@link CodeableConcept} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getAsNeeded() {
+        return asNeeded;
     }
 
     /**
      * Identifies the facility where the activity will occur; e.g. home, hospital, specific clinic, etc.
      * 
      * @return
-     *     An immutable object of type {@link Reference} that may be null.
+     *     An immutable object of type {@link CodeableReference} that may be null.
      */
-    public Reference getLocation() {
+    public CodeableReference getLocation() {
         return location;
     }
 
@@ -685,7 +753,7 @@ public class ActivityDefinition extends DomainResource {
      * @return
      *     An immutable object of type {@link Reference} or {@link CodeableConcept} that may be null.
      */
-    public Element getProduct() {
+    public org.linuxforhealth.fhir.model.type.Element getProduct() {
         return product;
     }
 
@@ -723,9 +791,9 @@ public class ActivityDefinition extends DomainResource {
      * Defines specimen requirements for the action to be performed, such as required specimens for a lab test.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link Canonical} that may be empty.
      */
-    public List<Reference> getSpecimenRequirement() {
+    public List<Canonical> getSpecimenRequirement() {
         return specimenRequirement;
     }
 
@@ -733,9 +801,9 @@ public class ActivityDefinition extends DomainResource {
      * Defines observation requirements for the action to be performed, such as body weight or surface area.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link Canonical} that may be empty.
      */
-    public List<Reference> getObservationRequirement() {
+    public List<Canonical> getObservationRequirement() {
         return observationRequirement;
     }
 
@@ -743,9 +811,9 @@ public class ActivityDefinition extends DomainResource {
      * Defines the observations that are expected to be produced by the action.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link Canonical} that may be empty.
      */
-    public List<Reference> getObservationResultRequirement() {
+    public List<Canonical> getObservationResultRequirement() {
         return observationResultRequirement;
     }
 
@@ -778,6 +846,7 @@ public class ActivityDefinition extends DomainResource {
             (url != null) || 
             !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
             (title != null) || 
             (subtitle != null) || 
@@ -793,6 +862,7 @@ public class ActivityDefinition extends DomainResource {
             (purpose != null) || 
             (usage != null) || 
             (copyright != null) || 
+            (copyrightLabel != null) || 
             (approvalDate != null) || 
             (lastReviewDate != null) || 
             (effectivePeriod != null) || 
@@ -810,6 +880,7 @@ public class ActivityDefinition extends DomainResource {
             (priority != null) || 
             (doNotPerform != null) || 
             (timing != null) || 
+            (asNeeded != null) || 
             (location != null) || 
             !participant.isEmpty() || 
             (product != null) || 
@@ -840,6 +911,7 @@ public class ActivityDefinition extends DomainResource {
                 accept(url, "url", visitor);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(subtitle, "subtitle", visitor);
@@ -855,6 +927,7 @@ public class ActivityDefinition extends DomainResource {
                 accept(purpose, "purpose", visitor);
                 accept(usage, "usage", visitor);
                 accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
                 accept(approvalDate, "approvalDate", visitor);
                 accept(lastReviewDate, "lastReviewDate", visitor);
                 accept(effectivePeriod, "effectivePeriod", visitor);
@@ -872,15 +945,16 @@ public class ActivityDefinition extends DomainResource {
                 accept(priority, "priority", visitor);
                 accept(doNotPerform, "doNotPerform", visitor);
                 accept(timing, "timing", visitor);
+                accept(asNeeded, "asNeeded", visitor);
                 accept(location, "location", visitor);
                 accept(participant, "participant", visitor, Participant.class);
                 accept(product, "product", visitor);
                 accept(quantity, "quantity", visitor);
                 accept(dosage, "dosage", visitor, Dosage.class);
                 accept(bodySite, "bodySite", visitor, CodeableConcept.class);
-                accept(specimenRequirement, "specimenRequirement", visitor, Reference.class);
-                accept(observationRequirement, "observationRequirement", visitor, Reference.class);
-                accept(observationResultRequirement, "observationResultRequirement", visitor, Reference.class);
+                accept(specimenRequirement, "specimenRequirement", visitor, Canonical.class);
+                accept(observationRequirement, "observationRequirement", visitor, Canonical.class);
+                accept(observationResultRequirement, "observationResultRequirement", visitor, Canonical.class);
                 accept(transform, "transform", visitor);
                 accept(dynamicValue, "dynamicValue", visitor, DynamicValue.class);
             }
@@ -912,6 +986,7 @@ public class ActivityDefinition extends DomainResource {
             Objects.equals(url, other.url) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(subtitle, other.subtitle) && 
@@ -927,6 +1002,7 @@ public class ActivityDefinition extends DomainResource {
             Objects.equals(purpose, other.purpose) && 
             Objects.equals(usage, other.usage) && 
             Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
             Objects.equals(approvalDate, other.approvalDate) && 
             Objects.equals(lastReviewDate, other.lastReviewDate) && 
             Objects.equals(effectivePeriod, other.effectivePeriod) && 
@@ -944,6 +1020,7 @@ public class ActivityDefinition extends DomainResource {
             Objects.equals(priority, other.priority) && 
             Objects.equals(doNotPerform, other.doNotPerform) && 
             Objects.equals(timing, other.timing) && 
+            Objects.equals(asNeeded, other.asNeeded) && 
             Objects.equals(location, other.location) && 
             Objects.equals(participant, other.participant) && 
             Objects.equals(product, other.product) && 
@@ -972,6 +1049,7 @@ public class ActivityDefinition extends DomainResource {
                 url, 
                 identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
                 title, 
                 subtitle, 
@@ -987,6 +1065,7 @@ public class ActivityDefinition extends DomainResource {
                 purpose, 
                 usage, 
                 copyright, 
+                copyrightLabel, 
                 approvalDate, 
                 lastReviewDate, 
                 effectivePeriod, 
@@ -1004,6 +1083,7 @@ public class ActivityDefinition extends DomainResource {
                 priority, 
                 doNotPerform, 
                 timing, 
+                asNeeded, 
                 location, 
                 participant, 
                 product, 
@@ -1033,12 +1113,13 @@ public class ActivityDefinition extends DomainResource {
         private Uri url;
         private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
         private String title;
         private String subtitle;
         private PublicationStatus status;
         private Boolean experimental;
-        private Element subject;
+        private org.linuxforhealth.fhir.model.type.Element subject;
         private DateTime date;
         private String publisher;
         private List<ContactDetail> contact = new ArrayList<>();
@@ -1046,8 +1127,9 @@ public class ActivityDefinition extends DomainResource {
         private List<UsageContext> useContext = new ArrayList<>();
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
         private Markdown purpose;
-        private String usage;
+        private Markdown usage;
         private Markdown copyright;
+        private String copyrightLabel;
         private Date approvalDate;
         private Date lastReviewDate;
         private Period effectivePeriod;
@@ -1064,16 +1146,17 @@ public class ActivityDefinition extends DomainResource {
         private RequestIntent intent;
         private RequestPriority priority;
         private Boolean doNotPerform;
-        private Element timing;
-        private Reference location;
+        private org.linuxforhealth.fhir.model.type.Element timing;
+        private org.linuxforhealth.fhir.model.type.Element asNeeded;
+        private CodeableReference location;
         private List<Participant> participant = new ArrayList<>();
-        private Element product;
+        private org.linuxforhealth.fhir.model.type.Element product;
         private SimpleQuantity quantity;
         private List<Dosage> dosage = new ArrayList<>();
         private List<CodeableConcept> bodySite = new ArrayList<>();
-        private List<Reference> specimenRequirement = new ArrayList<>();
-        private List<Reference> observationRequirement = new ArrayList<>();
-        private List<Reference> observationResultRequirement = new ArrayList<>();
+        private List<Canonical> specimenRequirement = new ArrayList<>();
+        private List<Canonical> observationRequirement = new ArrayList<>();
+        private List<Canonical> observationResultRequirement = new ArrayList<>();
         private Canonical transform;
         private List<DynamicValue> dynamicValue = new ArrayList<>();
 
@@ -1159,7 +1242,8 @@ public class ActivityDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1177,7 +1261,8 @@ public class ActivityDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1198,7 +1283,7 @@ public class ActivityDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -1218,7 +1303,7 @@ public class ActivityDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -1243,9 +1328,9 @@ public class ActivityDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1268,9 +1353,9 @@ public class ActivityDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1295,9 +1380,8 @@ public class ActivityDefinition extends DomainResource {
         /**
          * An absolute URI that is used to identify this activity definition when it is referenced in a specification, model, 
          * design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal 
-         * address at which at which an authoritative instance of this activity definition is (or will be) published. This URL 
-         * can be the target of a canonical reference. It SHALL remain the same when the activity definition is stored on 
-         * different servers.
+         * address at which an authoritative instance of this activity definition is (or will be) published. This URL can be the 
+         * target of a canonical reference. It SHALL remain the same when the activity definition is stored on different servers.
          * 
          * @param url
          *     Canonical identifier for this activity definition, represented as a URI (globally unique)
@@ -1384,6 +1468,42 @@ public class ActivityDefinition extends DomainResource {
          */
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
             return this;
         }
 
@@ -1541,6 +1661,12 @@ public class ActivityDefinition extends DomainResource {
          * When of type {@link Reference}, the allowed resource types for this reference are:
          * <ul>
          * <li>{@link Group}</li>
+         * <li>{@link MedicinalProductDefinition}</li>
+         * <li>{@link SubstanceDefinition}</li>
+         * <li>{@link AdministrableProductDefinition}</li>
+         * <li>{@link ManufacturedItemDefinition}</li>
+         * <li>{@link PackagedProductDefinition}</li>
+         * <li>{@link EvidenceVariable}</li>
          * </ul>
          * 
          * @param subject
@@ -1549,15 +1675,15 @@ public class ActivityDefinition extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder subject(Element subject) {
+        public Builder subject(org.linuxforhealth.fhir.model.type.Element subject) {
             this.subject = subject;
             return this;
         }
 
         /**
-         * The date (and optionally time) when the activity definition was published. The date must change when the business 
-         * version changes and it must change if the status code changes. In addition, it should change when the substantive 
-         * content of the activity definition changes.
+         * The date (and optionally time) when the activity definition was last significantly changed. The date must change when 
+         * the business version changes and it must change if the status code changes. In addition, it should change when the 
+         * substantive content of the activity definition changes.
          * 
          * @param date
          *     Date last changed
@@ -1574,7 +1700,7 @@ public class ActivityDefinition extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1587,10 +1713,11 @@ public class ActivityDefinition extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the activity definition.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the activity 
+         * definition.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1750,22 +1877,6 @@ public class ActivityDefinition extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code usage}.
-         * 
-         * @param usage
-         *     Describes the clinical usage of the activity definition
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #usage(org.linuxforhealth.fhir.model.type.String)
-         */
-        public Builder usage(java.lang.String usage) {
-            this.usage = (usage == null) ? null : String.of(usage);
-            return this;
-        }
-
-        /**
          * A detailed description of how the activity definition is used from a clinical perspective.
          * 
          * @param usage
@@ -1774,7 +1885,7 @@ public class ActivityDefinition extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder usage(String usage) {
+        public Builder usage(Markdown usage) {
             this.usage = usage;
             return this;
         }
@@ -1791,6 +1902,37 @@ public class ActivityDefinition extends DomainResource {
          */
         public Builder copyright(Markdown copyright) {
             this.copyright = copyright;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
             return this;
         }
 
@@ -1829,7 +1971,7 @@ public class ActivityDefinition extends DomainResource {
          * Convenience method for setting {@code lastReviewDate}.
          * 
          * @param lastReviewDate
-         *     When the activity definition was last reviewed
+         *     When the activity definition was last reviewed by the publisher
          * 
          * @return
          *     A reference to this Builder instance
@@ -1846,7 +1988,7 @@ public class ActivityDefinition extends DomainResource {
          * change the original approval date.
          * 
          * @param lastReviewDate
-         *     When the activity definition was last reviewed
+         *     When the activity definition was last reviewed by the publisher
          * 
          * @return
          *     A reference to this Builder instance
@@ -1878,7 +2020,7 @@ public class ActivityDefinition extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param topic
-         *     E.g. Education, Treatment, Assessment, etc.
+         *     E.g. Education, Treatment, Assessment, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -1898,7 +2040,7 @@ public class ActivityDefinition extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param topic
-         *     E.g. Education, Treatment, Assessment, etc.
+         *     E.g. Education, Treatment, Assessment, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -1990,7 +2132,8 @@ public class ActivityDefinition extends DomainResource {
         }
 
         /**
-         * An individual or organization primarily responsible for review of some aspect of the content.
+         * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+         * content.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -2009,7 +2152,8 @@ public class ActivityDefinition extends DomainResource {
         }
 
         /**
-         * An individual or organization primarily responsible for review of some aspect of the content.
+         * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+         * content.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -2029,7 +2173,8 @@ public class ActivityDefinition extends DomainResource {
         }
 
         /**
-         * An individual or organization responsible for officially endorsing the content for use in some setting.
+         * An individual or organization asserted by the publisher to be responsible for officially endorsing the content for use 
+         * in some setting.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -2048,7 +2193,8 @@ public class ActivityDefinition extends DomainResource {
         }
 
         /**
-         * An individual or organization responsible for officially endorsing the content for use in some setting.
+         * An individual or organization asserted by the publisher to be responsible for officially endorsing the content for use 
+         * in some setting.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -2074,7 +2220,7 @@ public class ActivityDefinition extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param relatedArtifact
-         *     Additional documentation, citations, etc.
+         *     Additional documentation, citations, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -2093,7 +2239,7 @@ public class ActivityDefinition extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param relatedArtifact
-         *     Additional documentation, citations, etc.
+         *     Additional documentation, citations, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -2147,7 +2293,7 @@ public class ActivityDefinition extends DomainResource {
 
         /**
          * A description of the kind of resource the activity definition is representing. For example, a MedicationRequest, a 
-         * ServiceRequest, or a CommunicationRequest. Typically, but not always, this is a Request resource.
+         * ServiceRequest, or a CommunicationRequest.
          * 
          * @param kind
          *     Kind of resource
@@ -2250,14 +2396,12 @@ public class ActivityDefinition extends DomainResource {
         }
 
         /**
-         * The period, timing or frequency upon which the described activity is to occur.
+         * The timing or frequency upon which the described activity is to occur.
          * 
          * <p>This is a choice element with the following allowed types:
          * <ul>
          * <li>{@link Timing}</li>
-         * <li>{@link DateTime}</li>
          * <li>{@link Age}</li>
-         * <li>{@link Period}</li>
          * <li>{@link Range}</li>
          * <li>{@link Duration}</li>
          * </ul>
@@ -2268,18 +2412,50 @@ public class ActivityDefinition extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder timing(Element timing) {
+        public Builder timing(org.linuxforhealth.fhir.model.type.Element timing) {
             this.timing = timing;
             return this;
         }
 
         /**
-         * Identifies the facility where the activity will occur; e.g. home, hospital, specific clinic, etc.
+         * Convenience method for setting {@code asNeeded} with choice type Boolean.
          * 
-         * <p>Allowed resource types for this reference:
+         * @param asNeeded
+         *     Preconditions for service
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #asNeeded(Element)
+         */
+        public Builder asNeeded(java.lang.Boolean asNeeded) {
+            this.asNeeded = (asNeeded == null) ? null : Boolean.of(asNeeded);
+            return this;
+        }
+
+        /**
+         * If a CodeableConcept is present, it indicates the pre-condition for performing the service. For example "pain", "on 
+         * flare-up", etc.
+         * 
+         * <p>This is a choice element with the following allowed types:
          * <ul>
-         * <li>{@link Location}</li>
+         * <li>{@link Boolean}</li>
+         * <li>{@link CodeableConcept}</li>
          * </ul>
+         * 
+         * @param asNeeded
+         *     Preconditions for service
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder asNeeded(org.linuxforhealth.fhir.model.type.Element asNeeded) {
+            this.asNeeded = asNeeded;
+            return this;
+        }
+
+        /**
+         * Identifies the facility where the activity will occur; e.g. home, hospital, specific clinic, etc.
          * 
          * @param location
          *     Where it should happen
@@ -2287,7 +2463,7 @@ public class ActivityDefinition extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder location(Reference location) {
+        public Builder location(CodeableReference location) {
             this.location = location;
             return this;
         }
@@ -2343,8 +2519,9 @@ public class ActivityDefinition extends DomainResource {
          * When of type {@link Reference}, the allowed resource types for this reference are:
          * <ul>
          * <li>{@link Medication}</li>
-         * <li>{@link Substance}</li>
          * <li>{@link Ingredient}</li>
+         * <li>{@link Substance}</li>
+         * <li>{@link SubstanceDefinition}</li>
          * </ul>
          * 
          * @param product
@@ -2353,7 +2530,7 @@ public class ActivityDefinition extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder product(Element product) {
+        public Builder product(org.linuxforhealth.fhir.model.type.Element product) {
             this.product = product;
             return this;
         }
@@ -2456,19 +2633,14 @@ public class ActivityDefinition extends DomainResource {
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link SpecimenDefinition}</li>
-         * </ul>
-         * 
          * @param specimenRequirement
          *     What specimens are required to perform this action
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder specimenRequirement(Reference... specimenRequirement) {
-            for (Reference value : specimenRequirement) {
+        public Builder specimenRequirement(Canonical... specimenRequirement) {
+            for (Canonical value : specimenRequirement) {
                 this.specimenRequirement.add(value);
             }
             return this;
@@ -2480,11 +2652,6 @@ public class ActivityDefinition extends DomainResource {
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link SpecimenDefinition}</li>
-         * </ul>
-         * 
          * @param specimenRequirement
          *     What specimens are required to perform this action
          * 
@@ -2494,7 +2661,7 @@ public class ActivityDefinition extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder specimenRequirement(Collection<Reference> specimenRequirement) {
+        public Builder specimenRequirement(Collection<Canonical> specimenRequirement) {
             this.specimenRequirement = new ArrayList<>(specimenRequirement);
             return this;
         }
@@ -2505,19 +2672,14 @@ public class ActivityDefinition extends DomainResource {
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link ObservationDefinition}</li>
-         * </ul>
-         * 
          * @param observationRequirement
          *     What observations are required to perform this action
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder observationRequirement(Reference... observationRequirement) {
-            for (Reference value : observationRequirement) {
+        public Builder observationRequirement(Canonical... observationRequirement) {
+            for (Canonical value : observationRequirement) {
                 this.observationRequirement.add(value);
             }
             return this;
@@ -2529,11 +2691,6 @@ public class ActivityDefinition extends DomainResource {
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link ObservationDefinition}</li>
-         * </ul>
-         * 
          * @param observationRequirement
          *     What observations are required to perform this action
          * 
@@ -2543,7 +2700,7 @@ public class ActivityDefinition extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder observationRequirement(Collection<Reference> observationRequirement) {
+        public Builder observationRequirement(Collection<Canonical> observationRequirement) {
             this.observationRequirement = new ArrayList<>(observationRequirement);
             return this;
         }
@@ -2554,19 +2711,14 @@ public class ActivityDefinition extends DomainResource {
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link ObservationDefinition}</li>
-         * </ul>
-         * 
          * @param observationResultRequirement
          *     What observations must be produced by this action
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder observationResultRequirement(Reference... observationResultRequirement) {
-            for (Reference value : observationResultRequirement) {
+        public Builder observationResultRequirement(Canonical... observationResultRequirement) {
+            for (Canonical value : observationResultRequirement) {
                 this.observationResultRequirement.add(value);
             }
             return this;
@@ -2578,11 +2730,6 @@ public class ActivityDefinition extends DomainResource {
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link ObservationDefinition}</li>
-         * </ul>
-         * 
          * @param observationResultRequirement
          *     What observations must be produced by this action
          * 
@@ -2592,7 +2739,7 @@ public class ActivityDefinition extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder observationResultRequirement(Collection<Reference> observationResultRequirement) {
+        public Builder observationResultRequirement(Collection<Canonical> observationResultRequirement) {
             this.observationResultRequirement = new ArrayList<>(observationResultRequirement);
             return this;
         }
@@ -2680,6 +2827,7 @@ public class ActivityDefinition extends DomainResource {
         protected void validate(ActivityDefinition activityDefinition) {
             super.validate(activityDefinition);
             ValidationSupport.checkList(activityDefinition.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(activityDefinition.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.requireNonNull(activityDefinition.status, "status");
             ValidationSupport.choiceElement(activityDefinition.subject, "subject", CodeableConcept.class, Reference.class, Canonical.class);
             ValidationSupport.checkList(activityDefinition.contact, "contact", ContactDetail.class);
@@ -2692,21 +2840,18 @@ public class ActivityDefinition extends DomainResource {
             ValidationSupport.checkList(activityDefinition.endorser, "endorser", ContactDetail.class);
             ValidationSupport.checkList(activityDefinition.relatedArtifact, "relatedArtifact", RelatedArtifact.class);
             ValidationSupport.checkList(activityDefinition.library, "library", Canonical.class);
-            ValidationSupport.choiceElement(activityDefinition.timing, "timing", Timing.class, DateTime.class, Age.class, Period.class, Range.class, Duration.class);
+            ValidationSupport.choiceElement(activityDefinition.timing, "timing", Timing.class, Age.class, Range.class, Duration.class);
+            ValidationSupport.choiceElement(activityDefinition.asNeeded, "asNeeded", Boolean.class, CodeableConcept.class);
             ValidationSupport.checkList(activityDefinition.participant, "participant", Participant.class);
             ValidationSupport.choiceElement(activityDefinition.product, "product", Reference.class, CodeableConcept.class);
             ValidationSupport.checkList(activityDefinition.dosage, "dosage", Dosage.class);
             ValidationSupport.checkList(activityDefinition.bodySite, "bodySite", CodeableConcept.class);
-            ValidationSupport.checkList(activityDefinition.specimenRequirement, "specimenRequirement", Reference.class);
-            ValidationSupport.checkList(activityDefinition.observationRequirement, "observationRequirement", Reference.class);
-            ValidationSupport.checkList(activityDefinition.observationResultRequirement, "observationResultRequirement", Reference.class);
+            ValidationSupport.checkList(activityDefinition.specimenRequirement, "specimenRequirement", Canonical.class);
+            ValidationSupport.checkList(activityDefinition.observationRequirement, "observationRequirement", Canonical.class);
+            ValidationSupport.checkList(activityDefinition.observationResultRequirement, "observationResultRequirement", Canonical.class);
             ValidationSupport.checkList(activityDefinition.dynamicValue, "dynamicValue", DynamicValue.class);
-            ValidationSupport.checkReferenceType(activityDefinition.subject, "subject", "Group");
-            ValidationSupport.checkReferenceType(activityDefinition.location, "location", "Location");
-            ValidationSupport.checkReferenceType(activityDefinition.product, "product", "Medication", "Substance", "Ingredient");
-            ValidationSupport.checkReferenceType(activityDefinition.specimenRequirement, "specimenRequirement", "SpecimenDefinition");
-            ValidationSupport.checkReferenceType(activityDefinition.observationRequirement, "observationRequirement", "ObservationDefinition");
-            ValidationSupport.checkReferenceType(activityDefinition.observationResultRequirement, "observationResultRequirement", "ObservationDefinition");
+            ValidationSupport.checkReferenceType(activityDefinition.subject, "subject", "Group", "MedicinalProductDefinition", "SubstanceDefinition", "AdministrableProductDefinition", "ManufacturedItemDefinition", "PackagedProductDefinition", "EvidenceVariable");
+            ValidationSupport.checkReferenceType(activityDefinition.product, "product", "Medication", "Ingredient", "Substance", "SubstanceDefinition");
         }
 
         protected Builder from(ActivityDefinition activityDefinition) {
@@ -2714,6 +2859,7 @@ public class ActivityDefinition extends DomainResource {
             url = activityDefinition.url;
             identifier.addAll(activityDefinition.identifier);
             version = activityDefinition.version;
+            versionAlgorithm = activityDefinition.versionAlgorithm;
             name = activityDefinition.name;
             title = activityDefinition.title;
             subtitle = activityDefinition.subtitle;
@@ -2729,6 +2875,7 @@ public class ActivityDefinition extends DomainResource {
             purpose = activityDefinition.purpose;
             usage = activityDefinition.usage;
             copyright = activityDefinition.copyright;
+            copyrightLabel = activityDefinition.copyrightLabel;
             approvalDate = activityDefinition.approvalDate;
             lastReviewDate = activityDefinition.lastReviewDate;
             effectivePeriod = activityDefinition.effectivePeriod;
@@ -2746,6 +2893,7 @@ public class ActivityDefinition extends DomainResource {
             priority = activityDefinition.priority;
             doNotPerform = activityDefinition.doNotPerform;
             timing = activityDefinition.timing;
+            asNeeded = activityDefinition.asNeeded;
             location = activityDefinition.location;
             participant.addAll(activityDefinition.participant);
             product = activityDefinition.product;
@@ -2769,10 +2917,12 @@ public class ActivityDefinition extends DomainResource {
             bindingName = "ActivityParticipantType",
             strength = BindingStrength.Value.REQUIRED,
             description = "The type of participant in the activity.",
-            valueSet = "http://hl7.org/fhir/ValueSet/action-participant-type|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/action-participant-type|5.0.0"
         )
-        @Required
         private final ActivityParticipantType type;
+        private final Canonical typeCanonical;
+        @ReferenceTarget({ "CareTeam", "Device", "DeviceDefinition", "Endpoint", "Group", "HealthcareService", "Location", "Organization", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson" })
+        private final Reference typeReference;
         @Binding(
             bindingName = "ActivityParticipantRole",
             strength = BindingStrength.Value.EXAMPLE,
@@ -2780,21 +2930,50 @@ public class ActivityDefinition extends DomainResource {
             valueSet = "http://terminology.hl7.org/ValueSet/action-participant-role"
         )
         private final CodeableConcept role;
+        @Binding(
+            bindingName = "ActionParticipantFunction",
+            strength = BindingStrength.Value.EXAMPLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/action-participant-function"
+        )
+        private final CodeableConcept function;
 
         private Participant(Builder builder) {
             super(builder);
             type = builder.type;
+            typeCanonical = builder.typeCanonical;
+            typeReference = builder.typeReference;
             role = builder.role;
+            function = builder.function;
         }
 
         /**
          * The type of participant in the action.
          * 
          * @return
-         *     An immutable object of type {@link ActivityParticipantType} that is non-null.
+         *     An immutable object of type {@link ActivityParticipantType} that may be null.
          */
         public ActivityParticipantType getType() {
             return type;
+        }
+
+        /**
+         * The type of participant in the action.
+         * 
+         * @return
+         *     An immutable object of type {@link Canonical} that may be null.
+         */
+        public Canonical getTypeCanonical() {
+            return typeCanonical;
+        }
+
+        /**
+         * The type of participant in the action.
+         * 
+         * @return
+         *     An immutable object of type {@link Reference} that may be null.
+         */
+        public Reference getTypeReference() {
+            return typeReference;
         }
 
         /**
@@ -2807,11 +2986,24 @@ public class ActivityDefinition extends DomainResource {
             return role;
         }
 
+        /**
+         * Indicates how the actor will be involved in the action - author, reviewer, witness, etc.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getFunction() {
+            return function;
+        }
+
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
                 (type != null) || 
-                (role != null);
+                (typeCanonical != null) || 
+                (typeReference != null) || 
+                (role != null) || 
+                (function != null);
         }
 
         @Override
@@ -2824,7 +3016,10 @@ public class ActivityDefinition extends DomainResource {
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(type, "type", visitor);
+                    accept(typeCanonical, "typeCanonical", visitor);
+                    accept(typeReference, "typeReference", visitor);
                     accept(role, "role", visitor);
+                    accept(function, "function", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -2847,7 +3042,10 @@ public class ActivityDefinition extends DomainResource {
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(type, other.type) && 
-                Objects.equals(role, other.role);
+                Objects.equals(typeCanonical, other.typeCanonical) && 
+                Objects.equals(typeReference, other.typeReference) && 
+                Objects.equals(role, other.role) && 
+                Objects.equals(function, other.function);
         }
 
         @Override
@@ -2858,7 +3056,10 @@ public class ActivityDefinition extends DomainResource {
                     extension, 
                     modifierExtension, 
                     type, 
-                    role);
+                    typeCanonical, 
+                    typeReference, 
+                    role, 
+                    function);
                 hashCode = result;
             }
             return result;
@@ -2875,7 +3076,10 @@ public class ActivityDefinition extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private ActivityParticipantType type;
+            private Canonical typeCanonical;
+            private Reference typeReference;
             private CodeableConcept role;
+            private CodeableConcept function;
 
             private Builder() {
                 super();
@@ -2898,7 +3102,7 @@ public class ActivityDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2918,7 +3122,7 @@ public class ActivityDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2943,7 +3147,7 @@ public class ActivityDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2968,7 +3172,7 @@ public class ActivityDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2995,10 +3199,9 @@ public class ActivityDefinition extends DomainResource {
             /**
              * The type of participant in the action.
              * 
-             * <p>This element is required.
-             * 
              * @param type
-             *     patient | practitioner | related-person | device
+             *     careteam | device | group | healthcareservice | location | organization | patient | practitioner | practitionerrole | 
+             *     relatedperson
              * 
              * @return
              *     A reference to this Builder instance
@@ -3009,10 +3212,54 @@ public class ActivityDefinition extends DomainResource {
             }
 
             /**
+             * The type of participant in the action.
+             * 
+             * @param typeCanonical
+             *     Who or what can participate
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder typeCanonical(Canonical typeCanonical) {
+                this.typeCanonical = typeCanonical;
+                return this;
+            }
+
+            /**
+             * The type of participant in the action.
+             * 
+             * <p>Allowed resource types for this reference:
+             * <ul>
+             * <li>{@link CareTeam}</li>
+             * <li>{@link Device}</li>
+             * <li>{@link DeviceDefinition}</li>
+             * <li>{@link Endpoint}</li>
+             * <li>{@link Group}</li>
+             * <li>{@link HealthcareService}</li>
+             * <li>{@link Location}</li>
+             * <li>{@link Organization}</li>
+             * <li>{@link Patient}</li>
+             * <li>{@link Practitioner}</li>
+             * <li>{@link PractitionerRole}</li>
+             * <li>{@link RelatedPerson}</li>
+             * </ul>
+             * 
+             * @param typeReference
+             *     Who or what can participate
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder typeReference(Reference typeReference) {
+                this.typeReference = typeReference;
+                return this;
+            }
+
+            /**
              * The role the participant should play in performing the described action.
              * 
              * @param role
-             *     E.g. Nurse, Surgeon, Parent, etc.
+             *     E.g. Nurse, Surgeon, Parent, etc
              * 
              * @return
              *     A reference to this Builder instance
@@ -3023,12 +3270,21 @@ public class ActivityDefinition extends DomainResource {
             }
 
             /**
-             * Build the {@link Participant}
+             * Indicates how the actor will be involved in the action - author, reviewer, witness, etc.
              * 
-             * <p>Required elements:
-             * <ul>
-             * <li>type</li>
-             * </ul>
+             * @param function
+             *     E.g. Author, Reviewer, Witness, etc
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder function(CodeableConcept function) {
+                this.function = function;
+                return this;
+            }
+
+            /**
+             * Build the {@link Participant}
              * 
              * @return
              *     An immutable object of type {@link Participant}
@@ -3046,14 +3302,17 @@ public class ActivityDefinition extends DomainResource {
 
             protected void validate(Participant participant) {
                 super.validate(participant);
-                ValidationSupport.requireNonNull(participant.type, "type");
+                ValidationSupport.checkReferenceType(participant.typeReference, "typeReference", "CareTeam", "Device", "DeviceDefinition", "Endpoint", "Group", "HealthcareService", "Location", "Organization", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson");
                 ValidationSupport.requireValueOrChildren(participant);
             }
 
             protected Builder from(Participant participant) {
                 super.from(participant);
                 type = participant.type;
+                typeCanonical = participant.typeCanonical;
+                typeReference = participant.typeReference;
                 role = participant.role;
+                function = participant.function;
                 return this;
             }
         }
@@ -3078,7 +3337,7 @@ public class ActivityDefinition extends DomainResource {
 
         /**
          * The path to the element to be customized. This is the path on the resource that will hold the result of the 
-         * calculation defined by the expression. The specified path SHALL be a FHIRPath resolveable on the specified target type 
+         * calculation defined by the expression. The specified path SHALL be a FHIRPath resolvable on the specified target type 
          * of the ActivityDefinition, and SHALL consist only of identifiers, constant indexers, and a restricted subset of 
          * functions. The path is allowed to contain qualifiers (.) to traverse sub-elements, as well as indexers ([x]) to 
          * traverse multiple-cardinality sub-elements (see the [Simple FHIRPath Profile](fhirpath.html#simple) for full details).
@@ -3191,7 +3450,7 @@ public class ActivityDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3211,7 +3470,7 @@ public class ActivityDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3236,7 +3495,7 @@ public class ActivityDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3261,7 +3520,7 @@ public class ActivityDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3305,7 +3564,7 @@ public class ActivityDefinition extends DomainResource {
 
             /**
              * The path to the element to be customized. This is the path on the resource that will hold the result of the 
-             * calculation defined by the expression. The specified path SHALL be a FHIRPath resolveable on the specified target type 
+             * calculation defined by the expression. The specified path SHALL be a FHIRPath resolvable on the specified target type 
              * of the ActivityDefinition, and SHALL consist only of identifiers, constant indexers, and a restricted subset of 
              * functions. The path is allowed to contain qualifiers (.) to traverse sub-elements, as well as indexers ([x]) to 
              * traverse multiple-cardinality sub-elements (see the [Simple FHIRPath Profile](fhirpath.html#simple) for full details).

@@ -115,6 +115,14 @@ public class EventTiming extends Code {
      */
     public static final EventTiming PHS = EventTiming.builder().value(Value.PHS).build();
 
+    /**
+     * Immediate
+     * 
+     * <p>Event occurs a single time (with no repetitions) as soon as possible after the scheduled or actual start of the 
+     * overall event.
+     */
+    public static final EventTiming IMD = EventTiming.builder().value(Value.IMD).build();
+
     public static final EventTiming HS = EventTiming.builder().value(Value.HS).build();
 
     public static final EventTiming WAKE = EventTiming.builder().value(Value.WAKE).build();
@@ -185,6 +193,8 @@ public class EventTiming extends Code {
             return NIGHT;
         case PHS:
             return PHS;
+        case IMD:
+            return IMD;
         case HS:
             return HS;
         case WAKE:
@@ -441,6 +451,14 @@ public class EventTiming extends Code {
          */
         PHS("PHS"),
 
+        /**
+         * Immediate
+         * 
+         * <p>Event occurs a single time (with no repetitions) as soon as possible after the scheduled or actual start of the 
+         * overall event.
+         */
+        IMD("IMD"),
+
         HS("HS"),
 
         WAKE("WAKE"),
@@ -522,6 +540,8 @@ public class EventTiming extends Code {
                 return NIGHT;
             case "PHS":
                 return PHS;
+            case "IMD":
+                return IMD;
             case "HS":
                 return HS;
             case "WAKE":

@@ -16,7 +16,7 @@ import java.util.Objects;
 
 import javax.annotation.Generated;
 
-@System("http://hl7.org/fhir/remittance-outcome")
+@System("http://hl7.org/fhir/claim-outcome")
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class RemittanceOutcome extends Code {
     /**
@@ -27,23 +27,23 @@ public class RemittanceOutcome extends Code {
     public static final RemittanceOutcome QUEUED = RemittanceOutcome.builder().value(Value.QUEUED).build();
 
     /**
-     * Complete
+     * Processing Complete
      * 
-     * <p>The processing completed without errors.
+     * <p>The processing has completed without errors
      */
     public static final RemittanceOutcome COMPLETE = RemittanceOutcome.builder().value(Value.COMPLETE).build();
 
     /**
      * Error
      * 
-     * <p>The processing identified errors.
+     * <p>One or more errors have been detected in the Claim
      */
     public static final RemittanceOutcome ERROR = RemittanceOutcome.builder().value(Value.ERROR).build();
 
     /**
-     * Partial
+     * Partial Processing
      * 
-     * <p>No errors have been detected and some of the adjudication has been performed.
+     * <p>No errors have been detected in the Claim and some of the adjudication has been performed.
      */
     public static final RemittanceOutcome PARTIAL = RemittanceOutcome.builder().value(Value.PARTIAL).build();
 
@@ -213,23 +213,23 @@ public class RemittanceOutcome extends Code {
         QUEUED("queued"),
 
         /**
-         * Complete
+         * Processing Complete
          * 
-         * <p>The processing completed without errors.
+         * <p>The processing has completed without errors
          */
         COMPLETE("complete"),
 
         /**
          * Error
          * 
-         * <p>The processing identified errors.
+         * <p>One or more errors have been detected in the Claim
          */
         ERROR("error"),
 
         /**
-         * Partial
+         * Partial Processing
          * 
-         * <p>No errors have been detected and some of the adjudication has been performed.
+         * <p>No errors have been detected in the Claim and some of the adjudication has been performed.
          */
         PARTIAL("partial");
 

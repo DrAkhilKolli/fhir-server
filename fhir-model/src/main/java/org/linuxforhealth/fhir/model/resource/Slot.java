@@ -23,6 +23,7 @@ import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Instant;
@@ -60,7 +61,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Warning",
     location = "(base)",
     description = "SHOULD contain a code from value set http://terminology.hl7.org/ValueSet/v2-0276",
-    expression = "appointmentType.exists() implies (appointmentType.memberOf('http://terminology.hl7.org/ValueSet/v2-0276', 'preferred'))",
+    expression = "appointmentType.exists() implies (appointmentType.all(memberOf('http://terminology.hl7.org/ValueSet/v2-0276', 'preferred')))",
     source = "http://hl7.org/fhir/StructureDefinition/Slot",
     generated = true
 )
@@ -81,7 +82,7 @@ public class Slot extends DomainResource {
         strength = BindingStrength.Value.EXAMPLE,
         valueSet = "http://hl7.org/fhir/ValueSet/service-type"
     )
-    private final List<CodeableConcept> serviceType;
+    private final List<CodeableReference> serviceType;
     @Summary
     @Binding(
         bindingName = "specialty",
@@ -96,7 +97,7 @@ public class Slot extends DomainResource {
         strength = BindingStrength.Value.PREFERRED,
         valueSet = "http://terminology.hl7.org/ValueSet/v2-0276"
     )
-    private final CodeableConcept appointmentType;
+    private final List<CodeableConcept> appointmentType;
     @Summary
     @ReferenceTarget({ "Schedule" })
     @Required
@@ -106,7 +107,7 @@ public class Slot extends DomainResource {
         bindingName = "SlotStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The free/busy status of the slot.",
-        valueSet = "http://hl7.org/fhir/ValueSet/slotstatus|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/slotstatus|5.0.0"
     )
     @Required
     private final SlotStatus status;
@@ -125,7 +126,7 @@ public class Slot extends DomainResource {
         serviceCategory = Collections.unmodifiableList(builder.serviceCategory);
         serviceType = Collections.unmodifiableList(builder.serviceType);
         specialty = Collections.unmodifiableList(builder.specialty);
-        appointmentType = builder.appointmentType;
+        appointmentType = Collections.unmodifiableList(builder.appointmentType);
         schedule = builder.schedule;
         status = builder.status;
         start = builder.start;
@@ -156,13 +157,13 @@ public class Slot extends DomainResource {
 
     /**
      * The type of appointments that can be booked into this slot (ideally this would be an identifiable service - which is 
-     * at a location, rather than the location itself). If provided then this overrides the value provided on the 
-     * availability resource.
+     * at a location, rather than the location itself). If provided then this overrides the value provided on the Schedule 
+     * resource.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<CodeableConcept> getServiceType() {
+    public List<CodeableReference> getServiceType() {
         return serviceType;
     }
 
@@ -180,9 +181,9 @@ public class Slot extends DomainResource {
      * The style of appointment or patient that may be booked in the slot (not service type).
      * 
      * @return
-     *     An immutable object of type {@link CodeableConcept} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
      */
-    public CodeableConcept getAppointmentType() {
+    public List<CodeableConcept> getAppointmentType() {
         return appointmentType;
     }
 
@@ -253,7 +254,7 @@ public class Slot extends DomainResource {
             !serviceCategory.isEmpty() || 
             !serviceType.isEmpty() || 
             !specialty.isEmpty() || 
-            (appointmentType != null) || 
+            !appointmentType.isEmpty() || 
             (schedule != null) || 
             (status != null) || 
             (start != null) || 
@@ -278,9 +279,9 @@ public class Slot extends DomainResource {
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(serviceCategory, "serviceCategory", visitor, CodeableConcept.class);
-                accept(serviceType, "serviceType", visitor, CodeableConcept.class);
+                accept(serviceType, "serviceType", visitor, CodeableReference.class);
                 accept(specialty, "specialty", visitor, CodeableConcept.class);
-                accept(appointmentType, "appointmentType", visitor);
+                accept(appointmentType, "appointmentType", visitor, CodeableConcept.class);
                 accept(schedule, "schedule", visitor);
                 accept(status, "status", visitor);
                 accept(start, "start", visitor);
@@ -366,9 +367,9 @@ public class Slot extends DomainResource {
     public static class Builder extends DomainResource.Builder {
         private List<Identifier> identifier = new ArrayList<>();
         private List<CodeableConcept> serviceCategory = new ArrayList<>();
-        private List<CodeableConcept> serviceType = new ArrayList<>();
+        private List<CodeableReference> serviceType = new ArrayList<>();
         private List<CodeableConcept> specialty = new ArrayList<>();
-        private CodeableConcept appointmentType;
+        private List<CodeableConcept> appointmentType = new ArrayList<>();
         private Reference schedule;
         private SlotStatus status;
         private Instant start;
@@ -458,7 +459,8 @@ public class Slot extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -476,7 +478,8 @@ public class Slot extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -497,7 +500,7 @@ public class Slot extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -517,7 +520,7 @@ public class Slot extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -542,9 +545,9 @@ public class Slot extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -567,9 +570,9 @@ public class Slot extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -671,22 +674,22 @@ public class Slot extends DomainResource {
 
         /**
          * The type of appointments that can be booked into this slot (ideally this would be an identifiable service - which is 
-         * at a location, rather than the location itself). If provided then this overrides the value provided on the 
-         * availability resource.
+         * at a location, rather than the location itself). If provided then this overrides the value provided on the Schedule 
+         * resource.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param serviceType
          *     The type of appointments that can be booked into this slot (ideally this would be an identifiable service - which is 
-         *     at a location, rather than the location itself). If provided then this overrides the value provided on the 
-         *     availability resource
+         *     at a location, rather than the location itself). If provided then this overrides the value provided on the Schedule 
+         *     resource
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder serviceType(CodeableConcept... serviceType) {
-            for (CodeableConcept value : serviceType) {
+        public Builder serviceType(CodeableReference... serviceType) {
+            for (CodeableReference value : serviceType) {
                 this.serviceType.add(value);
             }
             return this;
@@ -694,16 +697,16 @@ public class Slot extends DomainResource {
 
         /**
          * The type of appointments that can be booked into this slot (ideally this would be an identifiable service - which is 
-         * at a location, rather than the location itself). If provided then this overrides the value provided on the 
-         * availability resource.
+         * at a location, rather than the location itself). If provided then this overrides the value provided on the Schedule 
+         * resource.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param serviceType
          *     The type of appointments that can be booked into this slot (ideally this would be an identifiable service - which is 
-         *     at a location, rather than the location itself). If provided then this overrides the value provided on the 
-         *     availability resource
+         *     at a location, rather than the location itself). If provided then this overrides the value provided on the Schedule 
+         *     resource
          * 
          * @return
          *     A reference to this Builder instance
@@ -711,7 +714,7 @@ public class Slot extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder serviceType(Collection<CodeableConcept> serviceType) {
+        public Builder serviceType(Collection<CodeableReference> serviceType) {
             this.serviceType = new ArrayList<>(serviceType);
             return this;
         }
@@ -758,14 +761,39 @@ public class Slot extends DomainResource {
         /**
          * The style of appointment or patient that may be booked in the slot (not service type).
          * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
          * @param appointmentType
          *     The style of appointment or patient that may be booked in the slot (not service type)
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder appointmentType(CodeableConcept appointmentType) {
-            this.appointmentType = appointmentType;
+        public Builder appointmentType(CodeableConcept... appointmentType) {
+            for (CodeableConcept value : appointmentType) {
+                this.appointmentType.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The style of appointment or patient that may be booked in the slot (not service type).
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param appointmentType
+         *     The style of appointment or patient that may be booked in the slot (not service type)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder appointmentType(Collection<CodeableConcept> appointmentType) {
+            this.appointmentType = new ArrayList<>(appointmentType);
             return this;
         }
 
@@ -963,8 +991,9 @@ public class Slot extends DomainResource {
             super.validate(slot);
             ValidationSupport.checkList(slot.identifier, "identifier", Identifier.class);
             ValidationSupport.checkList(slot.serviceCategory, "serviceCategory", CodeableConcept.class);
-            ValidationSupport.checkList(slot.serviceType, "serviceType", CodeableConcept.class);
+            ValidationSupport.checkList(slot.serviceType, "serviceType", CodeableReference.class);
             ValidationSupport.checkList(slot.specialty, "specialty", CodeableConcept.class);
+            ValidationSupport.checkList(slot.appointmentType, "appointmentType", CodeableConcept.class);
             ValidationSupport.requireNonNull(slot.schedule, "schedule");
             ValidationSupport.requireNonNull(slot.status, "status");
             ValidationSupport.requireNonNull(slot.start, "start");
@@ -978,7 +1007,7 @@ public class Slot extends DomainResource {
             serviceCategory.addAll(slot.serviceCategory);
             serviceType.addAll(slot.serviceType);
             specialty.addAll(slot.specialty);
-            appointmentType = slot.appointmentType;
+            appointmentType.addAll(slot.appointmentType);
             schedule = slot.schedule;
             status = slot.status;
             start = slot.start;

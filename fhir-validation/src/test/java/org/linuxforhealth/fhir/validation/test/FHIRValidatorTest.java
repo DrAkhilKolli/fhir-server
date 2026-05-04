@@ -30,6 +30,7 @@ import org.linuxforhealth.fhir.model.resource.Patient;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
+import org.linuxforhealth.fhir.model.type.CodeableConcept;
 import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.Extension;
@@ -203,10 +204,12 @@ public class FHIRValidatorTest {
                                 Canonical.of("http://hl7.org/fhir/us/davinci-pdex-plan-net/StructureDefinition/plannet-Endpoint"))
                             .lastUpdated(Instant.now())
                             .build());
-        builder.connectionType(Coding.builder()
-            .code(Code.of("hl7-fhir-opn"))
-            .system(Uri.of("http://hl7.org/fhir/us/davinci-pdex-plan-net/CodeSystem/EndpointConnectionTypeCS"))
-            .display("HL7 FHIR Operation")
+        builder.connectionType(CodeableConcept.builder()
+            .coding(Coding.builder()
+                .code(Code.of("hl7-fhir-opn"))
+                .system(Uri.of("http://hl7.org/fhir/us/davinci-pdex-plan-net/CodeSystem/EndpointConnectionTypeCS"))
+                .display("HL7 FHIR Operation")
+                .build())
             .build());
         Endpoint endpoint = builder.build();
 

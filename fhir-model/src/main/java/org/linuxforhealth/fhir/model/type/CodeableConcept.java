@@ -22,7 +22,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * A concept that may be defined by a formal reference to a terminology or ontology or may be provided by text.
  */
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class CodeableConcept extends Element {
+public class CodeableConcept extends DataType {
     @Summary
     private final List<Coding> coding;
     @Summary
@@ -118,7 +118,7 @@ public class CodeableConcept extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private List<Coding> coding = new ArrayList<>();
         private String text;
 
@@ -143,7 +143,7 @@ public class CodeableConcept extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -163,7 +163,7 @@ public class CodeableConcept extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 

@@ -16,7 +16,7 @@ import java.util.Objects;
 
 import javax.annotation.Generated;
 
-@System("http://terminology.hl7.org/CodeSystem/medication-admin-status")
+@System("http://hl7.org/fhir/CodeSystem/medication-admin-status")
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class ImmunizationEvaluationStatus extends Code {
     public static final ImmunizationEvaluationStatus COMPLETED = ImmunizationEvaluationStatus.builder().value(Value.COMPLETED).build();

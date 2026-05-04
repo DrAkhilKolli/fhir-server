@@ -53,7 +53,7 @@ public class SearchModifierCode extends Code {
      * Text
      * 
      * <p>The search parameter is processed as a string that searches text associated with the code/value - either 
-     * CodeableConcept.text, Coding.display, or Identifier.type.text.
+     * CodeableConcept.text, Coding.display, Identifier.type.text, or Reference.display.
      */
     public static final SearchModifierCode TEXT = SearchModifierCode.builder().value(Value.TEXT).build();
 
@@ -112,6 +112,30 @@ public class SearchModifierCode extends Code {
      */
     public static final SearchModifierCode OF_TYPE = SearchModifierCode.builder().value(Value.OF_TYPE).build();
 
+    /**
+     * Code Text
+     * 
+     * <p>Tests whether the textual display value in a resource (e.g., CodeableConcept.text, Coding.display, or Reference.
+     * display) matches the supplied parameter value.
+     */
+    public static final SearchModifierCode CODE_TEXT = SearchModifierCode.builder().value(Value.CODE_TEXT).build();
+
+    /**
+     * Text Advanced
+     * 
+     * <p>Tests whether the value in a resource matches the supplied parameter value using advanced text handling that 
+     * searches text associated with the code/value - e.g., CodeableConcept.text, Coding.display, or Identifier.type.text.
+     */
+    public static final SearchModifierCode TEXT_ADVANCED = SearchModifierCode.builder().value(Value.TEXT_ADVANCED).build();
+
+    /**
+     * Iterate
+     * 
+     * <p>The search parameter indicates an inclusion directive (_include, _revinclude) that is applied to an included 
+     * resource instead of the matching resource.
+     */
+    public static final SearchModifierCode ITERATE = SearchModifierCode.builder().value(Value.ITERATE).build();
+
     private volatile int hashCode;
 
     private SearchModifierCode(Builder builder) {
@@ -154,6 +178,12 @@ public class SearchModifierCode extends Code {
             return IDENTIFIER;
         case OF_TYPE:
             return OF_TYPE;
+        case CODE_TEXT:
+            return CODE_TEXT;
+        case TEXT_ADVANCED:
+            return TEXT_ADVANCED;
+        case ITERATE:
+            return ITERATE;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -320,7 +350,7 @@ public class SearchModifierCode extends Code {
          * Text
          * 
          * <p>The search parameter is processed as a string that searches text associated with the code/value - either 
-         * CodeableConcept.text, Coding.display, or Identifier.type.text.
+         * CodeableConcept.text, Coding.display, Identifier.type.text, or Reference.display.
          */
         TEXT("text"),
 
@@ -377,7 +407,31 @@ public class SearchModifierCode extends Code {
          * <p>The search parameter has the format system|code|value, where the system and code refer to an Identifier.type.coding.
          * system and .code, and match if any of the type codes match. All 3 parts must be present.
          */
-        OF_TYPE("ofType");
+        OF_TYPE("of-type"),
+
+        /**
+         * Code Text
+         * 
+         * <p>Tests whether the textual display value in a resource (e.g., CodeableConcept.text, Coding.display, or Reference.
+         * display) matches the supplied parameter value.
+         */
+        CODE_TEXT("code-text"),
+
+        /**
+         * Text Advanced
+         * 
+         * <p>Tests whether the value in a resource matches the supplied parameter value using advanced text handling that 
+         * searches text associated with the code/value - e.g., CodeableConcept.text, Coding.display, or Identifier.type.text.
+         */
+        TEXT_ADVANCED("text-advanced"),
+
+        /**
+         * Iterate
+         * 
+         * <p>The search parameter indicates an inclusion directive (_include, _revinclude) that is applied to an included 
+         * resource instead of the matching resource.
+         */
+        ITERATE("iterate");
 
         private final java.lang.String value;
 
@@ -430,8 +484,14 @@ public class SearchModifierCode extends Code {
                 return TYPE;
             case "identifier":
                 return IDENTIFIER;
-            case "ofType":
+            case "of-type":
                 return OF_TYPE;
+            case "code-text":
+                return CODE_TEXT;
+            case "text-advanced":
+                return TEXT_ADVANCED;
+            case "iterate":
+                return ITERATE;
             default:
                 throw new IllegalArgumentException(value);
             }

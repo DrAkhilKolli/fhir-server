@@ -23,7 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.cqframework.cql.cql2elm.ModelManager;
 import org.cqframework.cql.cql2elm.model.Model;
-import org.hl7.elm.r1.VersionedIdentifier;
+import org.hl7.cql.model.ModelIdentifier;
 import org.hl7.elm_modelinfo.r1.ClassInfo;
 import org.hl7.elm_modelinfo.r1.TypeInfo;
 import org.opencds.cqf.cql.engine.model.ModelResolver;
@@ -35,6 +35,7 @@ import org.linuxforhealth.fhir.model.resource.Encounter;
 import org.linuxforhealth.fhir.model.resource.Patient;
 import org.linuxforhealth.fhir.model.resource.TestReport;
 import org.linuxforhealth.fhir.model.type.Code;
+import org.linuxforhealth.fhir.model.type.CodeableConcept;
 import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.DateTime;
@@ -43,7 +44,6 @@ import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.HumanName;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Quantity;
-import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.AdministrativeGender;
 import org.linuxforhealth.fhir.model.type.code.BundleType;
@@ -87,7 +87,7 @@ public class FHIRModelResolverTest {
 
     private void visitModelInfoTypes(String id, String version, Consumer<ClassInfo> visitor) {
         ModelManager mm = new ModelManager();
-        Model m = mm.resolveModel(new VersionedIdentifier().withId(id).withVersion(version));
+        Model m = mm.resolveModel(new ModelIdentifier().withId(id).withVersion(version));
 
         List<TypeInfo> typeInfos = m.getModelInfo().getTypeInfo();
 
@@ -396,9 +396,10 @@ public class FHIRModelResolverTest {
     @Test
     public void resolveEncounterClass() {
         Encounter enc = Encounter.builder()
-                .status( EncounterStatus.FINISHED )
-                .clazz( Coding.builder()
-                    .code( Code.of("test") ).build() )
+                .status( EncounterStatus.COMPLETED )
+                .clazz( CodeableConcept.builder()
+                    .coding( Coding.builder()
+                        .code( Code.of("test") ).build() ).build() )
                 .build();
 
         Object result = resolver.resolvePath(enc, "class");
@@ -418,7 +419,7 @@ public class FHIRModelResolverTest {
         TestReport report = TestReport.builder()
                 .status(TestReportStatus.COMPLETED)
                 .setup( TestReport.Setup.builder().action(action).build() )
-                .testScript(Reference.builder().reference(fhirstring("TestScript/123")).build())
+                .testScript(org.linuxforhealth.fhir.model.type.Canonical.of("TestScript/123"))
                 .result(TestReportResult.PASS)
                 .build();
 

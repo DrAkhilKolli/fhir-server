@@ -26,6 +26,7 @@ import org.linuxforhealth.fhir.model.type.Annotation;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
@@ -40,14 +41,13 @@ import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.AllergyIntoleranceCategory;
 import org.linuxforhealth.fhir.model.type.code.AllergyIntoleranceCriticality;
 import org.linuxforhealth.fhir.model.type.code.AllergyIntoleranceSeverity;
-import org.linuxforhealth.fhir.model.type.code.AllergyIntoleranceType;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
- * Risk of harmful or undesirable, physiological response which is unique to an individual and associated with exposure 
+ * Risk of harmful or undesirable physiological response which is specific to an individual and associated with exposure 
  * to a substance.
  * 
  * <p>Maturity level: FMM3 (Trial Use)
@@ -57,20 +57,22 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "ait-1",
-    level = "Rule",
+    id = "allergyIntolerance-0",
+    level = "Warning",
     location = "(base)",
-    description = "AllergyIntolerance.clinicalStatus SHALL be present if verificationStatus is not entered-in-error.",
-    expression = "(verificationStatus.exists() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/allergyintolerance-verification' and code='entered-in-error').exists().not()) implies clinicalStatus.exists()",
-    source = "http://hl7.org/fhir/StructureDefinition/AllergyIntolerance"
+    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/allergy-intolerance-type",
+    expression = "type.exists() implies (type.memberOf('http://hl7.org/fhir/ValueSet/allergy-intolerance-type', 'preferred'))",
+    source = "http://hl7.org/fhir/StructureDefinition/AllergyIntolerance",
+    generated = true
 )
 @Constraint(
-    id = "ait-2",
-    level = "Rule",
-    location = "(base)",
-    description = "AllergyIntolerance.clinicalStatus SHALL NOT be present if verification Status is entered-in-error",
-    expression = "(verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/allergyintolerance-verification' and code='entered-in-error').exists()) implies clinicalStatus.exists().not()",
-    source = "http://hl7.org/fhir/StructureDefinition/AllergyIntolerance"
+    id = "allergyIntolerance-1",
+    level = "Warning",
+    location = "participant.function",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/participation-role-type",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/participation-role-type', 'extensible')",
+    source = "http://hl7.org/fhir/StructureDefinition/AllergyIntolerance",
+    generated = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class AllergyIntolerance extends DomainResource {
@@ -81,7 +83,7 @@ public class AllergyIntolerance extends DomainResource {
         bindingName = "AllergyIntoleranceClinicalStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The clinical status of the allergy or intolerance.",
-        valueSet = "http://hl7.org/fhir/ValueSet/allergyintolerance-clinical|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/allergyintolerance-clinical|5.0.0"
     )
     private final CodeableConcept clinicalStatus;
     @Summary
@@ -89,23 +91,23 @@ public class AllergyIntolerance extends DomainResource {
         bindingName = "AllergyIntoleranceVerificationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "Assertion about certainty associated with a propensity, or potential risk, of a reaction to the identified substance.",
-        valueSet = "http://hl7.org/fhir/ValueSet/allergyintolerance-verification|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/allergyintolerance-verification|5.0.0"
     )
     private final CodeableConcept verificationStatus;
     @Summary
     @Binding(
         bindingName = "AllergyIntoleranceType",
-        strength = BindingStrength.Value.REQUIRED,
+        strength = BindingStrength.Value.PREFERRED,
         description = "Identification of the underlying physiological mechanism for a Reaction Risk.",
-        valueSet = "http://hl7.org/fhir/ValueSet/allergy-intolerance-type|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/allergy-intolerance-type"
     )
-    private final AllergyIntoleranceType type;
+    private final CodeableConcept type;
     @Summary
     @Binding(
         bindingName = "AllergyIntoleranceCategory",
         strength = BindingStrength.Value.REQUIRED,
         description = "Category of an identified substance associated with allergies or intolerances.",
-        valueSet = "http://hl7.org/fhir/ValueSet/allergy-intolerance-category|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/allergy-intolerance-category|5.0.0"
     )
     private final List<AllergyIntoleranceCategory> category;
     @Summary
@@ -113,7 +115,7 @@ public class AllergyIntolerance extends DomainResource {
         bindingName = "AllergyIntoleranceCriticality",
         strength = BindingStrength.Value.REQUIRED,
         description = "Estimate of the potential clinical harm, or seriousness, of a reaction to an identified substance.",
-        valueSet = "http://hl7.org/fhir/ValueSet/allergy-intolerance-criticality|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/allergy-intolerance-criticality|5.0.0"
     )
     private final AllergyIntoleranceCriticality criticality;
     @Summary
@@ -131,13 +133,10 @@ public class AllergyIntolerance extends DomainResource {
     @ReferenceTarget({ "Encounter" })
     private final Reference encounter;
     @Choice({ DateTime.class, Age.class, Period.class, Range.class, String.class })
-    private final Element onset;
+    private final org.linuxforhealth.fhir.model.type.Element onset;
     private final DateTime recordedDate;
-    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Patient", "RelatedPerson" })
-    private final Reference recorder;
     @Summary
-    @ReferenceTarget({ "Patient", "RelatedPerson", "Practitioner", "PractitionerRole" })
-    private final Reference asserter;
+    private final List<Participant> participant;
     private final DateTime lastOccurrence;
     private final List<Annotation> note;
     private final List<Reaction> reaction;
@@ -155,8 +154,7 @@ public class AllergyIntolerance extends DomainResource {
         encounter = builder.encounter;
         onset = builder.onset;
         recordedDate = builder.recordedDate;
-        recorder = builder.recorder;
-        asserter = builder.asserter;
+        participant = Collections.unmodifiableList(builder.participant);
         lastOccurrence = builder.lastOccurrence;
         note = Collections.unmodifiableList(builder.note);
         reaction = Collections.unmodifiableList(builder.reaction);
@@ -185,7 +183,8 @@ public class AllergyIntolerance extends DomainResource {
 
     /**
      * Assertion about certainty associated with the propensity, or potential risk, of a reaction to the identified substance 
-     * (including pharmaceutical product).
+     * (including pharmaceutical product). The verification status pertains to the allergy or intolerance, itself, not to any 
+     * specific AllergyIntolerance attribute.
      * 
      * @return
      *     An immutable object of type {@link CodeableConcept} that may be null.
@@ -198,9 +197,9 @@ public class AllergyIntolerance extends DomainResource {
      * Identification of the underlying physiological mechanism for the reaction risk.
      * 
      * @return
-     *     An immutable object of type {@link AllergyIntoleranceType} that may be null.
+     *     An immutable object of type {@link CodeableConcept} that may be null.
      */
-    public AllergyIntoleranceType getType() {
+    public CodeableConcept getType() {
         return type;
     }
 
@@ -270,7 +269,7 @@ public class AllergyIntolerance extends DomainResource {
      *     An immutable object of type {@link DateTime}, {@link Age}, {@link Period}, {@link Range} or {@link String} that may be 
      *     null.
      */
-    public Element getOnset() {
+    public org.linuxforhealth.fhir.model.type.Element getOnset() {
         return onset;
     }
 
@@ -286,23 +285,13 @@ public class AllergyIntolerance extends DomainResource {
     }
 
     /**
-     * Individual who recorded the record and takes responsibility for its content.
+     * Indicates who or what participated in the activities related to the allergy or intolerance and how they were involved.
      * 
      * @return
-     *     An immutable object of type {@link Reference} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Participant} that may be empty.
      */
-    public Reference getRecorder() {
-        return recorder;
-    }
-
-    /**
-     * The source of the information about the allergy that is recorded.
-     * 
-     * @return
-     *     An immutable object of type {@link Reference} that may be null.
-     */
-    public Reference getAsserter() {
-        return asserter;
+    public List<Participant> getParticipant() {
+        return participant;
     }
 
     /**
@@ -349,8 +338,7 @@ public class AllergyIntolerance extends DomainResource {
             (encounter != null) || 
             (onset != null) || 
             (recordedDate != null) || 
-            (recorder != null) || 
-            (asserter != null) || 
+            !participant.isEmpty() || 
             (lastOccurrence != null) || 
             !note.isEmpty() || 
             !reaction.isEmpty();
@@ -381,8 +369,7 @@ public class AllergyIntolerance extends DomainResource {
                 accept(encounter, "encounter", visitor);
                 accept(onset, "onset", visitor);
                 accept(recordedDate, "recordedDate", visitor);
-                accept(recorder, "recorder", visitor);
-                accept(asserter, "asserter", visitor);
+                accept(participant, "participant", visitor, Participant.class);
                 accept(lastOccurrence, "lastOccurrence", visitor);
                 accept(note, "note", visitor, Annotation.class);
                 accept(reaction, "reaction", visitor, Reaction.class);
@@ -423,8 +410,7 @@ public class AllergyIntolerance extends DomainResource {
             Objects.equals(encounter, other.encounter) && 
             Objects.equals(onset, other.onset) && 
             Objects.equals(recordedDate, other.recordedDate) && 
-            Objects.equals(recorder, other.recorder) && 
-            Objects.equals(asserter, other.asserter) && 
+            Objects.equals(participant, other.participant) && 
             Objects.equals(lastOccurrence, other.lastOccurrence) && 
             Objects.equals(note, other.note) && 
             Objects.equals(reaction, other.reaction);
@@ -453,8 +439,7 @@ public class AllergyIntolerance extends DomainResource {
                 encounter, 
                 onset, 
                 recordedDate, 
-                recorder, 
-                asserter, 
+                participant, 
                 lastOccurrence, 
                 note, 
                 reaction);
@@ -476,16 +461,15 @@ public class AllergyIntolerance extends DomainResource {
         private List<Identifier> identifier = new ArrayList<>();
         private CodeableConcept clinicalStatus;
         private CodeableConcept verificationStatus;
-        private AllergyIntoleranceType type;
+        private CodeableConcept type;
         private List<AllergyIntoleranceCategory> category = new ArrayList<>();
         private AllergyIntoleranceCriticality criticality;
         private CodeableConcept code;
         private Reference patient;
         private Reference encounter;
-        private Element onset;
+        private org.linuxforhealth.fhir.model.type.Element onset;
         private DateTime recordedDate;
-        private Reference recorder;
-        private Reference asserter;
+        private List<Participant> participant = new ArrayList<>();
         private DateTime lastOccurrence;
         private List<Annotation> note = new ArrayList<>();
         private List<Reaction> reaction = new ArrayList<>();
@@ -572,7 +556,8 @@ public class AllergyIntolerance extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -590,7 +575,8 @@ public class AllergyIntolerance extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -611,7 +597,7 @@ public class AllergyIntolerance extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -631,7 +617,7 @@ public class AllergyIntolerance extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -656,9 +642,9 @@ public class AllergyIntolerance extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -681,9 +667,9 @@ public class AllergyIntolerance extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -762,10 +748,11 @@ public class AllergyIntolerance extends DomainResource {
 
         /**
          * Assertion about certainty associated with the propensity, or potential risk, of a reaction to the identified substance 
-         * (including pharmaceutical product).
+         * (including pharmaceutical product). The verification status pertains to the allergy or intolerance, itself, not to any 
+         * specific AllergyIntolerance attribute.
          * 
          * @param verificationStatus
-         *     unconfirmed | confirmed | refuted | entered-in-error
+         *     unconfirmed | presumed | confirmed | refuted | entered-in-error
          * 
          * @return
          *     A reference to this Builder instance
@@ -784,7 +771,7 @@ public class AllergyIntolerance extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder type(AllergyIntoleranceType type) {
+        public Builder type(CodeableConcept type) {
             this.type = type;
             return this;
         }
@@ -876,7 +863,7 @@ public class AllergyIntolerance extends DomainResource {
          * </ul>
          * 
          * @param patient
-         *     Who the sensitivity is for
+         *     Who the allergy or intolerance is for
          * 
          * @return
          *     A reference to this Builder instance
@@ -939,7 +926,7 @@ public class AllergyIntolerance extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder onset(Element onset) {
+        public Builder onset(org.linuxforhealth.fhir.model.type.Element onset) {
             this.onset = onset;
             return this;
         }
@@ -949,7 +936,7 @@ public class AllergyIntolerance extends DomainResource {
          * system-generated date.
          * 
          * @param recordedDate
-         *     Date first version of the resource instance was recorded
+         *     Date allergy or intolerance was first recorded
          * 
          * @return
          *     A reference to this Builder instance
@@ -960,46 +947,41 @@ public class AllergyIntolerance extends DomainResource {
         }
 
         /**
-         * Individual who recorded the record and takes responsibility for its content.
+         * Indicates who or what participated in the activities related to the allergy or intolerance and how they were involved.
          * 
-         * <p>Allowed resource types for this reference:
-         * <ul>
-         * <li>{@link Practitioner}</li>
-         * <li>{@link PractitionerRole}</li>
-         * <li>{@link Patient}</li>
-         * <li>{@link RelatedPerson}</li>
-         * </ul>
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param recorder
-         *     Who recorded the sensitivity
+         * @param participant
+         *     Who or what participated in the activities related to the allergy or intolerance and how they were involved
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder recorder(Reference recorder) {
-            this.recorder = recorder;
+        public Builder participant(Participant... participant) {
+            for (Participant value : participant) {
+                this.participant.add(value);
+            }
             return this;
         }
 
         /**
-         * The source of the information about the allergy that is recorded.
+         * Indicates who or what participated in the activities related to the allergy or intolerance and how they were involved.
          * 
-         * <p>Allowed resource types for this reference:
-         * <ul>
-         * <li>{@link Patient}</li>
-         * <li>{@link RelatedPerson}</li>
-         * <li>{@link Practitioner}</li>
-         * <li>{@link PractitionerRole}</li>
-         * </ul>
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param asserter
-         *     Source of the information about the allergy
+         * @param participant
+         *     Who or what participated in the activities related to the allergy or intolerance and how they were involved
          * 
          * @return
          *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
          */
-        public Builder asserter(Reference asserter) {
-            this.asserter = asserter;
+        public Builder participant(Collection<Participant> participant) {
+            this.participant = new ArrayList<>(participant);
             return this;
         }
 
@@ -1123,14 +1105,11 @@ public class AllergyIntolerance extends DomainResource {
             ValidationSupport.checkList(allergyIntolerance.category, "category", AllergyIntoleranceCategory.class);
             ValidationSupport.requireNonNull(allergyIntolerance.patient, "patient");
             ValidationSupport.choiceElement(allergyIntolerance.onset, "onset", DateTime.class, Age.class, Period.class, Range.class, String.class);
+            ValidationSupport.checkList(allergyIntolerance.participant, "participant", Participant.class);
             ValidationSupport.checkList(allergyIntolerance.note, "note", Annotation.class);
             ValidationSupport.checkList(allergyIntolerance.reaction, "reaction", Reaction.class);
-            ValidationSupport.checkValueSetBinding(allergyIntolerance.clinicalStatus, "clinicalStatus", "http://hl7.org/fhir/ValueSet/allergyintolerance-clinical", "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical", "active", "inactive", "resolved");
-            ValidationSupport.checkValueSetBinding(allergyIntolerance.verificationStatus, "verificationStatus", "http://hl7.org/fhir/ValueSet/allergyintolerance-verification", "http://terminology.hl7.org/CodeSystem/allergyintolerance-verification", "unconfirmed", "confirmed", "refuted", "entered-in-error");
             ValidationSupport.checkReferenceType(allergyIntolerance.patient, "patient", "Patient");
             ValidationSupport.checkReferenceType(allergyIntolerance.encounter, "encounter", "Encounter");
-            ValidationSupport.checkReferenceType(allergyIntolerance.recorder, "recorder", "Practitioner", "PractitionerRole", "Patient", "RelatedPerson");
-            ValidationSupport.checkReferenceType(allergyIntolerance.asserter, "asserter", "Patient", "RelatedPerson", "Practitioner", "PractitionerRole");
         }
 
         protected Builder from(AllergyIntolerance allergyIntolerance) {
@@ -1146,12 +1125,317 @@ public class AllergyIntolerance extends DomainResource {
             encounter = allergyIntolerance.encounter;
             onset = allergyIntolerance.onset;
             recordedDate = allergyIntolerance.recordedDate;
-            recorder = allergyIntolerance.recorder;
-            asserter = allergyIntolerance.asserter;
+            participant.addAll(allergyIntolerance.participant);
             lastOccurrence = allergyIntolerance.lastOccurrence;
             note.addAll(allergyIntolerance.note);
             reaction.addAll(allergyIntolerance.reaction);
             return this;
+        }
+    }
+
+    /**
+     * Indicates who or what participated in the activities related to the allergy or intolerance and how they were involved.
+     */
+    public static class Participant extends BackboneElement {
+        @Summary
+        @Binding(
+            bindingName = "AllergyIntoleranceParticipantFunction",
+            strength = BindingStrength.Value.EXTENSIBLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/participation-role-type"
+        )
+        private final CodeableConcept function;
+        @Summary
+        @ReferenceTarget({ "Practitioner", "PractitionerRole", "Patient", "RelatedPerson", "Device", "Organization", "CareTeam" })
+        @Required
+        private final Reference actor;
+
+        private Participant(Builder builder) {
+            super(builder);
+            function = builder.function;
+            actor = builder.actor;
+        }
+
+        /**
+         * Distinguishes the type of involvement of the actor in the activities related to the allergy or intolerance.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getFunction() {
+            return function;
+        }
+
+        /**
+         * Indicates who or what participated in the activities related to the allergy or intolerance.
+         * 
+         * @return
+         *     An immutable object of type {@link Reference} that is non-null.
+         */
+        public Reference getActor() {
+            return actor;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (function != null) || 
+                (actor != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(function, "function", visitor);
+                    accept(actor, "actor", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Participant other = (Participant) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(function, other.function) && 
+                Objects.equals(actor, other.actor);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    function, 
+                    actor);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private CodeableConcept function;
+            private Reference actor;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * Distinguishes the type of involvement of the actor in the activities related to the allergy or intolerance.
+             * 
+             * @param function
+             *     Type of involvement
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder function(CodeableConcept function) {
+                this.function = function;
+                return this;
+            }
+
+            /**
+             * Indicates who or what participated in the activities related to the allergy or intolerance.
+             * 
+             * <p>This element is required.
+             * 
+             * <p>Allowed resource types for this reference:
+             * <ul>
+             * <li>{@link Practitioner}</li>
+             * <li>{@link PractitionerRole}</li>
+             * <li>{@link Patient}</li>
+             * <li>{@link RelatedPerson}</li>
+             * <li>{@link Device}</li>
+             * <li>{@link Organization}</li>
+             * <li>{@link CareTeam}</li>
+             * </ul>
+             * 
+             * @param actor
+             *     Who or what participated in the activities related to the allergy or intolerance
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder actor(Reference actor) {
+                this.actor = actor;
+                return this;
+            }
+
+            /**
+             * Build the {@link Participant}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>actor</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link Participant}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Participant per the base specification
+             */
+            @Override
+            public Participant build() {
+                Participant participant = new Participant(this);
+                if (validating) {
+                    validate(participant);
+                }
+                return participant;
+            }
+
+            protected void validate(Participant participant) {
+                super.validate(participant);
+                ValidationSupport.requireNonNull(participant.actor, "actor");
+                ValidationSupport.checkReferenceType(participant.actor, "actor", "Practitioner", "PractitionerRole", "Patient", "RelatedPerson", "Device", "Organization", "CareTeam");
+                ValidationSupport.requireValueOrChildren(participant);
+            }
+
+            protected Builder from(Participant participant) {
+                super.from(participant);
+                function = participant.function;
+                actor = participant.actor;
+                return this;
+            }
         }
     }
 
@@ -1173,20 +1457,20 @@ public class AllergyIntolerance extends DomainResource {
             valueSet = "http://hl7.org/fhir/ValueSet/clinical-findings"
         )
         @Required
-        private final List<CodeableConcept> manifestation;
+        private final List<CodeableReference> manifestation;
         private final String description;
         private final DateTime onset;
         @Binding(
             bindingName = "AllergyIntoleranceSeverity",
             strength = BindingStrength.Value.REQUIRED,
             description = "Clinical assessment of the severity of a reaction event as a whole, potentially considering multiple different manifestations.",
-            valueSet = "http://hl7.org/fhir/ValueSet/reaction-event-severity|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/reaction-event-severity|5.0.0"
         )
         private final AllergyIntoleranceSeverity severity;
         @Binding(
             bindingName = "RouteOfAdministration",
             strength = BindingStrength.Value.EXAMPLE,
-            description = "A coded concept describing the route or physiological path of administration of a therapeutic agent into or onto the body of a subject.",
+            description = "A coded concept describing the route or physiological path of exposure to a substance.",
             valueSet = "http://hl7.org/fhir/ValueSet/route-codes"
         )
         private final CodeableConcept exposureRoute;
@@ -1223,9 +1507,9 @@ public class AllergyIntolerance extends DomainResource {
          * Clinical symptoms and/or signs that are observed or associated with the adverse reaction event.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that is non-empty.
+         *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that is non-empty.
          */
-        public List<CodeableConcept> getManifestation() {
+        public List<CodeableReference> getManifestation() {
             return manifestation;
         }
 
@@ -1302,7 +1586,7 @@ public class AllergyIntolerance extends DomainResource {
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(substance, "substance", visitor);
-                    accept(manifestation, "manifestation", visitor, CodeableConcept.class);
+                    accept(manifestation, "manifestation", visitor, CodeableReference.class);
                     accept(description, "description", visitor);
                     accept(onset, "onset", visitor);
                     accept(severity, "severity", visitor);
@@ -1368,7 +1652,7 @@ public class AllergyIntolerance extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private CodeableConcept substance;
-            private List<CodeableConcept> manifestation = new ArrayList<>();
+            private List<CodeableReference> manifestation = new ArrayList<>();
             private String description;
             private DateTime onset;
             private AllergyIntoleranceSeverity severity;
@@ -1396,7 +1680,7 @@ public class AllergyIntolerance extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1416,7 +1700,7 @@ public class AllergyIntolerance extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1441,7 +1725,7 @@ public class AllergyIntolerance extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1466,7 +1750,7 @@ public class AllergyIntolerance extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1524,8 +1808,8 @@ public class AllergyIntolerance extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder manifestation(CodeableConcept... manifestation) {
-                for (CodeableConcept value : manifestation) {
+            public Builder manifestation(CodeableReference... manifestation) {
+                for (CodeableReference value : manifestation) {
                     this.manifestation.add(value);
                 }
                 return this;
@@ -1548,7 +1832,7 @@ public class AllergyIntolerance extends DomainResource {
              * @throws NullPointerException
              *     If the passed collection is null
              */
-            public Builder manifestation(Collection<CodeableConcept> manifestation) {
+            public Builder manifestation(Collection<CodeableReference> manifestation) {
                 this.manifestation = new ArrayList<>(manifestation);
                 return this;
             }
@@ -1689,7 +1973,7 @@ public class AllergyIntolerance extends DomainResource {
 
             protected void validate(Reaction reaction) {
                 super.validate(reaction);
-                ValidationSupport.checkNonEmptyList(reaction.manifestation, "manifestation", CodeableConcept.class);
+                ValidationSupport.checkNonEmptyList(reaction.manifestation, "manifestation", CodeableReference.class);
                 ValidationSupport.checkList(reaction.note, "note", Annotation.class);
                 ValidationSupport.requireValueOrChildren(reaction);
             }

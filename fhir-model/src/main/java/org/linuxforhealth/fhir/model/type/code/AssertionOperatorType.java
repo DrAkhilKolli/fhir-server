@@ -96,6 +96,14 @@ public class AssertionOperatorType extends Code {
      */
     public static final AssertionOperatorType EVAL = AssertionOperatorType.builder().value(Value.EVAL).build();
 
+    /**
+     * manualEvaluate
+     * 
+     * <p>Manually evaluate the condition described by this assert. The test engine SHALL pause and provide an input 
+     * mechanism to set the outcome of this assert to 'pass', 'fail', 'skip' or 'stop'.
+     */
+    public static final AssertionOperatorType MANUAL_EVAL = AssertionOperatorType.builder().value(Value.MANUAL_EVAL).build();
+
     private volatile int hashCode;
 
     private AssertionOperatorType(Builder builder) {
@@ -136,6 +144,8 @@ public class AssertionOperatorType extends Code {
             return NOT_CONTAINS;
         case EVAL:
             return EVAL;
+        case MANUAL_EVAL:
+            return MANUAL_EVAL;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -343,7 +353,15 @@ public class AssertionOperatorType extends Code {
          * 
          * <p>Evaluate the FHIRPath expression as a boolean condition.
          */
-        EVAL("eval");
+        EVAL("eval"),
+
+        /**
+         * manualEvaluate
+         * 
+         * <p>Manually evaluate the condition described by this assert. The test engine SHALL pause and provide an input 
+         * mechanism to set the outcome of this assert to 'pass', 'fail', 'skip' or 'stop'.
+         */
+        MANUAL_EVAL("manualEval");
 
         private final java.lang.String value;
 
@@ -396,6 +414,8 @@ public class AssertionOperatorType extends Code {
                 return NOT_CONTAINS;
             case "eval":
                 return EVAL;
+            case "manualEval":
+                return MANUAL_EVAL;
             default:
                 throw new IllegalArgumentException(value);
             }

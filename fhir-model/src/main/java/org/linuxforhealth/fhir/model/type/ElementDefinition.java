@@ -18,6 +18,7 @@ import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
+import org.linuxforhealth.fhir.model.type.code.AdditionalBindingPurpose;
 import org.linuxforhealth.fhir.model.type.code.AggregationMode;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.ConstraintSeverity;
@@ -31,14 +32,6 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 /**
  * Captures constraints on each element within the resource, profile, or extension.
  */
-@Constraint(
-    id = "eld-1",
-    level = "Rule",
-    location = "ElementDefinition.slicing",
-    description = "If there are no discriminators, there must be a definition",
-    expression = "discriminator.exists() or description.exists()",
-    source = "http://hl7.org/fhir/StructureDefinition/ElementDefinition"
-)
 @Constraint(
     id = "eld-2",
     level = "Rule",
@@ -60,7 +53,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Rule",
     location = "ElementDefinition.type",
     description = "Aggregation may only be specified if one of the allowed types for the element is a reference",
-    expression = "aggregation.empty() or (code = 'Reference') or (code = 'canonical')",
+    expression = "aggregation.empty() or (code = 'Reference') or (code = 'canonical') or (code = 'CodeableReference')",
     source = "http://hl7.org/fhir/StructureDefinition/ElementDefinition"
 )
 @Constraint(
@@ -99,15 +92,15 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "eld-11",
     level = "Rule",
     location = "(base)",
-    description = "Binding can only be present for coded elements, string, and uri",
-    expression = "binding.empty() or type.code.empty() or type.select((code = 'code') or (code = 'Coding') or (code='CodeableConcept') or (code = 'Quantity') or (code = 'string') or (code = 'uri') or (code = 'Duration')).exists()",
+    description = "Binding can only be present for coded elements, string, and uri if using FHIR-defined types",
+    expression = "binding.empty() or type.code.empty() or type.code.contains(\":\") or type.select((code = 'code') or (code = 'Coding') or (code='CodeableConcept') or (code = 'Quantity') or (code = 'string') or (code = 'uri') or (code = 'Duration')).exists()",
     source = "http://hl7.org/fhir/StructureDefinition/ElementDefinition"
 )
 @Constraint(
     id = "eld-12",
     level = "Rule",
     location = "ElementDefinition.binding",
-    description = "ValueSet SHALL start with http:// or https:// or urn:",
+    description = "ValueSet SHALL start with http:// or https:// or urn: or #",
     expression = "valueSet.exists() implies (valueSet.startsWith('http:') or valueSet.startsWith('https') or valueSet.startsWith('urn:') or valueSet.startsWith('#'))",
     source = "http://hl7.org/fhir/StructureDefinition/ElementDefinition"
 )
@@ -139,7 +132,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "eld-16",
     level = "Rule",
     location = "(base)",
-    description = "sliceName must be composed of proper tokens separated by\"/\"",
+    description = "sliceName must be composed of proper tokens separated by \"/\"",
     expression = "sliceName.empty() or sliceName.matches('^[a-zA-Z0-9\\/\\-_\\[\\]\\@]+$')",
     source = "http://hl7.org/fhir/StructureDefinition/ElementDefinition"
 )
@@ -163,7 +156,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "eld-19",
     level = "Rule",
     location = "(base)",
-    description = "Element names cannot include some special characters",
+    description = "Element path SHALL be expressed as a set of '.'-separated components with each component restricted to a maximum of 64 characters and with some limits on the allowed choice of characters",
     expression = "path.matches('^[^\\s\\.,:;\\\'\"\\/|?!@#$%&*()\\[\\]{}]{1,64}(\\.[^\\s\\.,:;\\\'\"\\/|?!@#$%&*()\\[\\]{}]{1,64}(\\[x\\])?(\\:[^\\s\\.]+)?)*$')",
     source = "http://hl7.org/fhir/StructureDefinition/ElementDefinition"
 )
@@ -171,8 +164,8 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "eld-20",
     level = "Warning",
     location = "(base)",
-    description = "Element names should be simple alphanumerics with a max of 64 characters, or code generation tools may be broken",
-    expression = "path.matches('^[A-Za-z][A-Za-z0-9]*(\\.[a-z][A-Za-z0-9]*(\\[x])?)*$')",
+    description = "The first component of the path should be UpperCamelCase.  Additional components (following a '.') should be lowerCamelCase.  If this syntax is not adhered to, code generation tools may be broken. Logical models may be less concerned about this implication.",
+    expression = "path.matches('^[A-Za-z][A-Za-z0-9]{0,63}(\\.[a-z][A-Za-z0-9]{0,63}(\\[x])?)*$')",
     source = "http://hl7.org/fhir/StructureDefinition/ElementDefinition"
 )
 @Constraint(
@@ -192,16 +185,64 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     source = "http://hl7.org/fhir/StructureDefinition/ElementDefinition"
 )
 @Constraint(
-    id = "elementDefinition-23",
+    id = "eld-23",
+    level = "Rule",
+    location = "ElementDefinition.binding",
+    description = "binding SHALL have either description or valueSet",
+    expression = "description.exists() or valueSet.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/ElementDefinition"
+)
+@Constraint(
+    id = "eld-24",
+    level = "Warning",
+    location = "(base)",
+    description = "pattern[x] should be used rather than fixed[x]",
+    expression = "fixed.exists().not()",
+    source = "http://hl7.org/fhir/StructureDefinition/ElementDefinition"
+)
+@Constraint(
+    id = "eld-25",
+    level = "Warning",
+    location = "(base)",
+    description = "Order has no meaning (and cannot be asserted to have meaning), so enforcing rules on order is improper",
+    expression = "orderMeaning.empty() implies slicing.where(rules='openAtEnd' or ordered).exists().not()",
+    source = "http://hl7.org/fhir/StructureDefinition/ElementDefinition"
+)
+@Constraint(
+    id = "eld-26",
+    level = "Rule",
+    location = "ElementDefinition.constraint",
+    description = "Errors cannot be suppressed",
+    expression = "(severity = 'error') implies suppress.empty()",
+    source = "http://hl7.org/fhir/StructureDefinition/ElementDefinition"
+)
+@Constraint(
+    id = "eld-27",
+    level = "Warning",
+    location = "(base)",
+    description = "Mappings SHOULD be unique by key",
+    expression = "mapping.select(identity).isDistinct()",
+    source = "http://hl7.org/fhir/StructureDefinition/ElementDefinition"
+)
+@Constraint(
+    id = "eld-28",
+    level = "Rule",
+    location = "(base)",
+    description = "Can't have valueAlternatives if mustHaveValue is true",
+    expression = "mustHaveValue.value implies valueAlternatives.empty()",
+    source = "http://hl7.org/fhir/StructureDefinition/ElementDefinition"
+)
+@Constraint(
+    id = "elementDefinition-29",
     level = "Warning",
     location = "type.code",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/fhir-element-types",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/fhir-element-types', 'extensible')",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/elementdefinition-types",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/elementdefinition-types', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/ElementDefinition",
     generated = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class ElementDefinition extends BackboneElement {
+public class ElementDefinition extends BackboneType {
     @Summary
     @Required
     private final String path;
@@ -209,7 +250,8 @@ public class ElementDefinition extends BackboneElement {
     @org.linuxforhealth.fhir.model.annotation.Binding(
         bindingName = "PropertyRepresentation",
         strength = BindingStrength.Value.REQUIRED,
-        valueSet = "http://hl7.org/fhir/ValueSet/property-representation|4.3.0"
+        description = "How a property is represented when serialized.",
+        valueSet = "http://hl7.org/fhir/ValueSet/property-representation|5.0.0"
     )
     private final List<PropertyRepresentation> representation;
     @Summary
@@ -222,7 +264,8 @@ public class ElementDefinition extends BackboneElement {
     @org.linuxforhealth.fhir.model.annotation.Binding(
         bindingName = "ElementDefinitionCode",
         strength = BindingStrength.Value.EXAMPLE,
-        valueSet = "http://hl7.org/fhir/ValueSet/observation-codes"
+        description = "Codes that indicate the meaning of a data element.",
+        valueSet = "http://loinc.org/vs"
     )
     private final List<Coding> code;
     @Summary
@@ -248,32 +291,36 @@ public class ElementDefinition extends BackboneElement {
     @Summary
     private final List<Type> type;
     @Summary
-    @Choice({ Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, Contributor.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Dosage.class })
-    private final Element defaultValue;
+    @Choice({ Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Integer64.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Availability.class, ExtendedContactDetail.class, Dosage.class, Meta.class })
+    private final org.linuxforhealth.fhir.model.type.Element defaultValue;
     @Summary
     private final Markdown meaningWhenMissing;
     @Summary
     private final String orderMeaning;
     @Summary
-    @Choice({ Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, Contributor.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Dosage.class })
-    private final Element fixed;
+    @Choice({ Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Integer64.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Availability.class, ExtendedContactDetail.class, Dosage.class, Meta.class })
+    private final org.linuxforhealth.fhir.model.type.Element fixed;
     @Summary
-    @Choice({ Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, Contributor.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Dosage.class })
-    private final Element pattern;
+    @Choice({ Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Integer64.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Availability.class, ExtendedContactDetail.class, Dosage.class, Meta.class })
+    private final org.linuxforhealth.fhir.model.type.Element pattern;
     @Summary
     private final List<Example> example;
     @Summary
-    @Choice({ Date.class, DateTime.class, Instant.class, Time.class, Decimal.class, Integer.class, PositiveInt.class, UnsignedInt.class, Quantity.class })
-    private final Element minValue;
+    @Choice({ Date.class, DateTime.class, Instant.class, Time.class, Decimal.class, Integer.class, Integer64.class, PositiveInt.class, UnsignedInt.class, Quantity.class })
+    private final org.linuxforhealth.fhir.model.type.Element minValue;
     @Summary
-    @Choice({ Date.class, DateTime.class, Instant.class, Time.class, Decimal.class, Integer.class, PositiveInt.class, UnsignedInt.class, Quantity.class })
-    private final Element maxValue;
+    @Choice({ Date.class, DateTime.class, Instant.class, Time.class, Decimal.class, Integer.class, Integer64.class, PositiveInt.class, UnsignedInt.class, Quantity.class })
+    private final org.linuxforhealth.fhir.model.type.Element maxValue;
     @Summary
     private final Integer maxLength;
     @Summary
     private final List<Id> condition;
     @Summary
     private final List<Constraint> constraint;
+    @Summary
+    private final Boolean mustHaveValue;
+    @Summary
+    private final List<Canonical> valueAlternatives;
     @Summary
     private final Boolean mustSupport;
     @Summary
@@ -317,6 +364,8 @@ public class ElementDefinition extends BackboneElement {
         maxLength = builder.maxLength;
         condition = Collections.unmodifiableList(builder.condition);
         constraint = Collections.unmodifiableList(builder.constraint);
+        mustHaveValue = builder.mustHaveValue;
+        valueAlternatives = Collections.unmodifiableList(builder.valueAlternatives);
         mustSupport = builder.mustSupport;
         isModifier = builder.isModifier;
         isModifierReason = builder.isModifierReason;
@@ -337,7 +386,9 @@ public class ElementDefinition extends BackboneElement {
     }
 
     /**
-     * Codes that define how this element is represented in instances, when the deviation varies from the normal case.
+     * Codes that define how this element is represented in instances, when the deviation varies from the normal case. No 
+     * extensions are allowed on elements with a representation of 'xmlAttr', no matter what FHIR serialization format is 
+     * used.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link PropertyRepresentation} that may be empty.
@@ -483,7 +534,7 @@ public class ElementDefinition extends BackboneElement {
     /**
      * Information about the base definition of the element, provided to make it unnecessary for tools to trace the deviation 
      * of the element through the derived and related profiles. When the element definition is not the original definition of 
-     * an element - i.g. either in a constraint on another type, or for elements from a super type in a snap shot - then the 
+     * an element - e.g. either in a constraint on another type, or for elements from a super type in a snap shot - then the 
      * information in provided in the element definition may be different to the base definition. On the original definition 
      * of the element, it will be same.
      * 
@@ -522,16 +573,17 @@ public class ElementDefinition extends BackboneElement {
      * 
      * @return
      *     An immutable object of type {@link Base64Binary}, {@link Boolean}, {@link Canonical}, {@link Code}, {@link Date}, 
-     *     {@link DateTime}, {@link Decimal}, {@link Id}, {@link Instant}, {@link Integer}, {@link Markdown}, {@link Oid}, {@link 
-     *     PositiveInt}, {@link String}, {@link Time}, {@link UnsignedInt}, {@link Uri}, {@link Url}, {@link Uuid}, {@link 
-     *     Address}, {@link Age}, {@link Annotation}, {@link Attachment}, {@link CodeableConcept}, {@link CodeableReference}, 
-     *     {@link Coding}, {@link ContactPoint}, {@link Count}, {@link Distance}, {@link Duration}, {@link HumanName}, {@link 
-     *     Identifier}, {@link Money}, {@link Period}, {@link Quantity}, {@link Range}, {@link Ratio}, {@link RatioRange}, {@link 
-     *     Reference}, {@link SampledData}, {@link Signature}, {@link Timing}, {@link ContactDetail}, {@link Contributor}, {@link 
+     *     {@link DateTime}, {@link Decimal}, {@link Id}, {@link Instant}, {@link Integer}, {@link Integer64}, {@link Markdown}, 
+     *     {@link Oid}, {@link PositiveInt}, {@link String}, {@link Time}, {@link UnsignedInt}, {@link Uri}, {@link Url}, {@link 
+     *     Uuid}, {@link Address}, {@link Age}, {@link Annotation}, {@link Attachment}, {@link CodeableConcept}, {@link 
+     *     CodeableReference}, {@link Coding}, {@link ContactPoint}, {@link Count}, {@link Distance}, {@link Duration}, {@link 
+     *     HumanName}, {@link Identifier}, {@link Money}, {@link Period}, {@link Quantity}, {@link Range}, {@link Ratio}, {@link 
+     *     RatioRange}, {@link Reference}, {@link SampledData}, {@link Signature}, {@link Timing}, {@link ContactDetail}, {@link 
      *     DataRequirement}, {@link Expression}, {@link ParameterDefinition}, {@link RelatedArtifact}, {@link TriggerDefinition}, 
-     *     {@link UsageContext} or {@link Dosage} that may be null.
+     *     {@link UsageContext}, {@link Availability}, {@link ExtendedContactDetail}, {@link Dosage} or {@link Meta} that may be 
+     *     null.
      */
-    public Element getDefaultValue() {
+    public org.linuxforhealth.fhir.model.type.Element getDefaultValue() {
         return defaultValue;
     }
 
@@ -558,54 +610,61 @@ public class ElementDefinition extends BackboneElement {
     }
 
     /**
-     * Specifies a value that SHALL be exactly the value for this element in the instance. For purposes of comparison, non-
-     * significant whitespace is ignored, and all values must be an exact match (case and accent sensitive). Missing 
-     * elements/attributes must also be missing.
+     * Specifies a value that SHALL be exactly the value for this element in the instance, if present. For purposes of 
+     * comparison, non-significant whitespace is ignored, and all values must be an exact match (case and accent sensitive). 
+     * Missing elements/attributes must also be missing.
      * 
      * @return
      *     An immutable object of type {@link Base64Binary}, {@link Boolean}, {@link Canonical}, {@link Code}, {@link Date}, 
-     *     {@link DateTime}, {@link Decimal}, {@link Id}, {@link Instant}, {@link Integer}, {@link Markdown}, {@link Oid}, {@link 
-     *     PositiveInt}, {@link String}, {@link Time}, {@link UnsignedInt}, {@link Uri}, {@link Url}, {@link Uuid}, {@link 
-     *     Address}, {@link Age}, {@link Annotation}, {@link Attachment}, {@link CodeableConcept}, {@link CodeableReference}, 
-     *     {@link Coding}, {@link ContactPoint}, {@link Count}, {@link Distance}, {@link Duration}, {@link HumanName}, {@link 
-     *     Identifier}, {@link Money}, {@link Period}, {@link Quantity}, {@link Range}, {@link Ratio}, {@link RatioRange}, {@link 
-     *     Reference}, {@link SampledData}, {@link Signature}, {@link Timing}, {@link ContactDetail}, {@link Contributor}, {@link 
+     *     {@link DateTime}, {@link Decimal}, {@link Id}, {@link Instant}, {@link Integer}, {@link Integer64}, {@link Markdown}, 
+     *     {@link Oid}, {@link PositiveInt}, {@link String}, {@link Time}, {@link UnsignedInt}, {@link Uri}, {@link Url}, {@link 
+     *     Uuid}, {@link Address}, {@link Age}, {@link Annotation}, {@link Attachment}, {@link CodeableConcept}, {@link 
+     *     CodeableReference}, {@link Coding}, {@link ContactPoint}, {@link Count}, {@link Distance}, {@link Duration}, {@link 
+     *     HumanName}, {@link Identifier}, {@link Money}, {@link Period}, {@link Quantity}, {@link Range}, {@link Ratio}, {@link 
+     *     RatioRange}, {@link Reference}, {@link SampledData}, {@link Signature}, {@link Timing}, {@link ContactDetail}, {@link 
      *     DataRequirement}, {@link Expression}, {@link ParameterDefinition}, {@link RelatedArtifact}, {@link TriggerDefinition}, 
-     *     {@link UsageContext} or {@link Dosage} that may be null.
+     *     {@link UsageContext}, {@link Availability}, {@link ExtendedContactDetail}, {@link Dosage} or {@link Meta} that may be 
+     *     null.
      */
-    public Element getFixed() {
+    public org.linuxforhealth.fhir.model.type.Element getFixed() {
         return fixed;
     }
 
     /**
-     * Specifies a value that the value in the instance SHALL follow - that is, any value in the pattern must be found in the 
-     * instance. Other additional values may be found too. This is effectively constraint by example. 
+     * Specifies a value that each occurrence of the element in the instance SHALL follow - that is, any value in the pattern 
+     * must be found in the instance, if the element has a value. Other additional values may be found too. This is 
+     * effectively constraint by example. 
      * 
      * <p>When pattern[x] is used to constrain a primitive, it means that the value provided in the pattern[x] must match the 
      * instance value exactly.
      * 
-     * <p>When pattern[x] is used to constrain an array, it means that each element provided in the pattern[x] array must 
-     * (recursively) match at least one element from the instance array.
+     * <p>When an element within a pattern[x] is used to constrain an array, it means that each element provided in the 
+     * pattern[x] must (recursively) match at least one element from the instance array.
      * 
      * <p>When pattern[x] is used to constrain a complex object, it means that each property in the pattern must be present 
      * in the complex object, and its value must recursively match -- i.e.,
      * 
      * <p>1. If primitive: it must match exactly the pattern value
      * <p>2. If a complex object: it must match (recursively) the pattern value
-     * <p>3. If an array: it must match (recursively) the pattern value.
+     * <p>3. If an array: it must match (recursively) the pattern value
+     * 
+     * <p>If a pattern[x] is declared on a repeating element, the pattern applies to all repetitions. If the desire is for a 
+     * pattern to apply to only one element or a subset of elements, slicing must be used. See [Examples of Patterns]
+     * (elementdefinition-examples.html#pattern-examples) for examples of pattern usage and the effect it will have.
      * 
      * @return
      *     An immutable object of type {@link Base64Binary}, {@link Boolean}, {@link Canonical}, {@link Code}, {@link Date}, 
-     *     {@link DateTime}, {@link Decimal}, {@link Id}, {@link Instant}, {@link Integer}, {@link Markdown}, {@link Oid}, {@link 
-     *     PositiveInt}, {@link String}, {@link Time}, {@link UnsignedInt}, {@link Uri}, {@link Url}, {@link Uuid}, {@link 
-     *     Address}, {@link Age}, {@link Annotation}, {@link Attachment}, {@link CodeableConcept}, {@link CodeableReference}, 
-     *     {@link Coding}, {@link ContactPoint}, {@link Count}, {@link Distance}, {@link Duration}, {@link HumanName}, {@link 
-     *     Identifier}, {@link Money}, {@link Period}, {@link Quantity}, {@link Range}, {@link Ratio}, {@link RatioRange}, {@link 
-     *     Reference}, {@link SampledData}, {@link Signature}, {@link Timing}, {@link ContactDetail}, {@link Contributor}, {@link 
+     *     {@link DateTime}, {@link Decimal}, {@link Id}, {@link Instant}, {@link Integer}, {@link Integer64}, {@link Markdown}, 
+     *     {@link Oid}, {@link PositiveInt}, {@link String}, {@link Time}, {@link UnsignedInt}, {@link Uri}, {@link Url}, {@link 
+     *     Uuid}, {@link Address}, {@link Age}, {@link Annotation}, {@link Attachment}, {@link CodeableConcept}, {@link 
+     *     CodeableReference}, {@link Coding}, {@link ContactPoint}, {@link Count}, {@link Distance}, {@link Duration}, {@link 
+     *     HumanName}, {@link Identifier}, {@link Money}, {@link Period}, {@link Quantity}, {@link Range}, {@link Ratio}, {@link 
+     *     RatioRange}, {@link Reference}, {@link SampledData}, {@link Signature}, {@link Timing}, {@link ContactDetail}, {@link 
      *     DataRequirement}, {@link Expression}, {@link ParameterDefinition}, {@link RelatedArtifact}, {@link TriggerDefinition}, 
-     *     {@link UsageContext} or {@link Dosage} that may be null.
+     *     {@link UsageContext}, {@link Availability}, {@link ExtendedContactDetail}, {@link Dosage} or {@link Meta} that may be 
+     *     null.
      */
-    public Element getPattern() {
+    public org.linuxforhealth.fhir.model.type.Element getPattern() {
         return pattern;
     }
 
@@ -625,9 +684,9 @@ public class ElementDefinition extends BackboneElement {
      * 
      * @return
      *     An immutable object of type {@link Date}, {@link DateTime}, {@link Instant}, {@link Time}, {@link Decimal}, {@link 
-     *     Integer}, {@link PositiveInt}, {@link UnsignedInt} or {@link Quantity} that may be null.
+     *     Integer}, {@link Integer64}, {@link PositiveInt}, {@link UnsignedInt} or {@link Quantity} that may be null.
      */
-    public Element getMinValue() {
+    public org.linuxforhealth.fhir.model.type.Element getMinValue() {
         return minValue;
     }
 
@@ -637,15 +696,18 @@ public class ElementDefinition extends BackboneElement {
      * 
      * @return
      *     An immutable object of type {@link Date}, {@link DateTime}, {@link Instant}, {@link Time}, {@link Decimal}, {@link 
-     *     Integer}, {@link PositiveInt}, {@link UnsignedInt} or {@link Quantity} that may be null.
+     *     Integer}, {@link Integer64}, {@link PositiveInt}, {@link UnsignedInt} or {@link Quantity} that may be null.
      */
-    public Element getMaxValue() {
+    public org.linuxforhealth.fhir.model.type.Element getMaxValue() {
         return maxValue;
     }
 
     /**
      * Indicates the maximum length in characters that is permitted to be present in conformant instances and which is 
-     * expected to be supported by conformant consumers that support the element.
+     * expected to be supported by conformant consumers that support the element. ```maxLength``` SHOULD only be used on 
+     * primitive data types that have a string representation (see [http://hl7.
+     * org/fhir/StructureDefinition/structuredefinition-type-characteristics](http://hl7.
+     * org/fhir/extensions/StructureDefinition-structuredefinition-type-characteristics.html)).
      * 
      * @return
      *     An immutable object of type {@link Integer} that may be null.
@@ -676,9 +738,30 @@ public class ElementDefinition extends BackboneElement {
     }
 
     /**
+     * Specifies for a primitive data type that the value of the data type cannot be replaced by an extension.
+     * 
+     * @return
+     *     An immutable object of type {@link Boolean} that may be null.
+     */
+    public Boolean getMustHaveValue() {
+        return mustHaveValue;
+    }
+
+    /**
+     * Specifies a list of extensions that can appear in place of a primitive value.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Canonical} that may be empty.
+     */
+    public List<Canonical> getValueAlternatives() {
+        return valueAlternatives;
+    }
+
+    /**
      * If true, implementations that produce or consume resources SHALL provide "support" for the element in some meaningful 
-     * way. If false, the element may be ignored and not supported. If false, whether to populate or use the data element in 
-     * any way is at the discretion of the implementation.
+     * way. Note that this is being phased out and replaced by obligations (see below). If false, the element may be ignored 
+     * and not supported. If false, whether to populate or use the data element in any way is at the discretion of the 
+     * implementation.
      * 
      * @return
      *     An immutable object of type {@link Boolean} that may be null.
@@ -691,7 +774,8 @@ public class ElementDefinition extends BackboneElement {
      * If true, the value of this element affects the interpretation of the element or resource that contains it, and the 
      * value of the element cannot be ignored. Typically, this is used for status, negation and qualification codes. The 
      * effect of this is that the element cannot be ignored by systems: they SHALL either recognize the element and process 
-     * it, and/or a pre-determination has been made that it is not relevant to their particular system.
+     * it, and/or a pre-determination has been made that it is not relevant to their particular system. When used on the root 
+     * element in an extension definition, this indicates whether or not the extension is a modifier extension.
      * 
      * @return
      *     An immutable object of type {@link Boolean} that may be null.
@@ -772,6 +856,8 @@ public class ElementDefinition extends BackboneElement {
             (maxLength != null) || 
             !condition.isEmpty() || 
             !constraint.isEmpty() || 
+            (mustHaveValue != null) || 
+            !valueAlternatives.isEmpty() || 
             (mustSupport != null) || 
             (isModifier != null) || 
             (isModifierReason != null) || 
@@ -817,6 +903,8 @@ public class ElementDefinition extends BackboneElement {
                 accept(maxLength, "maxLength", visitor);
                 accept(condition, "condition", visitor, Id.class);
                 accept(constraint, "constraint", visitor, Constraint.class);
+                accept(mustHaveValue, "mustHaveValue", visitor);
+                accept(valueAlternatives, "valueAlternatives", visitor, Canonical.class);
                 accept(mustSupport, "mustSupport", visitor);
                 accept(isModifier, "isModifier", visitor);
                 accept(isModifierReason, "isModifierReason", visitor);
@@ -872,6 +960,8 @@ public class ElementDefinition extends BackboneElement {
             Objects.equals(maxLength, other.maxLength) && 
             Objects.equals(condition, other.condition) && 
             Objects.equals(constraint, other.constraint) && 
+            Objects.equals(mustHaveValue, other.mustHaveValue) && 
+            Objects.equals(valueAlternatives, other.valueAlternatives) && 
             Objects.equals(mustSupport, other.mustSupport) && 
             Objects.equals(isModifier, other.isModifier) && 
             Objects.equals(isModifierReason, other.isModifierReason) && 
@@ -915,6 +1005,8 @@ public class ElementDefinition extends BackboneElement {
                 maxLength, 
                 condition, 
                 constraint, 
+                mustHaveValue, 
+                valueAlternatives, 
                 mustSupport, 
                 isModifier, 
                 isModifierReason, 
@@ -935,7 +1027,7 @@ public class ElementDefinition extends BackboneElement {
         return new Builder();
     }
 
-    public static class Builder extends BackboneElement.Builder {
+    public static class Builder extends BackboneType.Builder {
         private String path;
         private List<PropertyRepresentation> representation = new ArrayList<>();
         private String sliceName;
@@ -953,17 +1045,19 @@ public class ElementDefinition extends BackboneElement {
         private Base base;
         private Uri contentReference;
         private List<Type> type = new ArrayList<>();
-        private Element defaultValue;
+        private org.linuxforhealth.fhir.model.type.Element defaultValue;
         private Markdown meaningWhenMissing;
         private String orderMeaning;
-        private Element fixed;
-        private Element pattern;
+        private org.linuxforhealth.fhir.model.type.Element fixed;
+        private org.linuxforhealth.fhir.model.type.Element pattern;
         private List<Example> example = new ArrayList<>();
-        private Element minValue;
-        private Element maxValue;
+        private org.linuxforhealth.fhir.model.type.Element minValue;
+        private org.linuxforhealth.fhir.model.type.Element maxValue;
         private Integer maxLength;
         private List<Id> condition = new ArrayList<>();
         private List<Constraint> constraint = new ArrayList<>();
+        private Boolean mustHaveValue;
+        private List<Canonical> valueAlternatives = new ArrayList<>();
         private Boolean mustSupport;
         private Boolean isModifier;
         private String isModifierReason;
@@ -992,7 +1086,7 @@ public class ElementDefinition extends BackboneElement {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -1012,7 +1106,7 @@ public class ElementDefinition extends BackboneElement {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -1037,7 +1131,7 @@ public class ElementDefinition extends BackboneElement {
          * May be used to represent additional information that is not part of the basic definition of the element and that 
          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
          * extension. Applications processing a resource are required to check for modifier extensions.
          * 
@@ -1062,7 +1156,7 @@ public class ElementDefinition extends BackboneElement {
          * May be used to represent additional information that is not part of the basic definition of the element and that 
          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
          * extension. Applications processing a resource are required to check for modifier extensions.
          * 
@@ -1122,7 +1216,9 @@ public class ElementDefinition extends BackboneElement {
         }
 
         /**
-         * Codes that define how this element is represented in instances, when the deviation varies from the normal case.
+         * Codes that define how this element is represented in instances, when the deviation varies from the normal case. No 
+         * extensions are allowed on elements with a representation of 'xmlAttr', no matter what FHIR serialization format is 
+         * used.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1141,7 +1237,9 @@ public class ElementDefinition extends BackboneElement {
         }
 
         /**
-         * Codes that define how this element is represented in instances, when the deviation varies from the normal case.
+         * Codes that define how this element is represented in instances, when the deviation varies from the normal case. No 
+         * extensions are allowed on elements with a representation of 'xmlAttr', no matter what FHIR serialization format is 
+         * used.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1496,7 +1594,7 @@ public class ElementDefinition extends BackboneElement {
         /**
          * Information about the base definition of the element, provided to make it unnecessary for tools to trace the deviation 
          * of the element through the derived and related profiles. When the element definition is not the original definition of 
-         * an element - i.g. either in a constraint on another type, or for elements from a super type in a snap shot - then the 
+         * an element - e.g. either in a constraint on another type, or for elements from a super type in a snap shot - then the 
          * information in provided in the element definition may be different to the base definition. On the original definition 
          * of the element, it will be same.
          * 
@@ -1678,6 +1776,7 @@ public class ElementDefinition extends BackboneElement {
          * <li>{@link Id}</li>
          * <li>{@link Instant}</li>
          * <li>{@link Integer}</li>
+         * <li>{@link Integer64}</li>
          * <li>{@link Markdown}</li>
          * <li>{@link Oid}</li>
          * <li>{@link PositiveInt}</li>
@@ -1711,14 +1810,16 @@ public class ElementDefinition extends BackboneElement {
          * <li>{@link Signature}</li>
          * <li>{@link Timing}</li>
          * <li>{@link ContactDetail}</li>
-         * <li>{@link Contributor}</li>
          * <li>{@link DataRequirement}</li>
          * <li>{@link Expression}</li>
          * <li>{@link ParameterDefinition}</li>
          * <li>{@link RelatedArtifact}</li>
          * <li>{@link TriggerDefinition}</li>
          * <li>{@link UsageContext}</li>
+         * <li>{@link Availability}</li>
+         * <li>{@link ExtendedContactDetail}</li>
          * <li>{@link Dosage}</li>
+         * <li>{@link Meta}</li>
          * </ul>
          * 
          * @param defaultValue
@@ -1727,7 +1828,7 @@ public class ElementDefinition extends BackboneElement {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder defaultValue(Element defaultValue) {
+        public Builder defaultValue(org.linuxforhealth.fhir.model.type.Element defaultValue) {
             this.defaultValue = defaultValue;
             return this;
         }
@@ -1875,9 +1976,9 @@ public class ElementDefinition extends BackboneElement {
         }
 
         /**
-         * Specifies a value that SHALL be exactly the value for this element in the instance. For purposes of comparison, non-
-         * significant whitespace is ignored, and all values must be an exact match (case and accent sensitive). Missing 
-         * elements/attributes must also be missing.
+         * Specifies a value that SHALL be exactly the value for this element in the instance, if present. For purposes of 
+         * comparison, non-significant whitespace is ignored, and all values must be an exact match (case and accent sensitive). 
+         * Missing elements/attributes must also be missing.
          * 
          * <p>This is a choice element with the following allowed types:
          * <ul>
@@ -1891,6 +1992,7 @@ public class ElementDefinition extends BackboneElement {
          * <li>{@link Id}</li>
          * <li>{@link Instant}</li>
          * <li>{@link Integer}</li>
+         * <li>{@link Integer64}</li>
          * <li>{@link Markdown}</li>
          * <li>{@link Oid}</li>
          * <li>{@link PositiveInt}</li>
@@ -1924,14 +2026,16 @@ public class ElementDefinition extends BackboneElement {
          * <li>{@link Signature}</li>
          * <li>{@link Timing}</li>
          * <li>{@link ContactDetail}</li>
-         * <li>{@link Contributor}</li>
          * <li>{@link DataRequirement}</li>
          * <li>{@link Expression}</li>
          * <li>{@link ParameterDefinition}</li>
          * <li>{@link RelatedArtifact}</li>
          * <li>{@link TriggerDefinition}</li>
          * <li>{@link UsageContext}</li>
+         * <li>{@link Availability}</li>
+         * <li>{@link ExtendedContactDetail}</li>
          * <li>{@link Dosage}</li>
+         * <li>{@link Meta}</li>
          * </ul>
          * 
          * @param fixed
@@ -1940,7 +2044,7 @@ public class ElementDefinition extends BackboneElement {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder fixed(Element fixed) {
+        public Builder fixed(org.linuxforhealth.fhir.model.type.Element fixed) {
             this.fixed = fixed;
             return this;
         }
@@ -2042,21 +2146,26 @@ public class ElementDefinition extends BackboneElement {
         }
 
         /**
-         * Specifies a value that the value in the instance SHALL follow - that is, any value in the pattern must be found in the 
-         * instance. Other additional values may be found too. This is effectively constraint by example. 
+         * Specifies a value that each occurrence of the element in the instance SHALL follow - that is, any value in the pattern 
+         * must be found in the instance, if the element has a value. Other additional values may be found too. This is 
+         * effectively constraint by example. 
          * 
          * <p>When pattern[x] is used to constrain a primitive, it means that the value provided in the pattern[x] must match the 
          * instance value exactly.
          * 
-         * <p>When pattern[x] is used to constrain an array, it means that each element provided in the pattern[x] array must 
-         * (recursively) match at least one element from the instance array.
+         * <p>When an element within a pattern[x] is used to constrain an array, it means that each element provided in the 
+         * pattern[x] must (recursively) match at least one element from the instance array.
          * 
          * <p>When pattern[x] is used to constrain a complex object, it means that each property in the pattern must be present 
          * in the complex object, and its value must recursively match -- i.e.,
          * 
          * <p>1. If primitive: it must match exactly the pattern value
          * <p>2. If a complex object: it must match (recursively) the pattern value
-         * <p>3. If an array: it must match (recursively) the pattern value.
+         * <p>3. If an array: it must match (recursively) the pattern value
+         * 
+         * <p>If a pattern[x] is declared on a repeating element, the pattern applies to all repetitions. If the desire is for a 
+         * pattern to apply to only one element or a subset of elements, slicing must be used. See [Examples of Patterns]
+         * (elementdefinition-examples.html#pattern-examples) for examples of pattern usage and the effect it will have.
          * 
          * <p>This is a choice element with the following allowed types:
          * <ul>
@@ -2070,6 +2179,7 @@ public class ElementDefinition extends BackboneElement {
          * <li>{@link Id}</li>
          * <li>{@link Instant}</li>
          * <li>{@link Integer}</li>
+         * <li>{@link Integer64}</li>
          * <li>{@link Markdown}</li>
          * <li>{@link Oid}</li>
          * <li>{@link PositiveInt}</li>
@@ -2103,14 +2213,16 @@ public class ElementDefinition extends BackboneElement {
          * <li>{@link Signature}</li>
          * <li>{@link Timing}</li>
          * <li>{@link ContactDetail}</li>
-         * <li>{@link Contributor}</li>
          * <li>{@link DataRequirement}</li>
          * <li>{@link Expression}</li>
          * <li>{@link ParameterDefinition}</li>
          * <li>{@link RelatedArtifact}</li>
          * <li>{@link TriggerDefinition}</li>
          * <li>{@link UsageContext}</li>
+         * <li>{@link Availability}</li>
+         * <li>{@link ExtendedContactDetail}</li>
          * <li>{@link Dosage}</li>
+         * <li>{@link Meta}</li>
          * </ul>
          * 
          * @param pattern
@@ -2119,7 +2231,7 @@ public class ElementDefinition extends BackboneElement {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder pattern(Element pattern) {
+        public Builder pattern(org.linuxforhealth.fhir.model.type.Element pattern) {
             this.pattern = pattern;
             return this;
         }
@@ -2239,6 +2351,7 @@ public class ElementDefinition extends BackboneElement {
          * <li>{@link Time}</li>
          * <li>{@link Decimal}</li>
          * <li>{@link Integer}</li>
+         * <li>{@link Integer64}</li>
          * <li>{@link PositiveInt}</li>
          * <li>{@link UnsignedInt}</li>
          * <li>{@link Quantity}</li>
@@ -2250,7 +2363,7 @@ public class ElementDefinition extends BackboneElement {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder minValue(Element minValue) {
+        public Builder minValue(org.linuxforhealth.fhir.model.type.Element minValue) {
             this.minValue = minValue;
             return this;
         }
@@ -2331,6 +2444,7 @@ public class ElementDefinition extends BackboneElement {
          * <li>{@link Time}</li>
          * <li>{@link Decimal}</li>
          * <li>{@link Integer}</li>
+         * <li>{@link Integer64}</li>
          * <li>{@link PositiveInt}</li>
          * <li>{@link UnsignedInt}</li>
          * <li>{@link Quantity}</li>
@@ -2342,7 +2456,7 @@ public class ElementDefinition extends BackboneElement {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder maxValue(Element maxValue) {
+        public Builder maxValue(org.linuxforhealth.fhir.model.type.Element maxValue) {
             this.maxValue = maxValue;
             return this;
         }
@@ -2351,7 +2465,7 @@ public class ElementDefinition extends BackboneElement {
          * Convenience method for setting {@code maxLength}.
          * 
          * @param maxLength
-         *     Max length for strings
+         *     Max length for string type data
          * 
          * @return
          *     A reference to this Builder instance
@@ -2365,10 +2479,13 @@ public class ElementDefinition extends BackboneElement {
 
         /**
          * Indicates the maximum length in characters that is permitted to be present in conformant instances and which is 
-         * expected to be supported by conformant consumers that support the element.
+         * expected to be supported by conformant consumers that support the element. ```maxLength``` SHOULD only be used on 
+         * primitive data types that have a string representation (see [http://hl7.
+         * org/fhir/StructureDefinition/structuredefinition-type-characteristics](http://hl7.
+         * org/fhir/extensions/StructureDefinition-structuredefinition-type-characteristics.html)).
          * 
          * @param maxLength
-         *     Max length for strings
+         *     Max length for string type data
          * 
          * @return
          *     A reference to this Builder instance
@@ -2459,10 +2576,79 @@ public class ElementDefinition extends BackboneElement {
         }
 
         /**
+         * Convenience method for setting {@code mustHaveValue}.
+         * 
+         * @param mustHaveValue
+         *     For primitives, that a value must be present - not replaced by an extension
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #mustHaveValue(org.linuxforhealth.fhir.model.type.Boolean)
+         */
+        public Builder mustHaveValue(java.lang.Boolean mustHaveValue) {
+            this.mustHaveValue = (mustHaveValue == null) ? null : Boolean.of(mustHaveValue);
+            return this;
+        }
+
+        /**
+         * Specifies for a primitive data type that the value of the data type cannot be replaced by an extension.
+         * 
+         * @param mustHaveValue
+         *     For primitives, that a value must be present - not replaced by an extension
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder mustHaveValue(Boolean mustHaveValue) {
+            this.mustHaveValue = mustHaveValue;
+            return this;
+        }
+
+        /**
+         * Specifies a list of extensions that can appear in place of a primitive value.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param valueAlternatives
+         *     Extensions that are allowed to replace a primitive value
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder valueAlternatives(Canonical... valueAlternatives) {
+            for (Canonical value : valueAlternatives) {
+                this.valueAlternatives.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Specifies a list of extensions that can appear in place of a primitive value.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param valueAlternatives
+         *     Extensions that are allowed to replace a primitive value
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder valueAlternatives(Collection<Canonical> valueAlternatives) {
+            this.valueAlternatives = new ArrayList<>(valueAlternatives);
+            return this;
+        }
+
+        /**
          * Convenience method for setting {@code mustSupport}.
          * 
          * @param mustSupport
-         *     If the element must be supported
+         *     If the element must be supported (discouraged - see obligations)
          * 
          * @return
          *     A reference to this Builder instance
@@ -2476,11 +2662,12 @@ public class ElementDefinition extends BackboneElement {
 
         /**
          * If true, implementations that produce or consume resources SHALL provide "support" for the element in some meaningful 
-         * way. If false, the element may be ignored and not supported. If false, whether to populate or use the data element in 
-         * any way is at the discretion of the implementation.
+         * way. Note that this is being phased out and replaced by obligations (see below). If false, the element may be ignored 
+         * and not supported. If false, whether to populate or use the data element in any way is at the discretion of the 
+         * implementation.
          * 
          * @param mustSupport
-         *     If the element must be supported
+         *     If the element must be supported (discouraged - see obligations)
          * 
          * @return
          *     A reference to this Builder instance
@@ -2510,7 +2697,8 @@ public class ElementDefinition extends BackboneElement {
          * If true, the value of this element affects the interpretation of the element or resource that contains it, and the 
          * value of the element cannot be ignored. Typically, this is used for status, negation and qualification codes. The 
          * effect of this is that the element cannot be ignored by systems: they SHALL either recognize the element and process 
-         * it, and/or a pre-determination has been made that it is not relevant to their particular system.
+         * it, and/or a pre-determination has been made that it is not relevant to their particular system. When used on the root 
+         * element in an extension definition, this indicates whether or not the extension is a modifier extension.
          * 
          * @param isModifier
          *     If this modifies the meaning of other elements
@@ -2666,14 +2854,15 @@ public class ElementDefinition extends BackboneElement {
             ValidationSupport.checkList(elementDefinition.code, "code", Coding.class);
             ValidationSupport.checkList(elementDefinition.alias, "alias", String.class);
             ValidationSupport.checkList(elementDefinition.type, "type", Type.class);
-            ValidationSupport.choiceElement(elementDefinition.defaultValue, "defaultValue", Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, Contributor.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Dosage.class);
-            ValidationSupport.choiceElement(elementDefinition.fixed, "fixed", Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, Contributor.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Dosage.class);
-            ValidationSupport.choiceElement(elementDefinition.pattern, "pattern", Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, Contributor.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Dosage.class);
+            ValidationSupport.choiceElement(elementDefinition.defaultValue, "defaultValue", Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Integer64.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Availability.class, ExtendedContactDetail.class, Dosage.class, Meta.class);
+            ValidationSupport.choiceElement(elementDefinition.fixed, "fixed", Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Integer64.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Availability.class, ExtendedContactDetail.class, Dosage.class, Meta.class);
+            ValidationSupport.choiceElement(elementDefinition.pattern, "pattern", Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Integer64.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Availability.class, ExtendedContactDetail.class, Dosage.class, Meta.class);
             ValidationSupport.checkList(elementDefinition.example, "example", Example.class);
-            ValidationSupport.choiceElement(elementDefinition.minValue, "minValue", Date.class, DateTime.class, Instant.class, Time.class, Decimal.class, Integer.class, PositiveInt.class, UnsignedInt.class, Quantity.class);
-            ValidationSupport.choiceElement(elementDefinition.maxValue, "maxValue", Date.class, DateTime.class, Instant.class, Time.class, Decimal.class, Integer.class, PositiveInt.class, UnsignedInt.class, Quantity.class);
+            ValidationSupport.choiceElement(elementDefinition.minValue, "minValue", Date.class, DateTime.class, Instant.class, Time.class, Decimal.class, Integer.class, Integer64.class, PositiveInt.class, UnsignedInt.class, Quantity.class);
+            ValidationSupport.choiceElement(elementDefinition.maxValue, "maxValue", Date.class, DateTime.class, Instant.class, Time.class, Decimal.class, Integer.class, Integer64.class, PositiveInt.class, UnsignedInt.class, Quantity.class);
             ValidationSupport.checkList(elementDefinition.condition, "condition", Id.class);
             ValidationSupport.checkList(elementDefinition.constraint, "constraint", Constraint.class);
+            ValidationSupport.checkList(elementDefinition.valueAlternatives, "valueAlternatives", Canonical.class);
             ValidationSupport.checkList(elementDefinition.mapping, "mapping", Mapping.class);
             ValidationSupport.requireValueOrChildren(elementDefinition);
         }
@@ -2708,6 +2897,8 @@ public class ElementDefinition extends BackboneElement {
             maxLength = elementDefinition.maxLength;
             condition.addAll(elementDefinition.condition);
             constraint.addAll(elementDefinition.constraint);
+            mustHaveValue = elementDefinition.mustHaveValue;
+            valueAlternatives.addAll(elementDefinition.valueAlternatives);
             mustSupport = elementDefinition.mustSupport;
             isModifier = elementDefinition.isModifier;
             isModifierReason = elementDefinition.isModifierReason;
@@ -2736,7 +2927,8 @@ public class ElementDefinition extends BackboneElement {
         @org.linuxforhealth.fhir.model.annotation.Binding(
             bindingName = "SlicingRules",
             strength = BindingStrength.Value.REQUIRED,
-            valueSet = "http://hl7.org/fhir/ValueSet/resource-slicing-rules|4.3.0"
+            description = "How slices are interpreted when evaluating an instance.",
+            valueSet = "http://hl7.org/fhir/ValueSet/resource-slicing-rules|5.0.0"
         )
         @Required
         private final SlicingRules rules;
@@ -2894,7 +3086,7 @@ public class ElementDefinition extends BackboneElement {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2914,7 +3106,7 @@ public class ElementDefinition extends BackboneElement {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3156,7 +3348,8 @@ public class ElementDefinition extends BackboneElement {
             @org.linuxforhealth.fhir.model.annotation.Binding(
                 bindingName = "DiscriminatorType",
                 strength = BindingStrength.Value.REQUIRED,
-                valueSet = "http://hl7.org/fhir/ValueSet/discriminator-type|4.3.0"
+                description = "How an element value is interpreted when discrimination is evaluated.",
+                valueSet = "http://hl7.org/fhir/ValueSet/discriminator-type|5.0.0"
             )
             @Required
             private final DiscriminatorType type;
@@ -3282,7 +3475,7 @@ public class ElementDefinition extends BackboneElement {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3302,7 +3495,7 @@ public class ElementDefinition extends BackboneElement {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3380,7 +3573,7 @@ public class ElementDefinition extends BackboneElement {
                  * <p>This element is required.
                  * 
                  * @param type
-                 *     value | exists | pattern | type | profile
+                 *     value | exists | type | profile | position
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -3468,7 +3661,7 @@ public class ElementDefinition extends BackboneElement {
     /**
      * Information about the base definition of the element, provided to make it unnecessary for tools to trace the deviation 
      * of the element through the derived and related profiles. When the element definition is not the original definition of 
-     * an element - i.g. either in a constraint on another type, or for elements from a super type in a snap shot - then the 
+     * an element - e.g. either in a constraint on another type, or for elements from a super type in a snap shot - then the 
      * information in provided in the element definition may be different to the base definition. On the original definition 
      * of the element, it will be same.
      */
@@ -3618,7 +3811,7 @@ public class ElementDefinition extends BackboneElement {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3638,7 +3831,7 @@ public class ElementDefinition extends BackboneElement {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3844,9 +4037,10 @@ public class ElementDefinition extends BackboneElement {
     public static class Type extends BackboneElement {
         @Summary
         @org.linuxforhealth.fhir.model.annotation.Binding(
-            bindingName = "FHIRDefinedTypeExt",
+            bindingName = "ElementDefinitionTypes",
             strength = BindingStrength.Value.EXTENSIBLE,
-            valueSet = "http://hl7.org/fhir/ValueSet/fhir-element-types"
+            description = "List of all Types for ElementDefinition.type.code.",
+            valueSet = "http://hl7.org/fhir/ValueSet/elementdefinition-types"
         )
         @Required
         private final Uri code;
@@ -3858,14 +4052,16 @@ public class ElementDefinition extends BackboneElement {
         @org.linuxforhealth.fhir.model.annotation.Binding(
             bindingName = "AggregationMode",
             strength = BindingStrength.Value.REQUIRED,
-            valueSet = "http://hl7.org/fhir/ValueSet/resource-aggregation-mode|4.3.0"
+            description = "How resource references can be aggregated.",
+            valueSet = "http://hl7.org/fhir/ValueSet/resource-aggregation-mode|5.0.0"
         )
         private final List<AggregationMode> aggregation;
         @Summary
         @org.linuxforhealth.fhir.model.annotation.Binding(
             bindingName = "ReferenceVersionRules",
             strength = BindingStrength.Value.REQUIRED,
-            valueSet = "http://hl7.org/fhir/ValueSet/reference-version-rules|4.3.0"
+            description = "Whether a reference needs to be version specific or version independent, or whether either can be used.",
+            valueSet = "http://hl7.org/fhir/ValueSet/reference-version-rules|5.0.0"
         )
         private final ReferenceVersionRules versioning;
 
@@ -4045,7 +4241,7 @@ public class ElementDefinition extends BackboneElement {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4065,7 +4261,7 @@ public class ElementDefinition extends BackboneElement {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4355,9 +4551,9 @@ public class ElementDefinition extends BackboneElement {
         @Required
         private final String label;
         @Summary
-        @Choice({ Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, Contributor.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Dosage.class })
+        @Choice({ Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Integer64.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Availability.class, ExtendedContactDetail.class, Dosage.class, Meta.class })
         @Required
-        private final Element value;
+        private final org.linuxforhealth.fhir.model.type.Element value;
 
         private Example(Builder builder) {
             super(builder);
@@ -4366,7 +4562,7 @@ public class ElementDefinition extends BackboneElement {
         }
 
         /**
-         * Describes the purpose of this example amoung the set of examples.
+         * Describes the purpose of this example among the set of examples.
          * 
          * @return
          *     An immutable object of type {@link String} that is non-null.
@@ -4380,16 +4576,17 @@ public class ElementDefinition extends BackboneElement {
          * 
          * @return
          *     An immutable object of type {@link Base64Binary}, {@link Boolean}, {@link Canonical}, {@link Code}, {@link Date}, 
-         *     {@link DateTime}, {@link Decimal}, {@link Id}, {@link Instant}, {@link Integer}, {@link Markdown}, {@link Oid}, {@link 
-         *     PositiveInt}, {@link String}, {@link Time}, {@link UnsignedInt}, {@link Uri}, {@link Url}, {@link Uuid}, {@link 
-         *     Address}, {@link Age}, {@link Annotation}, {@link Attachment}, {@link CodeableConcept}, {@link CodeableReference}, 
-         *     {@link Coding}, {@link ContactPoint}, {@link Count}, {@link Distance}, {@link Duration}, {@link HumanName}, {@link 
-         *     Identifier}, {@link Money}, {@link Period}, {@link Quantity}, {@link Range}, {@link Ratio}, {@link RatioRange}, {@link 
-         *     Reference}, {@link SampledData}, {@link Signature}, {@link Timing}, {@link ContactDetail}, {@link Contributor}, {@link 
+         *     {@link DateTime}, {@link Decimal}, {@link Id}, {@link Instant}, {@link Integer}, {@link Integer64}, {@link Markdown}, 
+         *     {@link Oid}, {@link PositiveInt}, {@link String}, {@link Time}, {@link UnsignedInt}, {@link Uri}, {@link Url}, {@link 
+         *     Uuid}, {@link Address}, {@link Age}, {@link Annotation}, {@link Attachment}, {@link CodeableConcept}, {@link 
+         *     CodeableReference}, {@link Coding}, {@link ContactPoint}, {@link Count}, {@link Distance}, {@link Duration}, {@link 
+         *     HumanName}, {@link Identifier}, {@link Money}, {@link Period}, {@link Quantity}, {@link Range}, {@link Ratio}, {@link 
+         *     RatioRange}, {@link Reference}, {@link SampledData}, {@link Signature}, {@link Timing}, {@link ContactDetail}, {@link 
          *     DataRequirement}, {@link Expression}, {@link ParameterDefinition}, {@link RelatedArtifact}, {@link TriggerDefinition}, 
-         *     {@link UsageContext} or {@link Dosage} that is non-null.
+         *     {@link UsageContext}, {@link Availability}, {@link ExtendedContactDetail}, {@link Dosage} or {@link Meta} that is non-
+         *     null.
          */
-        public Element getValue() {
+        public org.linuxforhealth.fhir.model.type.Element getValue() {
             return value;
         }
 
@@ -4461,7 +4658,7 @@ public class ElementDefinition extends BackboneElement {
 
         public static class Builder extends BackboneElement.Builder {
             private String label;
-            private Element value;
+            private org.linuxforhealth.fhir.model.type.Element value;
 
             private Builder() {
                 super();
@@ -4484,7 +4681,7 @@ public class ElementDefinition extends BackboneElement {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4504,7 +4701,7 @@ public class ElementDefinition extends BackboneElement {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4595,7 +4792,7 @@ public class ElementDefinition extends BackboneElement {
             }
 
             /**
-             * Describes the purpose of this example amoung the set of examples.
+             * Describes the purpose of this example among the set of examples.
              * 
              * <p>This element is required.
              * 
@@ -4735,6 +4932,7 @@ public class ElementDefinition extends BackboneElement {
              * <li>{@link Id}</li>
              * <li>{@link Instant}</li>
              * <li>{@link Integer}</li>
+             * <li>{@link Integer64}</li>
              * <li>{@link Markdown}</li>
              * <li>{@link Oid}</li>
              * <li>{@link PositiveInt}</li>
@@ -4768,14 +4966,16 @@ public class ElementDefinition extends BackboneElement {
              * <li>{@link Signature}</li>
              * <li>{@link Timing}</li>
              * <li>{@link ContactDetail}</li>
-             * <li>{@link Contributor}</li>
              * <li>{@link DataRequirement}</li>
              * <li>{@link Expression}</li>
              * <li>{@link ParameterDefinition}</li>
              * <li>{@link RelatedArtifact}</li>
              * <li>{@link TriggerDefinition}</li>
              * <li>{@link UsageContext}</li>
+             * <li>{@link Availability}</li>
+             * <li>{@link ExtendedContactDetail}</li>
              * <li>{@link Dosage}</li>
+             * <li>{@link Meta}</li>
              * </ul>
              * 
              * @param value
@@ -4784,7 +4984,7 @@ public class ElementDefinition extends BackboneElement {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder value(Element value) {
+            public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                 this.value = value;
                 return this;
             }
@@ -4815,7 +5015,7 @@ public class ElementDefinition extends BackboneElement {
             protected void validate(Example example) {
                 super.validate(example);
                 ValidationSupport.requireNonNull(example.label, "label");
-                ValidationSupport.requireChoiceElement(example.value, "value", Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, Contributor.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Dosage.class);
+                ValidationSupport.requireChoiceElement(example.value, "value", Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Integer64.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Availability.class, ExtendedContactDetail.class, Dosage.class, Meta.class);
                 ValidationSupport.requireValueOrChildren(example);
             }
 
@@ -4837,22 +5037,23 @@ public class ElementDefinition extends BackboneElement {
         @Required
         private final Id key;
         @Summary
-        private final String requirements;
+        private final Markdown requirements;
         @Summary
         @org.linuxforhealth.fhir.model.annotation.Binding(
             bindingName = "ConstraintSeverity",
             strength = BindingStrength.Value.REQUIRED,
-            valueSet = "http://hl7.org/fhir/ValueSet/constraint-severity|4.3.0"
+            description = "SHALL applications comply with this constraint?",
+            valueSet = "http://hl7.org/fhir/ValueSet/constraint-severity|5.0.0"
         )
         @Required
         private final ConstraintSeverity severity;
+        @Summary
+        private final Boolean suppress;
         @Summary
         @Required
         private final String human;
         @Summary
         private final String expression;
-        @Summary
-        private final String xpath;
         @Summary
         private final Canonical source;
 
@@ -4861,9 +5062,9 @@ public class ElementDefinition extends BackboneElement {
             key = builder.key;
             requirements = builder.requirements;
             severity = builder.severity;
+            suppress = builder.suppress;
             human = builder.human;
             expression = builder.expression;
-            xpath = builder.xpath;
             source = builder.source;
         }
 
@@ -4882,9 +5083,9 @@ public class ElementDefinition extends BackboneElement {
          * Description of why this constraint is necessary or appropriate.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link Markdown} that may be null.
          */
-        public String getRequirements() {
+        public Markdown getRequirements() {
             return requirements;
         }
 
@@ -4896,6 +5097,16 @@ public class ElementDefinition extends BackboneElement {
          */
         public ConstraintSeverity getSeverity() {
             return severity;
+        }
+
+        /**
+         * If true, indicates that the warning or best practice guideline should be suppressed.
+         * 
+         * @return
+         *     An immutable object of type {@link Boolean} that may be null.
+         */
+        public Boolean getSuppress() {
+            return suppress;
         }
 
         /**
@@ -4919,16 +5130,6 @@ public class ElementDefinition extends BackboneElement {
         }
 
         /**
-         * An XPath expression of constraint that can be executed to see if this constraint is met.
-         * 
-         * @return
-         *     An immutable object of type {@link String} that may be null.
-         */
-        public String getXpath() {
-            return xpath;
-        }
-
-        /**
          * A reference to the original source of the constraint, for traceability purposes.
          * 
          * @return
@@ -4944,9 +5145,9 @@ public class ElementDefinition extends BackboneElement {
                 (key != null) || 
                 (requirements != null) || 
                 (severity != null) || 
+                (suppress != null) || 
                 (human != null) || 
                 (expression != null) || 
-                (xpath != null) || 
                 (source != null);
         }
 
@@ -4962,9 +5163,9 @@ public class ElementDefinition extends BackboneElement {
                     accept(key, "key", visitor);
                     accept(requirements, "requirements", visitor);
                     accept(severity, "severity", visitor);
+                    accept(suppress, "suppress", visitor);
                     accept(human, "human", visitor);
                     accept(expression, "expression", visitor);
-                    accept(xpath, "xpath", visitor);
                     accept(source, "source", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
@@ -4990,9 +5191,9 @@ public class ElementDefinition extends BackboneElement {
                 Objects.equals(key, other.key) && 
                 Objects.equals(requirements, other.requirements) && 
                 Objects.equals(severity, other.severity) && 
+                Objects.equals(suppress, other.suppress) && 
                 Objects.equals(human, other.human) && 
                 Objects.equals(expression, other.expression) && 
-                Objects.equals(xpath, other.xpath) && 
                 Objects.equals(source, other.source);
         }
 
@@ -5006,9 +5207,9 @@ public class ElementDefinition extends BackboneElement {
                     key, 
                     requirements, 
                     severity, 
+                    suppress, 
                     human, 
                     expression, 
-                    xpath, 
                     source);
                 hashCode = result;
             }
@@ -5026,11 +5227,11 @@ public class ElementDefinition extends BackboneElement {
 
         public static class Builder extends BackboneElement.Builder {
             private Id key;
-            private String requirements;
+            private Markdown requirements;
             private ConstraintSeverity severity;
+            private Boolean suppress;
             private String human;
             private String expression;
-            private String xpath;
             private Canonical source;
 
             private Builder() {
@@ -5054,7 +5255,7 @@ public class ElementDefinition extends BackboneElement {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -5074,7 +5275,7 @@ public class ElementDefinition extends BackboneElement {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -5164,22 +5365,6 @@ public class ElementDefinition extends BackboneElement {
             }
 
             /**
-             * Convenience method for setting {@code requirements}.
-             * 
-             * @param requirements
-             *     Why this constraint is necessary or appropriate
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #requirements(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder requirements(java.lang.String requirements) {
-                this.requirements = (requirements == null) ? null : String.of(requirements);
-                return this;
-            }
-
-            /**
              * Description of why this constraint is necessary or appropriate.
              * 
              * @param requirements
@@ -5188,7 +5373,7 @@ public class ElementDefinition extends BackboneElement {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder requirements(String requirements) {
+            public Builder requirements(Markdown requirements) {
                 this.requirements = requirements;
                 return this;
             }
@@ -5206,6 +5391,36 @@ public class ElementDefinition extends BackboneElement {
              */
             public Builder severity(ConstraintSeverity severity) {
                 this.severity = severity;
+                return this;
+            }
+
+            /**
+             * Convenience method for setting {@code suppress}.
+             * 
+             * @param suppress
+             *     Suppress warning or hint in profile
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #suppress(org.linuxforhealth.fhir.model.type.Boolean)
+             */
+            public Builder suppress(java.lang.Boolean suppress) {
+                this.suppress = (suppress == null) ? null : Boolean.of(suppress);
+                return this;
+            }
+
+            /**
+             * If true, indicates that the warning or best practice guideline should be suppressed.
+             * 
+             * @param suppress
+             *     Suppress warning or hint in profile
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder suppress(Boolean suppress) {
+                this.suppress = suppress;
                 return this;
             }
 
@@ -5274,36 +5489,6 @@ public class ElementDefinition extends BackboneElement {
             }
 
             /**
-             * Convenience method for setting {@code xpath}.
-             * 
-             * @param xpath
-             *     XPath expression of constraint
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #xpath(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder xpath(java.lang.String xpath) {
-                this.xpath = (xpath == null) ? null : String.of(xpath);
-                return this;
-            }
-
-            /**
-             * An XPath expression of constraint that can be executed to see if this constraint is met.
-             * 
-             * @param xpath
-             *     XPath expression of constraint
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder xpath(String xpath) {
-                this.xpath = xpath;
-                return this;
-            }
-
-            /**
              * A reference to the original source of the constraint, for traceability purposes.
              * 
              * @param source
@@ -5354,9 +5539,9 @@ public class ElementDefinition extends BackboneElement {
                 key = constraint.key;
                 requirements = constraint.requirements;
                 severity = constraint.severity;
+                suppress = constraint.suppress;
                 human = constraint.human;
                 expression = constraint.expression;
-                xpath = constraint.xpath;
                 source = constraint.source;
                 return this;
             }
@@ -5372,20 +5557,24 @@ public class ElementDefinition extends BackboneElement {
         @org.linuxforhealth.fhir.model.annotation.Binding(
             bindingName = "BindingStrength",
             strength = BindingStrength.Value.REQUIRED,
-            valueSet = "http://hl7.org/fhir/ValueSet/binding-strength|4.3.0"
+            description = "Indication of the degree of conformance expectations associated with a binding.",
+            valueSet = "http://hl7.org/fhir/ValueSet/binding-strength|5.0.0"
         )
         @Required
         private final BindingStrength strength;
         @Summary
-        private final String description;
+        private final Markdown description;
         @Summary
         private final Canonical valueSet;
+        @Summary
+        private final List<Additional> additional;
 
         private Binding(Builder builder) {
             super(builder);
             strength = builder.strength;
             description = builder.description;
             valueSet = builder.valueSet;
+            additional = Collections.unmodifiableList(builder.additional);
         }
 
         /**
@@ -5403,9 +5592,9 @@ public class ElementDefinition extends BackboneElement {
          * Describes the intended use of this particular set of codes.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link Markdown} that may be null.
          */
-        public String getDescription() {
+        public Markdown getDescription() {
             return description;
         }
 
@@ -5419,12 +5608,24 @@ public class ElementDefinition extends BackboneElement {
             return valueSet;
         }
 
+        /**
+         * Additional bindings that help applications implementing this element. Additional bindings do not replace the main 
+         * binding but provide more information and/or context.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link Additional} that may be empty.
+         */
+        public List<Additional> getAdditional() {
+            return additional;
+        }
+
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
                 (strength != null) || 
                 (description != null) || 
-                (valueSet != null);
+                (valueSet != null) || 
+                !additional.isEmpty();
         }
 
         @Override
@@ -5439,6 +5640,7 @@ public class ElementDefinition extends BackboneElement {
                     accept(strength, "strength", visitor);
                     accept(description, "description", visitor);
                     accept(valueSet, "valueSet", visitor);
+                    accept(additional, "additional", visitor, Additional.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -5462,7 +5664,8 @@ public class ElementDefinition extends BackboneElement {
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(strength, other.strength) && 
                 Objects.equals(description, other.description) && 
-                Objects.equals(valueSet, other.valueSet);
+                Objects.equals(valueSet, other.valueSet) && 
+                Objects.equals(additional, other.additional);
         }
 
         @Override
@@ -5474,7 +5677,8 @@ public class ElementDefinition extends BackboneElement {
                     modifierExtension, 
                     strength, 
                     description, 
-                    valueSet);
+                    valueSet, 
+                    additional);
                 hashCode = result;
             }
             return result;
@@ -5491,8 +5695,9 @@ public class ElementDefinition extends BackboneElement {
 
         public static class Builder extends BackboneElement.Builder {
             private BindingStrength strength;
-            private String description;
+            private Markdown description;
             private Canonical valueSet;
+            private List<Additional> additional = new ArrayList<>();
 
             private Builder() {
                 super();
@@ -5515,7 +5720,7 @@ public class ElementDefinition extends BackboneElement {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -5535,7 +5740,7 @@ public class ElementDefinition extends BackboneElement {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -5625,31 +5830,15 @@ public class ElementDefinition extends BackboneElement {
             }
 
             /**
-             * Convenience method for setting {@code description}.
-             * 
-             * @param description
-             *     Human explanation of the value set
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #description(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder description(java.lang.String description) {
-                this.description = (description == null) ? null : String.of(description);
-                return this;
-            }
-
-            /**
              * Describes the intended use of this particular set of codes.
              * 
              * @param description
-             *     Human explanation of the value set
+             *     Intended use of codes in the bound value set
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder description(String description) {
+            public Builder description(Markdown description) {
                 this.description = description;
                 return this;
             }
@@ -5665,6 +5854,47 @@ public class ElementDefinition extends BackboneElement {
              */
             public Builder valueSet(Canonical valueSet) {
                 this.valueSet = valueSet;
+                return this;
+            }
+
+            /**
+             * Additional bindings that help applications implementing this element. Additional bindings do not replace the main 
+             * binding but provide more information and/or context.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param additional
+             *     Additional Bindings - more rules about the binding
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder additional(Additional... additional) {
+                for (Additional value : additional) {
+                    this.additional.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * Additional bindings that help applications implementing this element. Additional bindings do not replace the main 
+             * binding but provide more information and/or context.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param additional
+             *     Additional Bindings - more rules about the binding
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder additional(Collection<Additional> additional) {
+                this.additional = new ArrayList<>(additional);
                 return this;
             }
 
@@ -5693,6 +5923,7 @@ public class ElementDefinition extends BackboneElement {
             protected void validate(Binding binding) {
                 super.validate(binding);
                 ValidationSupport.requireNonNull(binding.strength, "strength");
+                ValidationSupport.checkList(binding.additional, "additional", Additional.class);
                 ValidationSupport.requireValueOrChildren(binding);
             }
 
@@ -5701,7 +5932,450 @@ public class ElementDefinition extends BackboneElement {
                 strength = binding.strength;
                 description = binding.description;
                 valueSet = binding.valueSet;
+                additional.addAll(binding.additional);
                 return this;
+            }
+        }
+
+        /**
+         * Additional bindings that help applications implementing this element. Additional bindings do not replace the main 
+         * binding but provide more information and/or context.
+         */
+        public static class Additional extends BackboneElement {
+            @Summary
+            @org.linuxforhealth.fhir.model.annotation.Binding(
+                bindingName = "AdditionalBindingPurpose",
+                strength = BindingStrength.Value.REQUIRED,
+                description = "The use of an additional binding.",
+                valueSet = "http://hl7.org/fhir/ValueSet/additional-binding-purpose|5.0.0"
+            )
+            @Required
+            private final AdditionalBindingPurpose purpose;
+            @Summary
+            @Required
+            private final Canonical valueSet;
+            @Summary
+            private final Markdown documentation;
+            @Summary
+            private final String shortDoco;
+            @Summary
+            private final List<UsageContext> usage;
+            @Summary
+            private final Boolean any;
+
+            private Additional(Builder builder) {
+                super(builder);
+                purpose = builder.purpose;
+                valueSet = builder.valueSet;
+                documentation = builder.documentation;
+                shortDoco = builder.shortDoco;
+                usage = Collections.unmodifiableList(builder.usage);
+                any = builder.any;
+            }
+
+            /**
+             * The use of this additional binding.
+             * 
+             * @return
+             *     An immutable object of type {@link AdditionalBindingPurpose} that is non-null.
+             */
+            public AdditionalBindingPurpose getPurpose() {
+                return purpose;
+            }
+
+            /**
+             * The valueSet that is being bound for the purpose.
+             * 
+             * @return
+             *     An immutable object of type {@link Canonical} that is non-null.
+             */
+            public Canonical getValueSet() {
+                return valueSet;
+            }
+
+            /**
+             * Documentation of the purpose of use of the bindingproviding additional information about how it is intended to be used.
+             * 
+             * @return
+             *     An immutable object of type {@link Markdown} that may be null.
+             */
+            public Markdown getDocumentation() {
+                return documentation;
+            }
+
+            /**
+             * Concise documentation - for summary tables.
+             * 
+             * @return
+             *     An immutable object of type {@link String} that may be null.
+             */
+            public String getShortDoco() {
+                return shortDoco;
+            }
+
+            /**
+             * Qualifies the usage of the binding. Typically bindings are qualified by jurisdiction, but they may also be qualified 
+             * by gender, workflow status, clinical domain etc. The information to decide whether a usege context applies is usually 
+             * outside the resource, determined by context, and this might present challenges for validation tooling.
+             * 
+             * @return
+             *     An unmodifiable list containing immutable objects of type {@link UsageContext} that may be empty.
+             */
+            public List<UsageContext> getUsage() {
+                return usage;
+            }
+
+            /**
+             * Whether the binding applies to all repeats, or just to any one of them. This is only relevant for elements that can 
+             * repeat.
+             * 
+             * @return
+             *     An immutable object of type {@link Boolean} that may be null.
+             */
+            public Boolean getAny() {
+                return any;
+            }
+
+            @Override
+            public boolean hasChildren() {
+                return super.hasChildren() || 
+                    (purpose != null) || 
+                    (valueSet != null) || 
+                    (documentation != null) || 
+                    (shortDoco != null) || 
+                    !usage.isEmpty() || 
+                    (any != null);
+            }
+
+            @Override
+            public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                if (visitor.preVisit(this)) {
+                    visitor.visitStart(elementName, elementIndex, this);
+                    if (visitor.visit(elementName, elementIndex, this)) {
+                        // visit children
+                        accept(id, "id", visitor);
+                        accept(extension, "extension", visitor, Extension.class);
+                        accept(purpose, "purpose", visitor);
+                        accept(valueSet, "valueSet", visitor);
+                        accept(documentation, "documentation", visitor);
+                        accept(shortDoco, "shortDoco", visitor);
+                        accept(usage, "usage", visitor, UsageContext.class);
+                        accept(any, "any", visitor);
+                    }
+                    visitor.visitEnd(elementName, elementIndex, this);
+                    visitor.postVisit(this);
+                }
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj) {
+                    return true;
+                }
+                if (obj == null) {
+                    return false;
+                }
+                if (getClass() != obj.getClass()) {
+                    return false;
+                }
+                Additional other = (Additional) obj;
+                return Objects.equals(id, other.id) && 
+                    Objects.equals(extension, other.extension) && 
+                    Objects.equals(purpose, other.purpose) && 
+                    Objects.equals(valueSet, other.valueSet) && 
+                    Objects.equals(documentation, other.documentation) && 
+                    Objects.equals(shortDoco, other.shortDoco) && 
+                    Objects.equals(usage, other.usage) && 
+                    Objects.equals(any, other.any);
+            }
+
+            @Override
+            public int hashCode() {
+                int result = hashCode;
+                if (result == 0) {
+                    result = Objects.hash(id, 
+                        extension, 
+                        purpose, 
+                        valueSet, 
+                        documentation, 
+                        shortDoco, 
+                        usage, 
+                        any);
+                    hashCode = result;
+                }
+                return result;
+            }
+
+            @Override
+            public Builder toBuilder() {
+                return new Builder().from(this);
+            }
+
+            public static Builder builder() {
+                return new Builder();
+            }
+
+            public static class Builder extends BackboneElement.Builder {
+                private AdditionalBindingPurpose purpose;
+                private Canonical valueSet;
+                private Markdown documentation;
+                private String shortDoco;
+                private List<UsageContext> usage = new ArrayList<>();
+                private Boolean any;
+
+                private Builder() {
+                    super();
+                }
+
+                /**
+                 * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                 * contain spaces.
+                 * 
+                 * @param id
+                 *     Unique id for inter-element referencing
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder id(java.lang.String id) {
+                    return (Builder) super.id(id);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder extension(Extension... extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder extension(Collection<Extension> extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * The use of this additional binding.
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * @param purpose
+                 *     maximum | minimum | required | extensible | candidate | current | preferred | ui | starter | component
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder purpose(AdditionalBindingPurpose purpose) {
+                    this.purpose = purpose;
+                    return this;
+                }
+
+                /**
+                 * The valueSet that is being bound for the purpose.
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * @param valueSet
+                 *     The value set for the additional binding
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder valueSet(Canonical valueSet) {
+                    this.valueSet = valueSet;
+                    return this;
+                }
+
+                /**
+                 * Documentation of the purpose of use of the bindingproviding additional information about how it is intended to be used.
+                 * 
+                 * @param documentation
+                 *     Documentation of the purpose of use of the binding
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder documentation(Markdown documentation) {
+                    this.documentation = documentation;
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code shortDoco}.
+                 * 
+                 * @param shortDoco
+                 *     Concise documentation - for summary tables
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #shortDoco(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder shortDoco(java.lang.String shortDoco) {
+                    this.shortDoco = (shortDoco == null) ? null : String.of(shortDoco);
+                    return this;
+                }
+
+                /**
+                 * Concise documentation - for summary tables.
+                 * 
+                 * @param shortDoco
+                 *     Concise documentation - for summary tables
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder shortDoco(String shortDoco) {
+                    this.shortDoco = shortDoco;
+                    return this;
+                }
+
+                /**
+                 * Qualifies the usage of the binding. Typically bindings are qualified by jurisdiction, but they may also be qualified 
+                 * by gender, workflow status, clinical domain etc. The information to decide whether a usege context applies is usually 
+                 * outside the resource, determined by context, and this might present challenges for validation tooling.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param usage
+                 *     Qualifies the usage - jurisdiction, gender, workflow status etc.
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder usage(UsageContext... usage) {
+                    for (UsageContext value : usage) {
+                        this.usage.add(value);
+                    }
+                    return this;
+                }
+
+                /**
+                 * Qualifies the usage of the binding. Typically bindings are qualified by jurisdiction, but they may also be qualified 
+                 * by gender, workflow status, clinical domain etc. The information to decide whether a usege context applies is usually 
+                 * outside the resource, determined by context, and this might present challenges for validation tooling.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param usage
+                 *     Qualifies the usage - jurisdiction, gender, workflow status etc.
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                public Builder usage(Collection<UsageContext> usage) {
+                    this.usage = new ArrayList<>(usage);
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code any}.
+                 * 
+                 * @param any
+                 *     Whether binding can applies to all repeats, or just one
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #any(org.linuxforhealth.fhir.model.type.Boolean)
+                 */
+                public Builder any(java.lang.Boolean any) {
+                    this.any = (any == null) ? null : Boolean.of(any);
+                    return this;
+                }
+
+                /**
+                 * Whether the binding applies to all repeats, or just to any one of them. This is only relevant for elements that can 
+                 * repeat.
+                 * 
+                 * @param any
+                 *     Whether binding can applies to all repeats, or just one
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder any(Boolean any) {
+                    this.any = any;
+                    return this;
+                }
+
+                /**
+                 * Build the {@link Additional}
+                 * 
+                 * <p>Required elements:
+                 * <ul>
+                 * <li>purpose</li>
+                 * <li>valueSet</li>
+                 * </ul>
+                 * 
+                 * @return
+                 *     An immutable object of type {@link Additional}
+                 * @throws IllegalStateException
+                 *     if the current state cannot be built into a valid Additional per the base specification
+                 */
+                @Override
+                public Additional build() {
+                    Additional additional = new Additional(this);
+                    if (validating) {
+                        validate(additional);
+                    }
+                    return additional;
+                }
+
+                protected void validate(Additional additional) {
+                    super.validate(additional);
+                    ValidationSupport.requireNonNull(additional.purpose, "purpose");
+                    ValidationSupport.requireNonNull(additional.valueSet, "valueSet");
+                    ValidationSupport.checkList(additional.usage, "usage", UsageContext.class);
+                    ValidationSupport.requireValueOrChildren(additional);
+                }
+
+                protected Builder from(Additional additional) {
+                    super.from(additional);
+                    purpose = additional.purpose;
+                    valueSet = additional.valueSet;
+                    documentation = additional.documentation;
+                    shortDoco = additional.shortDoco;
+                    usage.addAll(additional.usage);
+                    any = additional.any;
+                    return this;
+                }
             }
         }
     }
@@ -5718,14 +6392,14 @@ public class ElementDefinition extends BackboneElement {
             bindingName = "MimeType",
             strength = BindingStrength.Value.REQUIRED,
             description = "BCP 13 (RFCs 2045, 2046, 2047, 4288, 4289 and 2049)",
-            valueSet = "http://hl7.org/fhir/ValueSet/mimetypes|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/mimetypes|5.0.0"
         )
         private final Code language;
         @Summary
         @Required
         private final String map;
         @Summary
-        private final String comment;
+        private final Markdown comment;
 
         private Mapping(Builder builder) {
             super(builder);
@@ -5769,9 +6443,9 @@ public class ElementDefinition extends BackboneElement {
          * Comments that provide information about the mapping or its use.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link Markdown} that may be null.
          */
-        public String getComment() {
+        public Markdown getComment() {
             return comment;
         }
 
@@ -5853,7 +6527,7 @@ public class ElementDefinition extends BackboneElement {
             private Id identity;
             private Code language;
             private String map;
-            private String comment;
+            private Markdown comment;
 
             private Builder() {
                 super();
@@ -5876,7 +6550,7 @@ public class ElementDefinition extends BackboneElement {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -5896,7 +6570,7 @@ public class ElementDefinition extends BackboneElement {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -6033,22 +6707,6 @@ public class ElementDefinition extends BackboneElement {
             }
 
             /**
-             * Convenience method for setting {@code comment}.
-             * 
-             * @param comment
-             *     Comments about the mapping or its use
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #comment(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder comment(java.lang.String comment) {
-                this.comment = (comment == null) ? null : String.of(comment);
-                return this;
-            }
-
-            /**
              * Comments that provide information about the mapping or its use.
              * 
              * @param comment
@@ -6057,7 +6715,7 @@ public class ElementDefinition extends BackboneElement {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder comment(String comment) {
+            public Builder comment(Markdown comment) {
                 this.comment = comment;
                 return this;
             }

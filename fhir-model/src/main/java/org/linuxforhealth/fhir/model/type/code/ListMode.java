@@ -22,7 +22,7 @@ public class ListMode extends Code {
     /**
      * Working List
      * 
-     * <p>This list is the master list, maintained in an ongoing fashion with regular updates as the real world list it is 
+     * <p>This list is the master list, maintained in an ongoing fashion with regular updates as the real-world list it is 
      * tracking changes.
      */
     public static final ListMode WORKING = ListMode.builder().value(Value.WORKING).build();
@@ -201,7 +201,7 @@ public class ListMode extends Code {
         /**
          * Working List
          * 
-         * <p>This list is the master list, maintained in an ongoing fashion with regular updates as the real world list it is 
+         * <p>This list is the master list, maintained in an ongoing fashion with regular updates as the real-world list it is 
          * tracking changes.
          */
         WORKING("working"),

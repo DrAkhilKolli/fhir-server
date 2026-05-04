@@ -38,7 +38,7 @@ public class FilterOperator extends Code {
      * Descendent Of (by subsumption)
      * 
      * <p>Includes all concept ids that have a transitive is-a relationship with the concept Id provided as the value, 
-     * excluding the provided concept itself i.e. include descendant codes only).
+     * excluding the provided concept itself (i.e. include descendant codes only).
      */
     public static final FilterOperator DESCENDENT_OF = FilterOperator.builder().value(Value.DESCENDENT_OF).build();
 
@@ -59,7 +59,7 @@ public class FilterOperator extends Code {
     /**
      * In Set
      * 
-     * <p>The specified property of the code is in the set of codes or concepts specified in the provided value (comma 
+     * <p>The specified property of the code is in the set of codes or concepts specified in the provided value (comma-
      * separated list).
      */
     public static final FilterOperator IN = FilterOperator.builder().value(Value.IN).build();
@@ -67,7 +67,7 @@ public class FilterOperator extends Code {
     /**
      * Not in Set
      * 
-     * <p>The specified property of the code is not in the set of codes or concepts specified in the provided value (comma 
+     * <p>The specified property of the code is not in the set of codes or concepts specified in the provided value (comma-
      * separated list).
      */
     public static final FilterOperator NOT_IN = FilterOperator.builder().value(Value.NOT_IN).build();
@@ -79,6 +79,22 @@ public class FilterOperator extends Code {
      * including the provided concept itself (i.e. include ancestor codes and self).
      */
     public static final FilterOperator GENERALIZES = FilterOperator.builder().value(Value.GENERALIZES).build();
+
+    /**
+     * Child Of
+     * 
+     * <p>Only concepts with a direct hierarchical relationship to the index code and no other concepts. This does not 
+     * include the index code in the output.
+     */
+    public static final FilterOperator CHILD_OF = FilterOperator.builder().value(Value.CHILD_OF).build();
+
+    /**
+     * Descendent Leaf
+     * 
+     * <p>Includes concept ids that have a transitive is-a relationship with the concept Id provided as the value, but which 
+     * do not have any concept ids with transitive is-a relationships with themselves.
+     */
+    public static final FilterOperator DESCENDENT_LEAF = FilterOperator.builder().value(Value.DESCENDENT_LEAF).build();
 
     /**
      * Exists
@@ -122,6 +138,10 @@ public class FilterOperator extends Code {
             return NOT_IN;
         case GENERALIZES:
             return GENERALIZES;
+        case CHILD_OF:
+            return CHILD_OF;
+        case DESCENDENT_LEAF:
+            return DESCENDENT_LEAF;
         case EXISTS:
             return EXISTS;
         default:
@@ -275,7 +295,7 @@ public class FilterOperator extends Code {
          * Descendent Of (by subsumption)
          * 
          * <p>Includes all concept ids that have a transitive is-a relationship with the concept Id provided as the value, 
-         * excluding the provided concept itself i.e. include descendant codes only).
+         * excluding the provided concept itself (i.e. include descendant codes only).
          */
         DESCENDENT_OF("descendent-of"),
 
@@ -296,7 +316,7 @@ public class FilterOperator extends Code {
         /**
          * In Set
          * 
-         * <p>The specified property of the code is in the set of codes or concepts specified in the provided value (comma 
+         * <p>The specified property of the code is in the set of codes or concepts specified in the provided value (comma-
          * separated list).
          */
         IN("in"),
@@ -304,7 +324,7 @@ public class FilterOperator extends Code {
         /**
          * Not in Set
          * 
-         * <p>The specified property of the code is not in the set of codes or concepts specified in the provided value (comma 
+         * <p>The specified property of the code is not in the set of codes or concepts specified in the provided value (comma-
          * separated list).
          */
         NOT_IN("not-in"),
@@ -316,6 +336,22 @@ public class FilterOperator extends Code {
          * including the provided concept itself (i.e. include ancestor codes and self).
          */
         GENERALIZES("generalizes"),
+
+        /**
+         * Child Of
+         * 
+         * <p>Only concepts with a direct hierarchical relationship to the index code and no other concepts. This does not 
+         * include the index code in the output.
+         */
+        CHILD_OF("child-of"),
+
+        /**
+         * Descendent Leaf
+         * 
+         * <p>Includes concept ids that have a transitive is-a relationship with the concept Id provided as the value, but which 
+         * do not have any concept ids with transitive is-a relationships with themselves.
+         */
+        DESCENDENT_LEAF("descendent-leaf"),
 
         /**
          * Exists
@@ -370,6 +406,10 @@ public class FilterOperator extends Code {
                 return NOT_IN;
             case "generalizes":
                 return GENERALIZES;
+            case "child-of":
+                return CHILD_OF;
+            case "descendent-leaf":
+                return DESCENDENT_LEAF;
             case "exists":
                 return EXISTS;
             default:

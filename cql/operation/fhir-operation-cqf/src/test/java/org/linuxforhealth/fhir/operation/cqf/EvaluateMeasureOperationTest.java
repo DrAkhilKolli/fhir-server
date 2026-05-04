@@ -84,16 +84,15 @@ public class EvaluateMeasureOperationTest {
         String encounterCode = "office-visit";
         Coding reason = coding(codesystem, encounterCode);
         Encounter encounter = Encounter.builder()
-                .reasonCode(concept(reason))
-                .status(EncounterStatus.FINISHED)
-                .clazz(reason)
-                .period(Period.builder().start(DateTime.now()).end(DateTime.now()).build())
+                .status(EncounterStatus.COMPLETED)
+                .clazz(concept(reason))
+                .actualPeriod(Period.builder().start(DateTime.now()).end(DateTime.now()).build())
                 .build();
 
         String procedureCode = "fluoride-application";
         Coding type = coding(codesystem, procedureCode);
         Procedure procedure = Procedure.builder().subject(Reference.builder().reference(fhirstring("Patient/"
-                + patient.getId())).build()).code(concept(type)).status(ProcedureStatus.COMPLETED).performed(DateTime.of("2019-03-14")).build();
+                + patient.getId())).build()).code(concept(type)).status(ProcedureStatus.COMPLETED).occurrence(DateTime.of("2019-03-14")).build();
 
         List<Measure> measures = TestHelper.getBundleResources("EXM74-10.2.000-request.json", Measure.class);
         assertEquals( measures.size(), 1 );

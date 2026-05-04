@@ -29,7 +29,6 @@ import org.linuxforhealth.fhir.model.format.Format;
 import org.linuxforhealth.fhir.model.generator.FHIRGenerator;
 import org.linuxforhealth.fhir.model.resource.AuditEvent;
 import org.linuxforhealth.fhir.model.resource.AuditEvent.Agent;
-import org.linuxforhealth.fhir.model.resource.AuditEvent.Agent.Network;
 import org.linuxforhealth.fhir.model.resource.AuditEvent.Entity;
 import org.linuxforhealth.fhir.model.resource.AuditEvent.Entity.Detail;
 import org.linuxforhealth.fhir.model.resource.AuditEvent.Source;
@@ -39,7 +38,6 @@ import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.Instant;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.code.AuditEventAction;
-import org.linuxforhealth.fhir.model.type.code.AuditEventAgentNetworkType;
 
 /**
  * This class adds support for AuditEvent
@@ -297,25 +295,20 @@ public class AuditEventMapper implements Mapper {
         // Everything on this server is an initiated RESTFUL Operation
         // @link https://www.hl7.org/fhir/valueset-audit-event-type.html
         // @formatter:off
-        builder.type(TYPE)
-            // We map to a single sub-type, however, in the future we may use multiple.
-            // @link https://www.hl7.org/fhir/valueset-audit-event-sub-type.html#expansion
-            .subtype(Arrays.asList(MAP_TO_SUBTYPE.get(entry.getEventType())))
+        builder.code(CodeableConcept.builder().coding(TYPE).build())
             // Mapping our AuditEventType to a specific C-R-U-D-E
             // @link https://www.hl7.org/fhir/valueset-audit-event-action.html
             .action(MAP_TO_ACTION.get(entry.getEventType()))
             // Period involves start/end
-            .period(period(entry))
+            .occurred(period(entry))
             // Now, when we are creating this AuditEvent
             .recorded(Instant.now())
             // Agent is the Actor involved in the event
             .agent(agent(entry))
             // Whether the event succeeded or failed
-            .outcome(outcome(entry))
-            // Description of the event outcome
-            .outcomeDesc(outcomeDesc(entry))
+            .outcome(buildOutcome(entry))
             // The purposeOfUse of the event
-            .purposeOfEvent(purposeOfEvent(entry))
+            .authorization(purposeOfEvent(entry))
             // source is the 'Audit Event Reporter' this server
             .source(source(entry))
             // Data or objects used in the audit
@@ -360,11 +353,7 @@ public class AuditEventMapper implements Mapper {
         Agent collector = Agent.builder()
                 .requestor(org.linuxforhealth.fhir.model.type.Boolean.TRUE)
                 .role(ROLE_DATA_COLLECTOR)
-                .name(string(entry.getComponentId()))
-                .network(Network.builder()
-                    .type(AuditEventAgentNetworkType.TYPE_1)
-                    .address(string(entry.getComponentIp()))
-                    .build())
+                .network(entry.getComponentIp())
                 .build();
         return Arrays.asList(collector);
     }
@@ -375,12 +364,13 @@ public class AuditEventMapper implements Mapper {
     private Entity entity(AuditLogEntry entry) throws IOException {
         // @formatter:off
         Entity.Builder builder = Entity.builder()
-                .securityLabel(Coding.builder()
-                                .code(code("N"))
-                                .display(string("normal"))
-                                .system(uri("http://terminology.hl7.org/CodeSystem/v3-Confidentiality"))
-                                .build())
-                .description(string(entry.getDescription()));
+                .securityLabel(CodeableConcept.builder()
+                                .coding(Coding.builder()
+                                    .code(code("N"))
+                                    .display(string("normal"))
+                                    .system(uri("http://terminology.hl7.org/CodeSystem/v3-Confidentiality"))
+                                    .build())
+                                .build());
 
         if (entry.getContext() != null) {
             FHIRContext fhirContext = new FHIRContext(entry.getContext());
@@ -392,7 +382,7 @@ public class AuditEventMapper implements Mapper {
             String value = FHIRContext.FHIRWriter.generate(fhirContext);
             builder.detail(
                 Detail.builder()
-                    .type(string("FHIR Context"))
+                    .type(CodeableConcept.builder().text(string("FHIR Context")).build())
                     .value(Base64Binary.builder()
                             .value(value.getBytes())
                             .build())
@@ -415,8 +405,7 @@ public class AuditEventMapper implements Mapper {
     private Source source(AuditLogEntry entry) {
         // @formatter:off
         return Source.builder()
-                .type(SOURCE_AUDIT)
-                .site(string(entry.getLocation()))
+                .type(CodeableConcept.builder().coding(SOURCE_AUDIT).build())
                 .observer(Reference.builder()
                             .reference(string("Device/"+ entry.getComponentId()))
                             .build())
@@ -442,28 +431,27 @@ public class AuditEventMapper implements Mapper {
         // @formatter:on
     }
 
-    /**
-     * @implNote This applies to the next two methods: outcomeDesc, outcome
-     * Previously, it had pending as an option, however it should now be success/failure in all cases.
-     */
-    private org.linuxforhealth.fhir.model.type.String outcomeDesc(AuditLogEntry entry) {
-        if (entry.getContext().getApiParameters().getStatus() < 400) {
-            return string("success");
-        } else if (entry.getContext().getApiParameters().getStatus() < 500) {
-            return string("minor failure");
+    // Builds an R5 AuditEvent.Outcome from the entry's HTTP status
+    private AuditEvent.Outcome buildOutcome(AuditLogEntry entry) {
+        int status = entry.getContext().getApiParameters().getStatus();
+        java.lang.String outcomeCode;
+        java.lang.String display;
+        if (status < 400) {
+            outcomeCode = "0";
+            display = "Success";
+        } else if (status < 500) {
+            outcomeCode = "4";
+            display = "Minor failure";
         } else {
-            return string("major failure");
+            outcomeCode = "12";
+            display = "Major failure";
         }
-    }
-
-    // Specifies the outcome as a success, minor or major
-    private org.linuxforhealth.fhir.model.type.code.AuditEventOutcome outcome(AuditLogEntry entry) {
-        if (entry.getContext().getApiParameters().getStatus() < 400) {
-            return org.linuxforhealth.fhir.model.type.code.AuditEventOutcome.OUTCOME_0;
-        } else if (entry.getContext().getApiParameters().getStatus() < 500) {
-            return org.linuxforhealth.fhir.model.type.code.AuditEventOutcome.OUTCOME_4;
-        } else {
-            return org.linuxforhealth.fhir.model.type.code.AuditEventOutcome.OUTCOME_12;
-        }
+        return AuditEvent.Outcome.builder()
+                .code(Coding.builder()
+                        .code(code(outcomeCode))
+                        .system(uri("http://terminology.hl7.org/CodeSystem/audit-event-outcome"))
+                        .display(string(display))
+                        .build())
+                .build();
     }
 }

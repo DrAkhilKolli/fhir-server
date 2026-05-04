@@ -27,6 +27,7 @@ import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.DateTime;
@@ -113,7 +114,7 @@ public class Contract extends DomainResource {
         bindingName = "ContractStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "A code specifying the state of the resource instance.",
-        valueSet = "http://hl7.org/fhir/ValueSet/contract-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/contract-status|5.0.0"
     )
     private final ContractStatus status;
     @Binding(
@@ -168,7 +169,7 @@ public class Contract extends DomainResource {
     )
     private final CodeableConcept scope;
     @Choice({ CodeableConcept.class, Reference.class })
-    private final Element topic;
+    private final org.linuxforhealth.fhir.model.type.Element topic;
     @Summary
     @Binding(
         bindingName = "ContractType",
@@ -196,7 +197,7 @@ public class Contract extends DomainResource {
     private final List<Rule> rule;
     @ReferenceTarget({ "Composition", "DocumentReference", "QuestionnaireResponse", "Contract" })
     @Choice({ Attachment.class, Reference.class })
-    private final Element legallyBinding;
+    private final org.linuxforhealth.fhir.model.type.Element legallyBinding;
 
     private Contract(Builder builder) {
         super(builder);
@@ -404,8 +405,7 @@ public class Contract extends DomainResource {
     }
 
     /**
-     * A short, descriptive, user-friendly title for this Contract definition, derivative, or instance in any legal state.t 
-     * giving additional information about its content.
+     * A short, descriptive, user-friendly title for this Contract definition, derivative, or instance in any legal state.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -415,8 +415,8 @@ public class Contract extends DomainResource {
     }
 
     /**
-     * An explanatory or alternate user-friendly title for this Contract definition, derivative, or instance in any legal 
-     * state.t giving additional information about its content.
+     * A more detailed or qualifying explanatory or alternate user-friendly title for this Contract definition, derivative, 
+     * or instance in any legal state.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -462,7 +462,7 @@ public class Contract extends DomainResource {
      * @return
      *     An immutable object of type {@link CodeableConcept} or {@link Reference} that may be null.
      */
-    public Element getTopic() {
+    public org.linuxforhealth.fhir.model.type.Element getTopic() {
         return topic;
     }
 
@@ -523,8 +523,8 @@ public class Contract extends DomainResource {
     /**
      * Links to Provenance records for past versions of this Contract definition, derivative, or instance, which identify key 
      * state transitions or updates that are likely to be relevant to a user looking at the current version of the Contract. 
-     * The Provence.entity indicates the target that was changed in the update. http://build.fhir.org/provenance-definitions.
-     * html#Provenance.entity.
+     * The Provenance.entity indicates the target that was changed in the update (see [Provenance.entity](provenance-
+     * definitions.html#Provenance.entity)).
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
@@ -585,7 +585,7 @@ public class Contract extends DomainResource {
      * @return
      *     An immutable object of type {@link Attachment} or {@link Reference} that may be null.
      */
-    public Element getLegallyBinding() {
+    public org.linuxforhealth.fhir.model.type.Element getLegallyBinding() {
         return legallyBinding;
     }
 
@@ -816,7 +816,7 @@ public class Contract extends DomainResource {
         private List<String> alias = new ArrayList<>();
         private Reference author;
         private CodeableConcept scope;
-        private Element topic;
+        private org.linuxforhealth.fhir.model.type.Element topic;
         private CodeableConcept type;
         private List<CodeableConcept> subType = new ArrayList<>();
         private ContentDefinition contentDefinition;
@@ -827,7 +827,7 @@ public class Contract extends DomainResource {
         private List<Friendly> friendly = new ArrayList<>();
         private List<Legal> legal = new ArrayList<>();
         private List<Rule> rule = new ArrayList<>();
-        private Element legallyBinding;
+        private org.linuxforhealth.fhir.model.type.Element legallyBinding;
 
         private Builder() {
             super();
@@ -911,7 +911,8 @@ public class Contract extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -929,7 +930,8 @@ public class Contract extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -950,7 +952,7 @@ public class Contract extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -970,7 +972,7 @@ public class Contract extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -995,9 +997,9 @@ public class Contract extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1020,9 +1022,9 @@ public class Contract extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1131,8 +1133,7 @@ public class Contract extends DomainResource {
          * The status of the resource instance.
          * 
          * @param status
-         *     amended | appended | cancelled | disputed | entered-in-error | executable | executed | negotiable | offered | policy | 
-         *     rejected | renewed | revoked | resolved | terminated
+         *     amended | appended | cancelled | disputed | entered-in-error | executable +
          * 
          * @return
          *     A reference to this Builder instance
@@ -1490,8 +1491,7 @@ public class Contract extends DomainResource {
         }
 
         /**
-         * A short, descriptive, user-friendly title for this Contract definition, derivative, or instance in any legal state.t 
-         * giving additional information about its content.
+         * A short, descriptive, user-friendly title for this Contract definition, derivative, or instance in any legal state.
          * 
          * @param title
          *     Human Friendly name
@@ -1521,8 +1521,8 @@ public class Contract extends DomainResource {
         }
 
         /**
-         * An explanatory or alternate user-friendly title for this Contract definition, derivative, or instance in any legal 
-         * state.t giving additional information about its content.
+         * A more detailed or qualifying explanatory or alternate user-friendly title for this Contract definition, derivative, 
+         * or instance in any legal state.
          * 
          * @param subtitle
          *     Subordinate Friendly name
@@ -1648,7 +1648,7 @@ public class Contract extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder topic(Element topic) {
+        public Builder topic(org.linuxforhealth.fhir.model.type.Element topic) {
             this.topic = topic;
             return this;
         }
@@ -1806,8 +1806,8 @@ public class Contract extends DomainResource {
         /**
          * Links to Provenance records for past versions of this Contract definition, derivative, or instance, which identify key 
          * state transitions or updates that are likely to be relevant to a user looking at the current version of the Contract. 
-         * The Provence.entity indicates the target that was changed in the update. http://build.fhir.org/provenance-definitions.
-         * html#Provenance.entity.
+         * The Provenance.entity indicates the target that was changed in the update (see [Provenance.entity](provenance-
+         * definitions.html#Provenance.entity)).
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1833,8 +1833,8 @@ public class Contract extends DomainResource {
         /**
          * Links to Provenance records for past versions of this Contract definition, derivative, or instance, which identify key 
          * state transitions or updates that are likely to be relevant to a user looking at the current version of the Contract. 
-         * The Provence.entity indicates the target that was changed in the update. http://build.fhir.org/provenance-definitions.
-         * html#Provenance.entity.
+         * The Provenance.entity indicates the target that was changed in the update (see [Provenance.entity](provenance-
+         * definitions.html#Provenance.entity)).
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -2048,7 +2048,7 @@ public class Contract extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder legallyBinding(Element legallyBinding) {
+        public Builder legallyBinding(org.linuxforhealth.fhir.model.type.Element legallyBinding) {
             this.legallyBinding = legallyBinding;
             return this;
         }
@@ -2163,7 +2163,7 @@ public class Contract extends DomainResource {
             bindingName = "ContractPublicationStatus",
             strength = BindingStrength.Value.REQUIRED,
             description = "Status of the publication of contract content.",
-            valueSet = "http://hl7.org/fhir/ValueSet/contract-publicationstatus|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/contract-publicationstatus|5.0.0"
         )
         @Required
         private final ContractPublicationStatus publicationStatus;
@@ -2211,9 +2211,9 @@ public class Contract extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the contract was published. The date must change when the business version changes 
-         * and it must change if the status code changes. In addition, it should change when the substantive content of the 
-         * contract changes.
+         * The date (and optionally time) when the contract was last significantly changed. The date must change when the 
+         * business version changes and it must change if the status code changes. In addition, it should change when the 
+         * substantive content of the contract changes.
          * 
          * @return
          *     An immutable object of type {@link DateTime} that may be null.
@@ -2223,8 +2223,7 @@ public class Contract extends DomainResource {
         }
 
         /**
-         * amended | appended | cancelled | disputed | entered-in-error | executable | executed | negotiable | offered | policy | 
-         * rejected | renewed | revoked | resolved | terminated.
+         * amended | appended | cancelled | disputed | entered-in-error | executable +.
          * 
          * @return
          *     An immutable object of type {@link ContractPublicationStatus} that is non-null.
@@ -2355,7 +2354,7 @@ public class Contract extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2375,7 +2374,7 @@ public class Contract extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2400,7 +2399,7 @@ public class Contract extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2425,7 +2424,7 @@ public class Contract extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2502,9 +2501,9 @@ public class Contract extends DomainResource {
             }
 
             /**
-             * The date (and optionally time) when the contract was published. The date must change when the business version changes 
-             * and it must change if the status code changes. In addition, it should change when the substantive content of the 
-             * contract changes.
+             * The date (and optionally time) when the contract was last significantly changed. The date must change when the 
+             * business version changes and it must change if the status code changes. In addition, it should change when the 
+             * substantive content of the contract changes.
              * 
              * @param publicationDate
              *     When published
@@ -2518,14 +2517,12 @@ public class Contract extends DomainResource {
             }
 
             /**
-             * amended | appended | cancelled | disputed | entered-in-error | executable | executed | negotiable | offered | policy | 
-             * rejected | renewed | revoked | resolved | terminated.
+             * amended | appended | cancelled | disputed | entered-in-error | executable +.
              * 
              * <p>This element is required.
              * 
              * @param publicationStatus
-             *     amended | appended | cancelled | disputed | entered-in-error | executable | executed | negotiable | offered | policy | 
-             *     rejected | renewed | revoked | resolved | terminated
+             *     amended | appended | cancelled | disputed | entered-in-error | executable +
              * 
              * @return
              *     A reference to this Builder instance
@@ -2605,7 +2602,7 @@ public class Contract extends DomainResource {
         @Summary
         private final Period applies;
         @Choice({ CodeableConcept.class, Reference.class })
-        private final Element topic;
+        private final org.linuxforhealth.fhir.model.type.Element topic;
         @Binding(
             bindingName = "ContractTermType",
             strength = BindingStrength.Value.EXAMPLE,
@@ -2681,7 +2678,7 @@ public class Contract extends DomainResource {
          * @return
          *     An immutable object of type {@link CodeableConcept} or {@link Reference} that may be null.
          */
-        public Element getTopic() {
+        public org.linuxforhealth.fhir.model.type.Element getTopic() {
             return topic;
         }
 
@@ -2719,7 +2716,7 @@ public class Contract extends DomainResource {
 
         /**
          * Security labels that protect the handling of information about the term and its elements, which may be specifically 
-         * identified..
+         * identified.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link SecurityLabel} that may be empty.
@@ -2879,7 +2876,7 @@ public class Contract extends DomainResource {
             private Identifier identifier;
             private DateTime issued;
             private Period applies;
-            private Element topic;
+            private org.linuxforhealth.fhir.model.type.Element topic;
             private CodeableConcept type;
             private CodeableConcept subType;
             private String text;
@@ -2910,7 +2907,7 @@ public class Contract extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2930,7 +2927,7 @@ public class Contract extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2955,7 +2952,7 @@ public class Contract extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2980,7 +2977,7 @@ public class Contract extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3061,7 +3058,7 @@ public class Contract extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder topic(Element topic) {
+            public Builder topic(org.linuxforhealth.fhir.model.type.Element topic) {
                 this.topic = topic;
                 return this;
             }
@@ -3128,7 +3125,7 @@ public class Contract extends DomainResource {
 
             /**
              * Security labels that protect the handling of information about the term and its elements, which may be specifically 
-             * identified..
+             * identified.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -3148,7 +3145,7 @@ public class Contract extends DomainResource {
 
             /**
              * Security labels that protect the handling of information about the term and its elements, which may be specifically 
-             * identified..
+             * identified.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -3355,7 +3352,7 @@ public class Contract extends DomainResource {
 
         /**
          * Security labels that protect the handling of information about the term and its elements, which may be specifically 
-         * identified..
+         * identified.
          */
         public static class SecurityLabel extends BackboneElement {
             private final List<UnsignedInt> number;
@@ -3401,7 +3398,7 @@ public class Contract extends DomainResource {
             }
 
             /**
-             * Security label privacy tag that species the level of confidentiality protection required for this term and/or term 
+             * Security label privacy tag that specifies the level of confidentiality protection required for this term and/or term 
              * elements.
              * 
              * @return
@@ -3412,7 +3409,7 @@ public class Contract extends DomainResource {
             }
 
             /**
-             * Security label privacy tag that species the applicable privacy and security policies governing this term and/or term 
+             * Security label privacy tag that specifies the applicable privacy and security policies governing this term and/or term 
              * elements.
              * 
              * @return
@@ -3423,7 +3420,7 @@ public class Contract extends DomainResource {
             }
 
             /**
-             * Security label privacy tag that species the manner in which term and/or term elements are to be protected.
+             * Security label privacy tag that specifies the manner in which term and/or term elements are to be protected.
              * 
              * @return
              *     An unmodifiable list containing immutable objects of type {@link Coding} that may be empty.
@@ -3533,7 +3530,7 @@ public class Contract extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3553,7 +3550,7 @@ public class Contract extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3578,7 +3575,7 @@ public class Contract extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3603,7 +3600,7 @@ public class Contract extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3667,7 +3664,7 @@ public class Contract extends DomainResource {
                 }
 
                 /**
-                 * Security label privacy tag that species the level of confidentiality protection required for this term and/or term 
+                 * Security label privacy tag that specifies the level of confidentiality protection required for this term and/or term 
                  * elements.
                  * 
                  * <p>This element is required.
@@ -3684,7 +3681,7 @@ public class Contract extends DomainResource {
                 }
 
                 /**
-                 * Security label privacy tag that species the applicable privacy and security policies governing this term and/or term 
+                 * Security label privacy tag that specifies the applicable privacy and security policies governing this term and/or term 
                  * elements.
                  * 
                  * <p>Adds new element(s) to the existing list.
@@ -3704,7 +3701,7 @@ public class Contract extends DomainResource {
                 }
 
                 /**
-                 * Security label privacy tag that species the applicable privacy and security policies governing this term and/or term 
+                 * Security label privacy tag that specifies the applicable privacy and security policies governing this term and/or term 
                  * elements.
                  * 
                  * <p>Replaces the existing list with a new one containing elements from the Collection.
@@ -3725,7 +3722,7 @@ public class Contract extends DomainResource {
                 }
 
                 /**
-                 * Security label privacy tag that species the manner in which term and/or term elements are to be protected.
+                 * Security label privacy tag that specifies the manner in which term and/or term elements are to be protected.
                  * 
                  * <p>Adds new element(s) to the existing list.
                  * If any of the elements are null, calling {@link #build()} will fail.
@@ -3744,7 +3741,7 @@ public class Contract extends DomainResource {
                 }
 
                 /**
-                 * Security label privacy tag that species the manner in which term and/or term elements are to be protected.
+                 * Security label privacy tag that specifies the manner in which term and/or term elements are to be protected.
                  * 
                  * <p>Replaces the existing list with a new one containing elements from the Collection.
                  * If any of the elements are null, calling {@link #build()} will fail.
@@ -4086,7 +4083,7 @@ public class Contract extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -4106,7 +4103,7 @@ public class Contract extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -4131,7 +4128,7 @@ public class Contract extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4156,7 +4153,7 @@ public class Contract extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4686,7 +4683,7 @@ public class Contract extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -4706,7 +4703,7 @@ public class Contract extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -4731,7 +4728,7 @@ public class Contract extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -4756,7 +4753,7 @@ public class Contract extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -4907,7 +4904,7 @@ public class Contract extends DomainResource {
             public static class Answer extends BackboneElement {
                 @Choice({ Boolean.class, Decimal.class, Integer.class, Date.class, DateTime.class, Time.class, String.class, Uri.class, Attachment.class, Coding.class, Quantity.class, Reference.class })
                 @Required
-                private final Element value;
+                private final org.linuxforhealth.fhir.model.type.Element value;
 
                 private Answer(Builder builder) {
                     super(builder);
@@ -4916,7 +4913,7 @@ public class Contract extends DomainResource {
 
                 /**
                  * Response to an offer clause or question text, which enables selection of values to be agreed to, e.g., the period of 
-                 * participation, the date of occupancy of a rental, warrently duration, or whether biospecimen may be used for further 
+                 * participation, the date of occupancy of a rental, warranty duration, or whether biospecimen may be used for further 
                  * research.
                  * 
                  * @return
@@ -4924,7 +4921,7 @@ public class Contract extends DomainResource {
                  *     Time}, {@link String}, {@link Uri}, {@link Attachment}, {@link Coding}, {@link Quantity} or {@link Reference} that is 
                  *     non-null.
                  */
-                public Element getValue() {
+                public org.linuxforhealth.fhir.model.type.Element getValue() {
                     return value;
                 }
 
@@ -4991,7 +4988,7 @@ public class Contract extends DomainResource {
                 }
 
                 public static class Builder extends BackboneElement.Builder {
-                    private Element value;
+                    private org.linuxforhealth.fhir.model.type.Element value;
 
                     private Builder() {
                         super();
@@ -5014,7 +5011,7 @@ public class Contract extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -5034,7 +5031,7 @@ public class Contract extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -5059,7 +5056,7 @@ public class Contract extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -5084,7 +5081,7 @@ public class Contract extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -5200,7 +5197,7 @@ public class Contract extends DomainResource {
 
                     /**
                      * Response to an offer clause or question text, which enables selection of values to be agreed to, e.g., the period of 
-                     * participation, the date of occupancy of a rental, warrently duration, or whether biospecimen may be used for further 
+                     * participation, the date of occupancy of a rental, warranty duration, or whether biospecimen may be used for further 
                      * research.
                      * 
                      * <p>This element is required.
@@ -5227,7 +5224,7 @@ public class Contract extends DomainResource {
                      * @return
                      *     A reference to this Builder instance
                      */
-                    public Builder value(Element value) {
+                    public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                         this.value = value;
                         return this;
                     }
@@ -5379,7 +5376,7 @@ public class Contract extends DomainResource {
             }
 
             /**
-             * Specifies the applicability of the term to an asset resource instance, and instances it refers to orinstances that 
+             * Specifies the applicability of the term to an asset resource instance, and instances it refers to or instances that 
              * refer to it, and/or are owned by the offeree.
              * 
              * @return
@@ -5400,7 +5397,7 @@ public class Contract extends DomainResource {
             }
 
             /**
-             * Description of the quality and completeness of the asset that imay be a factor in its valuation.
+             * Description of the quality and completeness of the asset that may be a factor in its valuation.
              * 
              * @return
              *     An immutable object of type {@link String} that may be null.
@@ -5646,7 +5643,7 @@ public class Contract extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5666,7 +5663,7 @@ public class Contract extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5691,7 +5688,7 @@ public class Contract extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5716,7 +5713,7 @@ public class Contract extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5872,7 +5869,7 @@ public class Contract extends DomainResource {
                 }
 
                 /**
-                 * Specifies the applicability of the term to an asset resource instance, and instances it refers to orinstances that 
+                 * Specifies the applicability of the term to an asset resource instance, and instances it refers to or instances that 
                  * refer to it, and/or are owned by the offeree.
                  * 
                  * @param relationship
@@ -5942,7 +5939,7 @@ public class Contract extends DomainResource {
                 }
 
                 /**
-                 * Description of the quality and completeness of the asset that imay be a factor in its valuation.
+                 * Description of the quality and completeness of the asset that may be a factor in its valuation.
                  * 
                  * @param condition
                  *     Quality desctiption of asset
@@ -6482,7 +6479,7 @@ public class Contract extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -6502,7 +6499,7 @@ public class Contract extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -6527,7 +6524,7 @@ public class Contract extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -6552,7 +6549,7 @@ public class Contract extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -6698,7 +6695,7 @@ public class Contract extends DomainResource {
              */
             public static class ValuedItem extends BackboneElement {
                 @Choice({ CodeableConcept.class, Reference.class })
-                private final Element entity;
+                private final org.linuxforhealth.fhir.model.type.Element entity;
                 private final Identifier identifier;
                 private final DateTime effectiveTime;
                 private final SimpleQuantity quantity;
@@ -6739,7 +6736,7 @@ public class Contract extends DomainResource {
                  * @return
                  *     An immutable object of type {@link CodeableConcept} or {@link Reference} that may be null.
                  */
-                public Element getEntity() {
+                public org.linuxforhealth.fhir.model.type.Element getEntity() {
                     return entity;
                 }
 
@@ -6995,7 +6992,7 @@ public class Contract extends DomainResource {
                 }
 
                 public static class Builder extends BackboneElement.Builder {
-                    private Element entity;
+                    private org.linuxforhealth.fhir.model.type.Element entity;
                     private Identifier identifier;
                     private DateTime effectiveTime;
                     private SimpleQuantity quantity;
@@ -7031,7 +7028,7 @@ public class Contract extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -7051,7 +7048,7 @@ public class Contract extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -7076,7 +7073,7 @@ public class Contract extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -7101,7 +7098,7 @@ public class Contract extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -7140,7 +7137,7 @@ public class Contract extends DomainResource {
                      * @return
                      *     A reference to this Builder instance
                      */
-                    public Builder entity(Element entity) {
+                    public Builder entity(org.linuxforhealth.fhir.model.type.Element entity) {
                         this.entity = entity;
                         return this;
                     }
@@ -7516,7 +7513,7 @@ public class Contract extends DomainResource {
             @Binding(
                 bindingName = "ContractActionStatus",
                 strength = BindingStrength.Value.EXAMPLE,
-                description = "Codes for the status of an term action.",
+                description = "Codes for the status of a term action.",
                 valueSet = "http://hl7.org/fhir/ValueSet/contract-actionstatus"
             )
             @Required
@@ -7525,22 +7522,22 @@ public class Contract extends DomainResource {
             private final Reference context;
             private final List<String> contextLinkId;
             @Choice({ DateTime.class, Period.class, Timing.class })
-            private final Element occurrence;
+            private final org.linuxforhealth.fhir.model.type.Element occurrence;
             @ReferenceTarget({ "Patient", "RelatedPerson", "Practitioner", "PractitionerRole", "Device", "Group", "Organization" })
             private final List<Reference> requester;
             private final List<String> requesterLinkId;
             @Binding(
                 bindingName = "ContractActionPerformerType",
                 strength = BindingStrength.Value.EXAMPLE,
-                description = "Codes for the types of action perfomer.",
-                valueSet = "http://hl7.org/fhir/ValueSet/provenance-participant-type"
+                description = "Codes for the types of action performer.",
+                valueSet = "http://hl7.org/fhir/ValueSet/participation-role-type"
             )
             private final List<CodeableConcept> performerType;
             @Binding(
                 bindingName = "ContractActionPerformerRole",
                 strength = BindingStrength.Value.EXAMPLE,
                 description = "Codes for the role of the action performer.",
-                valueSet = "http://hl7.org/fhir/ValueSet/provenance-participant-role"
+                valueSet = "http://hl7.org/fhir/ValueSet/security-role-type"
             )
             private final CodeableConcept performerRole;
             @ReferenceTarget({ "RelatedPerson", "Patient", "Practitioner", "PractitionerRole", "CareTeam", "Device", "Substance", "Organization", "Location" })
@@ -7552,10 +7549,7 @@ public class Contract extends DomainResource {
                 description = "Detailed codes for the contract action reason.",
                 valueSet = "http://terminology.hl7.org/ValueSet/v3-PurposeOfUse"
             )
-            private final List<CodeableConcept> reasonCode;
-            @ReferenceTarget({ "Condition", "Observation", "DiagnosticReport", "DocumentReference", "Questionnaire", "QuestionnaireResponse" })
-            private final List<Reference> reasonReference;
-            private final List<String> reason;
+            private final List<CodeableReference> reason;
             private final List<String> reasonLinkId;
             private final List<Annotation> note;
             private final List<UnsignedInt> securityLabelNumber;
@@ -7577,8 +7571,6 @@ public class Contract extends DomainResource {
                 performerRole = builder.performerRole;
                 performer = builder.performer;
                 performerLinkId = Collections.unmodifiableList(builder.performerLinkId);
-                reasonCode = Collections.unmodifiableList(builder.reasonCode);
-                reasonReference = Collections.unmodifiableList(builder.reasonReference);
                 reason = Collections.unmodifiableList(builder.reason);
                 reasonLinkId = Collections.unmodifiableList(builder.reasonLinkId);
                 note = Collections.unmodifiableList(builder.note);
@@ -7648,7 +7640,7 @@ public class Contract extends DomainResource {
             }
 
             /**
-             * Encounter or Episode with primary association to specified term activity.
+             * Encounter or Episode with primary association to the specified term activity.
              * 
              * @return
              *     An immutable object of type {@link Reference} that may be null.
@@ -7674,7 +7666,7 @@ public class Contract extends DomainResource {
              * @return
              *     An immutable object of type {@link DateTime}, {@link Period} or {@link Timing} that may be null.
              */
-            public Element getOccurrence() {
+            public org.linuxforhealth.fhir.model.type.Element getOccurrence() {
                 return occurrence;
             }
 
@@ -7741,32 +7733,13 @@ public class Contract extends DomainResource {
             }
 
             /**
-             * Rationale for the action to be performed or not performed. Describes why the action is permitted or prohibited.
+             * Rationale for the action to be performed or not performed. Describes why the action is permitted or prohibited. Either 
+             * a coded concept, or another resource whose existence justifies permitting or not permitting this action.
              * 
              * @return
-             *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+             *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
              */
-            public List<CodeableConcept> getReasonCode() {
-                return reasonCode;
-            }
-
-            /**
-             * Indicates another resource whose existence justifies permitting or not permitting this action.
-             * 
-             * @return
-             *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-             */
-            public List<Reference> getReasonReference() {
-                return reasonReference;
-            }
-
-            /**
-             * Describes why the action is to be performed or not performed in textual form.
-             * 
-             * @return
-             *     An unmodifiable list containing immutable objects of type {@link String} that may be empty.
-             */
-            public List<String> getReason() {
+            public List<CodeableReference> getReason() {
                 return reason;
             }
 
@@ -7819,8 +7792,6 @@ public class Contract extends DomainResource {
                     (performerRole != null) || 
                     (performer != null) || 
                     !performerLinkId.isEmpty() || 
-                    !reasonCode.isEmpty() || 
-                    !reasonReference.isEmpty() || 
                     !reason.isEmpty() || 
                     !reasonLinkId.isEmpty() || 
                     !note.isEmpty() || 
@@ -7851,9 +7822,7 @@ public class Contract extends DomainResource {
                         accept(performerRole, "performerRole", visitor);
                         accept(performer, "performer", visitor);
                         accept(performerLinkId, "performerLinkId", visitor, String.class);
-                        accept(reasonCode, "reasonCode", visitor, CodeableConcept.class);
-                        accept(reasonReference, "reasonReference", visitor, Reference.class);
-                        accept(reason, "reason", visitor, String.class);
+                        accept(reason, "reason", visitor, CodeableReference.class);
                         accept(reasonLinkId, "reasonLinkId", visitor, String.class);
                         accept(note, "note", visitor, Annotation.class);
                         accept(securityLabelNumber, "securityLabelNumber", visitor, UnsignedInt.class);
@@ -7893,8 +7862,6 @@ public class Contract extends DomainResource {
                     Objects.equals(performerRole, other.performerRole) && 
                     Objects.equals(performer, other.performer) && 
                     Objects.equals(performerLinkId, other.performerLinkId) && 
-                    Objects.equals(reasonCode, other.reasonCode) && 
-                    Objects.equals(reasonReference, other.reasonReference) && 
                     Objects.equals(reason, other.reason) && 
                     Objects.equals(reasonLinkId, other.reasonLinkId) && 
                     Objects.equals(note, other.note) && 
@@ -7923,8 +7890,6 @@ public class Contract extends DomainResource {
                         performerRole, 
                         performer, 
                         performerLinkId, 
-                        reasonCode, 
-                        reasonReference, 
                         reason, 
                         reasonLinkId, 
                         note, 
@@ -7952,16 +7917,14 @@ public class Contract extends DomainResource {
                 private CodeableConcept status;
                 private Reference context;
                 private List<String> contextLinkId = new ArrayList<>();
-                private Element occurrence;
+                private org.linuxforhealth.fhir.model.type.Element occurrence;
                 private List<Reference> requester = new ArrayList<>();
                 private List<String> requesterLinkId = new ArrayList<>();
                 private List<CodeableConcept> performerType = new ArrayList<>();
                 private CodeableConcept performerRole;
                 private Reference performer;
                 private List<String> performerLinkId = new ArrayList<>();
-                private List<CodeableConcept> reasonCode = new ArrayList<>();
-                private List<Reference> reasonReference = new ArrayList<>();
-                private List<String> reason = new ArrayList<>();
+                private List<CodeableReference> reason = new ArrayList<>();
                 private List<String> reasonLinkId = new ArrayList<>();
                 private List<Annotation> note = new ArrayList<>();
                 private List<UnsignedInt> securityLabelNumber = new ArrayList<>();
@@ -7987,7 +7950,7 @@ public class Contract extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -8007,7 +7970,7 @@ public class Contract extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -8032,7 +7995,7 @@ public class Contract extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -8057,7 +8020,7 @@ public class Contract extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -8262,7 +8225,7 @@ public class Contract extends DomainResource {
                 }
 
                 /**
-                 * Encounter or Episode with primary association to specified term activity.
+                 * Encounter or Episode with primary association to the specified term activity.
                  * 
                  * <p>Allowed resource types for this reference:
                  * <ul>
@@ -8359,7 +8322,7 @@ public class Contract extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder occurrence(Element occurrence) {
+                public Builder occurrence(org.linuxforhealth.fhir.model.type.Element occurrence) {
                     this.occurrence = occurrence;
                     return this;
                 }
@@ -8630,151 +8593,34 @@ public class Contract extends DomainResource {
                 }
 
                 /**
-                 * Rationale for the action to be performed or not performed. Describes why the action is permitted or prohibited.
-                 * 
-                 * <p>Adds new element(s) to the existing list.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param reasonCode
-                 *     Why is action (not) needed?
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder reasonCode(CodeableConcept... reasonCode) {
-                    for (CodeableConcept value : reasonCode) {
-                        this.reasonCode.add(value);
-                    }
-                    return this;
-                }
-
-                /**
-                 * Rationale for the action to be performed or not performed. Describes why the action is permitted or prohibited.
-                 * 
-                 * <p>Replaces the existing list with a new one containing elements from the Collection.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param reasonCode
-                 *     Why is action (not) needed?
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @throws NullPointerException
-                 *     If the passed collection is null
-                 */
-                public Builder reasonCode(Collection<CodeableConcept> reasonCode) {
-                    this.reasonCode = new ArrayList<>(reasonCode);
-                    return this;
-                }
-
-                /**
-                 * Indicates another resource whose existence justifies permitting or not permitting this action.
-                 * 
-                 * <p>Adds new element(s) to the existing list.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * <p>Allowed resource types for the references:
-                 * <ul>
-                 * <li>{@link Condition}</li>
-                 * <li>{@link Observation}</li>
-                 * <li>{@link DiagnosticReport}</li>
-                 * <li>{@link DocumentReference}</li>
-                 * <li>{@link Questionnaire}</li>
-                 * <li>{@link QuestionnaireResponse}</li>
-                 * </ul>
-                 * 
-                 * @param reasonReference
-                 *     Why is action (not) needed?
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder reasonReference(Reference... reasonReference) {
-                    for (Reference value : reasonReference) {
-                        this.reasonReference.add(value);
-                    }
-                    return this;
-                }
-
-                /**
-                 * Indicates another resource whose existence justifies permitting or not permitting this action.
-                 * 
-                 * <p>Replaces the existing list with a new one containing elements from the Collection.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * <p>Allowed resource types for the references:
-                 * <ul>
-                 * <li>{@link Condition}</li>
-                 * <li>{@link Observation}</li>
-                 * <li>{@link DiagnosticReport}</li>
-                 * <li>{@link DocumentReference}</li>
-                 * <li>{@link Questionnaire}</li>
-                 * <li>{@link QuestionnaireResponse}</li>
-                 * </ul>
-                 * 
-                 * @param reasonReference
-                 *     Why is action (not) needed?
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @throws NullPointerException
-                 *     If the passed collection is null
-                 */
-                public Builder reasonReference(Collection<Reference> reasonReference) {
-                    this.reasonReference = new ArrayList<>(reasonReference);
-                    return this;
-                }
-
-                /**
-                 * Convenience method for setting {@code reason}.
+                 * Rationale for the action to be performed or not performed. Describes why the action is permitted or prohibited. Either 
+                 * a coded concept, or another resource whose existence justifies permitting or not permitting this action.
                  * 
                  * <p>Adds new element(s) to the existing list.
                  * If any of the elements are null, calling {@link #build()} will fail.
                  * 
                  * @param reason
-                 *     Why action is to be performed
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @see #reason(org.linuxforhealth.fhir.model.type.String)
-                 */
-                public Builder reason(java.lang.String... reason) {
-                    for (java.lang.String value : reason) {
-                        this.reason.add((value == null) ? null : String.of(value));
-                    }
-                    return this;
-                }
-
-                /**
-                 * Describes why the action is to be performed or not performed in textual form.
-                 * 
-                 * <p>Adds new element(s) to the existing list.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param reason
-                 *     Why action is to be performed
+                 *     Why is action (not) needed?
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder reason(String... reason) {
-                    for (String value : reason) {
+                public Builder reason(CodeableReference... reason) {
+                    for (CodeableReference value : reason) {
                         this.reason.add(value);
                     }
                     return this;
                 }
 
                 /**
-                 * Describes why the action is to be performed or not performed in textual form.
+                 * Rationale for the action to be performed or not performed. Describes why the action is permitted or prohibited. Either 
+                 * a coded concept, or another resource whose existence justifies permitting or not permitting this action.
                  * 
                  * <p>Replaces the existing list with a new one containing elements from the Collection.
                  * If any of the elements are null, calling {@link #build()} will fail.
                  * 
                  * @param reason
-                 *     Why action is to be performed
+                 *     Why is action (not) needed?
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -8782,7 +8628,7 @@ public class Contract extends DomainResource {
                  * @throws NullPointerException
                  *     If the passed collection is null
                  */
-                public Builder reason(Collection<String> reason) {
+                public Builder reason(Collection<CodeableReference> reason) {
                     this.reason = new ArrayList<>(reason);
                     return this;
                 }
@@ -8964,16 +8810,13 @@ public class Contract extends DomainResource {
                     ValidationSupport.checkList(action.requesterLinkId, "requesterLinkId", String.class);
                     ValidationSupport.checkList(action.performerType, "performerType", CodeableConcept.class);
                     ValidationSupport.checkList(action.performerLinkId, "performerLinkId", String.class);
-                    ValidationSupport.checkList(action.reasonCode, "reasonCode", CodeableConcept.class);
-                    ValidationSupport.checkList(action.reasonReference, "reasonReference", Reference.class);
-                    ValidationSupport.checkList(action.reason, "reason", String.class);
+                    ValidationSupport.checkList(action.reason, "reason", CodeableReference.class);
                     ValidationSupport.checkList(action.reasonLinkId, "reasonLinkId", String.class);
                     ValidationSupport.checkList(action.note, "note", Annotation.class);
                     ValidationSupport.checkList(action.securityLabelNumber, "securityLabelNumber", UnsignedInt.class);
                     ValidationSupport.checkReferenceType(action.context, "context", "Encounter", "EpisodeOfCare");
                     ValidationSupport.checkReferenceType(action.requester, "requester", "Patient", "RelatedPerson", "Practitioner", "PractitionerRole", "Device", "Group", "Organization");
                     ValidationSupport.checkReferenceType(action.performer, "performer", "RelatedPerson", "Patient", "Practitioner", "PractitionerRole", "CareTeam", "Device", "Substance", "Organization", "Location");
-                    ValidationSupport.checkReferenceType(action.reasonReference, "reasonReference", "Condition", "Observation", "DiagnosticReport", "DocumentReference", "Questionnaire", "QuestionnaireResponse");
                     ValidationSupport.requireValueOrChildren(action);
                 }
 
@@ -8994,8 +8837,6 @@ public class Contract extends DomainResource {
                     performerRole = action.performerRole;
                     performer = action.performer;
                     performerLinkId.addAll(action.performerLinkId);
-                    reasonCode.addAll(action.reasonCode);
-                    reasonReference.addAll(action.reasonReference);
                     reason.addAll(action.reason);
                     reasonLinkId.addAll(action.reasonLinkId);
                     note.addAll(action.note);
@@ -9136,7 +8977,7 @@ public class Contract extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -9156,7 +8997,7 @@ public class Contract extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -9181,7 +9022,7 @@ public class Contract extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -9206,7 +9047,7 @@ public class Contract extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -9502,7 +9343,7 @@ public class Contract extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -9522,7 +9363,7 @@ public class Contract extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -9547,7 +9388,7 @@ public class Contract extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -9572,7 +9413,7 @@ public class Contract extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -9733,7 +9574,7 @@ public class Contract extends DomainResource {
         @ReferenceTarget({ "Composition", "DocumentReference", "QuestionnaireResponse" })
         @Choice({ Attachment.class, Reference.class })
         @Required
-        private final Element content;
+        private final org.linuxforhealth.fhir.model.type.Element content;
 
         private Friendly(Builder builder) {
             super(builder);
@@ -9747,7 +9588,7 @@ public class Contract extends DomainResource {
          * @return
          *     An immutable object of type {@link Attachment} or {@link Reference} that is non-null.
          */
-        public Element getContent() {
+        public org.linuxforhealth.fhir.model.type.Element getContent() {
             return content;
         }
 
@@ -9814,7 +9655,7 @@ public class Contract extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private Element content;
+            private org.linuxforhealth.fhir.model.type.Element content;
 
             private Builder() {
                 super();
@@ -9837,7 +9678,7 @@ public class Contract extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -9857,7 +9698,7 @@ public class Contract extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -9882,7 +9723,7 @@ public class Contract extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -9907,7 +9748,7 @@ public class Contract extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -9956,7 +9797,7 @@ public class Contract extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder content(Element content) {
+            public Builder content(org.linuxforhealth.fhir.model.type.Element content) {
                 this.content = content;
                 return this;
             }
@@ -10005,7 +9846,7 @@ public class Contract extends DomainResource {
         @ReferenceTarget({ "Composition", "DocumentReference", "QuestionnaireResponse" })
         @Choice({ Attachment.class, Reference.class })
         @Required
-        private final Element content;
+        private final org.linuxforhealth.fhir.model.type.Element content;
 
         private Legal(Builder builder) {
             super(builder);
@@ -10018,7 +9859,7 @@ public class Contract extends DomainResource {
          * @return
          *     An immutable object of type {@link Attachment} or {@link Reference} that is non-null.
          */
-        public Element getContent() {
+        public org.linuxforhealth.fhir.model.type.Element getContent() {
             return content;
         }
 
@@ -10085,7 +9926,7 @@ public class Contract extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private Element content;
+            private org.linuxforhealth.fhir.model.type.Element content;
 
             private Builder() {
                 super();
@@ -10108,7 +9949,7 @@ public class Contract extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -10128,7 +9969,7 @@ public class Contract extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -10153,7 +9994,7 @@ public class Contract extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -10178,7 +10019,7 @@ public class Contract extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -10226,7 +10067,7 @@ public class Contract extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder content(Element content) {
+            public Builder content(org.linuxforhealth.fhir.model.type.Element content) {
                 this.content = content;
                 return this;
             }
@@ -10275,7 +10116,7 @@ public class Contract extends DomainResource {
         @ReferenceTarget({ "DocumentReference" })
         @Choice({ Attachment.class, Reference.class })
         @Required
-        private final Element content;
+        private final org.linuxforhealth.fhir.model.type.Element content;
 
         private Rule(Builder builder) {
             super(builder);
@@ -10288,7 +10129,7 @@ public class Contract extends DomainResource {
          * @return
          *     An immutable object of type {@link Attachment} or {@link Reference} that is non-null.
          */
-        public Element getContent() {
+        public org.linuxforhealth.fhir.model.type.Element getContent() {
             return content;
         }
 
@@ -10355,7 +10196,7 @@ public class Contract extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private Element content;
+            private org.linuxforhealth.fhir.model.type.Element content;
 
             private Builder() {
                 super();
@@ -10378,7 +10219,7 @@ public class Contract extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -10398,7 +10239,7 @@ public class Contract extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -10423,7 +10264,7 @@ public class Contract extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -10448,7 +10289,7 @@ public class Contract extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -10494,7 +10335,7 @@ public class Contract extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder content(Element content) {
+            public Builder content(org.linuxforhealth.fhir.model.type.Element content) {
                 this.content = content;
                 return this;
             }

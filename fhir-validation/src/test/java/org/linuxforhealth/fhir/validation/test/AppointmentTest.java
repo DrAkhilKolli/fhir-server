@@ -33,13 +33,13 @@ import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
 import org.linuxforhealth.fhir.model.type.PositiveInt;
 import org.linuxforhealth.fhir.model.type.Reference;
-import org.linuxforhealth.fhir.model.type.UnsignedInt;
+import org.linuxforhealth.fhir.model.type.Annotation;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.Xhtml;
 import org.linuxforhealth.fhir.model.type.code.AppointmentStatus;
 import org.linuxforhealth.fhir.model.type.code.IssueSeverity;
 import org.linuxforhealth.fhir.model.type.code.NarrativeStatus;
-import org.linuxforhealth.fhir.model.type.code.ParticipantRequired;
 import org.linuxforhealth.fhir.model.type.code.ParticipationStatus;
 import org.linuxforhealth.fhir.validation.FHIRValidator;
 
@@ -111,7 +111,7 @@ public class AppointmentTest {
         return Appointment.Participant.builder()
                 .type(types)
                 .actor(actor)
-                .required(ParticipantRequired.REQUIRED)
+                .required(java.lang.Boolean.TRUE)
                 .status(ParticipationStatus.ACCEPTED).build();
     }
 
@@ -168,7 +168,7 @@ public class AppointmentTest {
             codings.add(getCoding("http://terminology.hl7.org/CodeSystem/appointment-cancellation-reason", "4.0.0", cancelationReason, cancelationReason, java.lang.Boolean.FALSE));
 
             CodeableConcept concept = getCodeableConcept(codings, cancelationReason);
-            builder.cancelationReason(concept);
+            builder.cancellationReason(concept);
         }
 
         if (serviceCategories != null) {
@@ -190,7 +190,7 @@ public class AppointmentTest {
 
                 CodeableConcept concept = getCodeableConcept(codings, serviceType);
 
-                builder.serviceType(concept);
+                builder.serviceType(CodeableReference.builder().concept(concept).build());
             }
         }
 
@@ -201,7 +201,7 @@ public class AppointmentTest {
 
                 CodeableConcept concept = getCodeableConcept(codings, specialty);
 
-                builder.serviceType(concept);
+                builder.serviceType(CodeableReference.builder().concept(concept).build());
             }
         }
 
@@ -221,18 +221,18 @@ public class AppointmentTest {
 
                 CodeableConcept concept = getCodeableConcept(codings, reasonCode);
 
-                builder.serviceType(concept);
+                builder.reason(CodeableReference.builder().concept(concept).build());
             }
         }
 
         if (reasonReferences != null) {
             for (String reasonReference : reasonReferences) {
-                builder.reasonReference(Reference.builder().display(string(reasonReference)).build());
+                builder.reason(CodeableReference.builder().reference(Reference.builder().display(string(reasonReference)).build()).build());
             }
         }
 
         if (priority != null) {
-            builder.priority(UnsignedInt.of(priority));
+            builder.priority(CodeableConcept.builder().text(string(priority.toString())).build());
         }
 
         if (description != null) {
@@ -268,11 +268,11 @@ public class AppointmentTest {
         }
 
         if (comment != null) {
-            builder.comment(string(comment));
+            builder.note(Annotation.builder().text(org.linuxforhealth.fhir.model.type.Markdown.of(comment)).build());
         }
 
         if (patientInstruction != null) {
-            builder.patientInstruction(string(patientInstruction));
+            builder.patientInstruction(CodeableReference.builder().concept(CodeableConcept.builder().text(string(patientInstruction)).build()).build());
         }
 
         if (basedOns != null) {

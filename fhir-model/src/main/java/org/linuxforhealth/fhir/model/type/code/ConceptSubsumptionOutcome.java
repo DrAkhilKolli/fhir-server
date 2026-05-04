@@ -22,28 +22,28 @@ public class ConceptSubsumptionOutcome extends Code {
     /**
      * Equivalent
      * 
-     * <p>The two concepts are equivalent (have the same properties).
+     * <p>A equivalent to B if A subsumes B and B subsumes A
      */
     public static final ConceptSubsumptionOutcome EQUIVALENT = ConceptSubsumptionOutcome.builder().value(Value.EQUIVALENT).build();
 
     /**
      * Subsumes
      * 
-     * <p>Coding/code "A" subsumes Coding/code "B" (e.g. B has all the properties A has, and some of it's own).
+     * <p>A subsumes B if there is a subsumption relationship between A and B
      */
     public static final ConceptSubsumptionOutcome SUBSUMES = ConceptSubsumptionOutcome.builder().value(Value.SUBSUMES).build();
 
     /**
      * Subsumed-By
      * 
-     * <p>Coding/code "A" is subsumed by Coding/code "B" (e.g. A has all the properties B has, and some of it's own).
+     * <p>A subsumed by B if B subsumes A
      */
     public static final ConceptSubsumptionOutcome SUBSUMED_BY = ConceptSubsumptionOutcome.builder().value(Value.SUBSUMED_BY).build();
 
     /**
      * Not-Subsumed
      * 
-     * <p>Coding/code "A" and Coding/code "B" are disjoint (e.g. each has propeties that the other doesn't have).
+     * <p>Neither A subsumes B nor B subsumes A
      */
     public static final ConceptSubsumptionOutcome NOT_SUBSUMED = ConceptSubsumptionOutcome.builder().value(Value.NOT_SUBSUMED).build();
 
@@ -208,28 +208,28 @@ public class ConceptSubsumptionOutcome extends Code {
         /**
          * Equivalent
          * 
-         * <p>The two concepts are equivalent (have the same properties).
+         * <p>A equivalent to B if A subsumes B and B subsumes A
          */
         EQUIVALENT("equivalent"),
 
         /**
          * Subsumes
          * 
-         * <p>Coding/code "A" subsumes Coding/code "B" (e.g. B has all the properties A has, and some of it's own).
+         * <p>A subsumes B if there is a subsumption relationship between A and B
          */
         SUBSUMES("subsumes"),
 
         /**
          * Subsumed-By
          * 
-         * <p>Coding/code "A" is subsumed by Coding/code "B" (e.g. A has all the properties B has, and some of it's own).
+         * <p>A subsumed by B if B subsumes A
          */
         SUBSUMED_BY("subsumed-by"),
 
         /**
          * Not-Subsumed
          * 
-         * <p>Coding/code "A" and Coding/code "B" are disjoint (e.g. each has propeties that the other doesn't have).
+         * <p>Neither A subsumes B nor B subsumes A
          */
         NOT_SUBSUMED("not-subsumed");
 

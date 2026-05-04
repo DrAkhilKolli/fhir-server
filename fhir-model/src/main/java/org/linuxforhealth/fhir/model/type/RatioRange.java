@@ -20,7 +20,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * A range of ratios expressed as a low and high numerator and a denominator.
  */
 @Constraint(
-    id = "inv-1",
+    id = "ratrng-1",
     level = "Rule",
     location = "(base)",
     description = "One of lowNumerator or highNumerator and denominator SHALL be present, or all are absent. If all are absent, there SHALL be some extension present",
@@ -28,15 +28,15 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     source = "http://hl7.org/fhir/StructureDefinition/RatioRange"
 )
 @Constraint(
-    id = "inv-2",
+    id = "ratrng-2",
     level = "Rule",
     location = "(base)",
     description = "If present, lowNumerator SHALL have a lower value than highNumerator",
-    expression = "lowNumerator.empty() or highNumerator.empty() or (lowNumerator <= highNumerator)",
+    expression = "lowNumerator.hasValue().not() or highNumerator.hasValue().not()  or (lowNumerator.lowBoundary() <= highNumerator.highBoundary())",
     source = "http://hl7.org/fhir/StructureDefinition/RatioRange"
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class RatioRange extends Element {
+public class RatioRange extends DataType {
     @Summary
     private final SimpleQuantity lowNumerator;
     @Summary
@@ -148,7 +148,7 @@ public class RatioRange extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private SimpleQuantity lowNumerator;
         private SimpleQuantity highNumerator;
         private SimpleQuantity denominator;
@@ -174,7 +174,7 @@ public class RatioRange extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -194,7 +194,7 @@ public class RatioRange extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 

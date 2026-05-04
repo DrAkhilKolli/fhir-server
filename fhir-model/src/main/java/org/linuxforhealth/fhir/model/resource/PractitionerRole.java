@@ -18,24 +18,20 @@ import org.linuxforhealth.fhir.model.annotation.Binding;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
-import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
-import org.linuxforhealth.fhir.model.type.BackboneElement;
+import org.linuxforhealth.fhir.model.type.Availability;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
-import org.linuxforhealth.fhir.model.type.ContactPoint;
+import org.linuxforhealth.fhir.model.type.ExtendedContactDetail;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
 import org.linuxforhealth.fhir.model.type.Reference;
-import org.linuxforhealth.fhir.model.type.String;
-import org.linuxforhealth.fhir.model.type.Time;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
-import org.linuxforhealth.fhir.model.type.code.DaysOfWeek;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
@@ -44,10 +40,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * A specific set of Roles/Locations/specialties/services that a practitioner may perform at an organization for a period 
  * of time.
  * 
- * <p>Maturity level: FMM2 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 2,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
@@ -94,11 +90,22 @@ public class PractitionerRole extends DomainResource {
     private final List<Reference> location;
     @ReferenceTarget({ "HealthcareService" })
     private final List<Reference> healthcareService;
-    @Summary
-    private final List<ContactPoint> telecom;
-    private final List<AvailableTime> availableTime;
-    private final List<NotAvailable> notAvailable;
-    private final String availabilityExceptions;
+    private final List<ExtendedContactDetail> contact;
+    @Binding(
+        bindingName = "ServiceCharacteristic",
+        strength = BindingStrength.Value.EXAMPLE,
+        description = "A custom attribute that could be provided at a service (e.g. Wheelchair accessibility).",
+        valueSet = "http://hl7.org/fhir/ValueSet/service-mode"
+    )
+    private final List<CodeableConcept> characteristic;
+    @Binding(
+        bindingName = "Language",
+        strength = BindingStrength.Value.REQUIRED,
+        description = "IETF language tag for a human language",
+        valueSet = "http://hl7.org/fhir/ValueSet/all-languages|5.0.0"
+    )
+    private final List<CodeableConcept> communication;
+    private final List<Availability> availability;
     @ReferenceTarget({ "Endpoint" })
     private final List<Reference> endpoint;
 
@@ -113,10 +120,10 @@ public class PractitionerRole extends DomainResource {
         specialty = Collections.unmodifiableList(builder.specialty);
         location = Collections.unmodifiableList(builder.location);
         healthcareService = Collections.unmodifiableList(builder.healthcareService);
-        telecom = Collections.unmodifiableList(builder.telecom);
-        availableTime = Collections.unmodifiableList(builder.availableTime);
-        notAvailable = Collections.unmodifiableList(builder.notAvailable);
-        availabilityExceptions = builder.availabilityExceptions;
+        contact = Collections.unmodifiableList(builder.contact);
+        characteristic = Collections.unmodifiableList(builder.characteristic);
+        communication = Collections.unmodifiableList(builder.communication);
+        availability = Collections.unmodifiableList(builder.availability);
         endpoint = Collections.unmodifiableList(builder.endpoint);
     }
 
@@ -131,7 +138,8 @@ public class PractitionerRole extends DomainResource {
     }
 
     /**
-     * Whether this practitioner role record is in active use.
+     *  Whether this practitioner role record is in active use. Some systems may use this property to mark non-active 
+     * practitioners, such as those that are not currently employed.
      * 
      * @return
      *     An immutable object of type {@link Boolean} that may be null.
@@ -181,7 +189,8 @@ public class PractitionerRole extends DomainResource {
     }
 
     /**
-     * Specific specialty of the practitioner.
+     * The specialty of a practitioner that describes the functional role they are practicing at a given organization or 
+     * location.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
@@ -211,48 +220,51 @@ public class PractitionerRole extends DomainResource {
     }
 
     /**
-     * Contact details that are specific to the role/location/service.
+     * The contact details of communication devices available relevant to the specific PractitionerRole. This can include 
+     * addresses, phone numbers, fax numbers, mobile numbers, email addresses and web sites.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link ContactPoint} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link ExtendedContactDetail} that may be empty.
      */
-    public List<ContactPoint> getTelecom() {
-        return telecom;
+    public List<ExtendedContactDetail> getContact() {
+        return contact;
+    }
+
+    /**
+     * Collection of characteristics (attributes).
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     */
+    public List<CodeableConcept> getCharacteristic() {
+        return characteristic;
+    }
+
+    /**
+     * A language the practitioner can use in patient communication. The practitioner may know several languages (listed in 
+     * practitioner.communication), however these are the languages that could be advertised in a directory for a patient to 
+     * search.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     */
+    public List<CodeableConcept> getCommunication() {
+        return communication;
     }
 
     /**
      * A collection of times the practitioner is available or performing this role at the location and/or healthcareservice.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link AvailableTime} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link Availability} that may be empty.
      */
-    public List<AvailableTime> getAvailableTime() {
-        return availableTime;
+    public List<Availability> getAvailability() {
+        return availability;
     }
 
     /**
-     * The practitioner is not available or performing this role during this period of time due to the provided reason.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link NotAvailable} that may be empty.
-     */
-    public List<NotAvailable> getNotAvailable() {
-        return notAvailable;
-    }
-
-    /**
-     * A description of site availability exceptions, e.g. public holiday availability. Succinctly describing all possible 
-     * exceptions to normal site availability as details in the available Times and not available Times.
-     * 
-     * @return
-     *     An immutable object of type {@link String} that may be null.
-     */
-    public String getAvailabilityExceptions() {
-        return availabilityExceptions;
-    }
-
-    /**
-     * Technical endpoints providing access to services operated for the practitioner with this role.
+     *  Technical endpoints providing access to services operated for the practitioner with this role. Commonly used for 
+     * locating scheduling services, or identifying where to send referrals electronically.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
@@ -273,10 +285,10 @@ public class PractitionerRole extends DomainResource {
             !specialty.isEmpty() || 
             !location.isEmpty() || 
             !healthcareService.isEmpty() || 
-            !telecom.isEmpty() || 
-            !availableTime.isEmpty() || 
-            !notAvailable.isEmpty() || 
-            (availabilityExceptions != null) || 
+            !contact.isEmpty() || 
+            !characteristic.isEmpty() || 
+            !communication.isEmpty() || 
+            !availability.isEmpty() || 
             !endpoint.isEmpty();
     }
 
@@ -303,10 +315,10 @@ public class PractitionerRole extends DomainResource {
                 accept(specialty, "specialty", visitor, CodeableConcept.class);
                 accept(location, "location", visitor, Reference.class);
                 accept(healthcareService, "healthcareService", visitor, Reference.class);
-                accept(telecom, "telecom", visitor, ContactPoint.class);
-                accept(availableTime, "availableTime", visitor, AvailableTime.class);
-                accept(notAvailable, "notAvailable", visitor, NotAvailable.class);
-                accept(availabilityExceptions, "availabilityExceptions", visitor);
+                accept(contact, "contact", visitor, ExtendedContactDetail.class);
+                accept(characteristic, "characteristic", visitor, CodeableConcept.class);
+                accept(communication, "communication", visitor, CodeableConcept.class);
+                accept(availability, "availability", visitor, Availability.class);
                 accept(endpoint, "endpoint", visitor, Reference.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
@@ -343,10 +355,10 @@ public class PractitionerRole extends DomainResource {
             Objects.equals(specialty, other.specialty) && 
             Objects.equals(location, other.location) && 
             Objects.equals(healthcareService, other.healthcareService) && 
-            Objects.equals(telecom, other.telecom) && 
-            Objects.equals(availableTime, other.availableTime) && 
-            Objects.equals(notAvailable, other.notAvailable) && 
-            Objects.equals(availabilityExceptions, other.availabilityExceptions) && 
+            Objects.equals(contact, other.contact) && 
+            Objects.equals(characteristic, other.characteristic) && 
+            Objects.equals(communication, other.communication) && 
+            Objects.equals(availability, other.availability) && 
             Objects.equals(endpoint, other.endpoint);
     }
 
@@ -371,10 +383,10 @@ public class PractitionerRole extends DomainResource {
                 specialty, 
                 location, 
                 healthcareService, 
-                telecom, 
-                availableTime, 
-                notAvailable, 
-                availabilityExceptions, 
+                contact, 
+                characteristic, 
+                communication, 
+                availability, 
                 endpoint);
             hashCode = result;
         }
@@ -400,10 +412,10 @@ public class PractitionerRole extends DomainResource {
         private List<CodeableConcept> specialty = new ArrayList<>();
         private List<Reference> location = new ArrayList<>();
         private List<Reference> healthcareService = new ArrayList<>();
-        private List<ContactPoint> telecom = new ArrayList<>();
-        private List<AvailableTime> availableTime = new ArrayList<>();
-        private List<NotAvailable> notAvailable = new ArrayList<>();
-        private String availabilityExceptions;
+        private List<ExtendedContactDetail> contact = new ArrayList<>();
+        private List<CodeableConcept> characteristic = new ArrayList<>();
+        private List<CodeableConcept> communication = new ArrayList<>();
+        private List<Availability> availability = new ArrayList<>();
         private List<Reference> endpoint = new ArrayList<>();
 
         private Builder() {
@@ -488,7 +500,8 @@ public class PractitionerRole extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -506,7 +519,8 @@ public class PractitionerRole extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -527,7 +541,7 @@ public class PractitionerRole extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -547,7 +561,7 @@ public class PractitionerRole extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -572,9 +586,9 @@ public class PractitionerRole extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -597,9 +611,9 @@ public class PractitionerRole extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -628,7 +642,7 @@ public class PractitionerRole extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param identifier
-         *     Business Identifiers that are specific to a role/location
+         *     Identifiers for a role/location
          * 
          * @return
          *     A reference to this Builder instance
@@ -647,7 +661,7 @@ public class PractitionerRole extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param identifier
-         *     Business Identifiers that are specific to a role/location
+         *     Identifiers for a role/location
          * 
          * @return
          *     A reference to this Builder instance
@@ -677,7 +691,8 @@ public class PractitionerRole extends DomainResource {
         }
 
         /**
-         * Whether this practitioner role record is in active use.
+         *  Whether this practitioner role record is in active use. Some systems may use this property to mark non-active 
+         * practitioners, such as those that are not currently employed.
          * 
          * @param active
          *     Whether this practitioner role record is in active use
@@ -713,7 +728,7 @@ public class PractitionerRole extends DomainResource {
          * </ul>
          * 
          * @param practitioner
-         *     Practitioner that is able to provide the defined services for the organization
+         *     Practitioner that provides services for the organization
          * 
          * @return
          *     A reference to this Builder instance
@@ -782,7 +797,8 @@ public class PractitionerRole extends DomainResource {
         }
 
         /**
-         * Specific specialty of the practitioner.
+         * The specialty of a practitioner that describes the functional role they are practicing at a given organization or 
+         * location.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -801,7 +817,8 @@ public class PractitionerRole extends DomainResource {
         }
 
         /**
-         * Specific specialty of the practitioner.
+         * The specialty of a practitioner that describes the functional role they are practicing at a given organization or 
+         * location.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -832,7 +849,7 @@ public class PractitionerRole extends DomainResource {
          * </ul>
          * 
          * @param location
-         *     The location(s) at which this practitioner provides care
+         *     Location(s) where the practitioner provides care
          * 
          * @return
          *     A reference to this Builder instance
@@ -856,7 +873,7 @@ public class PractitionerRole extends DomainResource {
          * </ul>
          * 
          * @param location
-         *     The location(s) at which this practitioner provides care
+         *     Location(s) where the practitioner provides care
          * 
          * @return
          *     A reference to this Builder instance
@@ -881,7 +898,7 @@ public class PractitionerRole extends DomainResource {
          * </ul>
          * 
          * @param healthcareService
-         *     The list of healthcare services that this worker provides for this role's Organization/Location(s)
+         *     Healthcare services provided for this role's Organization/Location(s)
          * 
          * @return
          *     A reference to this Builder instance
@@ -905,7 +922,7 @@ public class PractitionerRole extends DomainResource {
          * </ul>
          * 
          * @param healthcareService
-         *     The list of healthcare services that this worker provides for this role's Organization/Location(s)
+         *     Healthcare services provided for this role's Organization/Location(s)
          * 
          * @return
          *     A reference to this Builder instance
@@ -919,32 +936,34 @@ public class PractitionerRole extends DomainResource {
         }
 
         /**
-         * Contact details that are specific to the role/location/service.
+         * The contact details of communication devices available relevant to the specific PractitionerRole. This can include 
+         * addresses, phone numbers, fax numbers, mobile numbers, email addresses and web sites.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param telecom
-         *     Contact details that are specific to the role/location/service
+         * @param contact
+         *     Official contact details relating to this PractitionerRole
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder telecom(ContactPoint... telecom) {
-            for (ContactPoint value : telecom) {
-                this.telecom.add(value);
+        public Builder contact(ExtendedContactDetail... contact) {
+            for (ExtendedContactDetail value : contact) {
+                this.contact.add(value);
             }
             return this;
         }
 
         /**
-         * Contact details that are specific to the role/location/service.
+         * The contact details of communication devices available relevant to the specific PractitionerRole. This can include 
+         * addresses, phone numbers, fax numbers, mobile numbers, email addresses and web sites.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param telecom
-         *     Contact details that are specific to the role/location/service
+         * @param contact
+         *     Official contact details relating to this PractitionerRole
          * 
          * @return
          *     A reference to this Builder instance
@@ -952,8 +971,90 @@ public class PractitionerRole extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder telecom(Collection<ContactPoint> telecom) {
-            this.telecom = new ArrayList<>(telecom);
+        public Builder contact(Collection<ExtendedContactDetail> contact) {
+            this.contact = new ArrayList<>(contact);
+            return this;
+        }
+
+        /**
+         * Collection of characteristics (attributes).
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param characteristic
+         *     Collection of characteristics (attributes)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder characteristic(CodeableConcept... characteristic) {
+            for (CodeableConcept value : characteristic) {
+                this.characteristic.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Collection of characteristics (attributes).
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param characteristic
+         *     Collection of characteristics (attributes)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder characteristic(Collection<CodeableConcept> characteristic) {
+            this.characteristic = new ArrayList<>(characteristic);
+            return this;
+        }
+
+        /**
+         * A language the practitioner can use in patient communication. The practitioner may know several languages (listed in 
+         * practitioner.communication), however these are the languages that could be advertised in a directory for a patient to 
+         * search.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param communication
+         *     A language the practitioner (in this role) can use in patient communication
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder communication(CodeableConcept... communication) {
+            for (CodeableConcept value : communication) {
+                this.communication.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A language the practitioner can use in patient communication. The practitioner may know several languages (listed in 
+         * practitioner.communication), however these are the languages that could be advertised in a directory for a patient to 
+         * search.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param communication
+         *     A language the practitioner (in this role) can use in patient communication
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder communication(Collection<CodeableConcept> communication) {
+            this.communication = new ArrayList<>(communication);
             return this;
         }
 
@@ -963,15 +1064,15 @@ public class PractitionerRole extends DomainResource {
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param availableTime
-         *     Times the Service Site is available
+         * @param availability
+         *     Times the Practitioner is available at this location and/or healthcare service (including exceptions)
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder availableTime(AvailableTime... availableTime) {
-            for (AvailableTime value : availableTime) {
-                this.availableTime.add(value);
+        public Builder availability(Availability... availability) {
+            for (Availability value : availability) {
+                this.availability.add(value);
             }
             return this;
         }
@@ -982,8 +1083,8 @@ public class PractitionerRole extends DomainResource {
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param availableTime
-         *     Times the Service Site is available
+         * @param availability
+         *     Times the Practitioner is available at this location and/or healthcare service (including exceptions)
          * 
          * @return
          *     A reference to this Builder instance
@@ -991,83 +1092,14 @@ public class PractitionerRole extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder availableTime(Collection<AvailableTime> availableTime) {
-            this.availableTime = new ArrayList<>(availableTime);
+        public Builder availability(Collection<Availability> availability) {
+            this.availability = new ArrayList<>(availability);
             return this;
         }
 
         /**
-         * The practitioner is not available or performing this role during this period of time due to the provided reason.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param notAvailable
-         *     Not available during this time due to provided reason
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder notAvailable(NotAvailable... notAvailable) {
-            for (NotAvailable value : notAvailable) {
-                this.notAvailable.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * The practitioner is not available or performing this role during this period of time due to the provided reason.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param notAvailable
-         *     Not available during this time due to provided reason
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder notAvailable(Collection<NotAvailable> notAvailable) {
-            this.notAvailable = new ArrayList<>(notAvailable);
-            return this;
-        }
-
-        /**
-         * Convenience method for setting {@code availabilityExceptions}.
-         * 
-         * @param availabilityExceptions
-         *     Description of availability exceptions
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #availabilityExceptions(org.linuxforhealth.fhir.model.type.String)
-         */
-        public Builder availabilityExceptions(java.lang.String availabilityExceptions) {
-            this.availabilityExceptions = (availabilityExceptions == null) ? null : String.of(availabilityExceptions);
-            return this;
-        }
-
-        /**
-         * A description of site availability exceptions, e.g. public holiday availability. Succinctly describing all possible 
-         * exceptions to normal site availability as details in the available Times and not available Times.
-         * 
-         * @param availabilityExceptions
-         *     Description of availability exceptions
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder availabilityExceptions(String availabilityExceptions) {
-            this.availabilityExceptions = availabilityExceptions;
-            return this;
-        }
-
-        /**
-         * Technical endpoints providing access to services operated for the practitioner with this role.
+         *  Technical endpoints providing access to services operated for the practitioner with this role. Commonly used for 
+         * locating scheduling services, or identifying where to send referrals electronically.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1078,7 +1110,7 @@ public class PractitionerRole extends DomainResource {
          * </ul>
          * 
          * @param endpoint
-         *     Technical endpoints providing access to services operated for the practitioner with this role
+         *     Endpoints for interacting with the practitioner in this role
          * 
          * @return
          *     A reference to this Builder instance
@@ -1091,7 +1123,8 @@ public class PractitionerRole extends DomainResource {
         }
 
         /**
-         * Technical endpoints providing access to services operated for the practitioner with this role.
+         *  Technical endpoints providing access to services operated for the practitioner with this role. Commonly used for 
+         * locating scheduling services, or identifying where to send referrals electronically.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1102,7 +1135,7 @@ public class PractitionerRole extends DomainResource {
          * </ul>
          * 
          * @param endpoint
-         *     Technical endpoints providing access to services operated for the practitioner with this role
+         *     Endpoints for interacting with the practitioner in this role
          * 
          * @return
          *     A reference to this Builder instance
@@ -1139,10 +1172,12 @@ public class PractitionerRole extends DomainResource {
             ValidationSupport.checkList(practitionerRole.specialty, "specialty", CodeableConcept.class);
             ValidationSupport.checkList(practitionerRole.location, "location", Reference.class);
             ValidationSupport.checkList(practitionerRole.healthcareService, "healthcareService", Reference.class);
-            ValidationSupport.checkList(practitionerRole.telecom, "telecom", ContactPoint.class);
-            ValidationSupport.checkList(practitionerRole.availableTime, "availableTime", AvailableTime.class);
-            ValidationSupport.checkList(practitionerRole.notAvailable, "notAvailable", NotAvailable.class);
+            ValidationSupport.checkList(practitionerRole.contact, "contact", ExtendedContactDetail.class);
+            ValidationSupport.checkList(practitionerRole.characteristic, "characteristic", CodeableConcept.class);
+            ValidationSupport.checkList(practitionerRole.communication, "communication", CodeableConcept.class);
+            ValidationSupport.checkList(practitionerRole.availability, "availability", Availability.class);
             ValidationSupport.checkList(practitionerRole.endpoint, "endpoint", Reference.class);
+            ValidationSupport.checkValueSetBinding(practitionerRole.communication, "communication", "http://hl7.org/fhir/ValueSet/all-languages", "urn:ietf:bcp:47");
             ValidationSupport.checkReferenceType(practitionerRole.practitioner, "practitioner", "Practitioner");
             ValidationSupport.checkReferenceType(practitionerRole.organization, "organization", "Organization");
             ValidationSupport.checkReferenceType(practitionerRole.location, "location", "Location");
@@ -1161,737 +1196,12 @@ public class PractitionerRole extends DomainResource {
             specialty.addAll(practitionerRole.specialty);
             location.addAll(practitionerRole.location);
             healthcareService.addAll(practitionerRole.healthcareService);
-            telecom.addAll(practitionerRole.telecom);
-            availableTime.addAll(practitionerRole.availableTime);
-            notAvailable.addAll(practitionerRole.notAvailable);
-            availabilityExceptions = practitionerRole.availabilityExceptions;
+            contact.addAll(practitionerRole.contact);
+            characteristic.addAll(practitionerRole.characteristic);
+            communication.addAll(practitionerRole.communication);
+            availability.addAll(practitionerRole.availability);
             endpoint.addAll(practitionerRole.endpoint);
             return this;
-        }
-    }
-
-    /**
-     * A collection of times the practitioner is available or performing this role at the location and/or healthcareservice.
-     */
-    public static class AvailableTime extends BackboneElement {
-        @Binding(
-            bindingName = "DaysOfWeek",
-            strength = BindingStrength.Value.REQUIRED,
-            description = "The days of the week.",
-            valueSet = "http://hl7.org/fhir/ValueSet/days-of-week|4.3.0"
-        )
-        private final List<DaysOfWeek> daysOfWeek;
-        private final Boolean allDay;
-        private final Time availableStartTime;
-        private final Time availableEndTime;
-
-        private AvailableTime(Builder builder) {
-            super(builder);
-            daysOfWeek = Collections.unmodifiableList(builder.daysOfWeek);
-            allDay = builder.allDay;
-            availableStartTime = builder.availableStartTime;
-            availableEndTime = builder.availableEndTime;
-        }
-
-        /**
-         * Indicates which days of the week are available between the start and end Times.
-         * 
-         * @return
-         *     An unmodifiable list containing immutable objects of type {@link DaysOfWeek} that may be empty.
-         */
-        public List<DaysOfWeek> getDaysOfWeek() {
-            return daysOfWeek;
-        }
-
-        /**
-         * Is this always available? (hence times are irrelevant) e.g. 24 hour service.
-         * 
-         * @return
-         *     An immutable object of type {@link Boolean} that may be null.
-         */
-        public Boolean getAllDay() {
-            return allDay;
-        }
-
-        /**
-         * The opening time of day. Note: If the AllDay flag is set, then this time is ignored.
-         * 
-         * @return
-         *     An immutable object of type {@link Time} that may be null.
-         */
-        public Time getAvailableStartTime() {
-            return availableStartTime;
-        }
-
-        /**
-         * The closing time of day. Note: If the AllDay flag is set, then this time is ignored.
-         * 
-         * @return
-         *     An immutable object of type {@link Time} that may be null.
-         */
-        public Time getAvailableEndTime() {
-            return availableEndTime;
-        }
-
-        @Override
-        public boolean hasChildren() {
-            return super.hasChildren() || 
-                !daysOfWeek.isEmpty() || 
-                (allDay != null) || 
-                (availableStartTime != null) || 
-                (availableEndTime != null);
-        }
-
-        @Override
-        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-            if (visitor.preVisit(this)) {
-                visitor.visitStart(elementName, elementIndex, this);
-                if (visitor.visit(elementName, elementIndex, this)) {
-                    // visit children
-                    accept(id, "id", visitor);
-                    accept(extension, "extension", visitor, Extension.class);
-                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(daysOfWeek, "daysOfWeek", visitor, DaysOfWeek.class);
-                    accept(allDay, "allDay", visitor);
-                    accept(availableStartTime, "availableStartTime", visitor);
-                    accept(availableEndTime, "availableEndTime", visitor);
-                }
-                visitor.visitEnd(elementName, elementIndex, this);
-                visitor.postVisit(this);
-            }
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            AvailableTime other = (AvailableTime) obj;
-            return Objects.equals(id, other.id) && 
-                Objects.equals(extension, other.extension) && 
-                Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(daysOfWeek, other.daysOfWeek) && 
-                Objects.equals(allDay, other.allDay) && 
-                Objects.equals(availableStartTime, other.availableStartTime) && 
-                Objects.equals(availableEndTime, other.availableEndTime);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = hashCode;
-            if (result == 0) {
-                result = Objects.hash(id, 
-                    extension, 
-                    modifierExtension, 
-                    daysOfWeek, 
-                    allDay, 
-                    availableStartTime, 
-                    availableEndTime);
-                hashCode = result;
-            }
-            return result;
-        }
-
-        @Override
-        public Builder toBuilder() {
-            return new Builder().from(this);
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public static class Builder extends BackboneElement.Builder {
-            private List<DaysOfWeek> daysOfWeek = new ArrayList<>();
-            private Boolean allDay;
-            private Time availableStartTime;
-            private Time availableEndTime;
-
-            private Builder() {
-                super();
-            }
-
-            /**
-             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-             * contain spaces.
-             * 
-             * @param id
-             *     Unique id for inter-element referencing
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder id(java.lang.String id) {
-                return (Builder) super.id(id);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder extension(Extension... extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder extension(Collection<Extension> extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder modifierExtension(Extension... modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * Indicates which days of the week are available between the start and end Times.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param daysOfWeek
-             *     mon | tue | wed | thu | fri | sat | sun
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder daysOfWeek(DaysOfWeek... daysOfWeek) {
-                for (DaysOfWeek value : daysOfWeek) {
-                    this.daysOfWeek.add(value);
-                }
-                return this;
-            }
-
-            /**
-             * Indicates which days of the week are available between the start and end Times.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param daysOfWeek
-             *     mon | tue | wed | thu | fri | sat | sun
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            public Builder daysOfWeek(Collection<DaysOfWeek> daysOfWeek) {
-                this.daysOfWeek = new ArrayList<>(daysOfWeek);
-                return this;
-            }
-
-            /**
-             * Convenience method for setting {@code allDay}.
-             * 
-             * @param allDay
-             *     Always available? e.g. 24 hour service
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #allDay(org.linuxforhealth.fhir.model.type.Boolean)
-             */
-            public Builder allDay(java.lang.Boolean allDay) {
-                this.allDay = (allDay == null) ? null : Boolean.of(allDay);
-                return this;
-            }
-
-            /**
-             * Is this always available? (hence times are irrelevant) e.g. 24 hour service.
-             * 
-             * @param allDay
-             *     Always available? e.g. 24 hour service
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder allDay(Boolean allDay) {
-                this.allDay = allDay;
-                return this;
-            }
-
-            /**
-             * Convenience method for setting {@code availableStartTime}.
-             * 
-             * @param availableStartTime
-             *     Opening time of day (ignored if allDay = true)
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #availableStartTime(org.linuxforhealth.fhir.model.type.Time)
-             */
-            public Builder availableStartTime(java.time.LocalTime availableStartTime) {
-                this.availableStartTime = (availableStartTime == null) ? null : Time.of(availableStartTime);
-                return this;
-            }
-
-            /**
-             * The opening time of day. Note: If the AllDay flag is set, then this time is ignored.
-             * 
-             * @param availableStartTime
-             *     Opening time of day (ignored if allDay = true)
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder availableStartTime(Time availableStartTime) {
-                this.availableStartTime = availableStartTime;
-                return this;
-            }
-
-            /**
-             * Convenience method for setting {@code availableEndTime}.
-             * 
-             * @param availableEndTime
-             *     Closing time of day (ignored if allDay = true)
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #availableEndTime(org.linuxforhealth.fhir.model.type.Time)
-             */
-            public Builder availableEndTime(java.time.LocalTime availableEndTime) {
-                this.availableEndTime = (availableEndTime == null) ? null : Time.of(availableEndTime);
-                return this;
-            }
-
-            /**
-             * The closing time of day. Note: If the AllDay flag is set, then this time is ignored.
-             * 
-             * @param availableEndTime
-             *     Closing time of day (ignored if allDay = true)
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder availableEndTime(Time availableEndTime) {
-                this.availableEndTime = availableEndTime;
-                return this;
-            }
-
-            /**
-             * Build the {@link AvailableTime}
-             * 
-             * @return
-             *     An immutable object of type {@link AvailableTime}
-             * @throws IllegalStateException
-             *     if the current state cannot be built into a valid AvailableTime per the base specification
-             */
-            @Override
-            public AvailableTime build() {
-                AvailableTime availableTime = new AvailableTime(this);
-                if (validating) {
-                    validate(availableTime);
-                }
-                return availableTime;
-            }
-
-            protected void validate(AvailableTime availableTime) {
-                super.validate(availableTime);
-                ValidationSupport.checkList(availableTime.daysOfWeek, "daysOfWeek", DaysOfWeek.class);
-                ValidationSupport.requireValueOrChildren(availableTime);
-            }
-
-            protected Builder from(AvailableTime availableTime) {
-                super.from(availableTime);
-                daysOfWeek.addAll(availableTime.daysOfWeek);
-                allDay = availableTime.allDay;
-                availableStartTime = availableTime.availableStartTime;
-                availableEndTime = availableTime.availableEndTime;
-                return this;
-            }
-        }
-    }
-
-    /**
-     * The practitioner is not available or performing this role during this period of time due to the provided reason.
-     */
-    public static class NotAvailable extends BackboneElement {
-        @Required
-        private final String description;
-        private final Period during;
-
-        private NotAvailable(Builder builder) {
-            super(builder);
-            description = builder.description;
-            during = builder.during;
-        }
-
-        /**
-         * The reason that can be presented to the user as to why this time is not available.
-         * 
-         * @return
-         *     An immutable object of type {@link String} that is non-null.
-         */
-        public String getDescription() {
-            return description;
-        }
-
-        /**
-         * Service is not available (seasonally or for a public holiday) from this date.
-         * 
-         * @return
-         *     An immutable object of type {@link Period} that may be null.
-         */
-        public Period getDuring() {
-            return during;
-        }
-
-        @Override
-        public boolean hasChildren() {
-            return super.hasChildren() || 
-                (description != null) || 
-                (during != null);
-        }
-
-        @Override
-        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-            if (visitor.preVisit(this)) {
-                visitor.visitStart(elementName, elementIndex, this);
-                if (visitor.visit(elementName, elementIndex, this)) {
-                    // visit children
-                    accept(id, "id", visitor);
-                    accept(extension, "extension", visitor, Extension.class);
-                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(description, "description", visitor);
-                    accept(during, "during", visitor);
-                }
-                visitor.visitEnd(elementName, elementIndex, this);
-                visitor.postVisit(this);
-            }
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            NotAvailable other = (NotAvailable) obj;
-            return Objects.equals(id, other.id) && 
-                Objects.equals(extension, other.extension) && 
-                Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(description, other.description) && 
-                Objects.equals(during, other.during);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = hashCode;
-            if (result == 0) {
-                result = Objects.hash(id, 
-                    extension, 
-                    modifierExtension, 
-                    description, 
-                    during);
-                hashCode = result;
-            }
-            return result;
-        }
-
-        @Override
-        public Builder toBuilder() {
-            return new Builder().from(this);
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public static class Builder extends BackboneElement.Builder {
-            private String description;
-            private Period during;
-
-            private Builder() {
-                super();
-            }
-
-            /**
-             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-             * contain spaces.
-             * 
-             * @param id
-             *     Unique id for inter-element referencing
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder id(java.lang.String id) {
-                return (Builder) super.id(id);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder extension(Extension... extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder extension(Collection<Extension> extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder modifierExtension(Extension... modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * Convenience method for setting {@code description}.
-             * 
-             * <p>This element is required.
-             * 
-             * @param description
-             *     Reason presented to the user explaining why time not available
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #description(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder description(java.lang.String description) {
-                this.description = (description == null) ? null : String.of(description);
-                return this;
-            }
-
-            /**
-             * The reason that can be presented to the user as to why this time is not available.
-             * 
-             * <p>This element is required.
-             * 
-             * @param description
-             *     Reason presented to the user explaining why time not available
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder description(String description) {
-                this.description = description;
-                return this;
-            }
-
-            /**
-             * Service is not available (seasonally or for a public holiday) from this date.
-             * 
-             * @param during
-             *     Service not available from this date
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder during(Period during) {
-                this.during = during;
-                return this;
-            }
-
-            /**
-             * Build the {@link NotAvailable}
-             * 
-             * <p>Required elements:
-             * <ul>
-             * <li>description</li>
-             * </ul>
-             * 
-             * @return
-             *     An immutable object of type {@link NotAvailable}
-             * @throws IllegalStateException
-             *     if the current state cannot be built into a valid NotAvailable per the base specification
-             */
-            @Override
-            public NotAvailable build() {
-                NotAvailable notAvailable = new NotAvailable(this);
-                if (validating) {
-                    validate(notAvailable);
-                }
-                return notAvailable;
-            }
-
-            protected void validate(NotAvailable notAvailable) {
-                super.validate(notAvailable);
-                ValidationSupport.requireNonNull(notAvailable.description, "description");
-                ValidationSupport.requireValueOrChildren(notAvailable);
-            }
-
-            protected Builder from(NotAvailable notAvailable) {
-                super.from(notAvailable);
-                description = notAvailable.description;
-                during = notAvailable.during;
-                return this;
-            }
         }
     }
 }

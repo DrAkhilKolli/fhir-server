@@ -55,13 +55,6 @@ public class EndpointStatus extends Code {
      */
     public static final EndpointStatus ENTERED_IN_ERROR = EndpointStatus.builder().value(Value.ENTERED_IN_ERROR).build();
 
-    /**
-     * Test
-     * 
-     * <p>This endpoint is not intended for production usage.
-     */
-    public static final EndpointStatus TEST = EndpointStatus.builder().value(Value.TEST).build();
-
     private volatile int hashCode;
 
     private EndpointStatus(Builder builder) {
@@ -90,8 +83,6 @@ public class EndpointStatus extends Code {
             return OFF;
         case ENTERED_IN_ERROR:
             return ENTERED_IN_ERROR;
-        case TEST:
-            return TEST;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -258,14 +249,7 @@ public class EndpointStatus extends Code {
          * 
          * <p>This instance should not have been part of this patient's medical record.
          */
-        ENTERED_IN_ERROR("entered-in-error"),
-
-        /**
-         * Test
-         * 
-         * <p>This endpoint is not intended for production usage.
-         */
-        TEST("test");
+        ENTERED_IN_ERROR("entered-in-error");
 
         private final java.lang.String value;
 
@@ -306,8 +290,6 @@ public class EndpointStatus extends Code {
                 return OFF;
             case "entered-in-error":
                 return ENTERED_IN_ERROR;
-            case "test":
-                return TEST;
             default:
                 throw new IllegalArgumentException(value);
             }

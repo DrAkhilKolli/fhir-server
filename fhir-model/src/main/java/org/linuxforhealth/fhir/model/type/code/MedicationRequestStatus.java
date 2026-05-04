@@ -22,62 +22,69 @@ public class MedicationRequestStatus extends Code {
     /**
      * Active
      * 
-     * <p>The prescription is 'actionable', but not all actions that are implied by it have occurred yet.
+     * <p>The request is 'actionable', but not all actions that are implied by it have occurred yet.
      */
     public static final MedicationRequestStatus ACTIVE = MedicationRequestStatus.builder().value(Value.ACTIVE).build();
 
     /**
      * On Hold
      * 
-     * <p>Actions implied by the prescription are to be temporarily halted, but are expected to continue later. May also be 
+     * <p>Actions implied by the request are to be temporarily halted. The request might or might not be resumed. May also be 
      * called 'suspended'.
      */
     public static final MedicationRequestStatus ON_HOLD = MedicationRequestStatus.builder().value(Value.ON_HOLD).build();
 
     /**
-     * Cancelled
+     * Ended
      * 
-     * <p>The prescription has been withdrawn before any administrations have occurred
+     * <p>The request is no longer active and the subject should no longer be taking the medication.
      */
-    public static final MedicationRequestStatus CANCELLED = MedicationRequestStatus.builder().value(Value.CANCELLED).build();
-
-    /**
-     * Completed
-     * 
-     * <p>All actions that are implied by the prescription have occurred.
-     */
-    public static final MedicationRequestStatus COMPLETED = MedicationRequestStatus.builder().value(Value.COMPLETED).build();
-
-    /**
-     * Entered in Error
-     * 
-     * <p>Some of the actions that are implied by the medication request may have occurred. For example, the medication may 
-     * have been dispensed and the patient may have taken some of the medication. Clinical decision support systems should 
-     * take this status into account
-     */
-    public static final MedicationRequestStatus ENTERED_IN_ERROR = MedicationRequestStatus.builder().value(Value.ENTERED_IN_ERROR).build();
+    public static final MedicationRequestStatus ENDED = MedicationRequestStatus.builder().value(Value.ENDED).build();
 
     /**
      * Stopped
      * 
-     * <p>Actions implied by the prescription are to be permanently halted, before all of the administrations occurred. This 
+     * <p>Actions implied by the request are to be permanently halted, before all of the administrations occurred. This 
      * should not be used if the original order was entered in error
      */
     public static final MedicationRequestStatus STOPPED = MedicationRequestStatus.builder().value(Value.STOPPED).build();
 
     /**
+     * Completed
+     * 
+     * <p>All actions that are implied by the request have occurred.
+     */
+    public static final MedicationRequestStatus COMPLETED = MedicationRequestStatus.builder().value(Value.COMPLETED).build();
+
+    /**
+     * Cancelled
+     * 
+     * <p>The request has been withdrawn before any administrations have occurred
+     */
+    public static final MedicationRequestStatus CANCELLED = MedicationRequestStatus.builder().value(Value.CANCELLED).build();
+
+    /**
+     * Entered in Error
+     * 
+     * <p>The request was recorded against the wrong patient or for some reason should not have been recorded (e.g. wrong 
+     * medication, wrong dose, etc.). Some of the actions that are implied by the medication request may have occurred. For 
+     * example, the medication may have been dispensed and the patient may have taken some of the medication.
+     */
+    public static final MedicationRequestStatus ENTERED_IN_ERROR = MedicationRequestStatus.builder().value(Value.ENTERED_IN_ERROR).build();
+
+    /**
      * Draft
      * 
-     * <p>The prescription is not yet 'actionable', e.g. it is a work in progress, requires sign-off, verification or needs 
-     * to be run through decision support process.
+     * <p>The request is not yet 'actionable', e.g. it is a work in progress, requires sign-off, verification or needs to be 
+     * run through decision support process.
      */
     public static final MedicationRequestStatus DRAFT = MedicationRequestStatus.builder().value(Value.DRAFT).build();
 
     /**
      * Unknown
      * 
-     * <p>The authoring/source system does not know which of the status values currently applies for this observation. Note: 
-     * This concept is not to be used for 'other' - one of the listed statuses is presumed to apply, but the authoring/source 
+     * <p>The authoring/source system does not know which of the status values currently applies for this request. Note: This 
+     * concept is not to be used for 'other' - one of the listed statuses is presumed to apply, but the authoring/source 
      * system does not know which.
      */
     public static final MedicationRequestStatus UNKNOWN = MedicationRequestStatus.builder().value(Value.UNKNOWN).build();
@@ -104,14 +111,16 @@ public class MedicationRequestStatus extends Code {
             return ACTIVE;
         case ON_HOLD:
             return ON_HOLD;
-        case CANCELLED:
-            return CANCELLED;
-        case COMPLETED:
-            return COMPLETED;
-        case ENTERED_IN_ERROR:
-            return ENTERED_IN_ERROR;
+        case ENDED:
+            return ENDED;
         case STOPPED:
             return STOPPED;
+        case COMPLETED:
+            return COMPLETED;
+        case CANCELLED:
+            return CANCELLED;
+        case ENTERED_IN_ERROR:
+            return ENTERED_IN_ERROR;
         case DRAFT:
             return DRAFT;
         case UNKNOWN:
@@ -251,62 +260,69 @@ public class MedicationRequestStatus extends Code {
         /**
          * Active
          * 
-         * <p>The prescription is 'actionable', but not all actions that are implied by it have occurred yet.
+         * <p>The request is 'actionable', but not all actions that are implied by it have occurred yet.
          */
         ACTIVE("active"),
 
         /**
          * On Hold
          * 
-         * <p>Actions implied by the prescription are to be temporarily halted, but are expected to continue later. May also be 
+         * <p>Actions implied by the request are to be temporarily halted. The request might or might not be resumed. May also be 
          * called 'suspended'.
          */
         ON_HOLD("on-hold"),
 
         /**
-         * Cancelled
+         * Ended
          * 
-         * <p>The prescription has been withdrawn before any administrations have occurred
+         * <p>The request is no longer active and the subject should no longer be taking the medication.
          */
-        CANCELLED("cancelled"),
-
-        /**
-         * Completed
-         * 
-         * <p>All actions that are implied by the prescription have occurred.
-         */
-        COMPLETED("completed"),
-
-        /**
-         * Entered in Error
-         * 
-         * <p>Some of the actions that are implied by the medication request may have occurred. For example, the medication may 
-         * have been dispensed and the patient may have taken some of the medication. Clinical decision support systems should 
-         * take this status into account
-         */
-        ENTERED_IN_ERROR("entered-in-error"),
+        ENDED("ended"),
 
         /**
          * Stopped
          * 
-         * <p>Actions implied by the prescription are to be permanently halted, before all of the administrations occurred. This 
+         * <p>Actions implied by the request are to be permanently halted, before all of the administrations occurred. This 
          * should not be used if the original order was entered in error
          */
         STOPPED("stopped"),
 
         /**
+         * Completed
+         * 
+         * <p>All actions that are implied by the request have occurred.
+         */
+        COMPLETED("completed"),
+
+        /**
+         * Cancelled
+         * 
+         * <p>The request has been withdrawn before any administrations have occurred
+         */
+        CANCELLED("cancelled"),
+
+        /**
+         * Entered in Error
+         * 
+         * <p>The request was recorded against the wrong patient or for some reason should not have been recorded (e.g. wrong 
+         * medication, wrong dose, etc.). Some of the actions that are implied by the medication request may have occurred. For 
+         * example, the medication may have been dispensed and the patient may have taken some of the medication.
+         */
+        ENTERED_IN_ERROR("entered-in-error"),
+
+        /**
          * Draft
          * 
-         * <p>The prescription is not yet 'actionable', e.g. it is a work in progress, requires sign-off, verification or needs 
-         * to be run through decision support process.
+         * <p>The request is not yet 'actionable', e.g. it is a work in progress, requires sign-off, verification or needs to be 
+         * run through decision support process.
          */
         DRAFT("draft"),
 
         /**
          * Unknown
          * 
-         * <p>The authoring/source system does not know which of the status values currently applies for this observation. Note: 
-         * This concept is not to be used for 'other' - one of the listed statuses is presumed to apply, but the authoring/source 
+         * <p>The authoring/source system does not know which of the status values currently applies for this request. Note: This 
+         * concept is not to be used for 'other' - one of the listed statuses is presumed to apply, but the authoring/source 
          * system does not know which.
          */
         UNKNOWN("unknown");
@@ -344,14 +360,16 @@ public class MedicationRequestStatus extends Code {
                 return ACTIVE;
             case "on-hold":
                 return ON_HOLD;
-            case "cancelled":
-                return CANCELLED;
-            case "completed":
-                return COMPLETED;
-            case "entered-in-error":
-                return ENTERED_IN_ERROR;
+            case "ended":
+                return ENDED;
             case "stopped":
                 return STOPPED;
+            case "completed":
+                return COMPLETED;
+            case "cancelled":
+                return CANCELLED;
+            case "entered-in-error":
+                return ENTERED_IN_ERROR;
             case "draft":
                 return DRAFT;
             case "unknown":

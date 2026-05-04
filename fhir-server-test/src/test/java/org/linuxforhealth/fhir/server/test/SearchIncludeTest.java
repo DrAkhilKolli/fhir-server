@@ -39,6 +39,7 @@ import org.linuxforhealth.fhir.model.test.TestUtil;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.DateTime;
@@ -248,7 +249,7 @@ public class SearchIncludeTest extends FHIRServerTestBase {
                 .status(ProcedureStatus.COMPLETED)
                 .subject(Reference.builder().reference(of("Patient/" + patient2Id)).build())
                 .basedOn(Reference.builder().reference(of("CarePlan/" + tag)).build())
-                .performed(DateTime.of(now.toString()))
+                .occurrence(DateTime.of(now.toString()))
                 .instantiatesUri(Uri.of("1" + tag))
                 .code(CodeableConcept.builder().coding(Coding.builder().code(Code.of("1" + tag)).build()).build())
                 .build();
@@ -279,7 +280,7 @@ public class SearchIncludeTest extends FHIRServerTestBase {
                 .status(ProcedureStatus.COMPLETED)
                 .subject(Reference.builder().reference(of("Patient/" + patient2Id)).build())
                 .basedOn(Reference.builder().reference(of("ServiceRequest/" + tag)).build())
-                .performed(DateTime.of(now.toString()))
+                .occurrence(DateTime.of(now.toString()))
                 .instantiatesUri(Uri.of("2" + tag))
                 .code(CodeableConcept.builder().coding(Coding.builder().code(Code.of("2" + tag)).build()).build())
                 .build();
@@ -310,11 +311,11 @@ public class SearchIncludeTest extends FHIRServerTestBase {
         procedure = procedure.toBuilder()
                 .status(ProcedureStatus.COMPLETED)
                 .subject(Reference.builder().reference(of("Patient/" + patient2Id)).build())
-                .performed(DateTime.of(now.toString()))
+                .occurrence(DateTime.of(now.toString()))
                 .instantiatesUri(Uri.of("3" + tag))
                 .code(CodeableConcept.builder().coding(Coding.builder().code(Code.of("3" + tag)).build()).build())
                 .partOf(Reference.builder().reference(of("Procedure/" + procedure2Id)).build())
-                .reasonReference(Reference.builder().reference(of("Procedure/" + procedure2Id)).build())
+                .reason(CodeableReference.builder().reference(Reference.builder().reference(of("Procedure/" + procedure2Id)).build()).build())
                 .build();
 
         // Call the 'create' API.

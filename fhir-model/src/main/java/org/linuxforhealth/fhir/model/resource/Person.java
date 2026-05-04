@@ -15,6 +15,8 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
+import org.linuxforhealth.fhir.model.annotation.Choice;
+import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
@@ -24,8 +26,11 @@ import org.linuxforhealth.fhir.model.type.Attachment;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
+import org.linuxforhealth.fhir.model.type.CodeableConcept;
 import org.linuxforhealth.fhir.model.type.ContactPoint;
 import org.linuxforhealth.fhir.model.type.Date;
+import org.linuxforhealth.fhir.model.type.DateTime;
+import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.HumanName;
 import org.linuxforhealth.fhir.model.type.Identifier;
@@ -43,15 +48,27 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 /**
  * Demographics and administrative information about a person independent of a specific health-related context.
  * 
- * <p>Maturity level: FMM2 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 2,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
+)
+@Constraint(
+    id = "person-0",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/marital-status",
+    expression = "maritalStatus.exists() implies (maritalStatus.memberOf('http://hl7.org/fhir/ValueSet/marital-status', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/Person",
+    generated = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class Person extends DomainResource {
+    @Summary
     private final List<Identifier> identifier;
+    @Summary
+    private final Boolean active;
     @Summary
     private final List<HumanName> name;
     @Summary
@@ -61,31 +78,44 @@ public class Person extends DomainResource {
         bindingName = "AdministrativeGender",
         strength = BindingStrength.Value.REQUIRED,
         description = "The gender of a person used for administrative purposes.",
-        valueSet = "http://hl7.org/fhir/ValueSet/administrative-gender|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/administrative-gender|5.0.0"
     )
     private final AdministrativeGender gender;
     @Summary
     private final Date birthDate;
+    @Summary
+    @Choice({ Boolean.class, DateTime.class })
+    private final org.linuxforhealth.fhir.model.type.Element deceased;
+    @Summary
     private final List<Address> address;
-    private final Attachment photo;
+    @Binding(
+        bindingName = "MaritalStatus",
+        strength = BindingStrength.Value.EXTENSIBLE,
+        description = "The domestic partnership status of a person.",
+        valueSet = "http://hl7.org/fhir/ValueSet/marital-status"
+    )
+    private final CodeableConcept maritalStatus;
+    private final List<Attachment> photo;
+    private final List<Communication> communication;
     @Summary
     @ReferenceTarget({ "Organization" })
     private final Reference managingOrganization;
-    @Summary
-    private final Boolean active;
     private final List<Link> link;
 
     private Person(Builder builder) {
         super(builder);
         identifier = Collections.unmodifiableList(builder.identifier);
+        active = builder.active;
         name = Collections.unmodifiableList(builder.name);
         telecom = Collections.unmodifiableList(builder.telecom);
         gender = builder.gender;
         birthDate = builder.birthDate;
+        deceased = builder.deceased;
         address = Collections.unmodifiableList(builder.address);
-        photo = builder.photo;
+        maritalStatus = builder.maritalStatus;
+        photo = Collections.unmodifiableList(builder.photo);
+        communication = Collections.unmodifiableList(builder.communication);
         managingOrganization = builder.managingOrganization;
-        active = builder.active;
         link = Collections.unmodifiableList(builder.link);
     }
 
@@ -97,6 +127,16 @@ public class Person extends DomainResource {
      */
     public List<Identifier> getIdentifier() {
         return identifier;
+    }
+
+    /**
+     * Whether this person's record is in active use.
+     * 
+     * @return
+     *     An immutable object of type {@link Boolean} that may be null.
+     */
+    public Boolean getActive() {
+        return active;
     }
 
     /**
@@ -140,6 +180,16 @@ public class Person extends DomainResource {
     }
 
     /**
+     * Indicates if the individual is deceased or not.
+     * 
+     * @return
+     *     An immutable object of type {@link Boolean} or {@link DateTime} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getDeceased() {
+        return deceased;
+    }
+
+    /**
      * One or more addresses for the person.
      * 
      * @return
@@ -150,13 +200,33 @@ public class Person extends DomainResource {
     }
 
     /**
+     * This field contains a person's most recent marital (civil) status.
+     * 
+     * @return
+     *     An immutable object of type {@link CodeableConcept} that may be null.
+     */
+    public CodeableConcept getMaritalStatus() {
+        return maritalStatus;
+    }
+
+    /**
      * An image that can be displayed as a thumbnail of the person to enhance the identification of the individual.
      * 
      * @return
-     *     An immutable object of type {@link Attachment} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Attachment} that may be empty.
      */
-    public Attachment getPhoto() {
+    public List<Attachment> getPhoto() {
         return photo;
+    }
+
+    /**
+     * A language which may be used to communicate with the person about his or her health.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Communication} that may be empty.
+     */
+    public List<Communication> getCommunication() {
+        return communication;
     }
 
     /**
@@ -167,16 +237,6 @@ public class Person extends DomainResource {
      */
     public Reference getManagingOrganization() {
         return managingOrganization;
-    }
-
-    /**
-     * Whether this person's record is in active use.
-     * 
-     * @return
-     *     An immutable object of type {@link Boolean} that may be null.
-     */
-    public Boolean getActive() {
-        return active;
     }
 
     /**
@@ -193,14 +253,17 @@ public class Person extends DomainResource {
     public boolean hasChildren() {
         return super.hasChildren() || 
             !identifier.isEmpty() || 
+            (active != null) || 
             !name.isEmpty() || 
             !telecom.isEmpty() || 
             (gender != null) || 
             (birthDate != null) || 
+            (deceased != null) || 
             !address.isEmpty() || 
-            (photo != null) || 
+            (maritalStatus != null) || 
+            !photo.isEmpty() || 
+            !communication.isEmpty() || 
             (managingOrganization != null) || 
-            (active != null) || 
             !link.isEmpty();
     }
 
@@ -219,14 +282,17 @@ public class Person extends DomainResource {
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(identifier, "identifier", visitor, Identifier.class);
+                accept(active, "active", visitor);
                 accept(name, "name", visitor, HumanName.class);
                 accept(telecom, "telecom", visitor, ContactPoint.class);
                 accept(gender, "gender", visitor);
                 accept(birthDate, "birthDate", visitor);
+                accept(deceased, "deceased", visitor);
                 accept(address, "address", visitor, Address.class);
-                accept(photo, "photo", visitor);
+                accept(maritalStatus, "maritalStatus", visitor);
+                accept(photo, "photo", visitor, Attachment.class);
+                accept(communication, "communication", visitor, Communication.class);
                 accept(managingOrganization, "managingOrganization", visitor);
-                accept(active, "active", visitor);
                 accept(link, "link", visitor, Link.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
@@ -255,14 +321,17 @@ public class Person extends DomainResource {
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(identifier, other.identifier) && 
+            Objects.equals(active, other.active) && 
             Objects.equals(name, other.name) && 
             Objects.equals(telecom, other.telecom) && 
             Objects.equals(gender, other.gender) && 
             Objects.equals(birthDate, other.birthDate) && 
+            Objects.equals(deceased, other.deceased) && 
             Objects.equals(address, other.address) && 
+            Objects.equals(maritalStatus, other.maritalStatus) && 
             Objects.equals(photo, other.photo) && 
+            Objects.equals(communication, other.communication) && 
             Objects.equals(managingOrganization, other.managingOrganization) && 
-            Objects.equals(active, other.active) && 
             Objects.equals(link, other.link);
     }
 
@@ -279,14 +348,17 @@ public class Person extends DomainResource {
                 extension, 
                 modifierExtension, 
                 identifier, 
+                active, 
                 name, 
                 telecom, 
                 gender, 
                 birthDate, 
+                deceased, 
                 address, 
+                maritalStatus, 
                 photo, 
+                communication, 
                 managingOrganization, 
-                active, 
                 link);
             hashCode = result;
         }
@@ -304,14 +376,17 @@ public class Person extends DomainResource {
 
     public static class Builder extends DomainResource.Builder {
         private List<Identifier> identifier = new ArrayList<>();
+        private Boolean active;
         private List<HumanName> name = new ArrayList<>();
         private List<ContactPoint> telecom = new ArrayList<>();
         private AdministrativeGender gender;
         private Date birthDate;
+        private org.linuxforhealth.fhir.model.type.Element deceased;
         private List<Address> address = new ArrayList<>();
-        private Attachment photo;
+        private CodeableConcept maritalStatus;
+        private List<Attachment> photo = new ArrayList<>();
+        private List<Communication> communication = new ArrayList<>();
         private Reference managingOrganization;
-        private Boolean active;
         private List<Link> link = new ArrayList<>();
 
         private Builder() {
@@ -396,7 +471,8 @@ public class Person extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -414,7 +490,8 @@ public class Person extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -435,7 +512,7 @@ public class Person extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -455,7 +532,7 @@ public class Person extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -480,9 +557,9 @@ public class Person extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -505,9 +582,9 @@ public class Person extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -565,6 +642,36 @@ public class Person extends DomainResource {
          */
         public Builder identifier(Collection<Identifier> identifier) {
             this.identifier = new ArrayList<>(identifier);
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code active}.
+         * 
+         * @param active
+         *     This person's record is in active use
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #active(org.linuxforhealth.fhir.model.type.Boolean)
+         */
+        public Builder active(java.lang.Boolean active) {
+            this.active = (active == null) ? null : Boolean.of(active);
+            return this;
+        }
+
+        /**
+         * Whether this person's record is in active use.
+         * 
+         * @param active
+         *     This person's record is in active use
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder active(Boolean active) {
+            this.active = active;
             return this;
         }
 
@@ -691,6 +798,42 @@ public class Person extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code deceased} with choice type Boolean.
+         * 
+         * @param deceased
+         *     Indicates if the individual is deceased or not
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #deceased(Element)
+         */
+        public Builder deceased(java.lang.Boolean deceased) {
+            this.deceased = (deceased == null) ? null : Boolean.of(deceased);
+            return this;
+        }
+
+        /**
+         * Indicates if the individual is deceased or not.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link Boolean}</li>
+         * <li>{@link DateTime}</li>
+         * </ul>
+         * 
+         * @param deceased
+         *     Indicates if the individual is deceased or not
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder deceased(org.linuxforhealth.fhir.model.type.Element deceased) {
+            this.deceased = deceased;
+            return this;
+        }
+
+        /**
          * One or more addresses for the person.
          * 
          * <p>Adds new element(s) to the existing list.
@@ -730,7 +873,24 @@ public class Person extends DomainResource {
         }
 
         /**
+         * This field contains a person's most recent marital (civil) status.
+         * 
+         * @param maritalStatus
+         *     Marital (civil) status of a person
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder maritalStatus(CodeableConcept maritalStatus) {
+            this.maritalStatus = maritalStatus;
+            return this;
+        }
+
+        /**
          * An image that can be displayed as a thumbnail of the person to enhance the identification of the individual.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param photo
          *     Image of the person
@@ -738,8 +898,69 @@ public class Person extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder photo(Attachment photo) {
-            this.photo = photo;
+        public Builder photo(Attachment... photo) {
+            for (Attachment value : photo) {
+                this.photo.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * An image that can be displayed as a thumbnail of the person to enhance the identification of the individual.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param photo
+         *     Image of the person
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder photo(Collection<Attachment> photo) {
+            this.photo = new ArrayList<>(photo);
+            return this;
+        }
+
+        /**
+         * A language which may be used to communicate with the person about his or her health.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param communication
+         *     A language which may be used to communicate with the person about his or her health
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder communication(Communication... communication) {
+            for (Communication value : communication) {
+                this.communication.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A language which may be used to communicate with the person about his or her health.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param communication
+         *     A language which may be used to communicate with the person about his or her health
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder communication(Collection<Communication> communication) {
+            this.communication = new ArrayList<>(communication);
             return this;
         }
 
@@ -759,36 +980,6 @@ public class Person extends DomainResource {
          */
         public Builder managingOrganization(Reference managingOrganization) {
             this.managingOrganization = managingOrganization;
-            return this;
-        }
-
-        /**
-         * Convenience method for setting {@code active}.
-         * 
-         * @param active
-         *     This person's record is in active use
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #active(org.linuxforhealth.fhir.model.type.Boolean)
-         */
-        public Builder active(java.lang.Boolean active) {
-            this.active = (active == null) ? null : Boolean.of(active);
-            return this;
-        }
-
-        /**
-         * Whether this person's record is in active use.
-         * 
-         * @param active
-         *     This person's record is in active use
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder active(Boolean active) {
-            this.active = active;
             return this;
         }
 
@@ -853,7 +1044,10 @@ public class Person extends DomainResource {
             ValidationSupport.checkList(person.identifier, "identifier", Identifier.class);
             ValidationSupport.checkList(person.name, "name", HumanName.class);
             ValidationSupport.checkList(person.telecom, "telecom", ContactPoint.class);
+            ValidationSupport.choiceElement(person.deceased, "deceased", Boolean.class, DateTime.class);
             ValidationSupport.checkList(person.address, "address", Address.class);
+            ValidationSupport.checkList(person.photo, "photo", Attachment.class);
+            ValidationSupport.checkList(person.communication, "communication", Communication.class);
             ValidationSupport.checkList(person.link, "link", Link.class);
             ValidationSupport.checkReferenceType(person.managingOrganization, "managingOrganization", "Organization");
         }
@@ -861,16 +1055,332 @@ public class Person extends DomainResource {
         protected Builder from(Person person) {
             super.from(person);
             identifier.addAll(person.identifier);
+            active = person.active;
             name.addAll(person.name);
             telecom.addAll(person.telecom);
             gender = person.gender;
             birthDate = person.birthDate;
+            deceased = person.deceased;
             address.addAll(person.address);
-            photo = person.photo;
+            maritalStatus = person.maritalStatus;
+            photo.addAll(person.photo);
+            communication.addAll(person.communication);
             managingOrganization = person.managingOrganization;
-            active = person.active;
             link.addAll(person.link);
             return this;
+        }
+    }
+
+    /**
+     * A language which may be used to communicate with the person about his or her health.
+     */
+    public static class Communication extends BackboneElement {
+        @Binding(
+            bindingName = "Language",
+            strength = BindingStrength.Value.REQUIRED,
+            description = "IETF language tag for a human language",
+            valueSet = "http://hl7.org/fhir/ValueSet/all-languages|5.0.0"
+        )
+        @Required
+        private final CodeableConcept language;
+        private final Boolean preferred;
+
+        private Communication(Builder builder) {
+            super(builder);
+            language = builder.language;
+            preferred = builder.preferred;
+        }
+
+        /**
+         * The ISO-639-1 alpha 2 code in lower case for the language, optionally followed by a hyphen and the ISO-3166-1 alpha 2 
+         * code for the region in upper case; e.g. "en" for English, or "en-US" for American English versus "en-AU" for 
+         * Australian English.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that is non-null.
+         */
+        public CodeableConcept getLanguage() {
+            return language;
+        }
+
+        /**
+         * Indicates whether or not the person prefers this language (over other languages he masters up a certain level).
+         * 
+         * @return
+         *     An immutable object of type {@link Boolean} that may be null.
+         */
+        public Boolean getPreferred() {
+            return preferred;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (language != null) || 
+                (preferred != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(language, "language", visitor);
+                    accept(preferred, "preferred", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Communication other = (Communication) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(language, other.language) && 
+                Objects.equals(preferred, other.preferred);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    language, 
+                    preferred);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private CodeableConcept language;
+            private Boolean preferred;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * The ISO-639-1 alpha 2 code in lower case for the language, optionally followed by a hyphen and the ISO-3166-1 alpha 2 
+             * code for the region in upper case; e.g. "en" for English, or "en-US" for American English versus "en-AU" for 
+             * Australian English.
+             * 
+             * <p>This element is required.
+             * 
+             * @param language
+             *     The language which can be used to communicate with the person about his or her health
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder language(CodeableConcept language) {
+                this.language = language;
+                return this;
+            }
+
+            /**
+             * Convenience method for setting {@code preferred}.
+             * 
+             * @param preferred
+             *     Language preference indicator
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #preferred(org.linuxforhealth.fhir.model.type.Boolean)
+             */
+            public Builder preferred(java.lang.Boolean preferred) {
+                this.preferred = (preferred == null) ? null : Boolean.of(preferred);
+                return this;
+            }
+
+            /**
+             * Indicates whether or not the person prefers this language (over other languages he masters up a certain level).
+             * 
+             * @param preferred
+             *     Language preference indicator
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder preferred(Boolean preferred) {
+                this.preferred = preferred;
+                return this;
+            }
+
+            /**
+             * Build the {@link Communication}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>language</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link Communication}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Communication per the base specification
+             */
+            @Override
+            public Communication build() {
+                Communication communication = new Communication(this);
+                if (validating) {
+                    validate(communication);
+                }
+                return communication;
+            }
+
+            protected void validate(Communication communication) {
+                super.validate(communication);
+                ValidationSupport.requireNonNull(communication.language, "language");
+                ValidationSupport.checkValueSetBinding(communication.language, "language", "http://hl7.org/fhir/ValueSet/all-languages", "urn:ietf:bcp:47");
+                ValidationSupport.requireValueOrChildren(communication);
+            }
+
+            protected Builder from(Communication communication) {
+                super.from(communication);
+                language = communication.language;
+                preferred = communication.preferred;
+                return this;
+            }
         }
     }
 
@@ -885,7 +1395,7 @@ public class Person extends DomainResource {
             bindingName = "IdentityAssuranceLevel",
             strength = BindingStrength.Value.REQUIRED,
             description = "The level of confidence that this link represents the same actual person, based on NIST Authentication Levels.",
-            valueSet = "http://hl7.org/fhir/ValueSet/identity-assuranceLevel|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/identity-assuranceLevel|5.0.0"
         )
         private final IdentityAssuranceLevel assurance;
 
@@ -1006,7 +1516,7 @@ public class Person extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1026,7 +1536,7 @@ public class Person extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1051,7 +1561,7 @@ public class Person extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1076,7 +1586,7 @@ public class Person extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 

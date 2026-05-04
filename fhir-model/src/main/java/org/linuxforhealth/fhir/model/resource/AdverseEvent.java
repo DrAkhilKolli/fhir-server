@@ -15,65 +15,76 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
-import org.linuxforhealth.fhir.model.annotation.Constraint;
+import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
+import org.linuxforhealth.fhir.model.type.Annotation;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
+import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
 import org.linuxforhealth.fhir.model.type.DateTime;
+import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
+import org.linuxforhealth.fhir.model.type.Period;
 import org.linuxforhealth.fhir.model.type.Reference;
-import org.linuxforhealth.fhir.model.type.String;
+import org.linuxforhealth.fhir.model.type.Timing;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.AdverseEventActuality;
+import org.linuxforhealth.fhir.model.type.code.AdverseEventStatus;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
- * Actual or potential/avoided event causing unintended physical injury resulting from or contributed to by medical care, 
- * a research study or other healthcare setting factors that requires additional monitoring, treatment, or 
- * hospitalization, or that results in death.
+ * An event (i.e. any change to current patient status) that may be related to unintended effects on a patient or 
+ * research participant. The unintended effects may require additional monitoring, treatment, hospitalization, or may 
+ * result in death. The AdverseEvent resource also extends to potential or avoided events that could have had such 
+ * effects. There are two major domains where the AdverseEvent resource is expected to be used. One is in clinical care 
+ * reported adverse events and the other is in reporting adverse events in clinical research trial management. Adverse 
+ * events can be reported by healthcare providers, patients, caregivers or by medical products manufacturers. Given the 
+ * differences between these two concepts, we recommend consulting the domain specific implementation guides when 
+ * implementing the AdverseEvent Resource. The implementation guides include specific extensions, value sets and 
+ * constraints.
  * 
- * <p>Maturity level: FMM0 (Trial Use)
+ * <p>Maturity level: FMM2 (Trial Use)
  */
 @Maturity(
-    level = 0,
+    level = 2,
     status = StandardsStatus.Value.TRIAL_USE
-)
-@Constraint(
-    id = "adverseEvent-0",
-    level = "Warning",
-    location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/adverse-event-category",
-    expression = "category.exists() implies (category.all(memberOf('http://hl7.org/fhir/ValueSet/adverse-event-category', 'extensible')))",
-    source = "http://hl7.org/fhir/StructureDefinition/AdverseEvent",
-    generated = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class AdverseEvent extends DomainResource {
     @Summary
-    private final Identifier identifier;
+    private final List<Identifier> identifier;
+    @Summary
+    @Binding(
+        bindingName = "AdverseEventStatus",
+        strength = BindingStrength.Value.REQUIRED,
+        description = "Codes identifying the lifecycle stage of an event.",
+        valueSet = "http://hl7.org/fhir/ValueSet/adverse-event-status|5.0.0"
+    )
+    @Required
+    private final AdverseEventStatus status;
     @Summary
     @Binding(
         bindingName = "AdverseEventActuality",
         strength = BindingStrength.Value.REQUIRED,
         description = "Overall nature of the adverse event, e.g. real or potential.",
-        valueSet = "http://hl7.org/fhir/ValueSet/adverse-event-actuality|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/adverse-event-actuality|5.0.0"
     )
     @Required
     private final AdverseEventActuality actuality;
     @Summary
     @Binding(
         bindingName = "AdverseEventCategory",
-        strength = BindingStrength.Value.EXTENSIBLE,
+        strength = BindingStrength.Value.EXAMPLE,
         description = "Overall categorization of the event, e.g. product-related or situational.",
         valueSet = "http://hl7.org/fhir/ValueSet/adverse-event-category"
     )
@@ -85,23 +96,24 @@ public class AdverseEvent extends DomainResource {
         description = "Detailed type of event.",
         valueSet = "http://hl7.org/fhir/ValueSet/adverse-event-type"
     )
-    private final CodeableConcept event;
+    private final CodeableConcept code;
     @Summary
-    @ReferenceTarget({ "Patient", "Group", "Practitioner", "RelatedPerson" })
+    @ReferenceTarget({ "Patient", "Group", "Practitioner", "RelatedPerson", "ResearchSubject" })
     @Required
     private final Reference subject;
     @Summary
     @ReferenceTarget({ "Encounter" })
     private final Reference encounter;
     @Summary
-    private final DateTime date;
+    @Choice({ DateTime.class, Period.class, Timing.class })
+    private final org.linuxforhealth.fhir.model.type.Element occurrence;
     @Summary
     private final DateTime detected;
     @Summary
     private final DateTime recordedDate;
     @Summary
-    @ReferenceTarget({ "Condition" })
-    private final List<Reference> resultingCondition;
+    @ReferenceTarget({ "Condition", "Observation" })
+    private final List<Reference> resultingEffect;
     @Summary
     @ReferenceTarget({ "Location" })
     private final Reference location;
@@ -115,60 +127,60 @@ public class AdverseEvent extends DomainResource {
     private final CodeableConcept seriousness;
     @Summary
     @Binding(
-        bindingName = "AdverseEventSeverity",
-        strength = BindingStrength.Value.REQUIRED,
-        description = "The severity of the adverse event itself, in direct relation to the subject.",
-        valueSet = "http://hl7.org/fhir/ValueSet/adverse-event-severity|4.3.0"
-    )
-    private final CodeableConcept severity;
-    @Summary
-    @Binding(
         bindingName = "AdverseEventOutcome",
-        strength = BindingStrength.Value.REQUIRED,
-        description = "TODO (and should this be required?).",
-        valueSet = "http://hl7.org/fhir/ValueSet/adverse-event-outcome|4.3.0"
+        strength = BindingStrength.Value.EXAMPLE,
+        description = "Codes describing the type of outcome from the adverse event.",
+        valueSet = "http://hl7.org/fhir/ValueSet/adverse-event-outcome"
     )
-    private final CodeableConcept outcome;
+    private final List<CodeableConcept> outcome;
     @Summary
-    @ReferenceTarget({ "Patient", "Practitioner", "PractitionerRole", "RelatedPerson" })
+    @ReferenceTarget({ "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "ResearchSubject" })
     private final Reference recorder;
     @Summary
-    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Device" })
-    private final List<Reference> contributor;
-    @Summary
-    private final List<SuspectEntity> suspectEntity;
-    @Summary
-    @ReferenceTarget({ "Condition", "Observation", "AllergyIntolerance", "FamilyMemberHistory", "Immunization", "Procedure", "Media", "DocumentReference" })
-    private final List<Reference> subjectMedicalHistory;
-    @Summary
-    @ReferenceTarget({ "DocumentReference" })
-    private final List<Reference> referenceDocument;
+    private final List<Participant> participant;
     @Summary
     @ReferenceTarget({ "ResearchStudy" })
     private final List<Reference> study;
+    private final Boolean expectedInResearchStudy;
+    @Summary
+    private final List<SuspectEntity> suspectEntity;
+    @Summary
+    private final List<ContributingFactor> contributingFactor;
+    @Summary
+    private final List<PreventiveAction> preventiveAction;
+    @Summary
+    private final List<MitigatingAction> mitigatingAction;
+    @Summary
+    private final List<SupportingInfo> supportingInfo;
+    @Summary
+    private final List<Annotation> note;
 
     private AdverseEvent(Builder builder) {
         super(builder);
-        identifier = builder.identifier;
+        identifier = Collections.unmodifiableList(builder.identifier);
+        status = builder.status;
         actuality = builder.actuality;
         category = Collections.unmodifiableList(builder.category);
-        event = builder.event;
+        code = builder.code;
         subject = builder.subject;
         encounter = builder.encounter;
-        date = builder.date;
+        occurrence = builder.occurrence;
         detected = builder.detected;
         recordedDate = builder.recordedDate;
-        resultingCondition = Collections.unmodifiableList(builder.resultingCondition);
+        resultingEffect = Collections.unmodifiableList(builder.resultingEffect);
         location = builder.location;
         seriousness = builder.seriousness;
-        severity = builder.severity;
-        outcome = builder.outcome;
+        outcome = Collections.unmodifiableList(builder.outcome);
         recorder = builder.recorder;
-        contributor = Collections.unmodifiableList(builder.contributor);
-        suspectEntity = Collections.unmodifiableList(builder.suspectEntity);
-        subjectMedicalHistory = Collections.unmodifiableList(builder.subjectMedicalHistory);
-        referenceDocument = Collections.unmodifiableList(builder.referenceDocument);
+        participant = Collections.unmodifiableList(builder.participant);
         study = Collections.unmodifiableList(builder.study);
+        expectedInResearchStudy = builder.expectedInResearchStudy;
+        suspectEntity = Collections.unmodifiableList(builder.suspectEntity);
+        contributingFactor = Collections.unmodifiableList(builder.contributingFactor);
+        preventiveAction = Collections.unmodifiableList(builder.preventiveAction);
+        mitigatingAction = Collections.unmodifiableList(builder.mitigatingAction);
+        supportingInfo = Collections.unmodifiableList(builder.supportingInfo);
+        note = Collections.unmodifiableList(builder.note);
     }
 
     /**
@@ -176,15 +188,25 @@ public class AdverseEvent extends DomainResource {
      * resource is updated and propagates from server to server.
      * 
      * @return
-     *     An immutable object of type {@link Identifier} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
      */
-    public Identifier getIdentifier() {
+    public List<Identifier> getIdentifier() {
         return identifier;
     }
 
     /**
-     * Whether the event actually happened, or just had the potential to. Note that this is independent of whether anyone was 
-     * affected or harmed or how severely.
+     * The current state of the adverse event or potential adverse event.
+     * 
+     * @return
+     *     An immutable object of type {@link AdverseEventStatus} that is non-null.
+     */
+    public AdverseEventStatus getStatus() {
+        return status;
+    }
+
+    /**
+     * Whether the event actually happened or was a near miss. Note that this is independent of whether anyone was affected 
+     * or harmed or how severely.
      * 
      * @return
      *     An immutable object of type {@link AdverseEventActuality} that is non-null.
@@ -204,13 +226,13 @@ public class AdverseEvent extends DomainResource {
     }
 
     /**
-     * This element defines the specific type of event that occurred or that was prevented from occurring.
+     * Specific event that occurred or that was averted, such as patient fall, wrong organ removed, or wrong blood transfused.
      * 
      * @return
      *     An immutable object of type {@link CodeableConcept} that may be null.
      */
-    public CodeableConcept getEvent() {
-        return event;
+    public CodeableConcept getCode() {
+        return code;
     }
 
     /**
@@ -224,7 +246,7 @@ public class AdverseEvent extends DomainResource {
     }
 
     /**
-     * The Encounter during which AdverseEvent was created or to which the creation of this record is tightly associated.
+     * The Encounter associated with the start of the AdverseEvent.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
@@ -237,10 +259,10 @@ public class AdverseEvent extends DomainResource {
      * The date (and perhaps time) when the adverse event occurred.
      * 
      * @return
-     *     An immutable object of type {@link DateTime} that may be null.
+     *     An immutable object of type {@link DateTime}, {@link Period} or {@link Timing} that may be null.
      */
-    public DateTime getDate() {
-        return date;
+    public org.linuxforhealth.fhir.model.type.Element getOccurrence() {
+        return occurrence;
     }
 
     /**
@@ -264,14 +286,14 @@ public class AdverseEvent extends DomainResource {
     }
 
     /**
-     * Includes information about the reaction that occurred as a result of exposure to a substance (for example, a drug or a 
-     * chemical).
+     * Information about the condition that occurred as a result of the adverse event, such as hives due to the exposure to a 
+     * substance (for example, a drug or a chemical) or a broken leg as a result of the fall.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
      */
-    public List<Reference> getResultingCondition() {
-        return resultingCondition;
+    public List<Reference> getResultingEffect() {
+        return resultingEffect;
     }
 
     /**
@@ -285,7 +307,7 @@ public class AdverseEvent extends DomainResource {
     }
 
     /**
-     * Assessment whether this event was of real importance.
+     * Assessment whether this event, or averted event, was of clinical importance.
      * 
      * @return
      *     An immutable object of type {@link CodeableConcept} that may be null.
@@ -295,23 +317,13 @@ public class AdverseEvent extends DomainResource {
     }
 
     /**
-     * Describes the severity of the adverse event, in relation to the subject. Contrast to AdverseEvent.seriousness - a 
-     * severe rash might not be serious, but a mild heart problem is.
+     * Describes the type of outcome from the adverse event, such as resolved, recovering, ongoing, resolved-with-sequelae, 
+     * or fatal.
      * 
      * @return
-     *     An immutable object of type {@link CodeableConcept} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
      */
-    public CodeableConcept getSeverity() {
-        return severity;
-    }
-
-    /**
-     * Describes the type of outcome from the adverse event.
-     * 
-     * @return
-     *     An immutable object of type {@link CodeableConcept} that may be null.
-     */
-    public CodeableConcept getOutcome() {
+    public List<CodeableConcept> getOutcome() {
         return outcome;
     }
 
@@ -326,16 +338,34 @@ public class AdverseEvent extends DomainResource {
     }
 
     /**
-     * Parties that may or should contribute or have contributed information to the adverse event, which can consist of one 
-     * or more activities. Such information includes information leading to the decision to perform the activity and how to 
-     * perform the activity (e.g. consultant), information that the activity itself seeks to reveal (e.g. informant of 
-     * clinical history), or information about what activity was performed (e.g. informant witness).
+     * Indicates who or what participated in the adverse event and how they were involved.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Participant} that may be empty.
+     */
+    public List<Participant> getParticipant() {
+        return participant;
+    }
+
+    /**
+     * The research study that the subject is enrolled in.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
      */
-    public List<Reference> getContributor() {
-        return contributor;
+    public List<Reference> getStudy() {
+        return study;
+    }
+
+    /**
+     * Considered likely or probable or anticipated in the research study. Whether the reported event matches any of the 
+     * outcomes for the patient that are considered by the study as known or likely.
+     * 
+     * @return
+     *     An immutable object of type {@link Boolean} that may be null.
+     */
+    public Boolean getExpectedInResearchStudy() {
+        return expectedInResearchStudy;
     }
 
     /**
@@ -349,58 +379,82 @@ public class AdverseEvent extends DomainResource {
     }
 
     /**
-     * AdverseEvent.subjectMedicalHistory.
+     * The contributing factors suspected to have increased the probability or severity of the adverse event.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link ContributingFactor} that may be empty.
      */
-    public List<Reference> getSubjectMedicalHistory() {
-        return subjectMedicalHistory;
+    public List<ContributingFactor> getContributingFactor() {
+        return contributingFactor;
     }
 
     /**
-     * AdverseEvent.referenceDocument.
+     * Preventive actions that contributed to avoiding the adverse event.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link PreventiveAction} that may be empty.
      */
-    public List<Reference> getReferenceDocument() {
-        return referenceDocument;
+    public List<PreventiveAction> getPreventiveAction() {
+        return preventiveAction;
     }
 
     /**
-     * AdverseEvent.study.
+     * The ameliorating action taken after the adverse event occured in order to reduce the extent of harm.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link MitigatingAction} that may be empty.
      */
-    public List<Reference> getStudy() {
-        return study;
+    public List<MitigatingAction> getMitigatingAction() {
+        return mitigatingAction;
+    }
+
+    /**
+     * Supporting information relevant to the event.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link SupportingInfo} that may be empty.
+     */
+    public List<SupportingInfo> getSupportingInfo() {
+        return supportingInfo;
+    }
+
+    /**
+     * Comments made about the adverse event by the performer, subject or other participants.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Annotation} that may be empty.
+     */
+    public List<Annotation> getNote() {
+        return note;
     }
 
     @Override
     public boolean hasChildren() {
         return super.hasChildren() || 
-            (identifier != null) || 
+            !identifier.isEmpty() || 
+            (status != null) || 
             (actuality != null) || 
             !category.isEmpty() || 
-            (event != null) || 
+            (code != null) || 
             (subject != null) || 
             (encounter != null) || 
-            (date != null) || 
+            (occurrence != null) || 
             (detected != null) || 
             (recordedDate != null) || 
-            !resultingCondition.isEmpty() || 
+            !resultingEffect.isEmpty() || 
             (location != null) || 
             (seriousness != null) || 
-            (severity != null) || 
-            (outcome != null) || 
+            !outcome.isEmpty() || 
             (recorder != null) || 
-            !contributor.isEmpty() || 
+            !participant.isEmpty() || 
+            !study.isEmpty() || 
+            (expectedInResearchStudy != null) || 
             !suspectEntity.isEmpty() || 
-            !subjectMedicalHistory.isEmpty() || 
-            !referenceDocument.isEmpty() || 
-            !study.isEmpty();
+            !contributingFactor.isEmpty() || 
+            !preventiveAction.isEmpty() || 
+            !mitigatingAction.isEmpty() || 
+            !supportingInfo.isEmpty() || 
+            !note.isEmpty();
     }
 
     @Override
@@ -417,26 +471,30 @@ public class AdverseEvent extends DomainResource {
                 accept(contained, "contained", visitor, Resource.class);
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                accept(identifier, "identifier", visitor);
+                accept(identifier, "identifier", visitor, Identifier.class);
+                accept(status, "status", visitor);
                 accept(actuality, "actuality", visitor);
                 accept(category, "category", visitor, CodeableConcept.class);
-                accept(event, "event", visitor);
+                accept(code, "code", visitor);
                 accept(subject, "subject", visitor);
                 accept(encounter, "encounter", visitor);
-                accept(date, "date", visitor);
+                accept(occurrence, "occurrence", visitor);
                 accept(detected, "detected", visitor);
                 accept(recordedDate, "recordedDate", visitor);
-                accept(resultingCondition, "resultingCondition", visitor, Reference.class);
+                accept(resultingEffect, "resultingEffect", visitor, Reference.class);
                 accept(location, "location", visitor);
                 accept(seriousness, "seriousness", visitor);
-                accept(severity, "severity", visitor);
-                accept(outcome, "outcome", visitor);
+                accept(outcome, "outcome", visitor, CodeableConcept.class);
                 accept(recorder, "recorder", visitor);
-                accept(contributor, "contributor", visitor, Reference.class);
-                accept(suspectEntity, "suspectEntity", visitor, SuspectEntity.class);
-                accept(subjectMedicalHistory, "subjectMedicalHistory", visitor, Reference.class);
-                accept(referenceDocument, "referenceDocument", visitor, Reference.class);
+                accept(participant, "participant", visitor, Participant.class);
                 accept(study, "study", visitor, Reference.class);
+                accept(expectedInResearchStudy, "expectedInResearchStudy", visitor);
+                accept(suspectEntity, "suspectEntity", visitor, SuspectEntity.class);
+                accept(contributingFactor, "contributingFactor", visitor, ContributingFactor.class);
+                accept(preventiveAction, "preventiveAction", visitor, PreventiveAction.class);
+                accept(mitigatingAction, "mitigatingAction", visitor, MitigatingAction.class);
+                accept(supportingInfo, "supportingInfo", visitor, SupportingInfo.class);
+                accept(note, "note", visitor, Annotation.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
             visitor.postVisit(this);
@@ -464,25 +522,29 @@ public class AdverseEvent extends DomainResource {
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(identifier, other.identifier) && 
+            Objects.equals(status, other.status) && 
             Objects.equals(actuality, other.actuality) && 
             Objects.equals(category, other.category) && 
-            Objects.equals(event, other.event) && 
+            Objects.equals(code, other.code) && 
             Objects.equals(subject, other.subject) && 
             Objects.equals(encounter, other.encounter) && 
-            Objects.equals(date, other.date) && 
+            Objects.equals(occurrence, other.occurrence) && 
             Objects.equals(detected, other.detected) && 
             Objects.equals(recordedDate, other.recordedDate) && 
-            Objects.equals(resultingCondition, other.resultingCondition) && 
+            Objects.equals(resultingEffect, other.resultingEffect) && 
             Objects.equals(location, other.location) && 
             Objects.equals(seriousness, other.seriousness) && 
-            Objects.equals(severity, other.severity) && 
             Objects.equals(outcome, other.outcome) && 
             Objects.equals(recorder, other.recorder) && 
-            Objects.equals(contributor, other.contributor) && 
+            Objects.equals(participant, other.participant) && 
+            Objects.equals(study, other.study) && 
+            Objects.equals(expectedInResearchStudy, other.expectedInResearchStudy) && 
             Objects.equals(suspectEntity, other.suspectEntity) && 
-            Objects.equals(subjectMedicalHistory, other.subjectMedicalHistory) && 
-            Objects.equals(referenceDocument, other.referenceDocument) && 
-            Objects.equals(study, other.study);
+            Objects.equals(contributingFactor, other.contributingFactor) && 
+            Objects.equals(preventiveAction, other.preventiveAction) && 
+            Objects.equals(mitigatingAction, other.mitigatingAction) && 
+            Objects.equals(supportingInfo, other.supportingInfo) && 
+            Objects.equals(note, other.note);
     }
 
     @Override
@@ -498,25 +560,29 @@ public class AdverseEvent extends DomainResource {
                 extension, 
                 modifierExtension, 
                 identifier, 
+                status, 
                 actuality, 
                 category, 
-                event, 
+                code, 
                 subject, 
                 encounter, 
-                date, 
+                occurrence, 
                 detected, 
                 recordedDate, 
-                resultingCondition, 
+                resultingEffect, 
                 location, 
                 seriousness, 
-                severity, 
                 outcome, 
                 recorder, 
-                contributor, 
+                participant, 
+                study, 
+                expectedInResearchStudy, 
                 suspectEntity, 
-                subjectMedicalHistory, 
-                referenceDocument, 
-                study);
+                contributingFactor, 
+                preventiveAction, 
+                mitigatingAction, 
+                supportingInfo, 
+                note);
             hashCode = result;
         }
         return result;
@@ -532,26 +598,30 @@ public class AdverseEvent extends DomainResource {
     }
 
     public static class Builder extends DomainResource.Builder {
-        private Identifier identifier;
+        private List<Identifier> identifier = new ArrayList<>();
+        private AdverseEventStatus status;
         private AdverseEventActuality actuality;
         private List<CodeableConcept> category = new ArrayList<>();
-        private CodeableConcept event;
+        private CodeableConcept code;
         private Reference subject;
         private Reference encounter;
-        private DateTime date;
+        private org.linuxforhealth.fhir.model.type.Element occurrence;
         private DateTime detected;
         private DateTime recordedDate;
-        private List<Reference> resultingCondition = new ArrayList<>();
+        private List<Reference> resultingEffect = new ArrayList<>();
         private Reference location;
         private CodeableConcept seriousness;
-        private CodeableConcept severity;
-        private CodeableConcept outcome;
+        private List<CodeableConcept> outcome = new ArrayList<>();
         private Reference recorder;
-        private List<Reference> contributor = new ArrayList<>();
-        private List<SuspectEntity> suspectEntity = new ArrayList<>();
-        private List<Reference> subjectMedicalHistory = new ArrayList<>();
-        private List<Reference> referenceDocument = new ArrayList<>();
+        private List<Participant> participant = new ArrayList<>();
         private List<Reference> study = new ArrayList<>();
+        private Boolean expectedInResearchStudy;
+        private List<SuspectEntity> suspectEntity = new ArrayList<>();
+        private List<ContributingFactor> contributingFactor = new ArrayList<>();
+        private List<PreventiveAction> preventiveAction = new ArrayList<>();
+        private List<MitigatingAction> mitigatingAction = new ArrayList<>();
+        private List<SupportingInfo> supportingInfo = new ArrayList<>();
+        private List<Annotation> note = new ArrayList<>();
 
         private Builder() {
             super();
@@ -635,7 +705,8 @@ public class AdverseEvent extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -653,7 +724,8 @@ public class AdverseEvent extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -674,7 +746,7 @@ public class AdverseEvent extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -694,7 +766,7 @@ public class AdverseEvent extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -719,9 +791,9 @@ public class AdverseEvent extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -744,9 +816,9 @@ public class AdverseEvent extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -772,20 +844,62 @@ public class AdverseEvent extends DomainResource {
          * Business identifiers assigned to this adverse event by the performer or other systems which remain constant as the 
          * resource is updated and propagates from server to server.
          * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
          * @param identifier
          *     Business identifier for the event
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder identifier(Identifier identifier) {
-            this.identifier = identifier;
+        public Builder identifier(Identifier... identifier) {
+            for (Identifier value : identifier) {
+                this.identifier.add(value);
+            }
             return this;
         }
 
         /**
-         * Whether the event actually happened, or just had the potential to. Note that this is independent of whether anyone was 
-         * affected or harmed or how severely.
+         * Business identifiers assigned to this adverse event by the performer or other systems which remain constant as the 
+         * resource is updated and propagates from server to server.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param identifier
+         *     Business identifier for the event
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder identifier(Collection<Identifier> identifier) {
+            this.identifier = new ArrayList<>(identifier);
+            return this;
+        }
+
+        /**
+         * The current state of the adverse event or potential adverse event.
+         * 
+         * <p>This element is required.
+         * 
+         * @param status
+         *     in-progress | completed | entered-in-error | unknown
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder status(AdverseEventStatus status) {
+            this.status = status;
+            return this;
+        }
+
+        /**
+         * Whether the event actually happened or was a near miss. Note that this is independent of whether anyone was affected 
+         * or harmed or how severely.
          * 
          * <p>This element is required.
          * 
@@ -807,9 +921,8 @@ public class AdverseEvent extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param category
-         *     product-problem | product-quality | product-use-error | wrong-dose | incorrect-prescribing-information | wrong-
-         *     technique | wrong-route-of-administration | wrong-rate | wrong-duration | wrong-time | expired-drug | medical-device-
-         *     use-error | problem-different-manufacturer | unsafe-physical-environment
+         *     wrong-patient | procedure-mishap | medication-mishap | device | unsafe-physical-environment | hospital-aquired-
+         *     infection | wrong-body-site
          * 
          * @return
          *     A reference to this Builder instance
@@ -828,9 +941,8 @@ public class AdverseEvent extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param category
-         *     product-problem | product-quality | product-use-error | wrong-dose | incorrect-prescribing-information | wrong-
-         *     technique | wrong-route-of-administration | wrong-rate | wrong-duration | wrong-time | expired-drug | medical-device-
-         *     use-error | problem-different-manufacturer | unsafe-physical-environment
+         *     wrong-patient | procedure-mishap | medication-mishap | device | unsafe-physical-environment | hospital-aquired-
+         *     infection | wrong-body-site
          * 
          * @return
          *     A reference to this Builder instance
@@ -844,16 +956,16 @@ public class AdverseEvent extends DomainResource {
         }
 
         /**
-         * This element defines the specific type of event that occurred or that was prevented from occurring.
+         * Specific event that occurred or that was averted, such as patient fall, wrong organ removed, or wrong blood transfused.
          * 
-         * @param event
-         *     Type of the event itself in relation to the subject
+         * @param code
+         *     Event or incident that occurred or was averted
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder event(CodeableConcept event) {
-            this.event = event;
+        public Builder code(CodeableConcept code) {
+            this.code = code;
             return this;
         }
 
@@ -868,6 +980,7 @@ public class AdverseEvent extends DomainResource {
          * <li>{@link Group}</li>
          * <li>{@link Practitioner}</li>
          * <li>{@link RelatedPerson}</li>
+         * <li>{@link ResearchSubject}</li>
          * </ul>
          * 
          * @param subject
@@ -882,7 +995,7 @@ public class AdverseEvent extends DomainResource {
         }
 
         /**
-         * The Encounter during which AdverseEvent was created or to which the creation of this record is tightly associated.
+         * The Encounter associated with the start of the AdverseEvent.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
@@ -890,7 +1003,7 @@ public class AdverseEvent extends DomainResource {
          * </ul>
          * 
          * @param encounter
-         *     Encounter created as part of
+         *     The Encounter associated with the start of the AdverseEvent
          * 
          * @return
          *     A reference to this Builder instance
@@ -903,14 +1016,21 @@ public class AdverseEvent extends DomainResource {
         /**
          * The date (and perhaps time) when the adverse event occurred.
          * 
-         * @param date
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link DateTime}</li>
+         * <li>{@link Period}</li>
+         * <li>{@link Timing}</li>
+         * </ul>
+         * 
+         * @param occurrence
          *     When the event occurred
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder date(DateTime date) {
-            this.date = date;
+        public Builder occurrence(org.linuxforhealth.fhir.model.type.Element occurrence) {
+            this.occurrence = occurrence;
             return this;
         }
 
@@ -943,8 +1063,8 @@ public class AdverseEvent extends DomainResource {
         }
 
         /**
-         * Includes information about the reaction that occurred as a result of exposure to a substance (for example, a drug or a 
-         * chemical).
+         * Information about the condition that occurred as a result of the adverse event, such as hives due to the exposure to a 
+         * substance (for example, a drug or a chemical) or a broken leg as a result of the fall.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -952,24 +1072,25 @@ public class AdverseEvent extends DomainResource {
          * <p>Allowed resource types for the references:
          * <ul>
          * <li>{@link Condition}</li>
+         * <li>{@link Observation}</li>
          * </ul>
          * 
-         * @param resultingCondition
+         * @param resultingEffect
          *     Effect on the subject due to this event
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder resultingCondition(Reference... resultingCondition) {
-            for (Reference value : resultingCondition) {
-                this.resultingCondition.add(value);
+        public Builder resultingEffect(Reference... resultingEffect) {
+            for (Reference value : resultingEffect) {
+                this.resultingEffect.add(value);
             }
             return this;
         }
 
         /**
-         * Includes information about the reaction that occurred as a result of exposure to a substance (for example, a drug or a 
-         * chemical).
+         * Information about the condition that occurred as a result of the adverse event, such as hives due to the exposure to a 
+         * substance (for example, a drug or a chemical) or a broken leg as a result of the fall.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -977,9 +1098,10 @@ public class AdverseEvent extends DomainResource {
          * <p>Allowed resource types for the references:
          * <ul>
          * <li>{@link Condition}</li>
+         * <li>{@link Observation}</li>
          * </ul>
          * 
-         * @param resultingCondition
+         * @param resultingEffect
          *     Effect on the subject due to this event
          * 
          * @return
@@ -988,8 +1110,8 @@ public class AdverseEvent extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder resultingCondition(Collection<Reference> resultingCondition) {
-            this.resultingCondition = new ArrayList<>(resultingCondition);
+        public Builder resultingEffect(Collection<Reference> resultingEffect) {
+            this.resultingEffect = new ArrayList<>(resultingEffect);
             return this;
         }
 
@@ -1013,10 +1135,10 @@ public class AdverseEvent extends DomainResource {
         }
 
         /**
-         * Assessment whether this event was of real importance.
+         * Assessment whether this event, or averted event, was of clinical importance.
          * 
          * @param seriousness
-         *     Seriousness of the event
+         *     Seriousness or gravity of the event
          * 
          * @return
          *     A reference to this Builder instance
@@ -1027,31 +1149,43 @@ public class AdverseEvent extends DomainResource {
         }
 
         /**
-         * Describes the severity of the adverse event, in relation to the subject. Contrast to AdverseEvent.seriousness - a 
-         * severe rash might not be serious, but a mild heart problem is.
+         * Describes the type of outcome from the adverse event, such as resolved, recovering, ongoing, resolved-with-sequelae, 
+         * or fatal.
          * 
-         * @param severity
-         *     mild | moderate | severe
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param outcome
+         *     Type of outcome from the adverse event
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder severity(CodeableConcept severity) {
-            this.severity = severity;
+        public Builder outcome(CodeableConcept... outcome) {
+            for (CodeableConcept value : outcome) {
+                this.outcome.add(value);
+            }
             return this;
         }
 
         /**
-         * Describes the type of outcome from the adverse event.
+         * Describes the type of outcome from the adverse event, such as resolved, recovering, ongoing, resolved-with-sequelae, 
+         * or fatal.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param outcome
-         *     resolved | recovering | ongoing | resolvedWithSequelae | fatal | unknown
+         *     Type of outcome from the adverse event
          * 
          * @return
          *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
          */
-        public Builder outcome(CodeableConcept outcome) {
-            this.outcome = outcome;
+        public Builder outcome(Collection<CodeableConcept> outcome) {
+            this.outcome = new ArrayList<>(outcome);
             return this;
         }
 
@@ -1064,6 +1198,7 @@ public class AdverseEvent extends DomainResource {
          * <li>{@link Practitioner}</li>
          * <li>{@link PractitionerRole}</li>
          * <li>{@link RelatedPerson}</li>
+         * <li>{@link ResearchSubject}</li>
          * </ul>
          * 
          * @param recorder
@@ -1078,52 +1213,32 @@ public class AdverseEvent extends DomainResource {
         }
 
         /**
-         * Parties that may or should contribute or have contributed information to the adverse event, which can consist of one 
-         * or more activities. Such information includes information leading to the decision to perform the activity and how to 
-         * perform the activity (e.g. consultant), information that the activity itself seeks to reveal (e.g. informant of 
-         * clinical history), or information about what activity was performed (e.g. informant witness).
+         * Indicates who or what participated in the adverse event and how they were involved.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Practitioner}</li>
-         * <li>{@link PractitionerRole}</li>
-         * <li>{@link Device}</li>
-         * </ul>
-         * 
-         * @param contributor
-         *     Who was involved in the adverse event or the potential adverse event
+         * @param participant
+         *     Who was involved in the adverse event or the potential adverse event and what they did
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder contributor(Reference... contributor) {
-            for (Reference value : contributor) {
-                this.contributor.add(value);
+        public Builder participant(Participant... participant) {
+            for (Participant value : participant) {
+                this.participant.add(value);
             }
             return this;
         }
 
         /**
-         * Parties that may or should contribute or have contributed information to the adverse event, which can consist of one 
-         * or more activities. Such information includes information leading to the decision to perform the activity and how to 
-         * perform the activity (e.g. consultant), information that the activity itself seeks to reveal (e.g. informant of 
-         * clinical history), or information about what activity was performed (e.g. informant witness).
+         * Indicates who or what participated in the adverse event and how they were involved.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Practitioner}</li>
-         * <li>{@link PractitionerRole}</li>
-         * <li>{@link Device}</li>
-         * </ul>
-         * 
-         * @param contributor
-         *     Who was involved in the adverse event or the potential adverse event
+         * @param participant
+         *     Who was involved in the adverse event or the potential adverse event and what they did
          * 
          * @return
          *     A reference to this Builder instance
@@ -1131,8 +1246,88 @@ public class AdverseEvent extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder contributor(Collection<Reference> contributor) {
-            this.contributor = new ArrayList<>(contributor);
+        public Builder participant(Collection<Participant> participant) {
+            this.participant = new ArrayList<>(participant);
+            return this;
+        }
+
+        /**
+         * The research study that the subject is enrolled in.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link ResearchStudy}</li>
+         * </ul>
+         * 
+         * @param study
+         *     Research study that the subject is enrolled in
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder study(Reference... study) {
+            for (Reference value : study) {
+                this.study.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The research study that the subject is enrolled in.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link ResearchStudy}</li>
+         * </ul>
+         * 
+         * @param study
+         *     Research study that the subject is enrolled in
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder study(Collection<Reference> study) {
+            this.study = new ArrayList<>(study);
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code expectedInResearchStudy}.
+         * 
+         * @param expectedInResearchStudy
+         *     Considered likely or probable or anticipated in the research study
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #expectedInResearchStudy(org.linuxforhealth.fhir.model.type.Boolean)
+         */
+        public Builder expectedInResearchStudy(java.lang.Boolean expectedInResearchStudy) {
+            this.expectedInResearchStudy = (expectedInResearchStudy == null) ? null : Boolean.of(expectedInResearchStudy);
+            return this;
+        }
+
+        /**
+         * Considered likely or probable or anticipated in the research study. Whether the reported event matches any of the 
+         * outcomes for the patient that are considered by the study as known or likely.
+         * 
+         * @param expectedInResearchStudy
+         *     Considered likely or probable or anticipated in the research study
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder expectedInResearchStudy(Boolean expectedInResearchStudy) {
+            this.expectedInResearchStudy = expectedInResearchStudy;
             return this;
         }
 
@@ -1176,56 +1371,32 @@ public class AdverseEvent extends DomainResource {
         }
 
         /**
-         * AdverseEvent.subjectMedicalHistory.
+         * The contributing factors suspected to have increased the probability or severity of the adverse event.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link AllergyIntolerance}</li>
-         * <li>{@link FamilyMemberHistory}</li>
-         * <li>{@link Immunization}</li>
-         * <li>{@link Procedure}</li>
-         * <li>{@link Media}</li>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param subjectMedicalHistory
-         *     AdverseEvent.subjectMedicalHistory
+         * @param contributingFactor
+         *     Contributing factors suspected to have increased the probability or severity of the adverse event
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder subjectMedicalHistory(Reference... subjectMedicalHistory) {
-            for (Reference value : subjectMedicalHistory) {
-                this.subjectMedicalHistory.add(value);
+        public Builder contributingFactor(ContributingFactor... contributingFactor) {
+            for (ContributingFactor value : contributingFactor) {
+                this.contributingFactor.add(value);
             }
             return this;
         }
 
         /**
-         * AdverseEvent.subjectMedicalHistory.
+         * The contributing factors suspected to have increased the probability or severity of the adverse event.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link AllergyIntolerance}</li>
-         * <li>{@link FamilyMemberHistory}</li>
-         * <li>{@link Immunization}</li>
-         * <li>{@link Procedure}</li>
-         * <li>{@link Media}</li>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param subjectMedicalHistory
-         *     AdverseEvent.subjectMedicalHistory
+         * @param contributingFactor
+         *     Contributing factors suspected to have increased the probability or severity of the adverse event
          * 
          * @return
          *     A reference to this Builder instance
@@ -1233,48 +1404,38 @@ public class AdverseEvent extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder subjectMedicalHistory(Collection<Reference> subjectMedicalHistory) {
-            this.subjectMedicalHistory = new ArrayList<>(subjectMedicalHistory);
+        public Builder contributingFactor(Collection<ContributingFactor> contributingFactor) {
+            this.contributingFactor = new ArrayList<>(contributingFactor);
             return this;
         }
 
         /**
-         * AdverseEvent.referenceDocument.
+         * Preventive actions that contributed to avoiding the adverse event.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param referenceDocument
-         *     AdverseEvent.referenceDocument
+         * @param preventiveAction
+         *     Preventive actions that contributed to avoiding the adverse event
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder referenceDocument(Reference... referenceDocument) {
-            for (Reference value : referenceDocument) {
-                this.referenceDocument.add(value);
+        public Builder preventiveAction(PreventiveAction... preventiveAction) {
+            for (PreventiveAction value : preventiveAction) {
+                this.preventiveAction.add(value);
             }
             return this;
         }
 
         /**
-         * AdverseEvent.referenceDocument.
+         * Preventive actions that contributed to avoiding the adverse event.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param referenceDocument
-         *     AdverseEvent.referenceDocument
+         * @param preventiveAction
+         *     Preventive actions that contributed to avoiding the adverse event
          * 
          * @return
          *     A reference to this Builder instance
@@ -1282,48 +1443,38 @@ public class AdverseEvent extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder referenceDocument(Collection<Reference> referenceDocument) {
-            this.referenceDocument = new ArrayList<>(referenceDocument);
+        public Builder preventiveAction(Collection<PreventiveAction> preventiveAction) {
+            this.preventiveAction = new ArrayList<>(preventiveAction);
             return this;
         }
 
         /**
-         * AdverseEvent.study.
+         * The ameliorating action taken after the adverse event occured in order to reduce the extent of harm.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link ResearchStudy}</li>
-         * </ul>
-         * 
-         * @param study
-         *     AdverseEvent.study
+         * @param mitigatingAction
+         *     Ameliorating actions taken after the adverse event occured in order to reduce the extent of harm
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder study(Reference... study) {
-            for (Reference value : study) {
-                this.study.add(value);
+        public Builder mitigatingAction(MitigatingAction... mitigatingAction) {
+            for (MitigatingAction value : mitigatingAction) {
+                this.mitigatingAction.add(value);
             }
             return this;
         }
 
         /**
-         * AdverseEvent.study.
+         * The ameliorating action taken after the adverse event occured in order to reduce the extent of harm.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link ResearchStudy}</li>
-         * </ul>
-         * 
-         * @param study
-         *     AdverseEvent.study
+         * @param mitigatingAction
+         *     Ameliorating actions taken after the adverse event occured in order to reduce the extent of harm
          * 
          * @return
          *     A reference to this Builder instance
@@ -1331,8 +1482,86 @@ public class AdverseEvent extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder study(Collection<Reference> study) {
-            this.study = new ArrayList<>(study);
+        public Builder mitigatingAction(Collection<MitigatingAction> mitigatingAction) {
+            this.mitigatingAction = new ArrayList<>(mitigatingAction);
+            return this;
+        }
+
+        /**
+         * Supporting information relevant to the event.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param supportingInfo
+         *     Supporting information relevant to the event
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder supportingInfo(SupportingInfo... supportingInfo) {
+            for (SupportingInfo value : supportingInfo) {
+                this.supportingInfo.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Supporting information relevant to the event.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param supportingInfo
+         *     Supporting information relevant to the event
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder supportingInfo(Collection<SupportingInfo> supportingInfo) {
+            this.supportingInfo = new ArrayList<>(supportingInfo);
+            return this;
+        }
+
+        /**
+         * Comments made about the adverse event by the performer, subject or other participants.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param note
+         *     Comment on adverse event
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder note(Annotation... note) {
+            for (Annotation value : note) {
+                this.note.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Comments made about the adverse event by the performer, subject or other participants.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param note
+         *     Comment on adverse event
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder note(Collection<Annotation> note) {
+            this.note = new ArrayList<>(note);
             return this;
         }
 
@@ -1341,6 +1570,7 @@ public class AdverseEvent extends DomainResource {
          * 
          * <p>Required elements:
          * <ul>
+         * <li>status</li>
          * <li>actuality</li>
          * <li>subject</li>
          * </ul>
@@ -1361,51 +1591,365 @@ public class AdverseEvent extends DomainResource {
 
         protected void validate(AdverseEvent adverseEvent) {
             super.validate(adverseEvent);
+            ValidationSupport.checkList(adverseEvent.identifier, "identifier", Identifier.class);
+            ValidationSupport.requireNonNull(adverseEvent.status, "status");
             ValidationSupport.requireNonNull(adverseEvent.actuality, "actuality");
             ValidationSupport.checkList(adverseEvent.category, "category", CodeableConcept.class);
             ValidationSupport.requireNonNull(adverseEvent.subject, "subject");
-            ValidationSupport.checkList(adverseEvent.resultingCondition, "resultingCondition", Reference.class);
-            ValidationSupport.checkList(adverseEvent.contributor, "contributor", Reference.class);
-            ValidationSupport.checkList(adverseEvent.suspectEntity, "suspectEntity", SuspectEntity.class);
-            ValidationSupport.checkList(adverseEvent.subjectMedicalHistory, "subjectMedicalHistory", Reference.class);
-            ValidationSupport.checkList(adverseEvent.referenceDocument, "referenceDocument", Reference.class);
+            ValidationSupport.choiceElement(adverseEvent.occurrence, "occurrence", DateTime.class, Period.class, Timing.class);
+            ValidationSupport.checkList(adverseEvent.resultingEffect, "resultingEffect", Reference.class);
+            ValidationSupport.checkList(adverseEvent.outcome, "outcome", CodeableConcept.class);
+            ValidationSupport.checkList(adverseEvent.participant, "participant", Participant.class);
             ValidationSupport.checkList(adverseEvent.study, "study", Reference.class);
-            ValidationSupport.checkValueSetBinding(adverseEvent.severity, "severity", "http://hl7.org/fhir/ValueSet/adverse-event-severity", "http://terminology.hl7.org/CodeSystem/adverse-event-severity", "mild", "moderate", "severe");
-            ValidationSupport.checkValueSetBinding(adverseEvent.outcome, "outcome", "http://hl7.org/fhir/ValueSet/adverse-event-outcome", "http://terminology.hl7.org/CodeSystem/adverse-event-outcome", "resolved", "recovering", "ongoing", "resolvedWithSequelae", "fatal", "unknown");
-            ValidationSupport.checkReferenceType(adverseEvent.subject, "subject", "Patient", "Group", "Practitioner", "RelatedPerson");
+            ValidationSupport.checkList(adverseEvent.suspectEntity, "suspectEntity", SuspectEntity.class);
+            ValidationSupport.checkList(adverseEvent.contributingFactor, "contributingFactor", ContributingFactor.class);
+            ValidationSupport.checkList(adverseEvent.preventiveAction, "preventiveAction", PreventiveAction.class);
+            ValidationSupport.checkList(adverseEvent.mitigatingAction, "mitigatingAction", MitigatingAction.class);
+            ValidationSupport.checkList(adverseEvent.supportingInfo, "supportingInfo", SupportingInfo.class);
+            ValidationSupport.checkList(adverseEvent.note, "note", Annotation.class);
+            ValidationSupport.checkReferenceType(adverseEvent.subject, "subject", "Patient", "Group", "Practitioner", "RelatedPerson", "ResearchSubject");
             ValidationSupport.checkReferenceType(adverseEvent.encounter, "encounter", "Encounter");
-            ValidationSupport.checkReferenceType(adverseEvent.resultingCondition, "resultingCondition", "Condition");
+            ValidationSupport.checkReferenceType(adverseEvent.resultingEffect, "resultingEffect", "Condition", "Observation");
             ValidationSupport.checkReferenceType(adverseEvent.location, "location", "Location");
-            ValidationSupport.checkReferenceType(adverseEvent.recorder, "recorder", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson");
-            ValidationSupport.checkReferenceType(adverseEvent.contributor, "contributor", "Practitioner", "PractitionerRole", "Device");
-            ValidationSupport.checkReferenceType(adverseEvent.subjectMedicalHistory, "subjectMedicalHistory", "Condition", "Observation", "AllergyIntolerance", "FamilyMemberHistory", "Immunization", "Procedure", "Media", "DocumentReference");
-            ValidationSupport.checkReferenceType(adverseEvent.referenceDocument, "referenceDocument", "DocumentReference");
+            ValidationSupport.checkReferenceType(adverseEvent.recorder, "recorder", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "ResearchSubject");
             ValidationSupport.checkReferenceType(adverseEvent.study, "study", "ResearchStudy");
         }
 
         protected Builder from(AdverseEvent adverseEvent) {
             super.from(adverseEvent);
-            identifier = adverseEvent.identifier;
+            identifier.addAll(adverseEvent.identifier);
+            status = adverseEvent.status;
             actuality = adverseEvent.actuality;
             category.addAll(adverseEvent.category);
-            event = adverseEvent.event;
+            code = adverseEvent.code;
             subject = adverseEvent.subject;
             encounter = adverseEvent.encounter;
-            date = adverseEvent.date;
+            occurrence = adverseEvent.occurrence;
             detected = adverseEvent.detected;
             recordedDate = adverseEvent.recordedDate;
-            resultingCondition.addAll(adverseEvent.resultingCondition);
+            resultingEffect.addAll(adverseEvent.resultingEffect);
             location = adverseEvent.location;
             seriousness = adverseEvent.seriousness;
-            severity = adverseEvent.severity;
-            outcome = adverseEvent.outcome;
+            outcome.addAll(adverseEvent.outcome);
             recorder = adverseEvent.recorder;
-            contributor.addAll(adverseEvent.contributor);
-            suspectEntity.addAll(adverseEvent.suspectEntity);
-            subjectMedicalHistory.addAll(adverseEvent.subjectMedicalHistory);
-            referenceDocument.addAll(adverseEvent.referenceDocument);
+            participant.addAll(adverseEvent.participant);
             study.addAll(adverseEvent.study);
+            expectedInResearchStudy = adverseEvent.expectedInResearchStudy;
+            suspectEntity.addAll(adverseEvent.suspectEntity);
+            contributingFactor.addAll(adverseEvent.contributingFactor);
+            preventiveAction.addAll(adverseEvent.preventiveAction);
+            mitigatingAction.addAll(adverseEvent.mitigatingAction);
+            supportingInfo.addAll(adverseEvent.supportingInfo);
+            note.addAll(adverseEvent.note);
             return this;
+        }
+    }
+
+    /**
+     * Indicates who or what participated in the adverse event and how they were involved.
+     */
+    public static class Participant extends BackboneElement {
+        @Summary
+        @Binding(
+            bindingName = "AdverseEventParticipantFunction",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "Codes describing the type of involvement of the actor in the adverse event.",
+            valueSet = "http://hl7.org/fhir/ValueSet/adverse-event-participant-function"
+        )
+        private final CodeableConcept function;
+        @Summary
+        @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient", "Device", "RelatedPerson", "ResearchSubject" })
+        @Required
+        private final Reference actor;
+
+        private Participant(Builder builder) {
+            super(builder);
+            function = builder.function;
+            actor = builder.actor;
+        }
+
+        /**
+         * Distinguishes the type of involvement of the actor in the adverse event, such as contributor or informant.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getFunction() {
+            return function;
+        }
+
+        /**
+         * Indicates who or what participated in the event.
+         * 
+         * @return
+         *     An immutable object of type {@link Reference} that is non-null.
+         */
+        public Reference getActor() {
+            return actor;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (function != null) || 
+                (actor != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(function, "function", visitor);
+                    accept(actor, "actor", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Participant other = (Participant) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(function, other.function) && 
+                Objects.equals(actor, other.actor);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    function, 
+                    actor);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private CodeableConcept function;
+            private Reference actor;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * Distinguishes the type of involvement of the actor in the adverse event, such as contributor or informant.
+             * 
+             * @param function
+             *     Type of involvement
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder function(CodeableConcept function) {
+                this.function = function;
+                return this;
+            }
+
+            /**
+             * Indicates who or what participated in the event.
+             * 
+             * <p>This element is required.
+             * 
+             * <p>Allowed resource types for this reference:
+             * <ul>
+             * <li>{@link Practitioner}</li>
+             * <li>{@link PractitionerRole}</li>
+             * <li>{@link Organization}</li>
+             * <li>{@link CareTeam}</li>
+             * <li>{@link Patient}</li>
+             * <li>{@link Device}</li>
+             * <li>{@link RelatedPerson}</li>
+             * <li>{@link ResearchSubject}</li>
+             * </ul>
+             * 
+             * @param actor
+             *     Who was involved in the adverse event or the potential adverse event
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder actor(Reference actor) {
+                this.actor = actor;
+                return this;
+            }
+
+            /**
+             * Build the {@link Participant}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>actor</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link Participant}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Participant per the base specification
+             */
+            @Override
+            public Participant build() {
+                Participant participant = new Participant(this);
+                if (validating) {
+                    validate(participant);
+                }
+                return participant;
+            }
+
+            protected void validate(Participant participant) {
+                super.validate(participant);
+                ValidationSupport.requireNonNull(participant.actor, "actor");
+                ValidationSupport.checkReferenceType(participant.actor, "actor", "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient", "Device", "RelatedPerson", "ResearchSubject");
+                ValidationSupport.requireValueOrChildren(participant);
+            }
+
+            protected Builder from(Participant participant) {
+                super.from(participant);
+                function = participant.function;
+                actor = participant.actor;
+                return this;
+            }
         }
     }
 
@@ -1414,16 +1958,17 @@ public class AdverseEvent extends DomainResource {
      */
     public static class SuspectEntity extends BackboneElement {
         @Summary
-        @ReferenceTarget({ "Immunization", "Procedure", "Substance", "Medication", "MedicationAdministration", "MedicationStatement", "Device" })
+        @ReferenceTarget({ "Immunization", "Procedure", "Substance", "Medication", "MedicationAdministration", "MedicationStatement", "Device", "BiologicallyDerivedProduct", "ResearchStudy" })
+        @Choice({ CodeableConcept.class, Reference.class })
         @Required
-        private final Reference instance;
+        private final org.linuxforhealth.fhir.model.type.Element instance;
         @Summary
-        private final List<Causality> causality;
+        private final Causality causality;
 
         private SuspectEntity(Builder builder) {
             super(builder);
             instance = builder.instance;
-            causality = Collections.unmodifiableList(builder.causality);
+            causality = builder.causality;
         }
 
         /**
@@ -1431,9 +1976,9 @@ public class AdverseEvent extends DomainResource {
          * administration, medication statement or a device.
          * 
          * @return
-         *     An immutable object of type {@link Reference} that is non-null.
+         *     An immutable object of type {@link CodeableConcept} or {@link Reference} that is non-null.
          */
-        public Reference getInstance() {
+        public org.linuxforhealth.fhir.model.type.Element getInstance() {
             return instance;
         }
 
@@ -1441,9 +1986,9 @@ public class AdverseEvent extends DomainResource {
          * Information on the possible cause of the event.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link Causality} that may be empty.
+         *     An immutable object of type {@link Causality} that may be null.
          */
-        public List<Causality> getCausality() {
+        public Causality getCausality() {
             return causality;
         }
 
@@ -1451,7 +1996,7 @@ public class AdverseEvent extends DomainResource {
         public boolean hasChildren() {
             return super.hasChildren() || 
                 (instance != null) || 
-                !causality.isEmpty();
+                (causality != null);
         }
 
         @Override
@@ -1464,7 +2009,7 @@ public class AdverseEvent extends DomainResource {
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(instance, "instance", visitor);
-                    accept(causality, "causality", visitor, Causality.class);
+                    accept(causality, "causality", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -1514,8 +2059,8 @@ public class AdverseEvent extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private Reference instance;
-            private List<Causality> causality = new ArrayList<>();
+            private org.linuxforhealth.fhir.model.type.Element instance;
+            private Causality causality;
 
             private Builder() {
                 super();
@@ -1538,7 +2083,7 @@ public class AdverseEvent extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1558,7 +2103,7 @@ public class AdverseEvent extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1583,7 +2128,7 @@ public class AdverseEvent extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1608,7 +2153,7 @@ public class AdverseEvent extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1638,7 +2183,13 @@ public class AdverseEvent extends DomainResource {
              * 
              * <p>This element is required.
              * 
-             * <p>Allowed resource types for this reference:
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link CodeableConcept}</li>
+             * <li>{@link Reference}</li>
+             * </ul>
+             * 
+             * When of type {@link Reference}, the allowed resource types for this reference are:
              * <ul>
              * <li>{@link Immunization}</li>
              * <li>{@link Procedure}</li>
@@ -1647,6 +2198,8 @@ public class AdverseEvent extends DomainResource {
              * <li>{@link MedicationAdministration}</li>
              * <li>{@link MedicationStatement}</li>
              * <li>{@link Device}</li>
+             * <li>{@link BiologicallyDerivedProduct}</li>
+             * <li>{@link ResearchStudy}</li>
              * </ul>
              * 
              * @param instance
@@ -1655,7 +2208,7 @@ public class AdverseEvent extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder instance(Reference instance) {
+            public Builder instance(org.linuxforhealth.fhir.model.type.Element instance) {
                 this.instance = instance;
                 return this;
             }
@@ -1663,39 +2216,14 @@ public class AdverseEvent extends DomainResource {
             /**
              * Information on the possible cause of the event.
              * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
              * @param causality
              *     Information on the possible cause of the event
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder causality(Causality... causality) {
-                for (Causality value : causality) {
-                    this.causality.add(value);
-                }
-                return this;
-            }
-
-            /**
-             * Information on the possible cause of the event.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param causality
-             *     Information on the possible cause of the event
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            public Builder causality(Collection<Causality> causality) {
-                this.causality = new ArrayList<>(causality);
+            public Builder causality(Causality causality) {
+                this.causality = causality;
                 return this;
             }
 
@@ -1723,16 +2251,15 @@ public class AdverseEvent extends DomainResource {
 
             protected void validate(SuspectEntity suspectEntity) {
                 super.validate(suspectEntity);
-                ValidationSupport.requireNonNull(suspectEntity.instance, "instance");
-                ValidationSupport.checkList(suspectEntity.causality, "causality", Causality.class);
-                ValidationSupport.checkReferenceType(suspectEntity.instance, "instance", "Immunization", "Procedure", "Substance", "Medication", "MedicationAdministration", "MedicationStatement", "Device");
+                ValidationSupport.requireChoiceElement(suspectEntity.instance, "instance", CodeableConcept.class, Reference.class);
+                ValidationSupport.checkReferenceType(suspectEntity.instance, "instance", "Immunization", "Procedure", "Substance", "Medication", "MedicationAdministration", "MedicationStatement", "Device", "BiologicallyDerivedProduct", "ResearchStudy");
                 ValidationSupport.requireValueOrChildren(suspectEntity);
             }
 
             protected Builder from(SuspectEntity suspectEntity) {
                 super.from(suspectEntity);
                 instance = suspectEntity.instance;
-                causality.addAll(suspectEntity.causality);
+                causality = suspectEntity.causality;
                 return this;
             }
         }
@@ -1743,56 +2270,53 @@ public class AdverseEvent extends DomainResource {
         public static class Causality extends BackboneElement {
             @Summary
             @Binding(
-                bindingName = "AdverseEventCausalityAssessment",
-                strength = BindingStrength.Value.EXAMPLE,
-                description = "Codes for the assessment of whether the entity caused the event.",
-                valueSet = "http://hl7.org/fhir/ValueSet/adverse-event-causality-assess"
-            )
-            private final CodeableConcept assessment;
-            @Summary
-            private final String productRelatedness;
-            @Summary
-            @ReferenceTarget({ "Practitioner", "PractitionerRole" })
-            private final Reference author;
-            @Summary
-            @Binding(
                 bindingName = "AdverseEventCausalityMethod",
                 strength = BindingStrength.Value.EXAMPLE,
                 description = "TODO.",
                 valueSet = "http://hl7.org/fhir/ValueSet/adverse-event-causality-method"
             )
-            private final CodeableConcept method;
+            private final CodeableConcept assessmentMethod;
+            @Summary
+            @Binding(
+                bindingName = "AdverseEventCausalityAssessment",
+                strength = BindingStrength.Value.EXAMPLE,
+                description = "Codes for the assessment of whether the entity caused the event.",
+                valueSet = "http://hl7.org/fhir/ValueSet/adverse-event-causality-assess"
+            )
+            private final CodeableConcept entityRelatedness;
+            @Summary
+            @ReferenceTarget({ "Practitioner", "PractitionerRole", "Patient", "RelatedPerson", "ResearchSubject" })
+            private final Reference author;
 
             private Causality(Builder builder) {
                 super(builder);
-                assessment = builder.assessment;
-                productRelatedness = builder.productRelatedness;
+                assessmentMethod = builder.assessmentMethod;
+                entityRelatedness = builder.entityRelatedness;
                 author = builder.author;
-                method = builder.method;
             }
 
             /**
-             * Assessment of if the entity caused the event.
+             * The method of evaluating the relatedness of the suspected entity to the event.
              * 
              * @return
              *     An immutable object of type {@link CodeableConcept} that may be null.
              */
-            public CodeableConcept getAssessment() {
-                return assessment;
+            public CodeableConcept getAssessmentMethod() {
+                return assessmentMethod;
             }
 
             /**
-             * AdverseEvent.suspectEntity.causalityProductRelatedness.
+             * The result of the assessment regarding the relatedness of the suspected entity to the event.
              * 
              * @return
-             *     An immutable object of type {@link String} that may be null.
+             *     An immutable object of type {@link CodeableConcept} that may be null.
              */
-            public String getProductRelatedness() {
-                return productRelatedness;
+            public CodeableConcept getEntityRelatedness() {
+                return entityRelatedness;
             }
 
             /**
-             * AdverseEvent.suspectEntity.causalityAuthor.
+             * The author of the information on the possible cause of the event.
              * 
              * @return
              *     An immutable object of type {@link Reference} that may be null.
@@ -1801,23 +2325,12 @@ public class AdverseEvent extends DomainResource {
                 return author;
             }
 
-            /**
-             * ProbabilityScale | Bayesian | Checklist.
-             * 
-             * @return
-             *     An immutable object of type {@link CodeableConcept} that may be null.
-             */
-            public CodeableConcept getMethod() {
-                return method;
-            }
-
             @Override
             public boolean hasChildren() {
                 return super.hasChildren() || 
-                    (assessment != null) || 
-                    (productRelatedness != null) || 
-                    (author != null) || 
-                    (method != null);
+                    (assessmentMethod != null) || 
+                    (entityRelatedness != null) || 
+                    (author != null);
             }
 
             @Override
@@ -1829,10 +2342,9 @@ public class AdverseEvent extends DomainResource {
                         accept(id, "id", visitor);
                         accept(extension, "extension", visitor, Extension.class);
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                        accept(assessment, "assessment", visitor);
-                        accept(productRelatedness, "productRelatedness", visitor);
+                        accept(assessmentMethod, "assessmentMethod", visitor);
+                        accept(entityRelatedness, "entityRelatedness", visitor);
                         accept(author, "author", visitor);
-                        accept(method, "method", visitor);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
                     visitor.postVisit(this);
@@ -1854,10 +2366,9 @@ public class AdverseEvent extends DomainResource {
                 return Objects.equals(id, other.id) && 
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
-                    Objects.equals(assessment, other.assessment) && 
-                    Objects.equals(productRelatedness, other.productRelatedness) && 
-                    Objects.equals(author, other.author) && 
-                    Objects.equals(method, other.method);
+                    Objects.equals(assessmentMethod, other.assessmentMethod) && 
+                    Objects.equals(entityRelatedness, other.entityRelatedness) && 
+                    Objects.equals(author, other.author);
             }
 
             @Override
@@ -1867,10 +2378,9 @@ public class AdverseEvent extends DomainResource {
                     result = Objects.hash(id, 
                         extension, 
                         modifierExtension, 
-                        assessment, 
-                        productRelatedness, 
-                        author, 
-                        method);
+                        assessmentMethod, 
+                        entityRelatedness, 
+                        author);
                     hashCode = result;
                 }
                 return result;
@@ -1886,10 +2396,9 @@ public class AdverseEvent extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private CodeableConcept assessment;
-                private String productRelatedness;
+                private CodeableConcept assessmentMethod;
+                private CodeableConcept entityRelatedness;
                 private Reference author;
-                private CodeableConcept method;
 
                 private Builder() {
                     super();
@@ -1912,7 +2421,7 @@ public class AdverseEvent extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1932,7 +2441,7 @@ public class AdverseEvent extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1957,7 +2466,7 @@ public class AdverseEvent extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -1982,7 +2491,7 @@ public class AdverseEvent extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2007,80 +2516,53 @@ public class AdverseEvent extends DomainResource {
                 }
 
                 /**
-                 * Assessment of if the entity caused the event.
+                 * The method of evaluating the relatedness of the suspected entity to the event.
                  * 
-                 * @param assessment
-                 *     Assessment of if the entity caused the event
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder assessment(CodeableConcept assessment) {
-                    this.assessment = assessment;
-                    return this;
-                }
-
-                /**
-                 * Convenience method for setting {@code productRelatedness}.
-                 * 
-                 * @param productRelatedness
-                 *     AdverseEvent.suspectEntity.causalityProductRelatedness
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @see #productRelatedness(org.linuxforhealth.fhir.model.type.String)
-                 */
-                public Builder productRelatedness(java.lang.String productRelatedness) {
-                    this.productRelatedness = (productRelatedness == null) ? null : String.of(productRelatedness);
-                    return this;
-                }
-
-                /**
-                 * AdverseEvent.suspectEntity.causalityProductRelatedness.
-                 * 
-                 * @param productRelatedness
-                 *     AdverseEvent.suspectEntity.causalityProductRelatedness
+                 * @param assessmentMethod
+                 *     Method of evaluating the relatedness of the suspected entity to the event
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder productRelatedness(String productRelatedness) {
-                    this.productRelatedness = productRelatedness;
+                public Builder assessmentMethod(CodeableConcept assessmentMethod) {
+                    this.assessmentMethod = assessmentMethod;
                     return this;
                 }
 
                 /**
-                 * AdverseEvent.suspectEntity.causalityAuthor.
+                 * The result of the assessment regarding the relatedness of the suspected entity to the event.
+                 * 
+                 * @param entityRelatedness
+                 *     Result of the assessment regarding the relatedness of the suspected entity to the event
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder entityRelatedness(CodeableConcept entityRelatedness) {
+                    this.entityRelatedness = entityRelatedness;
+                    return this;
+                }
+
+                /**
+                 * The author of the information on the possible cause of the event.
                  * 
                  * <p>Allowed resource types for this reference:
                  * <ul>
                  * <li>{@link Practitioner}</li>
                  * <li>{@link PractitionerRole}</li>
+                 * <li>{@link Patient}</li>
+                 * <li>{@link RelatedPerson}</li>
+                 * <li>{@link ResearchSubject}</li>
                  * </ul>
                  * 
                  * @param author
-                 *     AdverseEvent.suspectEntity.causalityAuthor
+                 *     Author of the information on the possible cause of the event
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
                 public Builder author(Reference author) {
                     this.author = author;
-                    return this;
-                }
-
-                /**
-                 * ProbabilityScale | Bayesian | Checklist.
-                 * 
-                 * @param method
-                 *     ProbabilityScale | Bayesian | Checklist
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder method(CodeableConcept method) {
-                    this.method = method;
                     return this;
                 }
 
@@ -2103,18 +2585,1153 @@ public class AdverseEvent extends DomainResource {
 
                 protected void validate(Causality causality) {
                     super.validate(causality);
-                    ValidationSupport.checkReferenceType(causality.author, "author", "Practitioner", "PractitionerRole");
+                    ValidationSupport.checkReferenceType(causality.author, "author", "Practitioner", "PractitionerRole", "Patient", "RelatedPerson", "ResearchSubject");
                     ValidationSupport.requireValueOrChildren(causality);
                 }
 
                 protected Builder from(Causality causality) {
                     super.from(causality);
-                    assessment = causality.assessment;
-                    productRelatedness = causality.productRelatedness;
+                    assessmentMethod = causality.assessmentMethod;
+                    entityRelatedness = causality.entityRelatedness;
                     author = causality.author;
-                    method = causality.method;
                     return this;
                 }
+            }
+        }
+    }
+
+    /**
+     * The contributing factors suspected to have increased the probability or severity of the adverse event.
+     */
+    public static class ContributingFactor extends BackboneElement {
+        @Summary
+        @ReferenceTarget({ "Condition", "Observation", "AllergyIntolerance", "FamilyMemberHistory", "Immunization", "Procedure", "Device", "DeviceUsage", "DocumentReference", "MedicationAdministration", "MedicationStatement" })
+        @Choice({ Reference.class, CodeableConcept.class })
+        @Binding(
+            bindingName = "AdverseEventContributingFactor",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "Codes describing the contributing factors suspected to have increased the probability or severity of the adverse event.",
+            valueSet = "http://hl7.org/fhir/ValueSet/adverse-event-contributing-factor"
+        )
+        @Required
+        private final org.linuxforhealth.fhir.model.type.Element item;
+
+        private ContributingFactor(Builder builder) {
+            super(builder);
+            item = builder.item;
+        }
+
+        /**
+         * The item that is suspected to have increased the probability or severity of the adverse event.
+         * 
+         * @return
+         *     An immutable object of type {@link Reference} or {@link CodeableConcept} that is non-null.
+         */
+        public org.linuxforhealth.fhir.model.type.Element getItem() {
+            return item;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (item != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(item, "item", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            ContributingFactor other = (ContributingFactor) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(item, other.item);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    item);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private org.linuxforhealth.fhir.model.type.Element item;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * The item that is suspected to have increased the probability or severity of the adverse event.
+             * 
+             * <p>This element is required.
+             * 
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link Reference}</li>
+             * <li>{@link CodeableConcept}</li>
+             * </ul>
+             * 
+             * When of type {@link Reference}, the allowed resource types for this reference are:
+             * <ul>
+             * <li>{@link Condition}</li>
+             * <li>{@link Observation}</li>
+             * <li>{@link AllergyIntolerance}</li>
+             * <li>{@link FamilyMemberHistory}</li>
+             * <li>{@link Immunization}</li>
+             * <li>{@link Procedure}</li>
+             * <li>{@link Device}</li>
+             * <li>{@link DeviceUsage}</li>
+             * <li>{@link DocumentReference}</li>
+             * <li>{@link MedicationAdministration}</li>
+             * <li>{@link MedicationStatement}</li>
+             * </ul>
+             * 
+             * @param item
+             *     Item suspected to have increased the probability or severity of the adverse event
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder item(org.linuxforhealth.fhir.model.type.Element item) {
+                this.item = item;
+                return this;
+            }
+
+            /**
+             * Build the {@link ContributingFactor}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>item</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link ContributingFactor}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid ContributingFactor per the base specification
+             */
+            @Override
+            public ContributingFactor build() {
+                ContributingFactor contributingFactor = new ContributingFactor(this);
+                if (validating) {
+                    validate(contributingFactor);
+                }
+                return contributingFactor;
+            }
+
+            protected void validate(ContributingFactor contributingFactor) {
+                super.validate(contributingFactor);
+                ValidationSupport.requireChoiceElement(contributingFactor.item, "item", Reference.class, CodeableConcept.class);
+                ValidationSupport.checkReferenceType(contributingFactor.item, "item", "Condition", "Observation", "AllergyIntolerance", "FamilyMemberHistory", "Immunization", "Procedure", "Device", "DeviceUsage", "DocumentReference", "MedicationAdministration", "MedicationStatement");
+                ValidationSupport.requireValueOrChildren(contributingFactor);
+            }
+
+            protected Builder from(ContributingFactor contributingFactor) {
+                super.from(contributingFactor);
+                item = contributingFactor.item;
+                return this;
+            }
+        }
+    }
+
+    /**
+     * Preventive actions that contributed to avoiding the adverse event.
+     */
+    public static class PreventiveAction extends BackboneElement {
+        @Summary
+        @ReferenceTarget({ "Immunization", "Procedure", "DocumentReference", "MedicationAdministration", "MedicationRequest" })
+        @Choice({ Reference.class, CodeableConcept.class })
+        @Binding(
+            bindingName = "AdverseEventPreventiveAction",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "Codes describing the preventive actions that contributed to avoiding the adverse event.",
+            valueSet = "http://hl7.org/fhir/ValueSet/adverse-event-preventive-action"
+        )
+        @Required
+        private final org.linuxforhealth.fhir.model.type.Element item;
+
+        private PreventiveAction(Builder builder) {
+            super(builder);
+            item = builder.item;
+        }
+
+        /**
+         * The action that contributed to avoiding the adverse event.
+         * 
+         * @return
+         *     An immutable object of type {@link Reference} or {@link CodeableConcept} that is non-null.
+         */
+        public org.linuxforhealth.fhir.model.type.Element getItem() {
+            return item;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (item != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(item, "item", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            PreventiveAction other = (PreventiveAction) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(item, other.item);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    item);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private org.linuxforhealth.fhir.model.type.Element item;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * The action that contributed to avoiding the adverse event.
+             * 
+             * <p>This element is required.
+             * 
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link Reference}</li>
+             * <li>{@link CodeableConcept}</li>
+             * </ul>
+             * 
+             * When of type {@link Reference}, the allowed resource types for this reference are:
+             * <ul>
+             * <li>{@link Immunization}</li>
+             * <li>{@link Procedure}</li>
+             * <li>{@link DocumentReference}</li>
+             * <li>{@link MedicationAdministration}</li>
+             * <li>{@link MedicationRequest}</li>
+             * </ul>
+             * 
+             * @param item
+             *     Action that contributed to avoiding the adverse event
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder item(org.linuxforhealth.fhir.model.type.Element item) {
+                this.item = item;
+                return this;
+            }
+
+            /**
+             * Build the {@link PreventiveAction}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>item</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link PreventiveAction}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid PreventiveAction per the base specification
+             */
+            @Override
+            public PreventiveAction build() {
+                PreventiveAction preventiveAction = new PreventiveAction(this);
+                if (validating) {
+                    validate(preventiveAction);
+                }
+                return preventiveAction;
+            }
+
+            protected void validate(PreventiveAction preventiveAction) {
+                super.validate(preventiveAction);
+                ValidationSupport.requireChoiceElement(preventiveAction.item, "item", Reference.class, CodeableConcept.class);
+                ValidationSupport.checkReferenceType(preventiveAction.item, "item", "Immunization", "Procedure", "DocumentReference", "MedicationAdministration", "MedicationRequest");
+                ValidationSupport.requireValueOrChildren(preventiveAction);
+            }
+
+            protected Builder from(PreventiveAction preventiveAction) {
+                super.from(preventiveAction);
+                item = preventiveAction.item;
+                return this;
+            }
+        }
+    }
+
+    /**
+     * The ameliorating action taken after the adverse event occured in order to reduce the extent of harm.
+     */
+    public static class MitigatingAction extends BackboneElement {
+        @Summary
+        @ReferenceTarget({ "Procedure", "DocumentReference", "MedicationAdministration", "MedicationRequest" })
+        @Choice({ Reference.class, CodeableConcept.class })
+        @Binding(
+            bindingName = "AdverseEventMitigatingAction",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "Codes describing the ameliorating actions taken after the adverse event occured in order to reduce the extent of harm.",
+            valueSet = "http://hl7.org/fhir/ValueSet/adverse-event-mitigating-action"
+        )
+        @Required
+        private final org.linuxforhealth.fhir.model.type.Element item;
+
+        private MitigatingAction(Builder builder) {
+            super(builder);
+            item = builder.item;
+        }
+
+        /**
+         * The ameliorating action taken after the adverse event occured in order to reduce the extent of harm.
+         * 
+         * @return
+         *     An immutable object of type {@link Reference} or {@link CodeableConcept} that is non-null.
+         */
+        public org.linuxforhealth.fhir.model.type.Element getItem() {
+            return item;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (item != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(item, "item", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            MitigatingAction other = (MitigatingAction) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(item, other.item);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    item);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private org.linuxforhealth.fhir.model.type.Element item;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * The ameliorating action taken after the adverse event occured in order to reduce the extent of harm.
+             * 
+             * <p>This element is required.
+             * 
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link Reference}</li>
+             * <li>{@link CodeableConcept}</li>
+             * </ul>
+             * 
+             * When of type {@link Reference}, the allowed resource types for this reference are:
+             * <ul>
+             * <li>{@link Procedure}</li>
+             * <li>{@link DocumentReference}</li>
+             * <li>{@link MedicationAdministration}</li>
+             * <li>{@link MedicationRequest}</li>
+             * </ul>
+             * 
+             * @param item
+             *     Ameliorating action taken after the adverse event occured in order to reduce the extent of harm
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder item(org.linuxforhealth.fhir.model.type.Element item) {
+                this.item = item;
+                return this;
+            }
+
+            /**
+             * Build the {@link MitigatingAction}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>item</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link MitigatingAction}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid MitigatingAction per the base specification
+             */
+            @Override
+            public MitigatingAction build() {
+                MitigatingAction mitigatingAction = new MitigatingAction(this);
+                if (validating) {
+                    validate(mitigatingAction);
+                }
+                return mitigatingAction;
+            }
+
+            protected void validate(MitigatingAction mitigatingAction) {
+                super.validate(mitigatingAction);
+                ValidationSupport.requireChoiceElement(mitigatingAction.item, "item", Reference.class, CodeableConcept.class);
+                ValidationSupport.checkReferenceType(mitigatingAction.item, "item", "Procedure", "DocumentReference", "MedicationAdministration", "MedicationRequest");
+                ValidationSupport.requireValueOrChildren(mitigatingAction);
+            }
+
+            protected Builder from(MitigatingAction mitigatingAction) {
+                super.from(mitigatingAction);
+                item = mitigatingAction.item;
+                return this;
+            }
+        }
+    }
+
+    /**
+     * Supporting information relevant to the event.
+     */
+    public static class SupportingInfo extends BackboneElement {
+        @Summary
+        @ReferenceTarget({ "Condition", "Observation", "AllergyIntolerance", "FamilyMemberHistory", "Immunization", "Procedure", "DocumentReference", "MedicationAdministration", "MedicationStatement", "QuestionnaireResponse" })
+        @Choice({ Reference.class, CodeableConcept.class })
+        @Binding(
+            bindingName = "AdverseEventSupportingInfo",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "Codes describing the supporting information relevant to the event.",
+            valueSet = "http://hl7.org/fhir/ValueSet/adverse-event-supporting-info"
+        )
+        @Required
+        private final org.linuxforhealth.fhir.model.type.Element item;
+
+        private SupportingInfo(Builder builder) {
+            super(builder);
+            item = builder.item;
+        }
+
+        /**
+         * Relevant past history for the subject. In a clinical care context, an example being a patient had an adverse event 
+         * following a pencillin administration and the patient had a previously documented penicillin allergy. In a clinical 
+         * trials context, an example is a bunion or rash that was present prior to the study. Additionally, the supporting item 
+         * can be a document that is relevant to this instance of the adverse event that is not part of the subject's medical 
+         * history. For example, a clinical note, staff list, or material safety data sheet (MSDS). Supporting information is not 
+         * a contributing factor, preventive action, or mitigating action.
+         * 
+         * @return
+         *     An immutable object of type {@link Reference} or {@link CodeableConcept} that is non-null.
+         */
+        public org.linuxforhealth.fhir.model.type.Element getItem() {
+            return item;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (item != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(item, "item", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            SupportingInfo other = (SupportingInfo) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(item, other.item);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    item);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private org.linuxforhealth.fhir.model.type.Element item;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * Relevant past history for the subject. In a clinical care context, an example being a patient had an adverse event 
+             * following a pencillin administration and the patient had a previously documented penicillin allergy. In a clinical 
+             * trials context, an example is a bunion or rash that was present prior to the study. Additionally, the supporting item 
+             * can be a document that is relevant to this instance of the adverse event that is not part of the subject's medical 
+             * history. For example, a clinical note, staff list, or material safety data sheet (MSDS). Supporting information is not 
+             * a contributing factor, preventive action, or mitigating action.
+             * 
+             * <p>This element is required.
+             * 
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link Reference}</li>
+             * <li>{@link CodeableConcept}</li>
+             * </ul>
+             * 
+             * When of type {@link Reference}, the allowed resource types for this reference are:
+             * <ul>
+             * <li>{@link Condition}</li>
+             * <li>{@link Observation}</li>
+             * <li>{@link AllergyIntolerance}</li>
+             * <li>{@link FamilyMemberHistory}</li>
+             * <li>{@link Immunization}</li>
+             * <li>{@link Procedure}</li>
+             * <li>{@link DocumentReference}</li>
+             * <li>{@link MedicationAdministration}</li>
+             * <li>{@link MedicationStatement}</li>
+             * <li>{@link QuestionnaireResponse}</li>
+             * </ul>
+             * 
+             * @param item
+             *     Subject medical history or document relevant to this adverse event
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder item(org.linuxforhealth.fhir.model.type.Element item) {
+                this.item = item;
+                return this;
+            }
+
+            /**
+             * Build the {@link SupportingInfo}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>item</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link SupportingInfo}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid SupportingInfo per the base specification
+             */
+            @Override
+            public SupportingInfo build() {
+                SupportingInfo supportingInfo = new SupportingInfo(this);
+                if (validating) {
+                    validate(supportingInfo);
+                }
+                return supportingInfo;
+            }
+
+            protected void validate(SupportingInfo supportingInfo) {
+                super.validate(supportingInfo);
+                ValidationSupport.requireChoiceElement(supportingInfo.item, "item", Reference.class, CodeableConcept.class);
+                ValidationSupport.checkReferenceType(supportingInfo.item, "item", "Condition", "Observation", "AllergyIntolerance", "FamilyMemberHistory", "Immunization", "Procedure", "DocumentReference", "MedicationAdministration", "MedicationStatement", "QuestionnaireResponse");
+                ValidationSupport.requireValueOrChildren(supportingInfo);
+            }
+
+            protected Builder from(SupportingInfo supportingInfo) {
+                super.from(supportingInfo);
+                item = supportingInfo.item;
+                return this;
             }
         }
     }

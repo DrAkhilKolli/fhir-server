@@ -27,7 +27,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * specified to greater than microsecond precision (6 digits) will be truncated to microsecond precision when stored.
  */
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Time extends Element {
+public class Time extends PrimitiveType {
     public static final DateTimeFormatter PARSER_FORMATTER = new DateTimeFormatterBuilder().appendPattern("HH:mm:ss").optionalStart().appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true).optionalEnd().toFormatter();
 
     private final LocalTime value;
@@ -132,7 +132,7 @@ public class Time extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends PrimitiveType.Builder {
         private LocalTime value;
 
         private Builder() {
@@ -155,7 +155,7 @@ public class Time extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -175,7 +175,7 @@ public class Time extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 

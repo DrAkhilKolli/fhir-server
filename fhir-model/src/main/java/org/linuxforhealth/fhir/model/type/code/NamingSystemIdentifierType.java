@@ -41,6 +41,23 @@ public class NamingSystemIdentifierType extends Code {
     public static final NamingSystemIdentifierType URI = NamingSystemIdentifierType.builder().value(Value.URI).build();
 
     /**
+     * IRI stem
+     * 
+     * <p>An IRI string that can be prepended to the code to obtain a concept IRI for RDF applications. This should be a 
+     * valid, absolute IRI as defined in RFC 3987. See rdf.html#iri-stem for details on how this value may be used.
+     */
+    public static final NamingSystemIdentifierType IRI_STEM = NamingSystemIdentifierType.builder().value(Value.IRI_STEM).build();
+
+    /**
+     * V2CSMNemonic
+     * 
+     * <p>A short string published by HL7 for use in the V2 family of standsrds to idenfify a code system in the V12 coded 
+     * data types CWE, CNE, and CF. The code values are also published by HL7 at http://www.hl7.
+     * org/Special/committees/vocab/table_0396/index.cfm
+     */
+    public static final NamingSystemIdentifierType V2CSMNEMONIC = NamingSystemIdentifierType.builder().value(Value.V2CSMNEMONIC).build();
+
+    /**
      * Other
      * 
      * <p>Some other type of unique identifier; e.g. HL7-assigned reserved string such as LN for LOINC.
@@ -71,6 +88,10 @@ public class NamingSystemIdentifierType extends Code {
             return UUID;
         case URI:
             return URI;
+        case IRI_STEM:
+            return IRI_STEM;
+        case V2CSMNEMONIC:
+            return V2CSMNEMONIC;
         case OTHER:
             return OTHER;
         default:
@@ -227,6 +248,23 @@ public class NamingSystemIdentifierType extends Code {
         URI("uri"),
 
         /**
+         * IRI stem
+         * 
+         * <p>An IRI string that can be prepended to the code to obtain a concept IRI for RDF applications. This should be a 
+         * valid, absolute IRI as defined in RFC 3987. See rdf.html#iri-stem for details on how this value may be used.
+         */
+        IRI_STEM("iri-stem"),
+
+        /**
+         * V2CSMNemonic
+         * 
+         * <p>A short string published by HL7 for use in the V2 family of standsrds to idenfify a code system in the V12 coded 
+         * data types CWE, CNE, and CF. The code values are also published by HL7 at http://www.hl7.
+         * org/Special/committees/vocab/table_0396/index.cfm
+         */
+        V2CSMNEMONIC("v2csmnemonic"),
+
+        /**
          * Other
          * 
          * <p>Some other type of unique identifier; e.g. HL7-assigned reserved string such as LN for LOINC.
@@ -268,6 +306,10 @@ public class NamingSystemIdentifierType extends Code {
                 return UUID;
             case "uri":
                 return URI;
+            case "iri-stem":
+                return IRI_STEM;
+            case "v2csmnemonic":
+                return V2CSMNEMONIC;
             case "other":
                 return OTHER;
             default:

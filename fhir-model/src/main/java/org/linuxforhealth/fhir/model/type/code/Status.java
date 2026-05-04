@@ -16,7 +16,7 @@ import java.util.Objects;
 
 import javax.annotation.Generated;
 
-@System("http://hl7.org/fhir/verificationresult-status")
+@System("http://hl7.org/fhir/CodeSystem/verificationresult-status")
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class Status extends Code {
     /**
@@ -61,6 +61,13 @@ public class Status extends Code {
      */
     public static final Status REVAL_FAIL = Status.builder().value(Value.REVAL_FAIL).build();
 
+    /**
+     * Entered in Error
+     * 
+     * <p>The VerificationResult record was created erroneously and is not appropriated for use.
+     */
+    public static final Status ENTERED_IN_ERROR = Status.builder().value(Value.ENTERED_IN_ERROR).build();
+
     private volatile int hashCode;
 
     private Status(Builder builder) {
@@ -91,6 +98,8 @@ public class Status extends Code {
             return VAL_FAIL;
         case REVAL_FAIL:
             return REVAL_FAIL;
+        case ENTERED_IN_ERROR:
+            return ENTERED_IN_ERROR;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -263,7 +272,14 @@ public class Status extends Code {
          * 
          * <p>***TODO***
          */
-        REVAL_FAIL("reval-fail");
+        REVAL_FAIL("reval-fail"),
+
+        /**
+         * Entered in Error
+         * 
+         * <p>The VerificationResult record was created erroneously and is not appropriated for use.
+         */
+        ENTERED_IN_ERROR("entered-in-error");
 
         private final java.lang.String value;
 
@@ -306,6 +322,8 @@ public class Status extends Code {
                 return VAL_FAIL;
             case "reval-fail":
                 return REVAL_FAIL;
+            case "entered-in-error":
+                return ENTERED_IN_ERROR;
             default:
                 throw new IllegalArgumentException(value);
             }

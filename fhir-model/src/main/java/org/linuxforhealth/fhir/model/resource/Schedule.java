@@ -23,8 +23,10 @@ import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
+import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
@@ -73,7 +75,7 @@ public class Schedule extends DomainResource {
         strength = BindingStrength.Value.EXAMPLE,
         valueSet = "http://hl7.org/fhir/ValueSet/service-type"
     )
-    private final List<CodeableConcept> serviceType;
+    private final List<CodeableReference> serviceType;
     @Summary
     @Binding(
         bindingName = "specialty",
@@ -83,12 +85,14 @@ public class Schedule extends DomainResource {
     )
     private final List<CodeableConcept> specialty;
     @Summary
-    @ReferenceTarget({ "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "Device", "HealthcareService", "Location" })
+    private final String name;
+    @Summary
+    @ReferenceTarget({ "Patient", "Practitioner", "PractitionerRole", "CareTeam", "RelatedPerson", "Device", "HealthcareService", "Location" })
     @Required
     private final List<Reference> actor;
     @Summary
     private final Period planningHorizon;
-    private final String comment;
+    private final Markdown comment;
 
     private Schedule(Builder builder) {
         super(builder);
@@ -97,6 +101,7 @@ public class Schedule extends DomainResource {
         serviceCategory = Collections.unmodifiableList(builder.serviceCategory);
         serviceType = Collections.unmodifiableList(builder.serviceType);
         specialty = Collections.unmodifiableList(builder.specialty);
+        name = builder.name;
         actor = Collections.unmodifiableList(builder.actor);
         planningHorizon = builder.planningHorizon;
         comment = builder.comment;
@@ -136,9 +141,9 @@ public class Schedule extends DomainResource {
      * The specific service that is to be performed during this appointment.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<CodeableConcept> getServiceType() {
+    public List<CodeableReference> getServiceType() {
         return serviceType;
     }
 
@@ -150,6 +155,16 @@ public class Schedule extends DomainResource {
      */
     public List<CodeableConcept> getSpecialty() {
         return specialty;
+    }
+
+    /**
+     * Further description of the schedule as it would be presented to a consumer while searching.
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getName() {
+        return name;
     }
 
     /**
@@ -179,9 +194,9 @@ public class Schedule extends DomainResource {
      * associated.
      * 
      * @return
-     *     An immutable object of type {@link String} that may be null.
+     *     An immutable object of type {@link Markdown} that may be null.
      */
-    public String getComment() {
+    public Markdown getComment() {
         return comment;
     }
 
@@ -193,6 +208,7 @@ public class Schedule extends DomainResource {
             !serviceCategory.isEmpty() || 
             !serviceType.isEmpty() || 
             !specialty.isEmpty() || 
+            (name != null) || 
             !actor.isEmpty() || 
             (planningHorizon != null) || 
             (comment != null);
@@ -215,8 +231,9 @@ public class Schedule extends DomainResource {
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(active, "active", visitor);
                 accept(serviceCategory, "serviceCategory", visitor, CodeableConcept.class);
-                accept(serviceType, "serviceType", visitor, CodeableConcept.class);
+                accept(serviceType, "serviceType", visitor, CodeableReference.class);
                 accept(specialty, "specialty", visitor, CodeableConcept.class);
+                accept(name, "name", visitor);
                 accept(actor, "actor", visitor, Reference.class);
                 accept(planningHorizon, "planningHorizon", visitor);
                 accept(comment, "comment", visitor);
@@ -251,6 +268,7 @@ public class Schedule extends DomainResource {
             Objects.equals(serviceCategory, other.serviceCategory) && 
             Objects.equals(serviceType, other.serviceType) && 
             Objects.equals(specialty, other.specialty) && 
+            Objects.equals(name, other.name) && 
             Objects.equals(actor, other.actor) && 
             Objects.equals(planningHorizon, other.planningHorizon) && 
             Objects.equals(comment, other.comment);
@@ -273,6 +291,7 @@ public class Schedule extends DomainResource {
                 serviceCategory, 
                 serviceType, 
                 specialty, 
+                name, 
                 actor, 
                 planningHorizon, 
                 comment);
@@ -294,11 +313,12 @@ public class Schedule extends DomainResource {
         private List<Identifier> identifier = new ArrayList<>();
         private Boolean active;
         private List<CodeableConcept> serviceCategory = new ArrayList<>();
-        private List<CodeableConcept> serviceType = new ArrayList<>();
+        private List<CodeableReference> serviceType = new ArrayList<>();
         private List<CodeableConcept> specialty = new ArrayList<>();
+        private String name;
         private List<Reference> actor = new ArrayList<>();
         private Period planningHorizon;
-        private String comment;
+        private Markdown comment;
 
         private Builder() {
             super();
@@ -382,7 +402,8 @@ public class Schedule extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -400,7 +421,8 @@ public class Schedule extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -421,7 +443,7 @@ public class Schedule extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -441,7 +463,7 @@ public class Schedule extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -466,9 +488,9 @@ public class Schedule extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -491,9 +513,9 @@ public class Schedule extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -635,8 +657,8 @@ public class Schedule extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder serviceType(CodeableConcept... serviceType) {
-            for (CodeableConcept value : serviceType) {
+        public Builder serviceType(CodeableReference... serviceType) {
+            for (CodeableReference value : serviceType) {
                 this.serviceType.add(value);
             }
             return this;
@@ -657,7 +679,7 @@ public class Schedule extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder serviceType(Collection<CodeableConcept> serviceType) {
+        public Builder serviceType(Collection<CodeableReference> serviceType) {
             this.serviceType = new ArrayList<>(serviceType);
             return this;
         }
@@ -702,6 +724,36 @@ public class Schedule extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code name}.
+         * 
+         * @param name
+         *     Human-readable label
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #name(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder name(java.lang.String name) {
+            this.name = (name == null) ? null : String.of(name);
+            return this;
+        }
+
+        /**
+         * Further description of the schedule as it would be presented to a consumer while searching.
+         * 
+         * @param name
+         *     Human-readable label
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        /**
          * Slots that reference this schedule resource provide the availability details to these referenced resource(s).
          * 
          * <p>Adds new element(s) to the existing list.
@@ -714,6 +766,7 @@ public class Schedule extends DomainResource {
          * <li>{@link Patient}</li>
          * <li>{@link Practitioner}</li>
          * <li>{@link PractitionerRole}</li>
+         * <li>{@link CareTeam}</li>
          * <li>{@link RelatedPerson}</li>
          * <li>{@link Device}</li>
          * <li>{@link HealthcareService}</li>
@@ -746,6 +799,7 @@ public class Schedule extends DomainResource {
          * <li>{@link Patient}</li>
          * <li>{@link Practitioner}</li>
          * <li>{@link PractitionerRole}</li>
+         * <li>{@link CareTeam}</li>
          * <li>{@link RelatedPerson}</li>
          * <li>{@link Device}</li>
          * <li>{@link HealthcareService}</li>
@@ -783,22 +837,6 @@ public class Schedule extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code comment}.
-         * 
-         * @param comment
-         *     Comments on availability
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #comment(org.linuxforhealth.fhir.model.type.String)
-         */
-        public Builder comment(java.lang.String comment) {
-            this.comment = (comment == null) ? null : String.of(comment);
-            return this;
-        }
-
-        /**
          * Comments on the availability to describe any extended information. Such as custom constraints on the slots that may be 
          * associated.
          * 
@@ -808,7 +846,7 @@ public class Schedule extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder comment(String comment) {
+        public Builder comment(Markdown comment) {
             this.comment = comment;
             return this;
         }
@@ -839,10 +877,10 @@ public class Schedule extends DomainResource {
             super.validate(schedule);
             ValidationSupport.checkList(schedule.identifier, "identifier", Identifier.class);
             ValidationSupport.checkList(schedule.serviceCategory, "serviceCategory", CodeableConcept.class);
-            ValidationSupport.checkList(schedule.serviceType, "serviceType", CodeableConcept.class);
+            ValidationSupport.checkList(schedule.serviceType, "serviceType", CodeableReference.class);
             ValidationSupport.checkList(schedule.specialty, "specialty", CodeableConcept.class);
             ValidationSupport.checkNonEmptyList(schedule.actor, "actor", Reference.class);
-            ValidationSupport.checkReferenceType(schedule.actor, "actor", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "Device", "HealthcareService", "Location");
+            ValidationSupport.checkReferenceType(schedule.actor, "actor", "Patient", "Practitioner", "PractitionerRole", "CareTeam", "RelatedPerson", "Device", "HealthcareService", "Location");
         }
 
         protected Builder from(Schedule schedule) {
@@ -852,6 +890,7 @@ public class Schedule extends DomainResource {
             serviceCategory.addAll(schedule.serviceCategory);
             serviceType.addAll(schedule.serviceType);
             specialty.addAll(schedule.specialty);
+            name = schedule.name;
             actor.addAll(schedule.actor);
             planningHorizon = schedule.planningHorizon;
             comment = schedule.comment;

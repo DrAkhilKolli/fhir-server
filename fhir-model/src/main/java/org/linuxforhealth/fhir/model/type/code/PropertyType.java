@@ -16,16 +16,9 @@ import java.util.Objects;
 
 import javax.annotation.Generated;
 
-@System("http://hl7.org/fhir/concept-property-type")
+@System("http://hl7.org/fhir/conceptmap-property-type")
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class PropertyType extends Code {
-    /**
-     * code (internal reference)
-     * 
-     * <p>The property value is a code that identifies a concept defined in the code system.
-     */
-    public static final PropertyType CODE = PropertyType.builder().value(Value.CODE).build();
-
     /**
      * Coding (external reference)
      * 
@@ -44,7 +37,7 @@ public class PropertyType extends Code {
     /**
      * integer
      * 
-     * <p>The property value is a string (often used to assign ranking values to concepts for supporting score assessments).
+     * <p>The property value is an integer (often used to assign ranking values to concepts for supporting score assessments).
      */
     public static final PropertyType INTEGER = PropertyType.builder().value(Value.INTEGER).build();
 
@@ -69,6 +62,13 @@ public class PropertyType extends Code {
      */
     public static final PropertyType DECIMAL = PropertyType.builder().value(Value.DECIMAL).build();
 
+    /**
+     * code
+     * 
+     * <p>The property value is a code as defined in the CodeSystem in ConceptMap.property.system.
+     */
+    public static final PropertyType CODE = PropertyType.builder().value(Value.CODE).build();
+
     private volatile int hashCode;
 
     private PropertyType(Builder builder) {
@@ -87,8 +87,6 @@ public class PropertyType extends Code {
      */
     public static PropertyType of(Value value) {
         switch (value) {
-        case CODE:
-            return CODE;
         case CODING:
             return CODING;
         case STRING:
@@ -101,6 +99,8 @@ public class PropertyType extends Code {
             return DATE_TIME;
         case DECIMAL:
             return DECIMAL;
+        case CODE:
+            return CODE;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -234,13 +234,6 @@ public class PropertyType extends Code {
 
     public enum Value {
         /**
-         * code (internal reference)
-         * 
-         * <p>The property value is a code that identifies a concept defined in the code system.
-         */
-        CODE("code"),
-
-        /**
          * Coding (external reference)
          * 
          * <p>The property value is a code defined in an external code system. This may be used for translations, but is not the 
@@ -258,7 +251,7 @@ public class PropertyType extends Code {
         /**
          * integer
          * 
-         * <p>The property value is a string (often used to assign ranking values to concepts for supporting score assessments).
+         * <p>The property value is an integer (often used to assign ranking values to concepts for supporting score assessments).
          */
         INTEGER("integer"),
 
@@ -281,7 +274,14 @@ public class PropertyType extends Code {
          * 
          * <p>The property value is a decimal number.
          */
-        DECIMAL("decimal");
+        DECIMAL("decimal"),
+
+        /**
+         * code
+         * 
+         * <p>The property value is a code as defined in the CodeSystem in ConceptMap.property.system.
+         */
+        CODE("code");
 
         private final java.lang.String value;
 
@@ -312,8 +312,6 @@ public class PropertyType extends Code {
                 return null;
             }
             switch (value) {
-            case "code":
-                return CODE;
             case "Coding":
                 return CODING;
             case "string":
@@ -326,6 +324,8 @@ public class PropertyType extends Code {
                 return DATE_TIME;
             case "decimal":
                 return DECIMAL;
+            case "code":
+                return CODE;
             default:
                 throw new IllegalArgumentException(value);
             }

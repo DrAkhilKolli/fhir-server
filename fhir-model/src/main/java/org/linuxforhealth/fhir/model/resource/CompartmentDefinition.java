@@ -15,6 +15,7 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
+import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.Required;
@@ -22,8 +23,10 @@ import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
+import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
 import org.linuxforhealth.fhir.model.type.DateTime;
+import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
@@ -42,19 +45,36 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 /**
  * A compartment definition that defines how resources are accessed on a server.
  * 
- * <p>Maturity level: FMM1 (Trial Use)
+ * <p>Maturity level: FMM3 (Trial Use)
  */
 @Maturity(
-    level = 1,
+    level = 3,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "cpd-0",
+    id = "cnl-0",
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
     source = "http://hl7.org/fhir/StructureDefinition/CompartmentDefinition"
+)
+@Constraint(
+    id = "cnl-1",
+    level = "Warning",
+    location = "CompartmentDefinition.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
+    source = "http://hl7.org/fhir/StructureDefinition/CompartmentDefinition"
+)
+@Constraint(
+    id = "compartmentDefinition-2",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/CompartmentDefinition",
+    generated = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class CompartmentDefinition extends DomainResource {
@@ -64,14 +84,23 @@ public class CompartmentDefinition extends DomainResource {
     @Summary
     private final String version;
     @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+    @Summary
     @Required
     private final String name;
+    @Summary
+    private final String title;
     @Summary
     @Binding(
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -92,7 +121,7 @@ public class CompartmentDefinition extends DomainResource {
         bindingName = "CompartmentType",
         strength = BindingStrength.Value.REQUIRED,
         description = "Which type a compartment definition describes.",
-        valueSet = "http://hl7.org/fhir/ValueSet/compartment-type|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/compartment-type|5.0.0"
     )
     @Required
     private final CompartmentType code;
@@ -106,7 +135,9 @@ public class CompartmentDefinition extends DomainResource {
         super(builder);
         url = builder.url;
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
+        title = builder.title;
         status = builder.status;
         experimental = builder.experimental;
         date = builder.date;
@@ -123,9 +154,9 @@ public class CompartmentDefinition extends DomainResource {
     /**
      * An absolute URI that is used to identify this compartment definition when it is referenced in a specification, model, 
      * design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal 
-     * address at which at which an authoritative instance of this compartment definition is (or will be) published. This URL 
-     * can be the target of a canonical reference. It SHALL remain the same when the compartment definition is stored on 
-     * different servers.
+     * address at which an authoritative instance of this compartment definition is (or will be) published. This URL can be 
+     * the target of a canonical reference. It SHALL remain the same when the compartment definition is stored on different 
+     * servers.
      * 
      * @return
      *     An immutable object of type {@link Uri} that is non-null.
@@ -148,6 +179,16 @@ public class CompartmentDefinition extends DomainResource {
     }
 
     /**
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
+    }
+
+    /**
      * A natural language name identifying the compartment definition. This name should be usable as an identifier for the 
      * module by machine processing applications such as code generation.
      * 
@@ -156,6 +197,16 @@ public class CompartmentDefinition extends DomainResource {
      */
     public String getName() {
         return name;
+    }
+
+    /**
+     * A short, descriptive, user-friendly title for the capability statement.
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getTitle() {
+        return title;
     }
 
     /**
@@ -180,9 +231,9 @@ public class CompartmentDefinition extends DomainResource {
     }
 
     /**
-     * The date (and optionally time) when the compartment definition was published. The date must change when the business 
-     * version changes and it must change if the status code changes. In addition, it should change when the substantive 
-     * content of the compartment definition changes.
+     * The date (and optionally time) when the compartment definition was last significantly changed. The date must change 
+     * when the business version changes and it must change if the status code changes. In addition, it should change when 
+     * the substantive content of the compartment definition changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -192,7 +243,8 @@ public class CompartmentDefinition extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the compartment definition.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the compartment 
+     * definition.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -278,7 +330,9 @@ public class CompartmentDefinition extends DomainResource {
         return super.hasChildren() || 
             (url != null) || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
+            (title != null) || 
             (status != null) || 
             (experimental != null) || 
             (date != null) || 
@@ -308,7 +362,9 @@ public class CompartmentDefinition extends DomainResource {
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(url, "url", visitor);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
+                accept(title, "title", visitor);
                 accept(status, "status", visitor);
                 accept(experimental, "experimental", visitor);
                 accept(date, "date", visitor);
@@ -348,7 +404,9 @@ public class CompartmentDefinition extends DomainResource {
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(url, other.url) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
+            Objects.equals(title, other.title) && 
             Objects.equals(status, other.status) && 
             Objects.equals(experimental, other.experimental) && 
             Objects.equals(date, other.date) && 
@@ -376,7 +434,9 @@ public class CompartmentDefinition extends DomainResource {
                 modifierExtension, 
                 url, 
                 version, 
+                versionAlgorithm, 
                 name, 
+                title, 
                 status, 
                 experimental, 
                 date, 
@@ -405,7 +465,9 @@ public class CompartmentDefinition extends DomainResource {
     public static class Builder extends DomainResource.Builder {
         private Uri url;
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
+        private String title;
         private PublicationStatus status;
         private Boolean experimental;
         private DateTime date;
@@ -500,7 +562,8 @@ public class CompartmentDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -518,7 +581,8 @@ public class CompartmentDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -539,7 +603,7 @@ public class CompartmentDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -559,7 +623,7 @@ public class CompartmentDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -584,9 +648,9 @@ public class CompartmentDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -609,9 +673,9 @@ public class CompartmentDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -636,9 +700,9 @@ public class CompartmentDefinition extends DomainResource {
         /**
          * An absolute URI that is used to identify this compartment definition when it is referenced in a specification, model, 
          * design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal 
-         * address at which at which an authoritative instance of this compartment definition is (or will be) published. This URL 
-         * can be the target of a canonical reference. It SHALL remain the same when the compartment definition is stored on 
-         * different servers.
+         * address at which an authoritative instance of this compartment definition is (or will be) published. This URL can be 
+         * the target of a canonical reference. It SHALL remain the same when the compartment definition is stored on different 
+         * servers.
          * 
          * <p>This element is required.
          * 
@@ -687,6 +751,42 @@ public class CompartmentDefinition extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
+            return this;
+        }
+
+        /**
          * Convenience method for setting {@code name}.
          * 
          * <p>This element is required.
@@ -718,6 +818,36 @@ public class CompartmentDefinition extends DomainResource {
          */
         public Builder name(String name) {
             this.name = name;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code title}.
+         * 
+         * @param title
+         *     Name for this compartment definition (human friendly)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #title(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder title(java.lang.String title) {
+            this.title = (title == null) ? null : String.of(title);
+            return this;
+        }
+
+        /**
+         * A short, descriptive, user-friendly title for the capability statement.
+         * 
+         * @param title
+         *     Name for this compartment definition (human friendly)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder title(String title) {
+            this.title = title;
             return this;
         }
 
@@ -769,9 +899,9 @@ public class CompartmentDefinition extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the compartment definition was published. The date must change when the business 
-         * version changes and it must change if the status code changes. In addition, it should change when the substantive 
-         * content of the compartment definition changes.
+         * The date (and optionally time) when the compartment definition was last significantly changed. The date must change 
+         * when the business version changes and it must change if the status code changes. In addition, it should change when 
+         * the substantive content of the compartment definition changes.
          * 
          * @param date
          *     Date last changed
@@ -788,7 +918,7 @@ public class CompartmentDefinition extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -801,10 +931,11 @@ public class CompartmentDefinition extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the compartment definition.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the compartment 
+         * definition.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -930,7 +1061,7 @@ public class CompartmentDefinition extends DomainResource {
          * <p>This element is required.
          * 
          * @param code
-         *     Patient | Encounter | RelatedPerson | Practitioner | Device
+         *     Patient | Encounter | RelatedPerson | Practitioner | Device | EpisodeOfCare
          * 
          * @return
          *     A reference to this Builder instance
@@ -1042,6 +1173,7 @@ public class CompartmentDefinition extends DomainResource {
         protected void validate(CompartmentDefinition compartmentDefinition) {
             super.validate(compartmentDefinition);
             ValidationSupport.requireNonNull(compartmentDefinition.url, "url");
+            ValidationSupport.choiceElement(compartmentDefinition.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.requireNonNull(compartmentDefinition.name, "name");
             ValidationSupport.requireNonNull(compartmentDefinition.status, "status");
             ValidationSupport.checkList(compartmentDefinition.contact, "contact", ContactDetail.class);
@@ -1055,7 +1187,9 @@ public class CompartmentDefinition extends DomainResource {
             super.from(compartmentDefinition);
             url = compartmentDefinition.url;
             version = compartmentDefinition.version;
+            versionAlgorithm = compartmentDefinition.versionAlgorithm;
             name = compartmentDefinition.name;
+            title = compartmentDefinition.title;
             status = compartmentDefinition.status;
             experimental = compartmentDefinition.experimental;
             date = compartmentDefinition.date;
@@ -1080,19 +1214,23 @@ public class CompartmentDefinition extends DomainResource {
             bindingName = "ResourceType",
             strength = BindingStrength.Value.REQUIRED,
             description = "One of the resource types defined as part of this version of FHIR.",
-            valueSet = "http://hl7.org/fhir/ValueSet/resource-types|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/resource-types|5.0.0"
         )
         @Required
         private final ResourceTypeCode code;
         @Summary
         private final List<String> param;
         private final String documentation;
+        private final Uri startParam;
+        private final Uri endParam;
 
         private Resource(Builder builder) {
             super(builder);
             code = builder.code;
             param = Collections.unmodifiableList(builder.param);
             documentation = builder.documentation;
+            startParam = builder.startParam;
+            endParam = builder.endParam;
         }
 
         /**
@@ -1126,12 +1264,36 @@ public class CompartmentDefinition extends DomainResource {
             return documentation;
         }
 
+        /**
+         * Search Parameter for mapping requests made with $everything.start (e.g. on [Patient.$everything](patient-operation-
+         * everything.html)).
+         * 
+         * @return
+         *     An immutable object of type {@link Uri} that may be null.
+         */
+        public Uri getStartParam() {
+            return startParam;
+        }
+
+        /**
+         * Search Parameter for mapping requests made with $everything.end (e.g. on [Patient.$everything](patient-operation-
+         * everything.html)).
+         * 
+         * @return
+         *     An immutable object of type {@link Uri} that may be null.
+         */
+        public Uri getEndParam() {
+            return endParam;
+        }
+
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
                 (code != null) || 
                 !param.isEmpty() || 
-                (documentation != null);
+                (documentation != null) || 
+                (startParam != null) || 
+                (endParam != null);
         }
 
         @Override
@@ -1146,6 +1308,8 @@ public class CompartmentDefinition extends DomainResource {
                     accept(code, "code", visitor);
                     accept(param, "param", visitor, String.class);
                     accept(documentation, "documentation", visitor);
+                    accept(startParam, "startParam", visitor);
+                    accept(endParam, "endParam", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -1169,7 +1333,9 @@ public class CompartmentDefinition extends DomainResource {
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(code, other.code) && 
                 Objects.equals(param, other.param) && 
-                Objects.equals(documentation, other.documentation);
+                Objects.equals(documentation, other.documentation) && 
+                Objects.equals(startParam, other.startParam) && 
+                Objects.equals(endParam, other.endParam);
         }
 
         @Override
@@ -1181,7 +1347,9 @@ public class CompartmentDefinition extends DomainResource {
                     modifierExtension, 
                     code, 
                     param, 
-                    documentation);
+                    documentation, 
+                    startParam, 
+                    endParam);
                 hashCode = result;
             }
             return result;
@@ -1200,6 +1368,8 @@ public class CompartmentDefinition extends DomainResource {
             private ResourceTypeCode code;
             private List<String> param = new ArrayList<>();
             private String documentation;
+            private Uri startParam;
+            private Uri endParam;
 
             private Builder() {
                 super();
@@ -1222,7 +1392,7 @@ public class CompartmentDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1242,7 +1412,7 @@ public class CompartmentDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1267,7 +1437,7 @@ public class CompartmentDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1292,7 +1462,7 @@ public class CompartmentDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1425,6 +1595,36 @@ public class CompartmentDefinition extends DomainResource {
             }
 
             /**
+             * Search Parameter for mapping requests made with $everything.start (e.g. on [Patient.$everything](patient-operation-
+             * everything.html)).
+             * 
+             * @param startParam
+             *     Search Param for interpreting $everything.start
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder startParam(Uri startParam) {
+                this.startParam = startParam;
+                return this;
+            }
+
+            /**
+             * Search Parameter for mapping requests made with $everything.end (e.g. on [Patient.$everything](patient-operation-
+             * everything.html)).
+             * 
+             * @param endParam
+             *     Search Param for interpreting $everything.end
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder endParam(Uri endParam) {
+                this.endParam = endParam;
+                return this;
+            }
+
+            /**
              * Build the {@link Resource}
              * 
              * <p>Required elements:
@@ -1458,6 +1658,8 @@ public class CompartmentDefinition extends DomainResource {
                 code = resource.code;
                 param.addAll(resource.param);
                 documentation = resource.documentation;
+                startParam = resource.startParam;
+                endParam = resource.endParam;
                 return this;
             }
         }

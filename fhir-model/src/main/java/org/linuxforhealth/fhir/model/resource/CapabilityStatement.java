@@ -15,6 +15,7 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
+import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
@@ -28,7 +29,9 @@ import org.linuxforhealth.fhir.model.type.CodeableConcept;
 import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
 import org.linuxforhealth.fhir.model.type.DateTime;
+import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
+import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
@@ -58,8 +61,8 @@ import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
- * A Capability Statement documents a set of capabilities (behaviors) of a FHIR Server for a particular version of FHIR 
- * that may be used as a statement of actual server functionality or a statement of required or desired server 
+ * A Capability Statement documents a set of capabilities (behaviors) of a FHIR Server or Client for a particular version 
+ * of FHIR that may be used as a statement of actual server functionality or a statement of required or desired server 
  * implementation.
  * 
  * <p>Maturity level: FMM5 (Normative)
@@ -69,11 +72,11 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     status = StandardsStatus.Value.NORMATIVE
 )
 @Constraint(
-    id = "cpb-0",
+    id = "cnl-0",
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
     source = "http://hl7.org/fhir/StructureDefinition/CapabilityStatement"
 )
 @Constraint(
@@ -82,6 +85,14 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     location = "(base)",
     description = "A Capability Statement SHALL have at least one of REST, messaging or document element.",
     expression = "rest.exists() or messaging.exists() or document.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/CapabilityStatement"
+)
+@Constraint(
+    id = "cnl-1",
+    level = "Warning",
+    location = "CapabilityStatement.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
     source = "http://hl7.org/fhir/StructureDefinition/CapabilityStatement"
 )
 @Constraint(
@@ -96,8 +107,16 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "cpb-3",
     level = "Rule",
     location = "(base)",
-    description = "Messaging end-point is required (and is only permitted) when a statement is for an implementation.",
+    description = "Messaging end-point is only permitted when a capability statement is for an implementation.",
     expression = "messaging.endpoint.empty() or kind = 'instance'",
+    source = "http://hl7.org/fhir/StructureDefinition/CapabilityStatement"
+)
+@Constraint(
+    id = "cpb-4",
+    level = "Rule",
+    location = "(base)",
+    description = "There should only be one CapabilityStatement.rest per mode.",
+    expression = "rest.mode.isDistinct()",
     source = "http://hl7.org/fhir/StructureDefinition/CapabilityStatement"
 )
 @Constraint(
@@ -152,13 +171,22 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "capabilityStatement-17",
     level = "Warning",
     location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/CapabilityStatement",
+    generated = true
+)
+@Constraint(
+    id = "capabilityStatement-18",
+    level = "Warning",
+    location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
     expression = "jurisdiction.exists() implies (jurisdiction.all(memberOf('http://hl7.org/fhir/ValueSet/jurisdiction', 'extensible')))",
     source = "http://hl7.org/fhir/StructureDefinition/CapabilityStatement",
     generated = true
 )
 @Constraint(
-    id = "capabilityStatement-18",
+    id = "capabilityStatement-19",
     level = "Warning",
     location = "rest.security.service",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/restful-security-service",
@@ -167,7 +195,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "capabilityStatement-19",
+    id = "capabilityStatement-20",
     level = "Warning",
     location = "messaging.endpoint.protocol",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/message-transport",
@@ -180,7 +208,16 @@ public class CapabilityStatement extends DomainResource {
     @Summary
     private final Uri url;
     @Summary
+    private final List<Identifier> identifier;
+    @Summary
     private final String version;
+    @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
     @Summary
     private final String name;
     @Summary
@@ -190,7 +227,7 @@ public class CapabilityStatement extends DomainResource {
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -216,12 +253,13 @@ public class CapabilityStatement extends DomainResource {
     private final List<CodeableConcept> jurisdiction;
     private final Markdown purpose;
     private final Markdown copyright;
+    private final String copyrightLabel;
     @Summary
     @Binding(
         bindingName = "CapabilityStatementKind",
         strength = BindingStrength.Value.REQUIRED,
         description = "How a capability statement is intended to be used.",
-        valueSet = "http://hl7.org/fhir/ValueSet/capability-statement-kind|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/capability-statement-kind|5.0.0"
     )
     @Required
     private final CapabilityStatementKind kind;
@@ -238,7 +276,7 @@ public class CapabilityStatement extends DomainResource {
         bindingName = "FHIRVersion",
         strength = BindingStrength.Value.REQUIRED,
         description = "All published FHIR Versions.",
-        valueSet = "http://hl7.org/fhir/ValueSet/FHIR-version|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/FHIR-version|5.0.0"
     )
     @Required
     private final FHIRVersion fhirVersion;
@@ -246,8 +284,8 @@ public class CapabilityStatement extends DomainResource {
     @Binding(
         bindingName = "MimeType",
         strength = BindingStrength.Value.REQUIRED,
-        description = "BCP 13 (RFCs 2045, 2046, 2047, 4288, 4289 and 2049)",
-        valueSet = "http://hl7.org/fhir/ValueSet/mimetypes|4.3.0"
+        description = "The mime type of an attachment. Any valid mime type is allowed.",
+        valueSet = "http://hl7.org/fhir/ValueSet/mimetypes|5.0.0"
     )
     @Required
     private final List<Code> format;
@@ -256,9 +294,17 @@ public class CapabilityStatement extends DomainResource {
         bindingName = "MimeType",
         strength = BindingStrength.Value.REQUIRED,
         description = "BCP 13 (RFCs 2045, 2046, 2047, 4288, 4289 and 2049)",
-        valueSet = "http://hl7.org/fhir/ValueSet/mimetypes|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/mimetypes|5.0.0"
     )
     private final List<Code> patchFormat;
+    @Summary
+    @Binding(
+        bindingName = "Language",
+        strength = BindingStrength.Value.REQUIRED,
+        description = "IETF language tag for a human language",
+        valueSet = "http://hl7.org/fhir/ValueSet/all-languages|5.0.0"
+    )
+    private final List<Code> acceptLanguage;
     @Summary
     private final List<Canonical> implementationGuide;
     @Summary
@@ -271,7 +317,9 @@ public class CapabilityStatement extends DomainResource {
     private CapabilityStatement(Builder builder) {
         super(builder);
         url = builder.url;
+        identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
         title = builder.title;
         status = builder.status;
@@ -284,6 +332,7 @@ public class CapabilityStatement extends DomainResource {
         jurisdiction = Collections.unmodifiableList(builder.jurisdiction);
         purpose = builder.purpose;
         copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
         kind = builder.kind;
         instantiates = Collections.unmodifiableList(builder.instantiates);
         imports = Collections.unmodifiableList(builder.imports);
@@ -292,6 +341,7 @@ public class CapabilityStatement extends DomainResource {
         fhirVersion = builder.fhirVersion;
         format = Collections.unmodifiableList(builder.format);
         patchFormat = Collections.unmodifiableList(builder.patchFormat);
+        acceptLanguage = Collections.unmodifiableList(builder.acceptLanguage);
         implementationGuide = Collections.unmodifiableList(builder.implementationGuide);
         rest = Collections.unmodifiableList(builder.rest);
         messaging = Collections.unmodifiableList(builder.messaging);
@@ -301,15 +351,25 @@ public class CapabilityStatement extends DomainResource {
     /**
      * An absolute URI that is used to identify this capability statement when it is referenced in a specification, model, 
      * design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal 
-     * address at which at which an authoritative instance of this capability statement is (or will be) published. This URL 
-     * can be the target of a canonical reference. It SHALL remain the same when the capability statement is stored on 
-     * different servers.
+     * address at which an authoritative instance of this capability statement is (or will be) published. This URL can be the 
+     * target of a canonical reference. It SHALL remain the same when the capability statement is stored on different servers.
      * 
      * @return
      *     An immutable object of type {@link Uri} that may be null.
      */
     public Uri getUrl() {
         return url;
+    }
+
+    /**
+     * A formal identifier that is used to identify this CapabilityStatement when it is represented in other formats, or 
+     * referenced in a specification, model, design or an instance.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
+     */
+    public List<Identifier> getIdentifier() {
+        return identifier;
     }
 
     /**
@@ -323,6 +383,16 @@ public class CapabilityStatement extends DomainResource {
      */
     public String getVersion() {
         return version;
+    }
+
+    /**
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
     }
 
     /**
@@ -368,9 +438,9 @@ public class CapabilityStatement extends DomainResource {
     }
 
     /**
-     * The date (and optionally time) when the capability statement was published. The date must change when the business 
-     * version changes and it must change if the status code changes. In addition, it should change when the substantive 
-     * content of the capability statement changes.
+     * The date (and optionally time) when the capability statement was last significantly changed. The date must change when 
+     * the business version changes and it must change if the status code changes. In addition, it should change when the 
+     * substantive content of the capability statement changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that is non-null.
@@ -380,7 +450,8 @@ public class CapabilityStatement extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the capability statement.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the capability 
+     * statement.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -452,6 +523,17 @@ public class CapabilityStatement extends DomainResource {
      */
     public Markdown getCopyright() {
         return copyright;
+    }
+
+    /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
     }
 
     /**
@@ -543,6 +625,17 @@ public class CapabilityStatement extends DomainResource {
     }
 
     /**
+     * A list of the languages supported by this implementation that are usefully supported in the ```Accept-Language``` 
+     * header.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Code} that may be empty.
+     */
+    public List<Code> getAcceptLanguage() {
+        return acceptLanguage;
+    }
+
+    /**
      * A list of implementation guides that the server does (or should) support in their entirety.
      * 
      * @return
@@ -586,7 +679,9 @@ public class CapabilityStatement extends DomainResource {
     public boolean hasChildren() {
         return super.hasChildren() || 
             (url != null) || 
+            !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
             (title != null) || 
             (status != null) || 
@@ -599,6 +694,7 @@ public class CapabilityStatement extends DomainResource {
             !jurisdiction.isEmpty() || 
             (purpose != null) || 
             (copyright != null) || 
+            (copyrightLabel != null) || 
             (kind != null) || 
             !instantiates.isEmpty() || 
             !imports.isEmpty() || 
@@ -607,6 +703,7 @@ public class CapabilityStatement extends DomainResource {
             (fhirVersion != null) || 
             !format.isEmpty() || 
             !patchFormat.isEmpty() || 
+            !acceptLanguage.isEmpty() || 
             !implementationGuide.isEmpty() || 
             !rest.isEmpty() || 
             !messaging.isEmpty() || 
@@ -628,7 +725,9 @@ public class CapabilityStatement extends DomainResource {
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(url, "url", visitor);
+                accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(status, "status", visitor);
@@ -641,6 +740,7 @@ public class CapabilityStatement extends DomainResource {
                 accept(jurisdiction, "jurisdiction", visitor, CodeableConcept.class);
                 accept(purpose, "purpose", visitor);
                 accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
                 accept(kind, "kind", visitor);
                 accept(instantiates, "instantiates", visitor, Canonical.class);
                 accept(imports, "imports", visitor, Canonical.class);
@@ -649,6 +749,7 @@ public class CapabilityStatement extends DomainResource {
                 accept(fhirVersion, "fhirVersion", visitor);
                 accept(format, "format", visitor, Code.class);
                 accept(patchFormat, "patchFormat", visitor, Code.class);
+                accept(acceptLanguage, "acceptLanguage", visitor, Code.class);
                 accept(implementationGuide, "implementationGuide", visitor, Canonical.class);
                 accept(rest, "rest", visitor, Rest.class);
                 accept(messaging, "messaging", visitor, Messaging.class);
@@ -680,7 +781,9 @@ public class CapabilityStatement extends DomainResource {
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(url, other.url) && 
+            Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(status, other.status) && 
@@ -693,6 +796,7 @@ public class CapabilityStatement extends DomainResource {
             Objects.equals(jurisdiction, other.jurisdiction) && 
             Objects.equals(purpose, other.purpose) && 
             Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
             Objects.equals(kind, other.kind) && 
             Objects.equals(instantiates, other.instantiates) && 
             Objects.equals(imports, other.imports) && 
@@ -701,6 +805,7 @@ public class CapabilityStatement extends DomainResource {
             Objects.equals(fhirVersion, other.fhirVersion) && 
             Objects.equals(format, other.format) && 
             Objects.equals(patchFormat, other.patchFormat) && 
+            Objects.equals(acceptLanguage, other.acceptLanguage) && 
             Objects.equals(implementationGuide, other.implementationGuide) && 
             Objects.equals(rest, other.rest) && 
             Objects.equals(messaging, other.messaging) && 
@@ -720,7 +825,9 @@ public class CapabilityStatement extends DomainResource {
                 extension, 
                 modifierExtension, 
                 url, 
+                identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
                 title, 
                 status, 
@@ -733,6 +840,7 @@ public class CapabilityStatement extends DomainResource {
                 jurisdiction, 
                 purpose, 
                 copyright, 
+                copyrightLabel, 
                 kind, 
                 instantiates, 
                 imports, 
@@ -741,6 +849,7 @@ public class CapabilityStatement extends DomainResource {
                 fhirVersion, 
                 format, 
                 patchFormat, 
+                acceptLanguage, 
                 implementationGuide, 
                 rest, 
                 messaging, 
@@ -761,7 +870,9 @@ public class CapabilityStatement extends DomainResource {
 
     public static class Builder extends DomainResource.Builder {
         private Uri url;
+        private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
         private String title;
         private PublicationStatus status;
@@ -774,6 +885,7 @@ public class CapabilityStatement extends DomainResource {
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
         private Markdown purpose;
         private Markdown copyright;
+        private String copyrightLabel;
         private CapabilityStatementKind kind;
         private List<Canonical> instantiates = new ArrayList<>();
         private List<Canonical> imports = new ArrayList<>();
@@ -782,6 +894,7 @@ public class CapabilityStatement extends DomainResource {
         private FHIRVersion fhirVersion;
         private List<Code> format = new ArrayList<>();
         private List<Code> patchFormat = new ArrayList<>();
+        private List<Code> acceptLanguage = new ArrayList<>();
         private List<Canonical> implementationGuide = new ArrayList<>();
         private List<Rest> rest = new ArrayList<>();
         private List<Messaging> messaging = new ArrayList<>();
@@ -869,7 +982,8 @@ public class CapabilityStatement extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -887,7 +1001,8 @@ public class CapabilityStatement extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -908,7 +1023,7 @@ public class CapabilityStatement extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -928,7 +1043,7 @@ public class CapabilityStatement extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -953,9 +1068,9 @@ public class CapabilityStatement extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -978,9 +1093,9 @@ public class CapabilityStatement extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1005,9 +1120,8 @@ public class CapabilityStatement extends DomainResource {
         /**
          * An absolute URI that is used to identify this capability statement when it is referenced in a specification, model, 
          * design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal 
-         * address at which at which an authoritative instance of this capability statement is (or will be) published. This URL 
-         * can be the target of a canonical reference. It SHALL remain the same when the capability statement is stored on 
-         * different servers.
+         * address at which an authoritative instance of this capability statement is (or will be) published. This URL can be the 
+         * target of a canonical reference. It SHALL remain the same when the capability statement is stored on different servers.
          * 
          * @param url
          *     Canonical identifier for this capability statement, represented as a URI (globally unique)
@@ -1017,6 +1131,47 @@ public class CapabilityStatement extends DomainResource {
          */
         public Builder url(Uri url) {
             this.url = url;
+            return this;
+        }
+
+        /**
+         * A formal identifier that is used to identify this CapabilityStatement when it is represented in other formats, or 
+         * referenced in a specification, model, design or an instance.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param identifier
+         *     Additional identifier for the CapabilityStatement (business identifier)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder identifier(Identifier... identifier) {
+            for (Identifier value : identifier) {
+                this.identifier.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A formal identifier that is used to identify this CapabilityStatement when it is represented in other formats, or 
+         * referenced in a specification, model, design or an instance.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param identifier
+         *     Additional identifier for the CapabilityStatement (business identifier)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder identifier(Collection<Identifier> identifier) {
+            this.identifier = new ArrayList<>(identifier);
             return this;
         }
 
@@ -1050,6 +1205,42 @@ public class CapabilityStatement extends DomainResource {
          */
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
             return this;
         }
 
@@ -1162,9 +1353,9 @@ public class CapabilityStatement extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the capability statement was published. The date must change when the business 
-         * version changes and it must change if the status code changes. In addition, it should change when the substantive 
-         * content of the capability statement changes.
+         * The date (and optionally time) when the capability statement was last significantly changed. The date must change when 
+         * the business version changes and it must change if the status code changes. In addition, it should change when the 
+         * substantive content of the capability statement changes.
          * 
          * <p>This element is required.
          * 
@@ -1183,7 +1374,7 @@ public class CapabilityStatement extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1196,10 +1387,11 @@ public class CapabilityStatement extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the capability statement.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the capability 
+         * statement.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1372,6 +1564,37 @@ public class CapabilityStatement extends DomainResource {
          */
         public Builder copyright(Markdown copyright) {
             this.copyright = copyright;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
             return this;
         }
 
@@ -1608,6 +1831,47 @@ public class CapabilityStatement extends DomainResource {
         }
 
         /**
+         * A list of the languages supported by this implementation that are usefully supported in the ```Accept-Language``` 
+         * header.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param acceptLanguage
+         *     Languages supported
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder acceptLanguage(Code... acceptLanguage) {
+            for (Code value : acceptLanguage) {
+                this.acceptLanguage.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A list of the languages supported by this implementation that are usefully supported in the ```Accept-Language``` 
+         * header.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param acceptLanguage
+         *     Languages supported
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder acceptLanguage(Collection<Code> acceptLanguage) {
+            this.acceptLanguage = new ArrayList<>(acceptLanguage);
+            return this;
+        }
+
+        /**
          * A list of implementation guides that the server does (or should) support in their entirety.
          * 
          * <p>Adds new element(s) to the existing list.
@@ -1791,6 +2055,8 @@ public class CapabilityStatement extends DomainResource {
 
         protected void validate(CapabilityStatement capabilityStatement) {
             super.validate(capabilityStatement);
+            ValidationSupport.checkList(capabilityStatement.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(capabilityStatement.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.requireNonNull(capabilityStatement.status, "status");
             ValidationSupport.requireNonNull(capabilityStatement.date, "date");
             ValidationSupport.checkList(capabilityStatement.contact, "contact", ContactDetail.class);
@@ -1802,16 +2068,20 @@ public class CapabilityStatement extends DomainResource {
             ValidationSupport.requireNonNull(capabilityStatement.fhirVersion, "fhirVersion");
             ValidationSupport.checkNonEmptyList(capabilityStatement.format, "format", Code.class);
             ValidationSupport.checkList(capabilityStatement.patchFormat, "patchFormat", Code.class);
+            ValidationSupport.checkList(capabilityStatement.acceptLanguage, "acceptLanguage", Code.class);
             ValidationSupport.checkList(capabilityStatement.implementationGuide, "implementationGuide", Canonical.class);
             ValidationSupport.checkList(capabilityStatement.rest, "rest", Rest.class);
             ValidationSupport.checkList(capabilityStatement.messaging, "messaging", Messaging.class);
             ValidationSupport.checkList(capabilityStatement.document, "document", Document.class);
+            ValidationSupport.checkValueSetBinding(capabilityStatement.acceptLanguage, "acceptLanguage", "http://hl7.org/fhir/ValueSet/all-languages", "urn:ietf:bcp:47");
         }
 
         protected Builder from(CapabilityStatement capabilityStatement) {
             super.from(capabilityStatement);
             url = capabilityStatement.url;
+            identifier.addAll(capabilityStatement.identifier);
             version = capabilityStatement.version;
+            versionAlgorithm = capabilityStatement.versionAlgorithm;
             name = capabilityStatement.name;
             title = capabilityStatement.title;
             status = capabilityStatement.status;
@@ -1824,6 +2094,7 @@ public class CapabilityStatement extends DomainResource {
             jurisdiction.addAll(capabilityStatement.jurisdiction);
             purpose = capabilityStatement.purpose;
             copyright = capabilityStatement.copyright;
+            copyrightLabel = capabilityStatement.copyrightLabel;
             kind = capabilityStatement.kind;
             instantiates.addAll(capabilityStatement.instantiates);
             imports.addAll(capabilityStatement.imports);
@@ -1832,6 +2103,7 @@ public class CapabilityStatement extends DomainResource {
             fhirVersion = capabilityStatement.fhirVersion;
             format.addAll(capabilityStatement.format);
             patchFormat.addAll(capabilityStatement.patchFormat);
+            acceptLanguage.addAll(capabilityStatement.acceptLanguage);
             implementationGuide.addAll(capabilityStatement.implementationGuide);
             rest.addAll(capabilityStatement.rest);
             messaging.addAll(capabilityStatement.messaging);
@@ -1986,7 +2258,7 @@ public class CapabilityStatement extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2006,7 +2278,7 @@ public class CapabilityStatement extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2031,7 +2303,7 @@ public class CapabilityStatement extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2056,7 +2328,7 @@ public class CapabilityStatement extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2203,7 +2475,7 @@ public class CapabilityStatement extends DomainResource {
     public static class Implementation extends BackboneElement {
         @Summary
         @Required
-        private final String description;
+        private final Markdown description;
         @Summary
         private final Url url;
         @Summary
@@ -2221,9 +2493,9 @@ public class CapabilityStatement extends DomainResource {
          * Information about the specific installation that this capability statement relates to.
          * 
          * @return
-         *     An immutable object of type {@link String} that is non-null.
+         *     An immutable object of type {@link Markdown} that is non-null.
          */
-        public String getDescription() {
+        public Markdown getDescription() {
             return description;
         }
 
@@ -2320,7 +2592,7 @@ public class CapabilityStatement extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private String description;
+            private Markdown description;
             private Url url;
             private Reference custodian;
 
@@ -2345,7 +2617,7 @@ public class CapabilityStatement extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2365,7 +2637,7 @@ public class CapabilityStatement extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2390,7 +2662,7 @@ public class CapabilityStatement extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2415,7 +2687,7 @@ public class CapabilityStatement extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2440,24 +2712,6 @@ public class CapabilityStatement extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code description}.
-             * 
-             * <p>This element is required.
-             * 
-             * @param description
-             *     Describes this specific instance
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #description(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder description(java.lang.String description) {
-                this.description = (description == null) ? null : String.of(description);
-                return this;
-            }
-
-            /**
              * Information about the specific installation that this capability statement relates to.
              * 
              * <p>This element is required.
@@ -2468,7 +2722,7 @@ public class CapabilityStatement extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder description(String description) {
+            public Builder description(Markdown description) {
                 this.description = description;
                 return this;
             }
@@ -2556,7 +2810,7 @@ public class CapabilityStatement extends DomainResource {
             bindingName = "RestfulCapabilityMode",
             strength = BindingStrength.Value.REQUIRED,
             description = "The mode of a RESTful capability statement.",
-            valueSet = "http://hl7.org/fhir/ValueSet/restful-capability-mode|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/restful-capability-mode|5.0.0"
         )
         @Required
         private final RestfulCapabilityMode mode;
@@ -2635,7 +2889,8 @@ public class CapabilityStatement extends DomainResource {
 
         /**
          * Search parameters that are supported for searching all resources for implementations to support and/or make use of - 
-         * either references to ones defined in the specification, or additional ones defined for/by the implementation.
+         * either references to ones defined in the specification, or additional ones defined for/by the implementation. This is 
+         * only for searches executed against the system-level endpoint.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link SearchParam} that may be empty.
@@ -2786,7 +3041,7 @@ public class CapabilityStatement extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2806,7 +3061,7 @@ public class CapabilityStatement extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2831,7 +3086,7 @@ public class CapabilityStatement extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2856,7 +3111,7 @@ public class CapabilityStatement extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3004,7 +3259,8 @@ public class CapabilityStatement extends DomainResource {
 
             /**
              * Search parameters that are supported for searching all resources for implementations to support and/or make use of - 
-             * either references to ones defined in the specification, or additional ones defined for/by the implementation.
+             * either references to ones defined in the specification, or additional ones defined for/by the implementation. This is 
+             * only for searches executed against the system-level endpoint.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -3024,7 +3280,8 @@ public class CapabilityStatement extends DomainResource {
 
             /**
              * Search parameters that are supported for searching all resources for implementations to support and/or make use of - 
-             * either references to ones defined in the specification, or additional ones defined for/by the implementation.
+             * either references to ones defined in the specification, or additional ones defined for/by the implementation. This is 
+             * only for searches executed against the system-level endpoint.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -3319,7 +3576,7 @@ public class CapabilityStatement extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3339,7 +3596,7 @@ public class CapabilityStatement extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3364,7 +3621,7 @@ public class CapabilityStatement extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3389,7 +3646,7 @@ public class CapabilityStatement extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3538,7 +3795,7 @@ public class CapabilityStatement extends DomainResource {
                 bindingName = "ResourceType",
                 strength = BindingStrength.Value.REQUIRED,
                 description = "One of the resource types defined as part of this version of FHIR.",
-                valueSet = "http://hl7.org/fhir/ValueSet/resource-types|4.3.0"
+                valueSet = "http://hl7.org/fhir/ValueSet/resource-types|5.0.0"
             )
             @Required
             private final ResourceTypeCode type;
@@ -3552,7 +3809,7 @@ public class CapabilityStatement extends DomainResource {
                 bindingName = "ResourceVersionPolicy",
                 strength = BindingStrength.Value.REQUIRED,
                 description = "How the system supports versioning for a resource.",
-                valueSet = "http://hl7.org/fhir/ValueSet/versioning-policy|4.3.0"
+                valueSet = "http://hl7.org/fhir/ValueSet/versioning-policy|5.0.0"
             )
             private final ResourceVersionPolicy versioning;
             private final Boolean readHistory;
@@ -3562,22 +3819,23 @@ public class CapabilityStatement extends DomainResource {
                 bindingName = "ConditionalReadStatus",
                 strength = BindingStrength.Value.REQUIRED,
                 description = "A code that indicates how the server supports conditional read.",
-                valueSet = "http://hl7.org/fhir/ValueSet/conditional-read-status|4.3.0"
+                valueSet = "http://hl7.org/fhir/ValueSet/conditional-read-status|5.0.0"
             )
             private final ConditionalReadStatus conditionalRead;
             private final Boolean conditionalUpdate;
+            private final Boolean conditionalPatch;
             @Binding(
                 bindingName = "ConditionalDeleteStatus",
                 strength = BindingStrength.Value.REQUIRED,
                 description = "A code that indicates how the server supports conditional delete.",
-                valueSet = "http://hl7.org/fhir/ValueSet/conditional-delete-status|4.3.0"
+                valueSet = "http://hl7.org/fhir/ValueSet/conditional-delete-status|5.0.0"
             )
             private final ConditionalDeleteStatus conditionalDelete;
             @Binding(
                 bindingName = "ReferenceHandlingPolicy",
                 strength = BindingStrength.Value.REQUIRED,
                 description = "A set of flags that defines how references are supported.",
-                valueSet = "http://hl7.org/fhir/ValueSet/reference-handling-policy|4.3.0"
+                valueSet = "http://hl7.org/fhir/ValueSet/reference-handling-policy|5.0.0"
             )
             private final List<ReferenceHandlingPolicy> referencePolicy;
             private final List<String> searchInclude;
@@ -3599,6 +3857,7 @@ public class CapabilityStatement extends DomainResource {
                 conditionalCreate = builder.conditionalCreate;
                 conditionalRead = builder.conditionalRead;
                 conditionalUpdate = builder.conditionalUpdate;
+                conditionalPatch = builder.conditionalPatch;
                 conditionalDelete = builder.conditionalDelete;
                 referencePolicy = Collections.unmodifiableList(builder.referencePolicy);
                 searchInclude = Collections.unmodifiableList(builder.searchInclude);
@@ -3618,9 +3877,9 @@ public class CapabilityStatement extends DomainResource {
             }
 
             /**
-             * A specification of the profile that describes the solution's overall support for the resource, including any 
-             * constraints on cardinality, bindings, lengths or other limitations. See further discussion in [Using Profiles]
-             * (profiling.html#profile-uses).
+             * A system-wide profile that is applied across *all* instances of the resource supported by the system. For example, if 
+             * declared on Observation, this profile is the "superset" of capabilities for laboratory *and* vitals *and* other 
+             * domains. See further discussion in [Using Profiles](profiling.html#profile-uses).
              * 
              * @return
              *     An immutable object of type {@link Canonical} that may be null.
@@ -3630,11 +3889,11 @@ public class CapabilityStatement extends DomainResource {
             }
 
             /**
-             * A list of profiles that represent different use cases supported by the system. For a server, "supported by the system" 
-             * means the system hosts/produces a set of resources that are conformant to a particular profile, and allows clients 
-             * that use its services to search using this profile and to find appropriate data. For a client, it means the system 
-             * will search by this profile and process data according to the guidance implicit in the profile. See further discussion 
-             * in [Using Profiles](profiling.html#profile-uses).
+             * A list of profiles representing different use cases the system hosts/produces. A supported profile is a statement 
+             * about the functionality of the data and services provided by the server (or the client) for supported use cases. For 
+             * example, a system can define and declare multiple Observation profiles for laboratory observations, vital sign 
+             * observations, etc. By declaring supported profiles, systems provide a way to determine whether individual resources 
+             * are conformant. See further discussion in [Using Profiles](profiling.html#profile-uses).
              * 
              * @return
              *     An unmodifiable list containing immutable objects of type {@link Canonical} that may be empty.
@@ -3729,6 +3988,16 @@ public class CapabilityStatement extends DomainResource {
             }
 
             /**
+             * A flag that indicates that the server supports conditional patch.
+             * 
+             * @return
+             *     An immutable object of type {@link Boolean} that may be null.
+             */
+            public Boolean getConditionalPatch() {
+                return conditionalPatch;
+            }
+
+            /**
              * A code that indicates how the server supports conditional delete.
              * 
              * @return
@@ -3804,6 +4073,7 @@ public class CapabilityStatement extends DomainResource {
                     (conditionalCreate != null) || 
                     (conditionalRead != null) || 
                     (conditionalUpdate != null) || 
+                    (conditionalPatch != null) || 
                     (conditionalDelete != null) || 
                     !referencePolicy.isEmpty() || 
                     !searchInclude.isEmpty() || 
@@ -3832,6 +4102,7 @@ public class CapabilityStatement extends DomainResource {
                         accept(conditionalCreate, "conditionalCreate", visitor);
                         accept(conditionalRead, "conditionalRead", visitor);
                         accept(conditionalUpdate, "conditionalUpdate", visitor);
+                        accept(conditionalPatch, "conditionalPatch", visitor);
                         accept(conditionalDelete, "conditionalDelete", visitor);
                         accept(referencePolicy, "referencePolicy", visitor, ReferenceHandlingPolicy.class);
                         accept(searchInclude, "searchInclude", visitor, String.class);
@@ -3870,6 +4141,7 @@ public class CapabilityStatement extends DomainResource {
                     Objects.equals(conditionalCreate, other.conditionalCreate) && 
                     Objects.equals(conditionalRead, other.conditionalRead) && 
                     Objects.equals(conditionalUpdate, other.conditionalUpdate) && 
+                    Objects.equals(conditionalPatch, other.conditionalPatch) && 
                     Objects.equals(conditionalDelete, other.conditionalDelete) && 
                     Objects.equals(referencePolicy, other.referencePolicy) && 
                     Objects.equals(searchInclude, other.searchInclude) && 
@@ -3896,6 +4168,7 @@ public class CapabilityStatement extends DomainResource {
                         conditionalCreate, 
                         conditionalRead, 
                         conditionalUpdate, 
+                        conditionalPatch, 
                         conditionalDelete, 
                         referencePolicy, 
                         searchInclude, 
@@ -3928,6 +4201,7 @@ public class CapabilityStatement extends DomainResource {
                 private Boolean conditionalCreate;
                 private ConditionalReadStatus conditionalRead;
                 private Boolean conditionalUpdate;
+                private Boolean conditionalPatch;
                 private ConditionalDeleteStatus conditionalDelete;
                 private List<ReferenceHandlingPolicy> referencePolicy = new ArrayList<>();
                 private List<String> searchInclude = new ArrayList<>();
@@ -3956,7 +4230,7 @@ public class CapabilityStatement extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3976,7 +4250,7 @@ public class CapabilityStatement extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -4001,7 +4275,7 @@ public class CapabilityStatement extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4026,7 +4300,7 @@ public class CapabilityStatement extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4067,12 +4341,12 @@ public class CapabilityStatement extends DomainResource {
                 }
 
                 /**
-                 * A specification of the profile that describes the solution's overall support for the resource, including any 
-                 * constraints on cardinality, bindings, lengths or other limitations. See further discussion in [Using Profiles]
-                 * (profiling.html#profile-uses).
+                 * A system-wide profile that is applied across *all* instances of the resource supported by the system. For example, if 
+                 * declared on Observation, this profile is the "superset" of capabilities for laboratory *and* vitals *and* other 
+                 * domains. See further discussion in [Using Profiles](profiling.html#profile-uses).
                  * 
                  * @param profile
-                 *     Base System profile for all uses of resource
+                 *     System-wide profile
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -4083,17 +4357,17 @@ public class CapabilityStatement extends DomainResource {
                 }
 
                 /**
-                 * A list of profiles that represent different use cases supported by the system. For a server, "supported by the system" 
-                 * means the system hosts/produces a set of resources that are conformant to a particular profile, and allows clients 
-                 * that use its services to search using this profile and to find appropriate data. For a client, it means the system 
-                 * will search by this profile and process data according to the guidance implicit in the profile. See further discussion 
-                 * in [Using Profiles](profiling.html#profile-uses).
+                 * A list of profiles representing different use cases the system hosts/produces. A supported profile is a statement 
+                 * about the functionality of the data and services provided by the server (or the client) for supported use cases. For 
+                 * example, a system can define and declare multiple Observation profiles for laboratory observations, vital sign 
+                 * observations, etc. By declaring supported profiles, systems provide a way to determine whether individual resources 
+                 * are conformant. See further discussion in [Using Profiles](profiling.html#profile-uses).
                  * 
                  * <p>Adds new element(s) to the existing list.
                  * If any of the elements are null, calling {@link #build()} will fail.
                  * 
                  * @param supportedProfile
-                 *     Profiles for use cases supported
+                 *     Use-case specific profiles
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -4106,17 +4380,17 @@ public class CapabilityStatement extends DomainResource {
                 }
 
                 /**
-                 * A list of profiles that represent different use cases supported by the system. For a server, "supported by the system" 
-                 * means the system hosts/produces a set of resources that are conformant to a particular profile, and allows clients 
-                 * that use its services to search using this profile and to find appropriate data. For a client, it means the system 
-                 * will search by this profile and process data according to the guidance implicit in the profile. See further discussion 
-                 * in [Using Profiles](profiling.html#profile-uses).
+                 * A list of profiles representing different use cases the system hosts/produces. A supported profile is a statement 
+                 * about the functionality of the data and services provided by the server (or the client) for supported use cases. For 
+                 * example, a system can define and declare multiple Observation profiles for laboratory observations, vital sign 
+                 * observations, etc. By declaring supported profiles, systems provide a way to determine whether individual resources 
+                 * are conformant. See further discussion in [Using Profiles](profiling.html#profile-uses).
                  * 
                  * <p>Replaces the existing list with a new one containing elements from the Collection.
                  * If any of the elements are null, calling {@link #build()} will fail.
                  * 
                  * @param supportedProfile
-                 *     Profiles for use cases supported
+                 *     Use-case specific profiles
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -4332,6 +4606,36 @@ public class CapabilityStatement extends DomainResource {
                  */
                 public Builder conditionalUpdate(Boolean conditionalUpdate) {
                     this.conditionalUpdate = conditionalUpdate;
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code conditionalPatch}.
+                 * 
+                 * @param conditionalPatch
+                 *     If allows/uses conditional patch
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #conditionalPatch(org.linuxforhealth.fhir.model.type.Boolean)
+                 */
+                public Builder conditionalPatch(java.lang.Boolean conditionalPatch) {
+                    this.conditionalPatch = (conditionalPatch == null) ? null : Boolean.of(conditionalPatch);
+                    return this;
+                }
+
+                /**
+                 * A flag that indicates that the server supports conditional patch.
+                 * 
+                 * @param conditionalPatch
+                 *     If allows/uses conditional patch
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder conditionalPatch(Boolean conditionalPatch) {
+                    this.conditionalPatch = conditionalPatch;
                     return this;
                 }
 
@@ -4638,6 +4942,7 @@ public class CapabilityStatement extends DomainResource {
                     conditionalCreate = resource.conditionalCreate;
                     conditionalRead = resource.conditionalRead;
                     conditionalUpdate = resource.conditionalUpdate;
+                    conditionalPatch = resource.conditionalPatch;
                     conditionalDelete = resource.conditionalDelete;
                     referencePolicy.addAll(resource.referencePolicy);
                     searchInclude.addAll(resource.searchInclude);
@@ -4656,7 +4961,7 @@ public class CapabilityStatement extends DomainResource {
                     bindingName = "TypeRestfulInteraction",
                     strength = BindingStrength.Value.REQUIRED,
                     description = "Operations supported by REST at the type or instance level.",
-                    valueSet = "http://hl7.org/fhir/ValueSet/type-restful-interaction|4.3.0"
+                    valueSet = "http://hl7.org/fhir/ValueSet/type-restful-interaction|5.0.0"
                 )
                 @Required
                 private final TypeRestfulInteraction code;
@@ -4780,7 +5085,7 @@ public class CapabilityStatement extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -4800,7 +5105,7 @@ public class CapabilityStatement extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -4825,7 +5130,7 @@ public class CapabilityStatement extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -4850,7 +5155,7 @@ public class CapabilityStatement extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -4954,7 +5259,7 @@ public class CapabilityStatement extends DomainResource {
                     bindingName = "SearchParamType",
                     strength = BindingStrength.Value.REQUIRED,
                     description = "Data types allowed to be used for search parameters.",
-                    valueSet = "http://hl7.org/fhir/ValueSet/search-param-type|4.3.0"
+                    valueSet = "http://hl7.org/fhir/ValueSet/search-param-type|5.0.0"
                 )
                 @Required
                 private final SearchParamType type;
@@ -4969,7 +5274,10 @@ public class CapabilityStatement extends DomainResource {
                 }
 
                 /**
-                 * The name of the search parameter used in the interface.
+                 * The label used for the search parameter in this particular system's API - i.e. the 'name' portion of the name-value 
+                 * pair that will appear as part of the search URL. This SHOULD be the same as the SearchParameter.code of the defining 
+                 * SearchParameter. However, it can sometimes differ if necessary to disambiguate when a server supports multiple 
+                 * SearchParameters that happen to share the same code.
                  * 
                  * @return
                  *     An immutable object of type {@link String} that is non-null.
@@ -5113,7 +5421,7 @@ public class CapabilityStatement extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -5133,7 +5441,7 @@ public class CapabilityStatement extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -5158,7 +5466,7 @@ public class CapabilityStatement extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -5183,7 +5491,7 @@ public class CapabilityStatement extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -5213,7 +5521,7 @@ public class CapabilityStatement extends DomainResource {
                      * <p>This element is required.
                      * 
                      * @param name
-                     *     Name of search parameter
+                     *     Name for parameter in search url
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -5226,12 +5534,15 @@ public class CapabilityStatement extends DomainResource {
                     }
 
                     /**
-                     * The name of the search parameter used in the interface.
+                     * The label used for the search parameter in this particular system's API - i.e. the 'name' portion of the name-value 
+                     * pair that will appear as part of the search URL. This SHOULD be the same as the SearchParameter.code of the defining 
+                     * SearchParameter. However, it can sometimes differ if necessary to disambiguate when a server supports multiple 
+                     * SearchParameters that happen to share the same code.
                      * 
                      * <p>This element is required.
                      * 
                      * @param name
-                     *     Name of search parameter
+                     *     Name for parameter in search url
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -5351,8 +5662,10 @@ public class CapabilityStatement extends DomainResource {
                 }
 
                 /**
-                 * The name of the operation or query. For an operation, this is the name prefixed with $ and used in the URL. For a 
-                 * query, this is the name used in the _query parameter when the query is called.
+                 * The name of the operation or query. For an operation, this name is prefixed with $ and used in the URL. For a query, 
+                 * this is the name used in the _query parameter when the query is called. This SHOULD be the same as the 
+                 * OperationDefinition.code of the defining OperationDefinition. However, it can sometimes differ if necessary to 
+                 * disambiguate when a server supports multiple OperationDefinition that happen to share the same code.
                  * 
                  * @return
                  *     An immutable object of type {@link String} that is non-null.
@@ -5482,7 +5795,7 @@ public class CapabilityStatement extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -5502,7 +5815,7 @@ public class CapabilityStatement extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -5527,7 +5840,7 @@ public class CapabilityStatement extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -5552,7 +5865,7 @@ public class CapabilityStatement extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -5595,8 +5908,10 @@ public class CapabilityStatement extends DomainResource {
                     }
 
                     /**
-                     * The name of the operation or query. For an operation, this is the name prefixed with $ and used in the URL. For a 
-                     * query, this is the name used in the _query parameter when the query is called.
+                     * The name of the operation or query. For an operation, this name is prefixed with $ and used in the URL. For a query, 
+                     * this is the name used in the _query parameter when the query is called. This SHOULD be the same as the 
+                     * OperationDefinition.code of the defining OperationDefinition. However, it can sometimes differ if necessary to 
+                     * disambiguate when a server supports multiple OperationDefinition that happen to share the same code.
                      * 
                      * <p>This element is required.
                      * 
@@ -5695,7 +6010,7 @@ public class CapabilityStatement extends DomainResource {
                 bindingName = "SystemRestfulInteraction",
                 strength = BindingStrength.Value.REQUIRED,
                 description = "Operations supported by REST at the system level.",
-                valueSet = "http://hl7.org/fhir/ValueSet/system-restful-interaction|4.3.0"
+                valueSet = "http://hl7.org/fhir/ValueSet/system-restful-interaction|5.0.0"
             )
             @Required
             private final SystemRestfulInteraction code;
@@ -5819,7 +6134,7 @@ public class CapabilityStatement extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5839,7 +6154,7 @@ public class CapabilityStatement extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5864,7 +6179,7 @@ public class CapabilityStatement extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5889,7 +6204,7 @@ public class CapabilityStatement extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -6143,7 +6458,7 @@ public class CapabilityStatement extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -6163,7 +6478,7 @@ public class CapabilityStatement extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -6188,7 +6503,7 @@ public class CapabilityStatement extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -6213,7 +6528,7 @@ public class CapabilityStatement extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -6512,7 +6827,7 @@ public class CapabilityStatement extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -6532,7 +6847,7 @@ public class CapabilityStatement extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -6557,7 +6872,7 @@ public class CapabilityStatement extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -6582,7 +6897,7 @@ public class CapabilityStatement extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -6687,7 +7002,7 @@ public class CapabilityStatement extends DomainResource {
                 bindingName = "EventCapabilityMode",
                 strength = BindingStrength.Value.REQUIRED,
                 description = "The mode of a message capability statement.",
-                valueSet = "http://hl7.org/fhir/ValueSet/event-capability-mode|4.3.0"
+                valueSet = "http://hl7.org/fhir/ValueSet/event-capability-mode|5.0.0"
             )
             @Required
             private final EventCapabilityMode mode;
@@ -6812,7 +7127,7 @@ public class CapabilityStatement extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -6832,7 +7147,7 @@ public class CapabilityStatement extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -6857,7 +7172,7 @@ public class CapabilityStatement extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -6882,7 +7197,7 @@ public class CapabilityStatement extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -6987,7 +7302,7 @@ public class CapabilityStatement extends DomainResource {
             bindingName = "DocumentMode",
             strength = BindingStrength.Value.REQUIRED,
             description = "Whether the application produces or consumes documents.",
-            valueSet = "http://hl7.org/fhir/ValueSet/document-mode|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/document-mode|5.0.0"
         )
         @Required
         private final DocumentMode mode;
@@ -7130,7 +7445,7 @@ public class CapabilityStatement extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -7150,7 +7465,7 @@ public class CapabilityStatement extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -7175,7 +7490,7 @@ public class CapabilityStatement extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -7200,7 +7515,7 @@ public class CapabilityStatement extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 

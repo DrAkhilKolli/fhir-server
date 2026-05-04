@@ -432,7 +432,7 @@ public class MemberMatchTest {
                         .builder()
                         .reference("Patient/2-2-3-4")
                         .build())
-                    .payor(Reference
+                    .insurer(Reference
                         .builder()
                         .reference("Organization/1-2-3-4")
                         .build())
@@ -597,8 +597,8 @@ public class MemberMatchTest {
                 builder
                     .beneficiary(DATA_ABSENT_REFERENCE)
                     .subscriber(DATA_ABSENT_REFERENCE)
-                    .payor(DATA_ABSENT_REFERENCE)
-                    .subscriberId(DATA_ABSENT_STRING);
+                    .insurer(DATA_ABSENT_REFERENCE)
+                    .subscriberId(Identifier.builder().value(DATA_ABSENT_STRING).build());
         Coverage coverage = builder.build();
         MemberMatchCovergeSearchCompiler compiler = new MemberMatchCovergeSearchCompiler("1-2-3-4");
         coverage.accept(compiler);
@@ -612,8 +612,8 @@ public class MemberMatchTest {
         builder = builder
             .beneficiary(DATA_ABSENT_REFERENCE)
             .subscriber(DATA_ABSENT_REFERENCE)
-            .payor(DATA_ABSENT_REFERENCE)
-            .subscriberId(DATA_ABSENT_STRING);
+            .insurer(DATA_ABSENT_REFERENCE)
+            .subscriberId(Identifier.builder().value(DATA_ABSENT_STRING).build());
         Coverage coverage = builder.build();
         MemberMatchCovergeSearchCompiler compiler = new MemberMatchCovergeSearchCompiler("1-2-3-4");
         coverage.accept(compiler);
@@ -639,7 +639,7 @@ public class MemberMatchTest {
                                 .build())
                             .text("English")
                             .build())
-                        .value("Test")
+                        .value(Identifier.builder().value("Test").build())
                         .build())
                     .build();
 
@@ -673,7 +673,7 @@ public class MemberMatchTest {
                                 .build())
                             .text("English")
                             .build())
-                        .value(DATA_ABSENT_STRING)
+                        .value(Identifier.builder().value(DATA_ABSENT_STRING).build())
                         .build())
                     .build();
         MemberMatchCovergeSearchCompiler compiler = new MemberMatchCovergeSearchCompiler("1-2-3-4");
@@ -696,7 +696,7 @@ public class MemberMatchTest {
                             .coding(Coding.builder().system(Uri.of("urn:ietf:bcp:47")).code(Code.builder().extension(DATA_ABSENT).build()).build())
                             .text("English")
                             .build())
-                        .value("test")
+                        .value(Identifier.builder().value("test").build())
                         .build())
                     .build();
 
@@ -724,7 +724,7 @@ public class MemberMatchTest {
                                 .build())
                             .text("English")
                             .build())
-                        .value("test")
+                        .value(Identifier.builder().value("test").build())
                         .build())
                     .build();
 
@@ -748,7 +748,7 @@ public class MemberMatchTest {
                             .extension(DATA_ABSENT)
                             .text("English")
                             .build())
-                        .value(DATA_ABSENT_STRING)
+                        .value(Identifier.builder().value(DATA_ABSENT_STRING).build())
                         .build())
                     .build();
 
@@ -764,7 +764,7 @@ public class MemberMatchTest {
         Coverage.Class.Builder builder = Coverage.Class.builder();
         builder.setValidating(false);
         coverage =
-                coverage.toBuilder().clazz(builder.value("test").build()).build();
+                coverage.toBuilder().clazz(builder.value(Identifier.builder().value("test").build()).build()).build();
 
         MemberMatchCovergeSearchCompiler compiler = new MemberMatchCovergeSearchCompiler("1-2-3-4");
         coverage.accept(compiler);
@@ -805,7 +805,7 @@ public class MemberMatchTest {
                             .coding(builder.build())
                             .text("English")
                             .build())
-                        .value("Test")
+                        .value(Identifier.builder().value("Test").build())
                         .build())
                     .build();
 
@@ -834,7 +834,7 @@ public class MemberMatchTest {
                             .coding(builder.build())
                             .text("English")
                             .build())
-                        .value("Test")
+                        .value(Identifier.builder().value("Test").build())
                         .build())
                     .build();
 

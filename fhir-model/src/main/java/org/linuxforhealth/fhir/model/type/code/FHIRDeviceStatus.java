@@ -22,32 +22,23 @@ public class FHIRDeviceStatus extends Code {
     /**
      * Active
      * 
-     * <p>The device is available for use. Note: For *implanted devices* this means that the device is implanted in the 
-     * patient.
+     * <p>The device record is current and is appropriate for reference in new instances.
      */
     public static final FHIRDeviceStatus ACTIVE = FHIRDeviceStatus.builder().value(Value.ACTIVE).build();
 
     /**
      * Inactive
      * 
-     * <p>The device is no longer available for use (e.g. lost, expired, damaged). Note: For *implanted devices* this means 
-     * that the device has been removed from the patient.
+     * <p>The device record is not current and is not appropriate for reference in new instances.
      */
     public static final FHIRDeviceStatus INACTIVE = FHIRDeviceStatus.builder().value(Value.INACTIVE).build();
 
     /**
      * Entered in Error
      * 
-     * <p>The device was entered in error and voided.
+     * <p>The device record is not current and is not appropriate for reference in new instances.
      */
     public static final FHIRDeviceStatus ENTERED_IN_ERROR = FHIRDeviceStatus.builder().value(Value.ENTERED_IN_ERROR).build();
-
-    /**
-     * Unknown
-     * 
-     * <p>The status of the device has not been determined.
-     */
-    public static final FHIRDeviceStatus UNKNOWN = FHIRDeviceStatus.builder().value(Value.UNKNOWN).build();
 
     private volatile int hashCode;
 
@@ -73,8 +64,6 @@ public class FHIRDeviceStatus extends Code {
             return INACTIVE;
         case ENTERED_IN_ERROR:
             return ENTERED_IN_ERROR;
-        case UNKNOWN:
-            return UNKNOWN;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -210,32 +199,23 @@ public class FHIRDeviceStatus extends Code {
         /**
          * Active
          * 
-         * <p>The device is available for use. Note: For *implanted devices* this means that the device is implanted in the 
-         * patient.
+         * <p>The device record is current and is appropriate for reference in new instances.
          */
         ACTIVE("active"),
 
         /**
          * Inactive
          * 
-         * <p>The device is no longer available for use (e.g. lost, expired, damaged). Note: For *implanted devices* this means 
-         * that the device has been removed from the patient.
+         * <p>The device record is not current and is not appropriate for reference in new instances.
          */
         INACTIVE("inactive"),
 
         /**
          * Entered in Error
          * 
-         * <p>The device was entered in error and voided.
+         * <p>The device record is not current and is not appropriate for reference in new instances.
          */
-        ENTERED_IN_ERROR("entered-in-error"),
-
-        /**
-         * Unknown
-         * 
-         * <p>The status of the device has not been determined.
-         */
-        UNKNOWN("unknown");
+        ENTERED_IN_ERROR("entered-in-error");
 
         private final java.lang.String value;
 
@@ -272,8 +252,6 @@ public class FHIRDeviceStatus extends Code {
                 return INACTIVE;
             case "entered-in-error":
                 return ENTERED_IN_ERROR;
-            case "unknown":
-                return UNKNOWN;
             default:
                 throw new IllegalArgumentException(value);
             }

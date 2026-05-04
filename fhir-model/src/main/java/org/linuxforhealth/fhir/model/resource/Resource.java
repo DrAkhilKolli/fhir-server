@@ -9,17 +9,15 @@ package org.linuxforhealth.fhir.model.resource;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
-import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.Summary;
-import org.linuxforhealth.fhir.model.builder.AbstractBuilder;
+import org.linuxforhealth.fhir.model.type.Base;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
-import org.linuxforhealth.fhir.model.visitor.AbstractVisitable;
 
 /**
  * This is the base resource type for everything.
@@ -30,17 +28,8 @@ import org.linuxforhealth.fhir.model.visitor.AbstractVisitable;
     level = 5,
     status = StandardsStatus.Value.NORMATIVE
 )
-@Constraint(
-    id = "resource-0",
-    level = "Warning",
-    location = "(base)",
-    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/languages",
-    expression = "language.exists() implies (language.memberOf('http://hl7.org/fhir/ValueSet/languages', 'preferred'))",
-    source = "http://hl7.org/fhir/StructureDefinition/Resource",
-    generated = true
-)
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public abstract class Resource extends AbstractVisitable {
+public abstract class Resource extends Base {
     @Summary
     protected final java.lang.String id;
     @Summary
@@ -49,16 +38,16 @@ public abstract class Resource extends AbstractVisitable {
     protected final Uri implicitRules;
     @Binding(
         bindingName = "Language",
-        strength = BindingStrength.Value.PREFERRED,
-        description = "IETF language tag",
-        valueSet = "http://hl7.org/fhir/ValueSet/languages",
-        maxValueSet = "http://hl7.org/fhir/ValueSet/all-languages"
+        strength = BindingStrength.Value.REQUIRED,
+        description = "IETF language tag for a human language",
+        valueSet = "http://hl7.org/fhir/ValueSet/all-languages|5.0.0"
     )
     protected final Code language;
 
     protected volatile int hashCode;
 
     protected Resource(Builder builder) {
+        super(builder);
         id = builder.id;
         meta = builder.meta;
         implicitRules = builder.implicitRules;
@@ -136,7 +125,7 @@ public abstract class Resource extends AbstractVisitable {
      */
     public abstract Builder toBuilder();
 
-    public static abstract class Builder extends AbstractBuilder<Resource> {
+    public static abstract class Builder extends Base.Builder {
         protected java.lang.String id;
         protected Meta meta;
         protected Uri implicitRules;

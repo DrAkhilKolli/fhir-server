@@ -20,14 +20,14 @@ import javax.annotation.Generated;
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class ConsentProvisionType extends Code {
     /**
-     * Opt Out
+     * Deny
      * 
      * <p>Consent is denied for actions meeting these rules.
      */
     public static final ConsentProvisionType DENY = ConsentProvisionType.builder().value(Value.DENY).build();
 
     /**
-     * Opt In
+     * Permit
      * 
      * <p>Consent is provided for actions meeting these rules.
      */
@@ -188,14 +188,14 @@ public class ConsentProvisionType extends Code {
 
     public enum Value {
         /**
-         * Opt Out
+         * Deny
          * 
          * <p>Consent is denied for actions meeting these rules.
          */
         DENY("deny"),
 
         /**
-         * Opt In
+         * Permit
          * 
          * <p>Consent is provided for actions meeting these rules.
          */

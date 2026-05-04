@@ -49,6 +49,11 @@ public class ParticipantStatus extends Code {
      */
     public static final ParticipantStatus NEEDS_ACTION = ParticipantStatus.builder().value(Value.NEEDS_ACTION).build();
 
+    /**
+     * Entered in error
+     */
+    public static final ParticipantStatus ENTERED_IN_ERROR = ParticipantStatus.builder().value(Value.ENTERED_IN_ERROR).build();
+
     private volatile int hashCode;
 
     private ParticipantStatus(Builder builder) {
@@ -75,6 +80,8 @@ public class ParticipantStatus extends Code {
             return TENTATIVE;
         case NEEDS_ACTION:
             return NEEDS_ACTION;
+        case ENTERED_IN_ERROR:
+            return ENTERED_IN_ERROR;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -235,7 +242,12 @@ public class ParticipantStatus extends Code {
          * <p>The participant needs to indicate if they accept the appointment by changing this status to one of the other 
          * statuses.
          */
-        NEEDS_ACTION("needs-action");
+        NEEDS_ACTION("needs-action"),
+
+        /**
+         * Entered in error
+         */
+        ENTERED_IN_ERROR("entered-in-error");
 
         private final java.lang.String value;
 
@@ -274,6 +286,8 @@ public class ParticipantStatus extends Code {
                 return TENTATIVE;
             case "needs-action":
                 return NEEDS_ACTION;
+            case "entered-in-error":
+                return ENTERED_IN_ERROR;
             default:
                 throw new IllegalArgumentException(value);
             }

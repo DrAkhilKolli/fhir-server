@@ -20,40 +20,38 @@ import javax.annotation.Generated;
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class ProvenanceEntityRole extends Code {
     /**
-     * Derivation
-     * 
-     * <p>A transformation of an entity into another, an update of an entity resulting in a new one, or the construction of a 
-     * new entity based on a pre-existing entity.
-     */
-    public static final ProvenanceEntityRole DERIVATION = ProvenanceEntityRole.builder().value(Value.DERIVATION).build();
-
-    /**
      * Revision
      * 
-     * <p>A derivation for which the resulting entity is a revised version of some original.
+     * <p>An entity that is used by the activity to produce a new version of that entity.
      */
     public static final ProvenanceEntityRole REVISION = ProvenanceEntityRole.builder().value(Value.REVISION).build();
 
     /**
      * Quotation
      * 
-     * <p>The repeat of (some or all of) an entity, such as text or image, by someone who might or might not be its original 
-     * author.
+     * <p>An entity that is copied in full or part by an agent that is not the author of the entity.
      */
     public static final ProvenanceEntityRole QUOTATION = ProvenanceEntityRole.builder().value(Value.QUOTATION).build();
 
     /**
      * Source
      * 
-     * <p>A primary source for a topic refers to something produced by some agent with direct experience and knowledge about 
-     * the topic, at the time of the topic's study, without benefit from hindsight.
+     * <p>An entity that is used as input to the activity that produced the target.
      */
     public static final ProvenanceEntityRole SOURCE = ProvenanceEntityRole.builder().value(Value.SOURCE).build();
 
     /**
+     * Instantiates
+     * 
+     * <p>The record resulting from this event adheres to the protocol, guideline, order set or other definition represented 
+     * by this entity.
+     */
+    public static final ProvenanceEntityRole INSTANTIATES = ProvenanceEntityRole.builder().value(Value.INSTANTIATES).build();
+
+    /**
      * Removal
      * 
-     * <p>A derivation for which the entity is removed from accessibility usually through the use of the Delete operation.
+     * <p>An entity that is removed from accessibility, usually through the DELETE operator.
      */
     public static final ProvenanceEntityRole REMOVAL = ProvenanceEntityRole.builder().value(Value.REMOVAL).build();
 
@@ -75,14 +73,14 @@ public class ProvenanceEntityRole extends Code {
      */
     public static ProvenanceEntityRole of(Value value) {
         switch (value) {
-        case DERIVATION:
-            return DERIVATION;
         case REVISION:
             return REVISION;
         case QUOTATION:
             return QUOTATION;
         case SOURCE:
             return SOURCE;
+        case INSTANTIATES:
+            return INSTANTIATES;
         case REMOVAL:
             return REMOVAL;
         default:
@@ -218,40 +216,38 @@ public class ProvenanceEntityRole extends Code {
 
     public enum Value {
         /**
-         * Derivation
-         * 
-         * <p>A transformation of an entity into another, an update of an entity resulting in a new one, or the construction of a 
-         * new entity based on a pre-existing entity.
-         */
-        DERIVATION("derivation"),
-
-        /**
          * Revision
          * 
-         * <p>A derivation for which the resulting entity is a revised version of some original.
+         * <p>An entity that is used by the activity to produce a new version of that entity.
          */
         REVISION("revision"),
 
         /**
          * Quotation
          * 
-         * <p>The repeat of (some or all of) an entity, such as text or image, by someone who might or might not be its original 
-         * author.
+         * <p>An entity that is copied in full or part by an agent that is not the author of the entity.
          */
         QUOTATION("quotation"),
 
         /**
          * Source
          * 
-         * <p>A primary source for a topic refers to something produced by some agent with direct experience and knowledge about 
-         * the topic, at the time of the topic's study, without benefit from hindsight.
+         * <p>An entity that is used as input to the activity that produced the target.
          */
         SOURCE("source"),
 
         /**
+         * Instantiates
+         * 
+         * <p>The record resulting from this event adheres to the protocol, guideline, order set or other definition represented 
+         * by this entity.
+         */
+        INSTANTIATES("instantiates"),
+
+        /**
          * Removal
          * 
-         * <p>A derivation for which the entity is removed from accessibility usually through the use of the Delete operation.
+         * <p>An entity that is removed from accessibility, usually through the DELETE operator.
          */
         REMOVAL("removal");
 
@@ -284,14 +280,14 @@ public class ProvenanceEntityRole extends Code {
                 return null;
             }
             switch (value) {
-            case "derivation":
-                return DERIVATION;
             case "revision":
                 return REVISION;
             case "quotation":
                 return QUOTATION;
             case "source":
                 return SOURCE;
+            case "instantiates":
+                return INSTANTIATES;
             case "removal":
                 return REMOVAL;
             default:

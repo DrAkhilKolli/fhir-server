@@ -83,15 +83,6 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     source = "http://hl7.org/fhir/StructureDefinition/Patient",
     generated = true
 )
-@Constraint(
-    id = "patient-4",
-    level = "Warning",
-    location = "communication.language",
-    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/languages",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/languages', 'preferred')",
-    source = "http://hl7.org/fhir/StructureDefinition/Patient",
-    generated = true
-)
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class Patient extends DomainResource {
     @Summary
@@ -107,14 +98,14 @@ public class Patient extends DomainResource {
         bindingName = "AdministrativeGender",
         strength = BindingStrength.Value.REQUIRED,
         description = "The gender of a person used for administrative purposes.",
-        valueSet = "http://hl7.org/fhir/ValueSet/administrative-gender|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/administrative-gender|5.0.0"
     )
     private final AdministrativeGender gender;
     @Summary
     private final Date birthDate;
     @Summary
     @Choice({ Boolean.class, DateTime.class })
-    private final Element deceased;
+    private final org.linuxforhealth.fhir.model.type.Element deceased;
     @Summary
     private final List<Address> address;
     @Binding(
@@ -125,7 +116,7 @@ public class Patient extends DomainResource {
     )
     private final CodeableConcept maritalStatus;
     @Choice({ Boolean.class, Integer.class })
-    private final Element multipleBirth;
+    private final org.linuxforhealth.fhir.model.type.Element multipleBirth;
     private final List<Attachment> photo;
     private final List<Contact> contact;
     private final List<Communication> communication;
@@ -230,7 +221,7 @@ public class Patient extends DomainResource {
      * @return
      *     An immutable object of type {@link Boolean} or {@link DateTime} that may be null.
      */
-    public Element getDeceased() {
+    public org.linuxforhealth.fhir.model.type.Element getDeceased() {
         return deceased;
     }
 
@@ -260,7 +251,7 @@ public class Patient extends DomainResource {
      * @return
      *     An immutable object of type {@link Boolean} or {@link Integer} that may be null.
      */
-    public Element getMultipleBirth() {
+    public org.linuxforhealth.fhir.model.type.Element getMultipleBirth() {
         return multipleBirth;
     }
 
@@ -315,7 +306,7 @@ public class Patient extends DomainResource {
     }
 
     /**
-     * Link to another patient resource that concerns the same actual patient.
+     * Link to a Patient or RelatedPerson resource that concerns the same actual individual.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Link} that may be empty.
@@ -468,10 +459,10 @@ public class Patient extends DomainResource {
         private List<ContactPoint> telecom = new ArrayList<>();
         private AdministrativeGender gender;
         private Date birthDate;
-        private Element deceased;
+        private org.linuxforhealth.fhir.model.type.Element deceased;
         private List<Address> address = new ArrayList<>();
         private CodeableConcept maritalStatus;
-        private Element multipleBirth;
+        private org.linuxforhealth.fhir.model.type.Element multipleBirth;
         private List<Attachment> photo = new ArrayList<>();
         private List<Contact> contact = new ArrayList<>();
         private List<Communication> communication = new ArrayList<>();
@@ -561,7 +552,8 @@ public class Patient extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -579,7 +571,8 @@ public class Patient extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -600,7 +593,7 @@ public class Patient extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -620,7 +613,7 @@ public class Patient extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -645,9 +638,9 @@ public class Patient extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -670,9 +663,9 @@ public class Patient extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -923,7 +916,7 @@ public class Patient extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder deceased(Element deceased) {
+        public Builder deceased(org.linuxforhealth.fhir.model.type.Element deceased) {
             this.deceased = deceased;
             return this;
         }
@@ -1028,7 +1021,7 @@ public class Patient extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder multipleBirth(Element multipleBirth) {
+        public Builder multipleBirth(org.linuxforhealth.fhir.model.type.Element multipleBirth) {
             this.multipleBirth = multipleBirth;
             return this;
         }
@@ -1223,13 +1216,13 @@ public class Patient extends DomainResource {
         }
 
         /**
-         * Link to another patient resource that concerns the same actual patient.
+         * Link to a Patient or RelatedPerson resource that concerns the same actual individual.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param link
-         *     Link to another patient resource that concerns the same actual person
+         *     Link to a Patient or RelatedPerson resource that concerns the same actual individual
          * 
          * @return
          *     A reference to this Builder instance
@@ -1242,13 +1235,13 @@ public class Patient extends DomainResource {
         }
 
         /**
-         * Link to another patient resource that concerns the same actual patient.
+         * Link to a Patient or RelatedPerson resource that concerns the same actual individual.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param link
-         *     Link to another patient resource that concerns the same actual person
+         *     Link to a Patient or RelatedPerson resource that concerns the same actual individual
          * 
          * @return
          *     A reference to this Builder instance
@@ -1335,7 +1328,7 @@ public class Patient extends DomainResource {
             bindingName = "AdministrativeGender",
             strength = BindingStrength.Value.REQUIRED,
             description = "The gender of a person used for administrative purposes.",
-            valueSet = "http://hl7.org/fhir/ValueSet/administrative-gender|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/administrative-gender|5.0.0"
         )
         private final AdministrativeGender gender;
         @ReferenceTarget({ "Organization" })
@@ -1540,7 +1533,7 @@ public class Patient extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1560,7 +1553,7 @@ public class Patient extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1585,7 +1578,7 @@ public class Patient extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1610,7 +1603,7 @@ public class Patient extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1833,10 +1826,9 @@ public class Patient extends DomainResource {
     public static class Communication extends BackboneElement {
         @Binding(
             bindingName = "Language",
-            strength = BindingStrength.Value.PREFERRED,
-            description = "IETF language tag",
-            valueSet = "http://hl7.org/fhir/ValueSet/languages",
-            maxValueSet = "http://hl7.org/fhir/ValueSet/all-languages"
+            strength = BindingStrength.Value.REQUIRED,
+            description = "IETF language tag for a human language",
+            valueSet = "http://hl7.org/fhir/ValueSet/all-languages|5.0.0"
         )
         @Required
         private final CodeableConcept language;
@@ -1850,8 +1842,8 @@ public class Patient extends DomainResource {
 
         /**
          * The ISO-639-1 alpha 2 code in lower case for the language, optionally followed by a hyphen and the ISO-3166-1 alpha 2 
-         * code for the region in upper case; e.g. "en" for English, or "en-US" for American English versus "en-EN" for England 
-         * English.
+         * code for the region in upper case; e.g. "en" for English, or "en-US" for American English versus "en-AU" for 
+         * Australian English.
          * 
          * @return
          *     An immutable object of type {@link CodeableConcept} that is non-null.
@@ -1961,7 +1953,7 @@ public class Patient extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1981,7 +1973,7 @@ public class Patient extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2006,7 +1998,7 @@ public class Patient extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2031,7 +2023,7 @@ public class Patient extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2057,8 +2049,8 @@ public class Patient extends DomainResource {
 
             /**
              * The ISO-639-1 alpha 2 code in lower case for the language, optionally followed by a hyphen and the ISO-3166-1 alpha 2 
-             * code for the region in upper case; e.g. "en" for English, or "en-US" for American English versus "en-EN" for England 
-             * English.
+             * code for the region in upper case; e.g. "en" for English, or "en-US" for American English versus "en-AU" for 
+             * Australian English.
              * 
              * <p>This element is required.
              * 
@@ -2142,7 +2134,7 @@ public class Patient extends DomainResource {
     }
 
     /**
-     * Link to another patient resource that concerns the same actual patient.
+     * Link to a Patient or RelatedPerson resource that concerns the same actual individual.
      */
     public static class Link extends BackboneElement {
         @Summary
@@ -2153,8 +2145,8 @@ public class Patient extends DomainResource {
         @Binding(
             bindingName = "LinkType",
             strength = BindingStrength.Value.REQUIRED,
-            description = "The type of link between this patient resource and another patient resource.",
-            valueSet = "http://hl7.org/fhir/ValueSet/link-type|4.3.0"
+            description = "The type of link between this patient resource and another Patient resource, or Patient/RelatedPerson when using the `seealso` code",
+            valueSet = "http://hl7.org/fhir/ValueSet/link-type|5.0.0"
         )
         @Required
         private final LinkType type;
@@ -2166,7 +2158,7 @@ public class Patient extends DomainResource {
         }
 
         /**
-         * The other patient resource that the link refers to.
+         * Link to a Patient or RelatedPerson resource that concerns the same actual individual.
          * 
          * @return
          *     An immutable object of type {@link Reference} that is non-null.
@@ -2276,7 +2268,7 @@ public class Patient extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2296,7 +2288,7 @@ public class Patient extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2321,7 +2313,7 @@ public class Patient extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2346,7 +2338,7 @@ public class Patient extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2371,7 +2363,7 @@ public class Patient extends DomainResource {
             }
 
             /**
-             * The other patient resource that the link refers to.
+             * Link to a Patient or RelatedPerson resource that concerns the same actual individual.
              * 
              * <p>This element is required.
              * 

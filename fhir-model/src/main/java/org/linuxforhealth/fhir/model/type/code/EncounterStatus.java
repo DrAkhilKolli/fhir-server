@@ -27,20 +27,6 @@ public class EncounterStatus extends Code {
     public static final EncounterStatus PLANNED = EncounterStatus.builder().value(Value.PLANNED).build();
 
     /**
-     * Arrived
-     * 
-     * <p>The Patient is present for the encounter, however is not currently meeting with a practitioner.
-     */
-    public static final EncounterStatus ARRIVED = EncounterStatus.builder().value(Value.ARRIVED).build();
-
-    /**
-     * Triaged
-     * 
-     * <p>The patient has been assessed for the priority of their treatment based on the severity of their condition.
-     */
-    public static final EncounterStatus TRIAGED = EncounterStatus.builder().value(Value.TRIAGED).build();
-
-    /**
      * In Progress
      * 
      * <p>The Encounter has begun and the patient is present / the practitioner and the patient are meeting.
@@ -48,18 +34,28 @@ public class EncounterStatus extends Code {
     public static final EncounterStatus IN_PROGRESS = EncounterStatus.builder().value(Value.IN_PROGRESS).build();
 
     /**
-     * On Leave
+     * On Hold
      * 
-     * <p>The Encounter has begun, but the patient is temporarily on leave.
+     * <p>The Encounter has begun, but is currently on hold, e.g. because the patient is temporarily on leave.
      */
-    public static final EncounterStatus ONLEAVE = EncounterStatus.builder().value(Value.ONLEAVE).build();
+    public static final EncounterStatus ON_HOLD = EncounterStatus.builder().value(Value.ON_HOLD).build();
 
     /**
-     * Finished
+     * Discharged
+     * 
+     * <p>The Encounter has been clinically completed, the patient has been discharged from the facility or the visit has 
+     * ended, and the patient may have departed (refer to subjectStatus). While the encounter is in this status, 
+     * administrative activities are usually performed, collating all required documentation and charge information before 
+     * being released for billing, at which point the status will move to completed.
+     */
+    public static final EncounterStatus DISCHARGED = EncounterStatus.builder().value(Value.DISCHARGED).build();
+
+    /**
+     * Completed
      * 
      * <p>The Encounter has ended.
      */
-    public static final EncounterStatus FINISHED = EncounterStatus.builder().value(Value.FINISHED).build();
+    public static final EncounterStatus COMPLETED = EncounterStatus.builder().value(Value.COMPLETED).build();
 
     /**
      * Cancelled
@@ -67,6 +63,14 @@ public class EncounterStatus extends Code {
      * <p>The Encounter has ended before it has begun.
      */
     public static final EncounterStatus CANCELLED = EncounterStatus.builder().value(Value.CANCELLED).build();
+
+    /**
+     * Discontinued
+     * 
+     * <p>The Encounter has started, but was not able to be completed. Further action may need to be performed, such as 
+     * rescheduling appointments related to this encounter.
+     */
+    public static final EncounterStatus DISCONTINUED = EncounterStatus.builder().value(Value.DISCONTINUED).build();
 
     /**
      * Entered in Error
@@ -103,18 +107,18 @@ public class EncounterStatus extends Code {
         switch (value) {
         case PLANNED:
             return PLANNED;
-        case ARRIVED:
-            return ARRIVED;
-        case TRIAGED:
-            return TRIAGED;
         case IN_PROGRESS:
             return IN_PROGRESS;
-        case ONLEAVE:
-            return ONLEAVE;
-        case FINISHED:
-            return FINISHED;
+        case ON_HOLD:
+            return ON_HOLD;
+        case DISCHARGED:
+            return DISCHARGED;
+        case COMPLETED:
+            return COMPLETED;
         case CANCELLED:
             return CANCELLED;
+        case DISCONTINUED:
+            return DISCONTINUED;
         case ENTERED_IN_ERROR:
             return ENTERED_IN_ERROR;
         case UNKNOWN:
@@ -259,20 +263,6 @@ public class EncounterStatus extends Code {
         PLANNED("planned"),
 
         /**
-         * Arrived
-         * 
-         * <p>The Patient is present for the encounter, however is not currently meeting with a practitioner.
-         */
-        ARRIVED("arrived"),
-
-        /**
-         * Triaged
-         * 
-         * <p>The patient has been assessed for the priority of their treatment based on the severity of their condition.
-         */
-        TRIAGED("triaged"),
-
-        /**
          * In Progress
          * 
          * <p>The Encounter has begun and the patient is present / the practitioner and the patient are meeting.
@@ -280,18 +270,28 @@ public class EncounterStatus extends Code {
         IN_PROGRESS("in-progress"),
 
         /**
-         * On Leave
+         * On Hold
          * 
-         * <p>The Encounter has begun, but the patient is temporarily on leave.
+         * <p>The Encounter has begun, but is currently on hold, e.g. because the patient is temporarily on leave.
          */
-        ONLEAVE("onleave"),
+        ON_HOLD("on-hold"),
 
         /**
-         * Finished
+         * Discharged
+         * 
+         * <p>The Encounter has been clinically completed, the patient has been discharged from the facility or the visit has 
+         * ended, and the patient may have departed (refer to subjectStatus). While the encounter is in this status, 
+         * administrative activities are usually performed, collating all required documentation and charge information before 
+         * being released for billing, at which point the status will move to completed.
+         */
+        DISCHARGED("discharged"),
+
+        /**
+         * Completed
          * 
          * <p>The Encounter has ended.
          */
-        FINISHED("finished"),
+        COMPLETED("completed"),
 
         /**
          * Cancelled
@@ -299,6 +299,14 @@ public class EncounterStatus extends Code {
          * <p>The Encounter has ended before it has begun.
          */
         CANCELLED("cancelled"),
+
+        /**
+         * Discontinued
+         * 
+         * <p>The Encounter has started, but was not able to be completed. Further action may need to be performed, such as 
+         * rescheduling appointments related to this encounter.
+         */
+        DISCONTINUED("discontinued"),
 
         /**
          * Entered in Error
@@ -346,18 +354,18 @@ public class EncounterStatus extends Code {
             switch (value) {
             case "planned":
                 return PLANNED;
-            case "arrived":
-                return ARRIVED;
-            case "triaged":
-                return TRIAGED;
             case "in-progress":
                 return IN_PROGRESS;
-            case "onleave":
-                return ONLEAVE;
-            case "finished":
-                return FINISHED;
+            case "on-hold":
+                return ON_HOLD;
+            case "discharged":
+                return DISCHARGED;
+            case "completed":
+                return COMPLETED;
             case "cancelled":
                 return CANCELLED;
+            case "discontinued":
+                return DISCONTINUED;
             case "entered-in-error":
                 return ENTERED_IN_ERROR;
             case "unknown":

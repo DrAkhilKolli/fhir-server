@@ -24,6 +24,7 @@ import org.linuxforhealth.fhir.model.format.Format;
 import org.linuxforhealth.fhir.model.generator.FHIRGenerator;
 import org.linuxforhealth.fhir.model.parser.FHIRParser;
 import org.linuxforhealth.fhir.model.resource.Basic;
+import org.linuxforhealth.fhir.model.resource.Observation;
 import org.linuxforhealth.fhir.model.resource.Resource;
 import org.linuxforhealth.fhir.model.type.Base64Binary;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;

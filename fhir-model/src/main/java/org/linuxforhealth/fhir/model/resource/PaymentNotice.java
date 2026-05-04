@@ -40,10 +40,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * This resource provides the status of the payment for goods and services rendered, and the request and response 
  * resource references.
  * 
- * <p>Maturity level: FMM2 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 2,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
@@ -54,7 +54,7 @@ public class PaymentNotice extends DomainResource {
         bindingName = "PaymentNoticeStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "A code specifying the state of the resource instance.",
-        valueSet = "http://hl7.org/fhir/ValueSet/fm-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/fm-status|5.0.0"
     )
     @Required
     private final PaymentNoticeStatus status;
@@ -64,10 +64,9 @@ public class PaymentNotice extends DomainResource {
     @Required
     private final DateTime created;
     @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization" })
-    private final Reference provider;
+    private final Reference reporter;
     @Summary
     @ReferenceTarget({ "PaymentReconciliation" })
-    @Required
     private final Reference payment;
     private final Date paymentDate;
     @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization" })
@@ -94,7 +93,7 @@ public class PaymentNotice extends DomainResource {
         request = builder.request;
         response = builder.response;
         created = builder.created;
-        provider = builder.provider;
+        reporter = builder.reporter;
         payment = builder.payment;
         paymentDate = builder.paymentDate;
         payee = builder.payee;
@@ -154,20 +153,20 @@ public class PaymentNotice extends DomainResource {
     }
 
     /**
-     * The practitioner who is responsible for the services rendered to the patient.
+     * The party who reports the payment notice.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
      */
-    public Reference getProvider() {
-        return provider;
+    public Reference getReporter() {
+        return reporter;
     }
 
     /**
      * A reference to the payment which is the subject of this notice.
      * 
      * @return
-     *     An immutable object of type {@link Reference} that is non-null.
+     *     An immutable object of type {@link Reference} that may be null.
      */
     public Reference getPayment() {
         return payment;
@@ -231,7 +230,7 @@ public class PaymentNotice extends DomainResource {
             (request != null) || 
             (response != null) || 
             (created != null) || 
-            (provider != null) || 
+            (reporter != null) || 
             (payment != null) || 
             (paymentDate != null) || 
             (payee != null) || 
@@ -259,7 +258,7 @@ public class PaymentNotice extends DomainResource {
                 accept(request, "request", visitor);
                 accept(response, "response", visitor);
                 accept(created, "created", visitor);
-                accept(provider, "provider", visitor);
+                accept(reporter, "reporter", visitor);
                 accept(payment, "payment", visitor);
                 accept(paymentDate, "paymentDate", visitor);
                 accept(payee, "payee", visitor);
@@ -297,7 +296,7 @@ public class PaymentNotice extends DomainResource {
             Objects.equals(request, other.request) && 
             Objects.equals(response, other.response) && 
             Objects.equals(created, other.created) && 
-            Objects.equals(provider, other.provider) && 
+            Objects.equals(reporter, other.reporter) && 
             Objects.equals(payment, other.payment) && 
             Objects.equals(paymentDate, other.paymentDate) && 
             Objects.equals(payee, other.payee) && 
@@ -323,7 +322,7 @@ public class PaymentNotice extends DomainResource {
                 request, 
                 response, 
                 created, 
-                provider, 
+                reporter, 
                 payment, 
                 paymentDate, 
                 payee, 
@@ -350,7 +349,7 @@ public class PaymentNotice extends DomainResource {
         private Reference request;
         private Reference response;
         private DateTime created;
-        private Reference provider;
+        private Reference reporter;
         private Reference payment;
         private Date paymentDate;
         private Reference payee;
@@ -440,7 +439,8 @@ public class PaymentNotice extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -458,7 +458,8 @@ public class PaymentNotice extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -479,7 +480,7 @@ public class PaymentNotice extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -499,7 +500,7 @@ public class PaymentNotice extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -524,9 +525,9 @@ public class PaymentNotice extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -549,9 +550,9 @@ public class PaymentNotice extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -580,7 +581,7 @@ public class PaymentNotice extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param identifier
-         *     Business Identifier for the payment noctice
+         *     Business Identifier for the payment notice
          * 
          * @return
          *     A reference to this Builder instance
@@ -599,7 +600,7 @@ public class PaymentNotice extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param identifier
-         *     Business Identifier for the payment noctice
+         *     Business Identifier for the payment notice
          * 
          * @return
          *     A reference to this Builder instance
@@ -673,7 +674,7 @@ public class PaymentNotice extends DomainResource {
         }
 
         /**
-         * The practitioner who is responsible for the services rendered to the patient.
+         * The party who reports the payment notice.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
@@ -682,21 +683,19 @@ public class PaymentNotice extends DomainResource {
          * <li>{@link Organization}</li>
          * </ul>
          * 
-         * @param provider
+         * @param reporter
          *     Responsible practitioner
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder provider(Reference provider) {
-            this.provider = provider;
+        public Builder reporter(Reference reporter) {
+            this.reporter = reporter;
             return this;
         }
 
         /**
          * A reference to the payment which is the subject of this notice.
-         * 
-         * <p>This element is required.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
@@ -823,7 +822,6 @@ public class PaymentNotice extends DomainResource {
          * <ul>
          * <li>status</li>
          * <li>created</li>
-         * <li>payment</li>
          * <li>recipient</li>
          * <li>amount</li>
          * </ul>
@@ -847,10 +845,9 @@ public class PaymentNotice extends DomainResource {
             ValidationSupport.checkList(paymentNotice.identifier, "identifier", Identifier.class);
             ValidationSupport.requireNonNull(paymentNotice.status, "status");
             ValidationSupport.requireNonNull(paymentNotice.created, "created");
-            ValidationSupport.requireNonNull(paymentNotice.payment, "payment");
             ValidationSupport.requireNonNull(paymentNotice.recipient, "recipient");
             ValidationSupport.requireNonNull(paymentNotice.amount, "amount");
-            ValidationSupport.checkReferenceType(paymentNotice.provider, "provider", "Practitioner", "PractitionerRole", "Organization");
+            ValidationSupport.checkReferenceType(paymentNotice.reporter, "reporter", "Practitioner", "PractitionerRole", "Organization");
             ValidationSupport.checkReferenceType(paymentNotice.payment, "payment", "PaymentReconciliation");
             ValidationSupport.checkReferenceType(paymentNotice.payee, "payee", "Practitioner", "PractitionerRole", "Organization");
             ValidationSupport.checkReferenceType(paymentNotice.recipient, "recipient", "Organization");
@@ -863,7 +860,7 @@ public class PaymentNotice extends DomainResource {
             request = paymentNotice.request;
             response = paymentNotice.response;
             created = paymentNotice.created;
-            provider = paymentNotice.provider;
+            reporter = paymentNotice.reporter;
             payment = paymentNotice.payment;
             paymentDate = paymentNotice.paymentDate;
             payee = paymentNotice.payee;

@@ -22,18 +22,20 @@ import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
+import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
+import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Ratio;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.SimpleQuantity;
-import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.FHIRSubstanceStatus;
@@ -64,11 +66,14 @@ public class Substance extends DomainResource {
     @Summary
     private final List<Identifier> identifier;
     @Summary
+    @Required
+    private final Boolean instance;
+    @Summary
     @Binding(
         bindingName = "FHIRSubstanceStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "A code to indicate if the substance is actively used.",
-        valueSet = "http://hl7.org/fhir/ValueSet/substance-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/substance-status|5.0.0"
     )
     private final FHIRSubstanceStatus status;
     @Summary
@@ -87,33 +92,48 @@ public class Substance extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/substance-code"
     )
     @Required
-    private final CodeableConcept code;
+    private final CodeableReference code;
     @Summary
-    private final String description;
+    private final Markdown description;
     @Summary
-    private final List<Instance> instance;
+    private final DateTime expiry;
+    @Summary
+    private final SimpleQuantity quantity;
     @Summary
     private final List<Ingredient> ingredient;
 
     private Substance(Builder builder) {
         super(builder);
         identifier = Collections.unmodifiableList(builder.identifier);
+        instance = builder.instance;
         status = builder.status;
         category = Collections.unmodifiableList(builder.category);
         code = builder.code;
         description = builder.description;
-        instance = Collections.unmodifiableList(builder.instance);
+        expiry = builder.expiry;
+        quantity = builder.quantity;
         ingredient = Collections.unmodifiableList(builder.ingredient);
     }
 
     /**
-     * Unique identifier for the substance.
+     * Unique identifier for the substance. For an instance, an identifier associated with the package/container (usually a 
+     * label affixed directly).
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
      */
     public List<Identifier> getIdentifier() {
         return identifier;
+    }
+
+    /**
+     * A boolean to indicate if this an instance of a substance or a kind of one (a definition).
+     * 
+     * @return
+     *     An immutable object of type {@link Boolean} that is non-null.
+     */
+    public Boolean getInstance() {
+        return instance;
     }
 
     /**
@@ -140,9 +160,9 @@ public class Substance extends DomainResource {
      * A code (or set of codes) that identify this substance.
      * 
      * @return
-     *     An immutable object of type {@link CodeableConcept} that is non-null.
+     *     An immutable object of type {@link CodeableReference} that is non-null.
      */
-    public CodeableConcept getCode() {
+    public CodeableReference getCode() {
         return code;
     }
 
@@ -150,20 +170,30 @@ public class Substance extends DomainResource {
      * A description of the substance - its appearance, handling requirements, and other usage notes.
      * 
      * @return
-     *     An immutable object of type {@link String} that may be null.
+     *     An immutable object of type {@link Markdown} that may be null.
      */
-    public String getDescription() {
+    public Markdown getDescription() {
         return description;
     }
 
     /**
-     * Substance may be used to describe a kind of substance, or a specific package/container of the substance: an instance.
+     * When the substance is no longer valid to use. For some substances, a single arbitrary date is used for expiry.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Instance} that may be empty.
+     *     An immutable object of type {@link DateTime} that may be null.
      */
-    public List<Instance> getInstance() {
-        return instance;
+    public DateTime getExpiry() {
+        return expiry;
+    }
+
+    /**
+     * The amount of the substance.
+     * 
+     * @return
+     *     An immutable object of type {@link SimpleQuantity} that may be null.
+     */
+    public SimpleQuantity getQuantity() {
+        return quantity;
     }
 
     /**
@@ -180,11 +210,13 @@ public class Substance extends DomainResource {
     public boolean hasChildren() {
         return super.hasChildren() || 
             !identifier.isEmpty() || 
+            (instance != null) || 
             (status != null) || 
             !category.isEmpty() || 
             (code != null) || 
             (description != null) || 
-            !instance.isEmpty() || 
+            (expiry != null) || 
+            (quantity != null) || 
             !ingredient.isEmpty();
     }
 
@@ -203,11 +235,13 @@ public class Substance extends DomainResource {
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(identifier, "identifier", visitor, Identifier.class);
+                accept(instance, "instance", visitor);
                 accept(status, "status", visitor);
                 accept(category, "category", visitor, CodeableConcept.class);
                 accept(code, "code", visitor);
                 accept(description, "description", visitor);
-                accept(instance, "instance", visitor, Instance.class);
+                accept(expiry, "expiry", visitor);
+                accept(quantity, "quantity", visitor);
                 accept(ingredient, "ingredient", visitor, Ingredient.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
@@ -236,11 +270,13 @@ public class Substance extends DomainResource {
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(identifier, other.identifier) && 
+            Objects.equals(instance, other.instance) && 
             Objects.equals(status, other.status) && 
             Objects.equals(category, other.category) && 
             Objects.equals(code, other.code) && 
             Objects.equals(description, other.description) && 
-            Objects.equals(instance, other.instance) && 
+            Objects.equals(expiry, other.expiry) && 
+            Objects.equals(quantity, other.quantity) && 
             Objects.equals(ingredient, other.ingredient);
     }
 
@@ -257,11 +293,13 @@ public class Substance extends DomainResource {
                 extension, 
                 modifierExtension, 
                 identifier, 
+                instance, 
                 status, 
                 category, 
                 code, 
                 description, 
-                instance, 
+                expiry, 
+                quantity, 
                 ingredient);
             hashCode = result;
         }
@@ -279,11 +317,13 @@ public class Substance extends DomainResource {
 
     public static class Builder extends DomainResource.Builder {
         private List<Identifier> identifier = new ArrayList<>();
+        private Boolean instance;
         private FHIRSubstanceStatus status;
         private List<CodeableConcept> category = new ArrayList<>();
-        private CodeableConcept code;
-        private String description;
-        private List<Instance> instance = new ArrayList<>();
+        private CodeableReference code;
+        private Markdown description;
+        private DateTime expiry;
+        private SimpleQuantity quantity;
         private List<Ingredient> ingredient = new ArrayList<>();
 
         private Builder() {
@@ -368,7 +408,8 @@ public class Substance extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -386,7 +427,8 @@ public class Substance extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -407,7 +449,7 @@ public class Substance extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -427,7 +469,7 @@ public class Substance extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -452,9 +494,9 @@ public class Substance extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -477,9 +519,9 @@ public class Substance extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -502,7 +544,8 @@ public class Substance extends DomainResource {
         }
 
         /**
-         * Unique identifier for the substance.
+         * Unique identifier for the substance. For an instance, an identifier associated with the package/container (usually a 
+         * label affixed directly).
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -521,7 +564,8 @@ public class Substance extends DomainResource {
         }
 
         /**
-         * Unique identifier for the substance.
+         * Unique identifier for the substance. For an instance, an identifier associated with the package/container (usually a 
+         * label affixed directly).
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -537,6 +581,40 @@ public class Substance extends DomainResource {
          */
         public Builder identifier(Collection<Identifier> identifier) {
             this.identifier = new ArrayList<>(identifier);
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code instance}.
+         * 
+         * <p>This element is required.
+         * 
+         * @param instance
+         *     Is this an instance of a substance or a kind of one
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #instance(org.linuxforhealth.fhir.model.type.Boolean)
+         */
+        public Builder instance(java.lang.Boolean instance) {
+            this.instance = (instance == null) ? null : Boolean.of(instance);
+            return this;
+        }
+
+        /**
+         * A boolean to indicate if this an instance of a substance or a kind of one (a definition).
+         * 
+         * <p>This element is required.
+         * 
+         * @param instance
+         *     Is this an instance of a substance or a kind of one
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder instance(Boolean instance) {
+            this.instance = instance;
             return this;
         }
 
@@ -604,24 +682,8 @@ public class Substance extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder code(CodeableConcept code) {
+        public Builder code(CodeableReference code) {
             this.code = code;
-            return this;
-        }
-
-        /**
-         * Convenience method for setting {@code description}.
-         * 
-         * @param description
-         *     Textual description of the substance, comments
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #description(org.linuxforhealth.fhir.model.type.String)
-         */
-        public Builder description(java.lang.String description) {
-            this.description = (description == null) ? null : String.of(description);
             return this;
         }
 
@@ -634,47 +696,36 @@ public class Substance extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder description(String description) {
+        public Builder description(Markdown description) {
             this.description = description;
             return this;
         }
 
         /**
-         * Substance may be used to describe a kind of substance, or a specific package/container of the substance: an instance.
+         * When the substance is no longer valid to use. For some substances, a single arbitrary date is used for expiry.
          * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param instance
-         *     If this describes a specific package/container of the substance
+         * @param expiry
+         *     When no longer valid to use
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder instance(Instance... instance) {
-            for (Instance value : instance) {
-                this.instance.add(value);
-            }
+        public Builder expiry(DateTime expiry) {
+            this.expiry = expiry;
             return this;
         }
 
         /**
-         * Substance may be used to describe a kind of substance, or a specific package/container of the substance: an instance.
+         * The amount of the substance.
          * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param instance
-         *     If this describes a specific package/container of the substance
+         * @param quantity
+         *     Amount of substance in the package
          * 
          * @return
          *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
          */
-        public Builder instance(Collection<Instance> instance) {
-            this.instance = new ArrayList<>(instance);
+        public Builder quantity(SimpleQuantity quantity) {
+            this.quantity = quantity;
             return this;
         }
 
@@ -722,6 +773,7 @@ public class Substance extends DomainResource {
          * 
          * <p>Required elements:
          * <ul>
+         * <li>instance</li>
          * <li>code</li>
          * </ul>
          * 
@@ -742,334 +794,24 @@ public class Substance extends DomainResource {
         protected void validate(Substance substance) {
             super.validate(substance);
             ValidationSupport.checkList(substance.identifier, "identifier", Identifier.class);
+            ValidationSupport.requireNonNull(substance.instance, "instance");
             ValidationSupport.checkList(substance.category, "category", CodeableConcept.class);
             ValidationSupport.requireNonNull(substance.code, "code");
-            ValidationSupport.checkList(substance.instance, "instance", Instance.class);
             ValidationSupport.checkList(substance.ingredient, "ingredient", Ingredient.class);
         }
 
         protected Builder from(Substance substance) {
             super.from(substance);
             identifier.addAll(substance.identifier);
+            instance = substance.instance;
             status = substance.status;
             category.addAll(substance.category);
             code = substance.code;
             description = substance.description;
-            instance.addAll(substance.instance);
+            expiry = substance.expiry;
+            quantity = substance.quantity;
             ingredient.addAll(substance.ingredient);
             return this;
-        }
-    }
-
-    /**
-     * Substance may be used to describe a kind of substance, or a specific package/container of the substance: an instance.
-     */
-    public static class Instance extends BackboneElement {
-        @Summary
-        private final Identifier identifier;
-        @Summary
-        private final DateTime expiry;
-        @Summary
-        private final SimpleQuantity quantity;
-
-        private Instance(Builder builder) {
-            super(builder);
-            identifier = builder.identifier;
-            expiry = builder.expiry;
-            quantity = builder.quantity;
-        }
-
-        /**
-         * Identifier associated with the package/container (usually a label affixed directly).
-         * 
-         * @return
-         *     An immutable object of type {@link Identifier} that may be null.
-         */
-        public Identifier getIdentifier() {
-            return identifier;
-        }
-
-        /**
-         * When the substance is no longer valid to use. For some substances, a single arbitrary date is used for expiry.
-         * 
-         * @return
-         *     An immutable object of type {@link DateTime} that may be null.
-         */
-        public DateTime getExpiry() {
-            return expiry;
-        }
-
-        /**
-         * The amount of the substance.
-         * 
-         * @return
-         *     An immutable object of type {@link SimpleQuantity} that may be null.
-         */
-        public SimpleQuantity getQuantity() {
-            return quantity;
-        }
-
-        @Override
-        public boolean hasChildren() {
-            return super.hasChildren() || 
-                (identifier != null) || 
-                (expiry != null) || 
-                (quantity != null);
-        }
-
-        @Override
-        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-            if (visitor.preVisit(this)) {
-                visitor.visitStart(elementName, elementIndex, this);
-                if (visitor.visit(elementName, elementIndex, this)) {
-                    // visit children
-                    accept(id, "id", visitor);
-                    accept(extension, "extension", visitor, Extension.class);
-                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(identifier, "identifier", visitor);
-                    accept(expiry, "expiry", visitor);
-                    accept(quantity, "quantity", visitor);
-                }
-                visitor.visitEnd(elementName, elementIndex, this);
-                visitor.postVisit(this);
-            }
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            Instance other = (Instance) obj;
-            return Objects.equals(id, other.id) && 
-                Objects.equals(extension, other.extension) && 
-                Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(identifier, other.identifier) && 
-                Objects.equals(expiry, other.expiry) && 
-                Objects.equals(quantity, other.quantity);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = hashCode;
-            if (result == 0) {
-                result = Objects.hash(id, 
-                    extension, 
-                    modifierExtension, 
-                    identifier, 
-                    expiry, 
-                    quantity);
-                hashCode = result;
-            }
-            return result;
-        }
-
-        @Override
-        public Builder toBuilder() {
-            return new Builder().from(this);
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public static class Builder extends BackboneElement.Builder {
-            private Identifier identifier;
-            private DateTime expiry;
-            private SimpleQuantity quantity;
-
-            private Builder() {
-                super();
-            }
-
-            /**
-             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-             * contain spaces.
-             * 
-             * @param id
-             *     Unique id for inter-element referencing
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder id(java.lang.String id) {
-                return (Builder) super.id(id);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder extension(Extension... extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder extension(Collection<Extension> extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder modifierExtension(Extension... modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * Identifier associated with the package/container (usually a label affixed directly).
-             * 
-             * @param identifier
-             *     Identifier of the package/container
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder identifier(Identifier identifier) {
-                this.identifier = identifier;
-                return this;
-            }
-
-            /**
-             * When the substance is no longer valid to use. For some substances, a single arbitrary date is used for expiry.
-             * 
-             * @param expiry
-             *     When no longer valid to use
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder expiry(DateTime expiry) {
-                this.expiry = expiry;
-                return this;
-            }
-
-            /**
-             * The amount of the substance.
-             * 
-             * @param quantity
-             *     Amount of substance in the package
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder quantity(SimpleQuantity quantity) {
-                this.quantity = quantity;
-                return this;
-            }
-
-            /**
-             * Build the {@link Instance}
-             * 
-             * @return
-             *     An immutable object of type {@link Instance}
-             * @throws IllegalStateException
-             *     if the current state cannot be built into a valid Instance per the base specification
-             */
-            @Override
-            public Instance build() {
-                Instance instance = new Instance(this);
-                if (validating) {
-                    validate(instance);
-                }
-                return instance;
-            }
-
-            protected void validate(Instance instance) {
-                super.validate(instance);
-                ValidationSupport.requireValueOrChildren(instance);
-            }
-
-            protected Builder from(Instance instance) {
-                super.from(instance);
-                identifier = instance.identifier;
-                expiry = instance.expiry;
-                quantity = instance.quantity;
-                return this;
-            }
         }
     }
 
@@ -1089,7 +831,7 @@ public class Substance extends DomainResource {
             valueSet = "http://hl7.org/fhir/ValueSet/substance-code"
         )
         @Required
-        private final Element substance;
+        private final org.linuxforhealth.fhir.model.type.Element substance;
 
         private Ingredient(Builder builder) {
             super(builder);
@@ -1113,7 +855,7 @@ public class Substance extends DomainResource {
          * @return
          *     An immutable object of type {@link CodeableConcept} or {@link Reference} that is non-null.
          */
-        public Element getSubstance() {
+        public org.linuxforhealth.fhir.model.type.Element getSubstance() {
             return substance;
         }
 
@@ -1185,7 +927,7 @@ public class Substance extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private Ratio quantity;
-            private Element substance;
+            private org.linuxforhealth.fhir.model.type.Element substance;
 
             private Builder() {
                 super();
@@ -1208,7 +950,7 @@ public class Substance extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1228,7 +970,7 @@ public class Substance extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1253,7 +995,7 @@ public class Substance extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1278,7 +1020,7 @@ public class Substance extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1338,7 +1080,7 @@ public class Substance extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder substance(Element substance) {
+            public Builder substance(org.linuxforhealth.fhir.model.type.Element substance) {
                 this.substance = substance;
                 return this;
             }

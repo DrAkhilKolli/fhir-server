@@ -80,7 +80,9 @@ public class FHIRVersionRequestFilter implements ContainerRequestFilter {
             String submittedVersion = mediaType.getParameters().get(FHIRMediaType.FHIR_VERSION_PARAMETER);
             if (submittedVersion != null) {
                 // "startsWith" to cover the x.y.z cases which are technically invalid, but close enough
-                if (submittedVersion.startsWith(VERSION_43.value())) {
+                if (submittedVersion.startsWith(FHIRVersionParam.VERSION_50.value())) {
+                    return FHIRVersionParam.VERSION_50;
+                } else if (submittedVersion.startsWith(VERSION_43.value())) {
                     return VERSION_43;
                 } else if (submittedVersion.startsWith(VERSION_40.value())) {
                     return VERSION_40;
@@ -105,7 +107,11 @@ public class FHIRVersionRequestFilter implements ContainerRequestFilter {
                 String fhirVersionParam = mediaType.getParameters().get(FHIRMediaType.FHIR_VERSION_PARAMETER);
                 if (fhirVersionParam != null) {
                     // "startsWith" to cover the x.y.z cases which are technically invalid, but close enough
-                    if (fhirVersionParam.startsWith(VERSION_43.value())) {
+                    if (fhirVersionParam.startsWith(FHIRVersionParam.VERSION_50.value())) {
+                        // one of the acceptable media types was our "actual" fhir version, so use that and stop looking
+                        fhirVersion = FHIRVersionParam.VERSION_50;
+                        break;
+                    } else if (fhirVersionParam.startsWith(VERSION_43.value())) {
                         // one of the acceptable media types was our "actual" fhir version, so use that and stop looking
                         fhirVersion = VERSION_43;
                         break;

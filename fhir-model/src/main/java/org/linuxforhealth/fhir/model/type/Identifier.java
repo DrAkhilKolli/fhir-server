@@ -24,7 +24,15 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * An identifier - identifies some entity uniquely and unambiguously. Typically this is used for business identifiers.
  */
 @Constraint(
-    id = "identifier-0",
+    id = "ident-1",
+    level = "Warning",
+    location = "(base)",
+    description = "Identifier with no value has limited utility.  If communicating that an identifier value has been suppressed or missing, the value element SHOULD be present with an extension indicating the missing semantic - e.g. data-absent-reason",
+    expression = "value.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/Identifier"
+)
+@Constraint(
+    id = "identifier-2",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/identifier-type",
@@ -33,18 +41,20 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Identifier extends Element {
+public class Identifier extends DataType {
     @Summary
     @Binding(
         bindingName = "IdentifierUse",
         strength = BindingStrength.Value.REQUIRED,
-        valueSet = "http://hl7.org/fhir/ValueSet/identifier-use|4.3.0"
+        description = "Identifies the purpose for this identifier, if known .",
+        valueSet = "http://hl7.org/fhir/ValueSet/identifier-use|5.0.0"
     )
     private final IdentifierUse use;
     @Summary
     @Binding(
         bindingName = "IdentifierType",
         strength = BindingStrength.Value.EXTENSIBLE,
+        description = "A coded type for an identifier that can be used to determine which identifier to use for a specific purpose.",
         valueSet = "http://hl7.org/fhir/ValueSet/identifier-type"
     )
     private final CodeableConcept type;
@@ -89,7 +99,7 @@ public class Identifier extends Element {
     }
 
     /**
-     * Establishes the namespace for the value - that is, a URL that describes a set values that are unique.
+     * Establishes the namespace for the value - that is, an absolute URL that describes a set values that are unique.
      * 
      * @return
      *     An immutable object of type {@link Uri} that may be null.
@@ -207,7 +217,7 @@ public class Identifier extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private IdentifierUse use;
         private CodeableConcept type;
         private Uri system;
@@ -236,7 +246,7 @@ public class Identifier extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -256,7 +266,7 @@ public class Identifier extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -306,7 +316,7 @@ public class Identifier extends Element {
         }
 
         /**
-         * Establishes the namespace for the value - that is, a URL that describes a set values that are unique.
+         * Establishes the namespace for the value - that is, an absolute URL that describes a set values that are unique.
          * 
          * @param system
          *     The namespace for the identifier value

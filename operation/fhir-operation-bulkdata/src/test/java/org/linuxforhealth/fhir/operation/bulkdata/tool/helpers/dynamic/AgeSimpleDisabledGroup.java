@@ -67,7 +67,7 @@ public class AgeSimpleDisabledGroup extends GroupExample {
 
         org.linuxforhealth.fhir.model.type.Boolean active = org.linuxforhealth.fhir.model.type.Boolean.of(false);
 
-        org.linuxforhealth.fhir.model.type.Boolean actual = org.linuxforhealth.fhir.model.type.Boolean.of(false);
+        // R5: actual replaced by membership (definitional=characteristic-based, enumerated=listed members)
 
         Collection<Characteristic> characteristics = new ArrayList<>();
         characteristics.add(generateBirthdateCharacteristic());
@@ -78,7 +78,7 @@ public class AgeSimpleDisabledGroup extends GroupExample {
                 .text(text)
                 .active(active)
                 .type(GroupType.PERSON)
-                .actual(actual)
+                .membership(Code.of("definitional"))
                 .name(string(filename()))
                 .characteristic(characteristics)
                 .build();

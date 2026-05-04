@@ -159,7 +159,7 @@
 			"use": "out",
 			"min": 0,
 			"max": "*",
-			"type": "Any"
+			"type": "CodeableConcept"
 		},
 		{
 			"name": "SDE Race",

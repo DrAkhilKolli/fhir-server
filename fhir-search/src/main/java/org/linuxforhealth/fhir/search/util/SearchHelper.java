@@ -51,9 +51,9 @@ import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Uri;
+import org.linuxforhealth.fhir.model.type.code.FHIRTypes;
 import org.linuxforhealth.fhir.model.type.code.IssueSeverity;
 import org.linuxforhealth.fhir.model.type.code.IssueType;
-import org.linuxforhealth.fhir.model.type.code.ResourceTypeCode;
 import org.linuxforhealth.fhir.model.type.code.SearchComparator;
 import org.linuxforhealth.fhir.model.type.code.SearchModifierCode;
 import org.linuxforhealth.fhir.model.type.code.SearchParamType;
@@ -1465,8 +1465,8 @@ public class SearchHelper {
                             String.format(TYPE_NOT_ALLOWED_WITH_CHAINED_PARAMETER_EXCEPTION, type));
                     }
 
-                    List<ResourceTypeCode> targets = searchParameter.getTarget();
-                    if (modifierResourceTypeName != null && !targets.contains(ResourceTypeCode.of(modifierResourceTypeName))) {
+                    List<FHIRTypes> targets = searchParameter.getTarget();
+                    if (modifierResourceTypeName != null && !targets.contains(FHIRTypes.of(modifierResourceTypeName))) {
                         throw SearchExceptionUtil.buildNewInvalidSearchException(
                             String.format(MODIFIYERRESOURCETYPE_NOT_ALLOWED_FOR_RESOURCETYPE, modifierResourceTypeName,
                                 parameterName, resTypeName));
@@ -1590,9 +1590,9 @@ public class SearchHelper {
                             String.format(TYPE_NOT_ALLOWED_WITH_CHAINED_PARAMETER_EXCEPTION, type.value()));
                 }
 
-                List<ResourceTypeCode> targets = searchParameter.getTarget();
+                List<FHIRTypes> targets = searchParameter.getTarget();
                 // Check if the modifier resource type is invalid.
-                if (modifierResourceTypeName != null && !targets.contains(ResourceTypeCode.of(modifierResourceTypeName))) {
+                if (modifierResourceTypeName != null && !targets.contains(FHIRTypes.of(modifierResourceTypeName))) {
                     throw SearchExceptionUtil.buildNewInvalidSearchException(
                             String.format(MODIFIYERRESOURCETYPE_NOT_ALLOWED_FOR_RESOURCETYPE, modifierResourceTypeName,
                                     parameterName, resourceType.getSimpleName()));
@@ -1724,7 +1724,7 @@ public class SearchHelper {
                 }
 
                 // Validate resource type is one of the reference search parameter target resource types
-                if (!referenceSearchParameter.getTarget().contains(ResourceTypeCode.of(resourceType.getSimpleName()))) {
+                if (!referenceSearchParameter.getTarget().contains(FHIRTypes.of(resourceType.getSimpleName()))) {
                     throw SearchExceptionUtil.buildNewInvalidSearchException(
                         String.format(TARGET_TYPE_OF_REFERENCE_PARAMETER_NOT_VALID_FOR_REVERSE_CHAIN_SEARCH,
                             referenceSearchParameterName, resourceType.getSimpleName()));

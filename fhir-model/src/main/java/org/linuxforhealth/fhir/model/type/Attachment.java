@@ -29,45 +29,40 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     expression = "data.empty() or contentType.exists()",
     source = "http://hl7.org/fhir/StructureDefinition/Attachment"
 )
-@Constraint(
-    id = "attachment-2",
-    level = "Warning",
-    location = "(base)",
-    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/languages",
-    expression = "language.exists() implies (language.memberOf('http://hl7.org/fhir/ValueSet/languages', 'preferred'))",
-    source = "http://hl7.org/fhir/StructureDefinition/Attachment",
-    generated = true
-)
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Attachment extends Element {
+public class Attachment extends DataType {
     @Summary
     @Binding(
         bindingName = "MimeType",
         strength = BindingStrength.Value.REQUIRED,
         description = "BCP 13 (RFCs 2045, 2046, 2047, 4288, 4289 and 2049)",
-        valueSet = "http://hl7.org/fhir/ValueSet/mimetypes|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/mimetypes|5.0.0"
     )
     private final Code contentType;
     @Summary
     @Binding(
         bindingName = "Language",
-        strength = BindingStrength.Value.PREFERRED,
-        description = "IETF language tag",
-        valueSet = "http://hl7.org/fhir/ValueSet/languages",
-        maxValueSet = "http://hl7.org/fhir/ValueSet/all-languages"
+        strength = BindingStrength.Value.REQUIRED,
+        description = "IETF language tag for a human language.",
+        valueSet = "http://hl7.org/fhir/ValueSet/all-languages|5.0.0"
     )
     private final Code language;
     private final Base64Binary data;
     @Summary
     private final Url url;
     @Summary
-    private final UnsignedInt size;
+    private final Integer64 size;
     @Summary
     private final Base64Binary hash;
     @Summary
     private final String title;
     @Summary
     private final DateTime creation;
+    private final PositiveInt height;
+    private final PositiveInt width;
+    private final PositiveInt frames;
+    private final Decimal duration;
+    private final PositiveInt pages;
 
     private Attachment(Builder builder) {
         super(builder);
@@ -79,6 +74,11 @@ public class Attachment extends Element {
         hash = builder.hash;
         title = builder.title;
         creation = builder.creation;
+        height = builder.height;
+        width = builder.width;
+        frames = builder.frames;
+        duration = builder.duration;
+        pages = builder.pages;
     }
 
     /**
@@ -126,9 +126,9 @@ public class Attachment extends Element {
      * The number of bytes of data that make up this attachment (before base64 encoding, if that is done).
      * 
      * @return
-     *     An immutable object of type {@link UnsignedInt} that may be null.
+     *     An immutable object of type {@link Integer64} that may be null.
      */
-    public UnsignedInt getSize() {
+    public Integer64 getSize() {
         return size;
     }
 
@@ -162,6 +162,58 @@ public class Attachment extends Element {
         return creation;
     }
 
+    /**
+     * Height of the image in pixels (photo/video).
+     * 
+     * @return
+     *     An immutable object of type {@link PositiveInt} that may be null.
+     */
+    public PositiveInt getHeight() {
+        return height;
+    }
+
+    /**
+     * Width of the image in pixels (photo/video).
+     * 
+     * @return
+     *     An immutable object of type {@link PositiveInt} that may be null.
+     */
+    public PositiveInt getWidth() {
+        return width;
+    }
+
+    /**
+     * The number of frames in a photo. This is used with a multi-page fax, or an imaging acquisition context that takes 
+     * multiple slices in a single image, or an animated gif. If there is more than one frame, this SHALL have a value in 
+     * order to alert interface software that a multi-frame capable rendering widget is required.
+     * 
+     * @return
+     *     An immutable object of type {@link PositiveInt} that may be null.
+     */
+    public PositiveInt getFrames() {
+        return frames;
+    }
+
+    /**
+     * The duration of the recording in seconds - for audio and video.
+     * 
+     * @return
+     *     An immutable object of type {@link Decimal} that may be null.
+     */
+    public Decimal getDuration() {
+        return duration;
+    }
+
+    /**
+     * The number of pages when printed.
+     * 
+     * @return
+     *     An immutable object of type {@link PositiveInt} that may be null.
+     */
+    public PositiveInt getPages() {
+        return pages;
+    }
+
     @Override
     public boolean hasChildren() {
         return super.hasChildren() || 
@@ -172,7 +224,12 @@ public class Attachment extends Element {
             (size != null) || 
             (hash != null) || 
             (title != null) || 
-            (creation != null);
+            (creation != null) || 
+            (height != null) || 
+            (width != null) || 
+            (frames != null) || 
+            (duration != null) || 
+            (pages != null);
     }
 
     @Override
@@ -191,6 +248,11 @@ public class Attachment extends Element {
                 accept(hash, "hash", visitor);
                 accept(title, "title", visitor);
                 accept(creation, "creation", visitor);
+                accept(height, "height", visitor);
+                accept(width, "width", visitor);
+                accept(frames, "frames", visitor);
+                accept(duration, "duration", visitor);
+                accept(pages, "pages", visitor);
             }
             visitor.visitEnd(elementName, elementIndex, this);
             visitor.postVisit(this);
@@ -218,7 +280,12 @@ public class Attachment extends Element {
             Objects.equals(size, other.size) && 
             Objects.equals(hash, other.hash) && 
             Objects.equals(title, other.title) && 
-            Objects.equals(creation, other.creation);
+            Objects.equals(creation, other.creation) && 
+            Objects.equals(height, other.height) && 
+            Objects.equals(width, other.width) && 
+            Objects.equals(frames, other.frames) && 
+            Objects.equals(duration, other.duration) && 
+            Objects.equals(pages, other.pages);
     }
 
     @Override
@@ -234,7 +301,12 @@ public class Attachment extends Element {
                 size, 
                 hash, 
                 title, 
-                creation);
+                creation, 
+                height, 
+                width, 
+                frames, 
+                duration, 
+                pages);
             hashCode = result;
         }
         return result;
@@ -249,15 +321,20 @@ public class Attachment extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private Code contentType;
         private Code language;
         private Base64Binary data;
         private Url url;
-        private UnsignedInt size;
+        private Integer64 size;
         private Base64Binary hash;
         private String title;
         private DateTime creation;
+        private PositiveInt height;
+        private PositiveInt width;
+        private PositiveInt frames;
+        private Decimal duration;
+        private PositiveInt pages;
 
         private Builder() {
             super();
@@ -280,7 +357,7 @@ public class Attachment extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -300,7 +377,7 @@ public class Attachment extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -387,7 +464,7 @@ public class Attachment extends Element {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder size(UnsignedInt size) {
+        public Builder size(Integer64 size) {
             this.size = size;
             return this;
         }
@@ -451,6 +528,78 @@ public class Attachment extends Element {
         }
 
         /**
+         * Height of the image in pixels (photo/video).
+         * 
+         * @param height
+         *     Height of the image in pixels (photo/video)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder height(PositiveInt height) {
+            this.height = height;
+            return this;
+        }
+
+        /**
+         * Width of the image in pixels (photo/video).
+         * 
+         * @param width
+         *     Width of the image in pixels (photo/video)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder width(PositiveInt width) {
+            this.width = width;
+            return this;
+        }
+
+        /**
+         * The number of frames in a photo. This is used with a multi-page fax, or an imaging acquisition context that takes 
+         * multiple slices in a single image, or an animated gif. If there is more than one frame, this SHALL have a value in 
+         * order to alert interface software that a multi-frame capable rendering widget is required.
+         * 
+         * @param frames
+         *     Number of frames if &gt; 1 (photo)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder frames(PositiveInt frames) {
+            this.frames = frames;
+            return this;
+        }
+
+        /**
+         * The duration of the recording in seconds - for audio and video.
+         * 
+         * @param duration
+         *     Length in seconds (audio / video)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder duration(Decimal duration) {
+            this.duration = duration;
+            return this;
+        }
+
+        /**
+         * The number of pages when printed.
+         * 
+         * @param pages
+         *     Number of printed pages
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder pages(PositiveInt pages) {
+            this.pages = pages;
+            return this;
+        }
+
+        /**
          * Build the {@link Attachment}
          * 
          * @return
@@ -483,6 +632,11 @@ public class Attachment extends Element {
             hash = attachment.hash;
             title = attachment.title;
             creation = attachment.creation;
+            height = attachment.height;
+            width = attachment.width;
+            frames = attachment.frames;
+            duration = attachment.duration;
+            pages = attachment.pages;
             return this;
         }
     }

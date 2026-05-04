@@ -24,6 +24,7 @@ import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
@@ -44,7 +45,8 @@ import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
- * A record of a request for a medication, substance or device used in the healthcare setting.
+ * A record of a request to deliver a medication, substance or device used in the healthcare setting to a particular 
+ * destination for a particular person or organization.
  * 
  * <p>Maturity level: FMM1 (Trial Use)
  */
@@ -61,9 +63,11 @@ public class SupplyRequest extends DomainResource {
         bindingName = "SupplyRequestStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "Status of the supply request.",
-        valueSet = "http://hl7.org/fhir/ValueSet/supplyrequest-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/supplyrequest-status|5.0.0"
     )
     private final SupplyRequestStatus status;
+    @Summary
+    private final List<Reference> basedOn;
     @Summary
     @Binding(
         bindingName = "SupplyRequestKind",
@@ -77,12 +81,12 @@ public class SupplyRequest extends DomainResource {
         bindingName = "RequestPriority",
         strength = BindingStrength.Value.REQUIRED,
         description = "Identifies the level of importance to be assigned to actioning the request.",
-        valueSet = "http://hl7.org/fhir/ValueSet/request-priority|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/request-priority|5.0.0"
     )
     private final RequestPriority priority;
+    @ReferenceTarget({ "Patient" })
+    private final Reference deliverFor;
     @Summary
-    @ReferenceTarget({ "Medication", "Substance", "Device" })
-    @Choice({ CodeableConcept.class, Reference.class })
     @Binding(
         bindingName = "SupplyRequestItem",
         strength = BindingStrength.Value.EXAMPLE,
@@ -90,18 +94,18 @@ public class SupplyRequest extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/supply-item"
     )
     @Required
-    private final Element item;
+    private final CodeableReference item;
     @Summary
     @Required
     private final Quantity quantity;
     private final List<Parameter> parameter;
     @Summary
     @Choice({ DateTime.class, Period.class, Timing.class })
-    private final Element occurrence;
+    private final org.linuxforhealth.fhir.model.type.Element occurrence;
     @Summary
     private final DateTime authoredOn;
     @Summary
-    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "Patient", "RelatedPerson", "Device" })
+    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "Patient", "RelatedPerson", "Device", "CareTeam" })
     private final Reference requester;
     @Summary
     @ReferenceTarget({ "Organization", "HealthcareService" })
@@ -112,20 +116,20 @@ public class SupplyRequest extends DomainResource {
         description = "The reason why the supply item was requested.",
         valueSet = "http://hl7.org/fhir/ValueSet/supplyrequest-reason"
     )
-    private final List<CodeableConcept> reasonCode;
-    @ReferenceTarget({ "Condition", "Observation", "DiagnosticReport", "DocumentReference" })
-    private final List<Reference> reasonReference;
+    private final List<CodeableReference> reason;
     @ReferenceTarget({ "Organization", "Location" })
     private final Reference deliverFrom;
-    @ReferenceTarget({ "Organization", "Location", "Patient" })
+    @ReferenceTarget({ "Organization", "Location", "Patient", "RelatedPerson" })
     private final Reference deliverTo;
 
     private SupplyRequest(Builder builder) {
         super(builder);
         identifier = Collections.unmodifiableList(builder.identifier);
         status = builder.status;
+        basedOn = Collections.unmodifiableList(builder.basedOn);
         category = builder.category;
         priority = builder.priority;
+        deliverFor = builder.deliverFor;
         item = builder.item;
         quantity = builder.quantity;
         parameter = Collections.unmodifiableList(builder.parameter);
@@ -133,8 +137,7 @@ public class SupplyRequest extends DomainResource {
         authoredOn = builder.authoredOn;
         requester = builder.requester;
         supplier = Collections.unmodifiableList(builder.supplier);
-        reasonCode = Collections.unmodifiableList(builder.reasonCode);
-        reasonReference = Collections.unmodifiableList(builder.reasonReference);
+        reason = Collections.unmodifiableList(builder.reason);
         deliverFrom = builder.deliverFrom;
         deliverTo = builder.deliverTo;
     }
@@ -161,6 +164,16 @@ public class SupplyRequest extends DomainResource {
     }
 
     /**
+     * Plan/proposal/order fulfilled by this request.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getBasedOn() {
+        return basedOn;
+    }
+
+    /**
      * Category of supply, e.g. central, non-stock, etc. This is used to support work flows associated with the supply 
      * process.
      * 
@@ -182,13 +195,23 @@ public class SupplyRequest extends DomainResource {
     }
 
     /**
+     * The patient to whom the supply will be given or for whom they will be used.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getDeliverFor() {
+        return deliverFor;
+    }
+
+    /**
      * The item that is requested to be supplied. This is either a link to a resource representing the details of the item or 
      * a code that identifies the item from a known list.
      * 
      * @return
-     *     An immutable object of type {@link CodeableConcept} or {@link Reference} that is non-null.
+     *     An immutable object of type {@link CodeableReference} that is non-null.
      */
-    public Element getItem() {
+    public CodeableReference getItem() {
         return item;
     }
 
@@ -218,7 +241,7 @@ public class SupplyRequest extends DomainResource {
      * @return
      *     An immutable object of type {@link DateTime}, {@link Period} or {@link Timing} that may be null.
      */
-    public Element getOccurrence() {
+    public org.linuxforhealth.fhir.model.type.Element getOccurrence() {
         return occurrence;
     }
 
@@ -256,20 +279,10 @@ public class SupplyRequest extends DomainResource {
      * The reason why the supply item was requested.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<CodeableConcept> getReasonCode() {
-        return reasonCode;
-    }
-
-    /**
-     * The reason why the supply item was requested.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-     */
-    public List<Reference> getReasonReference() {
-        return reasonReference;
+    public List<CodeableReference> getReason() {
+        return reason;
     }
 
     /**
@@ -297,8 +310,10 @@ public class SupplyRequest extends DomainResource {
         return super.hasChildren() || 
             !identifier.isEmpty() || 
             (status != null) || 
+            !basedOn.isEmpty() || 
             (category != null) || 
             (priority != null) || 
+            (deliverFor != null) || 
             (item != null) || 
             (quantity != null) || 
             !parameter.isEmpty() || 
@@ -306,8 +321,7 @@ public class SupplyRequest extends DomainResource {
             (authoredOn != null) || 
             (requester != null) || 
             !supplier.isEmpty() || 
-            !reasonCode.isEmpty() || 
-            !reasonReference.isEmpty() || 
+            !reason.isEmpty() || 
             (deliverFrom != null) || 
             (deliverTo != null);
     }
@@ -328,8 +342,10 @@ public class SupplyRequest extends DomainResource {
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(status, "status", visitor);
+                accept(basedOn, "basedOn", visitor, Reference.class);
                 accept(category, "category", visitor);
                 accept(priority, "priority", visitor);
+                accept(deliverFor, "deliverFor", visitor);
                 accept(item, "item", visitor);
                 accept(quantity, "quantity", visitor);
                 accept(parameter, "parameter", visitor, Parameter.class);
@@ -337,8 +353,7 @@ public class SupplyRequest extends DomainResource {
                 accept(authoredOn, "authoredOn", visitor);
                 accept(requester, "requester", visitor);
                 accept(supplier, "supplier", visitor, Reference.class);
-                accept(reasonCode, "reasonCode", visitor, CodeableConcept.class);
-                accept(reasonReference, "reasonReference", visitor, Reference.class);
+                accept(reason, "reason", visitor, CodeableReference.class);
                 accept(deliverFrom, "deliverFrom", visitor);
                 accept(deliverTo, "deliverTo", visitor);
             }
@@ -369,8 +384,10 @@ public class SupplyRequest extends DomainResource {
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(status, other.status) && 
+            Objects.equals(basedOn, other.basedOn) && 
             Objects.equals(category, other.category) && 
             Objects.equals(priority, other.priority) && 
+            Objects.equals(deliverFor, other.deliverFor) && 
             Objects.equals(item, other.item) && 
             Objects.equals(quantity, other.quantity) && 
             Objects.equals(parameter, other.parameter) && 
@@ -378,8 +395,7 @@ public class SupplyRequest extends DomainResource {
             Objects.equals(authoredOn, other.authoredOn) && 
             Objects.equals(requester, other.requester) && 
             Objects.equals(supplier, other.supplier) && 
-            Objects.equals(reasonCode, other.reasonCode) && 
-            Objects.equals(reasonReference, other.reasonReference) && 
+            Objects.equals(reason, other.reason) && 
             Objects.equals(deliverFrom, other.deliverFrom) && 
             Objects.equals(deliverTo, other.deliverTo);
     }
@@ -398,8 +414,10 @@ public class SupplyRequest extends DomainResource {
                 modifierExtension, 
                 identifier, 
                 status, 
+                basedOn, 
                 category, 
                 priority, 
+                deliverFor, 
                 item, 
                 quantity, 
                 parameter, 
@@ -407,8 +425,7 @@ public class SupplyRequest extends DomainResource {
                 authoredOn, 
                 requester, 
                 supplier, 
-                reasonCode, 
-                reasonReference, 
+                reason, 
                 deliverFrom, 
                 deliverTo);
             hashCode = result;
@@ -428,17 +445,18 @@ public class SupplyRequest extends DomainResource {
     public static class Builder extends DomainResource.Builder {
         private List<Identifier> identifier = new ArrayList<>();
         private SupplyRequestStatus status;
+        private List<Reference> basedOn = new ArrayList<>();
         private CodeableConcept category;
         private RequestPriority priority;
-        private Element item;
+        private Reference deliverFor;
+        private CodeableReference item;
         private Quantity quantity;
         private List<Parameter> parameter = new ArrayList<>();
-        private Element occurrence;
+        private org.linuxforhealth.fhir.model.type.Element occurrence;
         private DateTime authoredOn;
         private Reference requester;
         private List<Reference> supplier = new ArrayList<>();
-        private List<CodeableConcept> reasonCode = new ArrayList<>();
-        private List<Reference> reasonReference = new ArrayList<>();
+        private List<CodeableReference> reason = new ArrayList<>();
         private Reference deliverFrom;
         private Reference deliverTo;
 
@@ -524,7 +542,8 @@ public class SupplyRequest extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -542,7 +561,8 @@ public class SupplyRequest extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -563,7 +583,7 @@ public class SupplyRequest extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -583,7 +603,7 @@ public class SupplyRequest extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -608,9 +628,9 @@ public class SupplyRequest extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -633,9 +653,9 @@ public class SupplyRequest extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -713,6 +733,45 @@ public class SupplyRequest extends DomainResource {
         }
 
         /**
+         * Plan/proposal/order fulfilled by this request.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param basedOn
+         *     What other request is fulfilled by this supply request
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder basedOn(Reference... basedOn) {
+            for (Reference value : basedOn) {
+                this.basedOn.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Plan/proposal/order fulfilled by this request.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param basedOn
+         *     What other request is fulfilled by this supply request
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder basedOn(Collection<Reference> basedOn) {
+            this.basedOn = new ArrayList<>(basedOn);
+            return this;
+        }
+
+        /**
          * Category of supply, e.g. central, non-stock, etc. This is used to support work flows associated with the supply 
          * process.
          * 
@@ -742,23 +801,29 @@ public class SupplyRequest extends DomainResource {
         }
 
         /**
+         * The patient to whom the supply will be given or for whom they will be used.
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link Patient}</li>
+         * </ul>
+         * 
+         * @param deliverFor
+         *     The patient for who the supply request is for
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder deliverFor(Reference deliverFor) {
+            this.deliverFor = deliverFor;
+            return this;
+        }
+
+        /**
          * The item that is requested to be supplied. This is either a link to a resource representing the details of the item or 
          * a code that identifies the item from a known list.
          * 
          * <p>This element is required.
-         * 
-         * <p>This is a choice element with the following allowed types:
-         * <ul>
-         * <li>{@link CodeableConcept}</li>
-         * <li>{@link Reference}</li>
-         * </ul>
-         * 
-         * When of type {@link Reference}, the allowed resource types for this reference are:
-         * <ul>
-         * <li>{@link Medication}</li>
-         * <li>{@link Substance}</li>
-         * <li>{@link Device}</li>
-         * </ul>
          * 
          * @param item
          *     Medication, Substance, or Device requested to be supplied
@@ -766,7 +831,7 @@ public class SupplyRequest extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder item(Element item) {
+        public Builder item(CodeableReference item) {
             this.item = item;
             return this;
         }
@@ -842,7 +907,7 @@ public class SupplyRequest extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder occurrence(Element occurrence) {
+        public Builder occurrence(org.linuxforhealth.fhir.model.type.Element occurrence) {
             this.occurrence = occurrence;
             return this;
         }
@@ -872,6 +937,7 @@ public class SupplyRequest extends DomainResource {
          * <li>{@link Patient}</li>
          * <li>{@link RelatedPerson}</li>
          * <li>{@link Device}</li>
+         * <li>{@link CareTeam}</li>
          * </ul>
          * 
          * @param requester
@@ -942,15 +1008,15 @@ public class SupplyRequest extends DomainResource {
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
+         * @param reason
          *     The reason why the supply item was requested
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder reasonCode(CodeableConcept... reasonCode) {
-            for (CodeableConcept value : reasonCode) {
-                this.reasonCode.add(value);
+        public Builder reason(CodeableReference... reason) {
+            for (CodeableReference value : reason) {
+                this.reason.add(value);
             }
             return this;
         }
@@ -961,7 +1027,7 @@ public class SupplyRequest extends DomainResource {
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
+         * @param reason
          *     The reason why the supply item was requested
          * 
          * @return
@@ -970,63 +1036,8 @@ public class SupplyRequest extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder reasonCode(Collection<CodeableConcept> reasonCode) {
-            this.reasonCode = new ArrayList<>(reasonCode);
-            return this;
-        }
-
-        /**
-         * The reason why the supply item was requested.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     The reason why the supply item was requested
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder reasonReference(Reference... reasonReference) {
-            for (Reference value : reasonReference) {
-                this.reasonReference.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * The reason why the supply item was requested.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     The reason why the supply item was requested
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder reasonReference(Collection<Reference> reasonReference) {
-            this.reasonReference = new ArrayList<>(reasonReference);
+        public Builder reason(Collection<CodeableReference> reason) {
+            this.reason = new ArrayList<>(reason);
             return this;
         }
 
@@ -1058,6 +1069,7 @@ public class SupplyRequest extends DomainResource {
          * <li>{@link Organization}</li>
          * <li>{@link Location}</li>
          * <li>{@link Patient}</li>
+         * <li>{@link RelatedPerson}</li>
          * </ul>
          * 
          * @param deliverTo
@@ -1097,27 +1109,28 @@ public class SupplyRequest extends DomainResource {
         protected void validate(SupplyRequest supplyRequest) {
             super.validate(supplyRequest);
             ValidationSupport.checkList(supplyRequest.identifier, "identifier", Identifier.class);
-            ValidationSupport.requireChoiceElement(supplyRequest.item, "item", CodeableConcept.class, Reference.class);
+            ValidationSupport.checkList(supplyRequest.basedOn, "basedOn", Reference.class);
+            ValidationSupport.requireNonNull(supplyRequest.item, "item");
             ValidationSupport.requireNonNull(supplyRequest.quantity, "quantity");
             ValidationSupport.checkList(supplyRequest.parameter, "parameter", Parameter.class);
             ValidationSupport.choiceElement(supplyRequest.occurrence, "occurrence", DateTime.class, Period.class, Timing.class);
             ValidationSupport.checkList(supplyRequest.supplier, "supplier", Reference.class);
-            ValidationSupport.checkList(supplyRequest.reasonCode, "reasonCode", CodeableConcept.class);
-            ValidationSupport.checkList(supplyRequest.reasonReference, "reasonReference", Reference.class);
-            ValidationSupport.checkReferenceType(supplyRequest.item, "item", "Medication", "Substance", "Device");
-            ValidationSupport.checkReferenceType(supplyRequest.requester, "requester", "Practitioner", "PractitionerRole", "Organization", "Patient", "RelatedPerson", "Device");
+            ValidationSupport.checkList(supplyRequest.reason, "reason", CodeableReference.class);
+            ValidationSupport.checkReferenceType(supplyRequest.deliverFor, "deliverFor", "Patient");
+            ValidationSupport.checkReferenceType(supplyRequest.requester, "requester", "Practitioner", "PractitionerRole", "Organization", "Patient", "RelatedPerson", "Device", "CareTeam");
             ValidationSupport.checkReferenceType(supplyRequest.supplier, "supplier", "Organization", "HealthcareService");
-            ValidationSupport.checkReferenceType(supplyRequest.reasonReference, "reasonReference", "Condition", "Observation", "DiagnosticReport", "DocumentReference");
             ValidationSupport.checkReferenceType(supplyRequest.deliverFrom, "deliverFrom", "Organization", "Location");
-            ValidationSupport.checkReferenceType(supplyRequest.deliverTo, "deliverTo", "Organization", "Location", "Patient");
+            ValidationSupport.checkReferenceType(supplyRequest.deliverTo, "deliverTo", "Organization", "Location", "Patient", "RelatedPerson");
         }
 
         protected Builder from(SupplyRequest supplyRequest) {
             super.from(supplyRequest);
             identifier.addAll(supplyRequest.identifier);
             status = supplyRequest.status;
+            basedOn.addAll(supplyRequest.basedOn);
             category = supplyRequest.category;
             priority = supplyRequest.priority;
+            deliverFor = supplyRequest.deliverFor;
             item = supplyRequest.item;
             quantity = supplyRequest.quantity;
             parameter.addAll(supplyRequest.parameter);
@@ -1125,8 +1138,7 @@ public class SupplyRequest extends DomainResource {
             authoredOn = supplyRequest.authoredOn;
             requester = supplyRequest.requester;
             supplier.addAll(supplyRequest.supplier);
-            reasonCode.addAll(supplyRequest.reasonCode);
-            reasonReference.addAll(supplyRequest.reasonReference);
+            reason.addAll(supplyRequest.reason);
             deliverFrom = supplyRequest.deliverFrom;
             deliverTo = supplyRequest.deliverTo;
             return this;
@@ -1144,7 +1156,7 @@ public class SupplyRequest extends DomainResource {
         )
         private final CodeableConcept code;
         @Choice({ CodeableConcept.class, Quantity.class, Range.class, Boolean.class })
-        private final Element value;
+        private final org.linuxforhealth.fhir.model.type.Element value;
 
         private Parameter(Builder builder) {
             super(builder);
@@ -1169,7 +1181,7 @@ public class SupplyRequest extends DomainResource {
          *     An immutable object of type {@link CodeableConcept}, {@link Quantity}, {@link Range} or {@link Boolean} that may be 
          *     null.
          */
-        public Element getValue() {
+        public org.linuxforhealth.fhir.model.type.Element getValue() {
             return value;
         }
 
@@ -1241,7 +1253,7 @@ public class SupplyRequest extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private CodeableConcept code;
-            private Element value;
+            private org.linuxforhealth.fhir.model.type.Element value;
 
             private Builder() {
                 super();
@@ -1264,7 +1276,7 @@ public class SupplyRequest extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1284,7 +1296,7 @@ public class SupplyRequest extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1309,7 +1321,7 @@ public class SupplyRequest extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1334,7 +1346,7 @@ public class SupplyRequest extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1405,7 +1417,7 @@ public class SupplyRequest extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder value(Element value) {
+            public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                 this.value = value;
                 return this;
             }

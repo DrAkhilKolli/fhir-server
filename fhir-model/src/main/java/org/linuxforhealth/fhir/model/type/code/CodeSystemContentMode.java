@@ -29,8 +29,8 @@ public class CodeSystemContentMode extends Code {
     /**
      * Example
      * 
-     * <p>A few representative concepts are included in the code system resource. There is no useful intent in the subset 
-     * choice and there's no process to make it workable: it's not intended to be workable.
+     * <p>A subset of the valid externally defined concepts are included in the code system resource. There is no specific 
+     * purpose or documented intent other than for illustrative purposes.
      */
     public static final CodeSystemContentMode EXAMPLE = CodeSystemContentMode.builder().value(Value.EXAMPLE).build();
 
@@ -229,8 +229,8 @@ public class CodeSystemContentMode extends Code {
         /**
          * Example
          * 
-         * <p>A few representative concepts are included in the code system resource. There is no useful intent in the subset 
-         * choice and there's no process to make it workable: it's not intended to be workable.
+         * <p>A subset of the valid externally defined concepts are included in the code system resource. There is no specific 
+         * purpose or documented intent other than for illustrative purposes.
          */
         EXAMPLE("example"),
 

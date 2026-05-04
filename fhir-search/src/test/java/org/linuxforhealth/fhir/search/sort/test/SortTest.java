@@ -26,7 +26,7 @@ import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
-import org.linuxforhealth.fhir.model.type.code.ResourceTypeCode;
+import org.linuxforhealth.fhir.model.type.code.FHIRTypes;
 import org.linuxforhealth.fhir.model.type.code.SearchParamType;
 import org.linuxforhealth.fhir.search.context.FHIRSearchContext;
 import org.linuxforhealth.fhir.search.context.FHIRSearchContextFactory;
@@ -124,7 +124,7 @@ public class SortTest extends BaseSearchTest {
         SearchParameter sortParmProxy =
                 SearchParameter.builder().url(Uri.of("test")).name(string("test")).status(PublicationStatus.DRAFT)
                         .description(Markdown.of("test")).code(Code.of("test"))
-                        .base(Arrays.asList(ResourceTypeCode.ACCOUNT)).type(SearchParamType.NUMBER)
+                        .base(Arrays.asList(FHIRTypes.ACCOUNT)).type(SearchParamType.NUMBER)
                         .expression(string("test")).build();
 
         context.setLenient(true);

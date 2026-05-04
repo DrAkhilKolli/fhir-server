@@ -18,7 +18,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * Value of "true" or "false"
  */
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Boolean extends Element {
+public class Boolean extends PrimitiveType {
     public static final Boolean TRUE = Boolean.of(true);
     public static final Boolean FALSE = Boolean.of(false);
 
@@ -124,7 +124,7 @@ public class Boolean extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends PrimitiveType.Builder {
         private java.lang.Boolean value;
 
         private Builder() {
@@ -147,7 +147,7 @@ public class Boolean extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -167,7 +167,7 @@ public class Boolean extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 

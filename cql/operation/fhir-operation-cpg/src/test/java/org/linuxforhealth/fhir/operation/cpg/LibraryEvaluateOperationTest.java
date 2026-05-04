@@ -68,12 +68,12 @@ public class LibraryEvaluateOperationTest extends BaseCqlOperationTest<LibraryEv
         String encounterCode = "office-visit";
         Coding reason = coding(codesystem, encounterCode);
         Encounter encounter =
-                Encounter.builder().reasonCode(concept(reason)).status(EncounterStatus.FINISHED).clazz(reason).period(Period.builder().start(DateTime.now()).end(DateTime.now()).build()).build();
+                Encounter.builder().status(EncounterStatus.COMPLETED).clazz(concept(reason)).actualPeriod(Period.builder().start(DateTime.now()).end(DateTime.now()).build()).build();
 
         String procedureCode = "fluoride-application";
         Coding type = coding(codesystem, procedureCode);
         Procedure procedure = Procedure.builder().subject(Reference.builder().reference(fhirstring("Patient/"
-                + patient.getId())).build()).code(concept(type)).status(ProcedureStatus.COMPLETED).performed(DateTime.of("2019-03-14")).build();
+                + patient.getId())).build()).code(concept(type)).status(ProcedureStatus.COMPLETED).occurrence(DateTime.of("2019-03-14")).build();
 
         List<Library> fhirLibraries = TestHelper.getBundleResources("EXM74-10.2.000-request.json", Library.class);
         Library primaryLibrary = fhirLibraries.get(0);
@@ -116,12 +116,12 @@ public class LibraryEvaluateOperationTest extends BaseCqlOperationTest<LibraryEv
         String encounterCode = "office-visit";
         Coding reason = coding(codesystem, encounterCode);
         Encounter encounter =
-                Encounter.builder().reasonCode(concept(reason)).status(EncounterStatus.FINISHED).clazz(reason).period(Period.builder().start(DateTime.now()).end(DateTime.now()).build()).build();
+                Encounter.builder().status(EncounterStatus.COMPLETED).clazz(concept(reason)).actualPeriod(Period.builder().start(DateTime.now()).end(DateTime.now()).build()).build();
 
         String procedureCode = "fluoride-application";
         Coding type = coding(codesystem, procedureCode);
         Procedure procedure = Procedure.builder().subject(Reference.builder().reference(fhirstring("Patient/"
-                + patient.getId())).build()).code(concept(type)).status(ProcedureStatus.COMPLETED).performed(DateTime.of("2019-03-14")).build();
+                + patient.getId())).build()).code(concept(type)).status(ProcedureStatus.COMPLETED).occurrence(DateTime.of("2019-03-14")).build();
 
         List<Library> fhirLibraries = TestHelper.getBundleResources("EXM74-10.2.000-request.json", Library.class);
 
@@ -169,12 +169,12 @@ public class LibraryEvaluateOperationTest extends BaseCqlOperationTest<LibraryEv
         String encounterCode = "office-visit";
         Coding reason = coding(codesystem, encounterCode);
         Encounter encounter =
-                Encounter.builder().reasonCode(concept(reason)).status(EncounterStatus.FINISHED).clazz(reason).period(Period.builder().start(DateTime.now()).end(DateTime.now()).build()).build();
+                Encounter.builder().status(EncounterStatus.COMPLETED).clazz(concept(reason)).actualPeriod(Period.builder().start(DateTime.now()).end(DateTime.now()).build()).build();
 
         String procedureCode = "fluoride-application";
         Coding type = coding(codesystem, procedureCode);
         Procedure procedure = Procedure.builder().subject(Reference.builder().reference(fhirstring("Patient/"
-                + patient.getId())).build()).code(concept(type)).status(ProcedureStatus.COMPLETED).performed(DateTime.of("2019-03-14")).build();
+                + patient.getId())).build()).code(concept(type)).status(ProcedureStatus.COMPLETED).occurrence(DateTime.of("2019-03-14")).build();
 
         List<Library> fhirLibraries = TestHelper.getBundleResources("EXM74-10.2.000-request.json", Library.class);
 
@@ -198,10 +198,9 @@ public class LibraryEvaluateOperationTest extends BaseCqlOperationTest<LibraryEv
 
         Endpoint endpoint = Endpoint.builder()
                 .status(EndpointStatus.ACTIVE)
-                .connectionType(Coding.builder()
+                .connectionType(concept(Coding.builder()
                     .code(Code.of("hl7-fhir-rest"))
-                    .build())
-                .payloadType(concept(coding("urn:hl7-org:sdwg:ccda-structuredBody:1.1")))
+                    .build()))
                 .address(Url.of("http://localhost:9443/fhir-server/api/v4"))
                 .build();
         Parameter pDataEndpoint = Parameter.builder().name(fhirstring(CqlOperation.PARAM_IN_DATA_ENDPOINT)).resource(endpoint).build();

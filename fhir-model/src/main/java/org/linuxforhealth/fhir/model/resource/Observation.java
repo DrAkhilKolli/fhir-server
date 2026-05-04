@@ -22,8 +22,10 @@ import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.Annotation;
+import org.linuxforhealth.fhir.model.type.Attachment;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Boolean;
+import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
 import org.linuxforhealth.fhir.model.type.DateTime;
@@ -32,6 +34,7 @@ import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Instant;
 import org.linuxforhealth.fhir.model.type.Integer;
+import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
@@ -48,6 +51,7 @@ import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.ObservationStatus;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
+import org.linuxforhealth.fhir.model.type.code.TriggeredByType;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
@@ -80,12 +84,28 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "obs-7",
     level = "Rule",
     location = "(base)",
-    description = "If Observation.code is the same as an Observation.component.code then the value element associated with the code SHALL NOT be present",
+    description = "If Observation.component.code is the same as Observation.code, then Observation.value SHALL NOT be present (the Observation.component.value[x] holds the value).",
     expression = "value.empty() or component.code.where(coding.intersect(%resource.code.coding).exists()).empty()",
     source = "http://hl7.org/fhir/StructureDefinition/Observation"
 )
 @Constraint(
-    id = "observation-8",
+    id = "obs-8",
+    level = "Rule",
+    location = "(base)",
+    description = "bodyStructure SHALL only be present if Observation.bodySite is not present",
+    expression = "bodySite.exists() implies bodyStructure.empty()",
+    source = "http://hl7.org/fhir/StructureDefinition/Observation"
+)
+@Constraint(
+    id = "obs-9",
+    level = "Rule",
+    location = "Observation.specimen",
+    description = "If Observation.specimen is a reference to Group, the group can only have specimens",
+    expression = "(reference.resolve().exists() and reference.resolve() is Group) implies reference.resolve().member.entity.resolve().all($this is Specimen)",
+    source = "http://hl7.org/fhir/StructureDefinition/Observation"
+)
+@Constraint(
+    id = "observation-10",
     level = "Warning",
     location = "(base)",
     description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/observation-category",
@@ -94,7 +114,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "observation-9",
+    id = "observation-11",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/data-absent-reason",
@@ -103,7 +123,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "observation-10",
+    id = "observation-12",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/observation-interpretation",
@@ -112,7 +132,16 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "observation-11",
+    id = "observation-13",
+    level = "Warning",
+    location = "referenceRange.normalValue",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/observation-referencerange-normalvalue",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/observation-referencerange-normalvalue', 'extensible')",
+    source = "http://hl7.org/fhir/StructureDefinition/Observation",
+    generated = true
+)
+@Constraint(
+    id = "observation-14",
     level = "Warning",
     location = "referenceRange.type",
     description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/referencerange-meaning",
@@ -121,7 +150,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "observation-12",
+    id = "observation-15",
     level = "Warning",
     location = "component.dataAbsentReason",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/data-absent-reason",
@@ -130,7 +159,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "observation-13",
+    id = "observation-16",
     level = "Warning",
     location = "component.interpretation",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/observation-interpretation",
@@ -143,17 +172,22 @@ public class Observation extends DomainResource {
     @Summary
     private final List<Identifier> identifier;
     @Summary
+    @ReferenceTarget({ "ObservationDefinition", "ObservationDefinition" })
+    @Choice({ Canonical.class, Reference.class })
+    private final org.linuxforhealth.fhir.model.type.Element instantiates;
+    @Summary
     @ReferenceTarget({ "CarePlan", "DeviceRequest", "ImmunizationRecommendation", "MedicationRequest", "NutritionOrder", "ServiceRequest" })
     private final List<Reference> basedOn;
+    private final List<TriggeredBy> triggeredBy;
     @Summary
-    @ReferenceTarget({ "MedicationAdministration", "MedicationDispense", "MedicationStatement", "Procedure", "Immunization", "ImagingStudy" })
+    @ReferenceTarget({ "MedicationAdministration", "MedicationDispense", "MedicationStatement", "Procedure", "Immunization", "ImagingStudy", "GenomicStudy" })
     private final List<Reference> partOf;
     @Summary
     @Binding(
         bindingName = "ObservationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "Codes providing the status of an observation.",
-        valueSet = "http://hl7.org/fhir/ValueSet/observation-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/observation-status|5.0.0"
     )
     @Required
     private final ObservationStatus status;
@@ -174,7 +208,7 @@ public class Observation extends DomainResource {
     @Required
     private final CodeableConcept code;
     @Summary
-    @ReferenceTarget({ "Patient", "Group", "Device", "Location", "Organization", "Procedure", "Practitioner", "Medication", "Substance" })
+    @ReferenceTarget({ "Patient", "Group", "Device", "Location", "Organization", "Procedure", "Practitioner", "Medication", "Substance", "BiologicallyDerivedProduct", "NutritionProduct" })
     private final Reference subject;
     @Summary
     private final List<Reference> focus;
@@ -183,15 +217,16 @@ public class Observation extends DomainResource {
     private final Reference encounter;
     @Summary
     @Choice({ DateTime.class, Period.class, Timing.class, Instant.class })
-    private final Element effective;
+    private final org.linuxforhealth.fhir.model.type.Element effective;
     @Summary
     private final Instant issued;
     @Summary
     @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient", "RelatedPerson" })
     private final List<Reference> performer;
     @Summary
-    @Choice({ Quantity.class, CodeableConcept.class, String.class, Boolean.class, Integer.class, Range.class, Ratio.class, SampledData.class, Time.class, DateTime.class, Period.class })
-    private final Element value;
+    @ReferenceTarget({ "MolecularSequence" })
+    @Choice({ Quantity.class, CodeableConcept.class, String.class, Boolean.class, Integer.class, Range.class, Ratio.class, SampledData.class, Time.class, DateTime.class, Period.class, Attachment.class, Reference.class })
+    private final org.linuxforhealth.fhir.model.type.Element value;
     @Binding(
         bindingName = "ObservationValueAbsentReason",
         strength = BindingStrength.Value.EXTENSIBLE,
@@ -214,6 +249,8 @@ public class Observation extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/body-site"
     )
     private final CodeableConcept bodySite;
+    @ReferenceTarget({ "BodyStructure" })
+    private final Reference bodyStructure;
     @Binding(
         bindingName = "ObservationMethod",
         strength = BindingStrength.Value.EXAMPLE,
@@ -221,7 +258,7 @@ public class Observation extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/observation-methods"
     )
     private final CodeableConcept method;
-    @ReferenceTarget({ "Specimen" })
+    @ReferenceTarget({ "Specimen", "Group" })
     private final Reference specimen;
     @ReferenceTarget({ "Device", "DeviceMetric" })
     private final Reference device;
@@ -230,7 +267,7 @@ public class Observation extends DomainResource {
     @ReferenceTarget({ "Observation", "QuestionnaireResponse", "MolecularSequence" })
     private final List<Reference> hasMember;
     @Summary
-    @ReferenceTarget({ "DocumentReference", "ImagingStudy", "Media", "QuestionnaireResponse", "Observation", "MolecularSequence" })
+    @ReferenceTarget({ "DocumentReference", "ImagingStudy", "ImagingSelection", "QuestionnaireResponse", "Observation", "MolecularSequence", "GenomicStudy" })
     private final List<Reference> derivedFrom;
     @Summary
     private final List<Component> component;
@@ -238,7 +275,9 @@ public class Observation extends DomainResource {
     private Observation(Builder builder) {
         super(builder);
         identifier = Collections.unmodifiableList(builder.identifier);
+        instantiates = builder.instantiates;
         basedOn = Collections.unmodifiableList(builder.basedOn);
+        triggeredBy = Collections.unmodifiableList(builder.triggeredBy);
         partOf = Collections.unmodifiableList(builder.partOf);
         status = builder.status;
         category = Collections.unmodifiableList(builder.category);
@@ -254,6 +293,7 @@ public class Observation extends DomainResource {
         interpretation = Collections.unmodifiableList(builder.interpretation);
         note = Collections.unmodifiableList(builder.note);
         bodySite = builder.bodySite;
+        bodyStructure = builder.bodyStructure;
         method = builder.method;
         specimen = builder.specimen;
         device = builder.device;
@@ -274,6 +314,17 @@ public class Observation extends DomainResource {
     }
 
     /**
+     * The reference to a FHIR ObservationDefinition resource that provides the definition that is adhered to in whole or in 
+     * part by this Observation instance.
+     * 
+     * @return
+     *     An immutable object of type {@link Canonical} or {@link Reference} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getInstantiates() {
+        return instantiates;
+    }
+
+    /**
      * A plan, proposal or order that is fulfilled in whole or in part by this event. For example, a MedicationRequest may 
      * require a patient to have laboratory test performed before it is dispensed.
      * 
@@ -282,6 +333,16 @@ public class Observation extends DomainResource {
      */
     public List<Reference> getBasedOn() {
         return basedOn;
+    }
+
+    /**
+     * Identifies the observation(s) that triggered the performance of this observation.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link TriggeredBy} that may be empty.
+     */
+    public List<TriggeredBy> getTriggeredBy() {
+        return triggeredBy;
     }
 
     /**
@@ -326,9 +387,10 @@ public class Observation extends DomainResource {
     }
 
     /**
-     * The patient, or group of patients, location, or device this observation is about and into whose record the observation 
-     * is placed. If the actual focus of the observation is different from the subject (or a sample of, part, or region of 
-     * the subject), the `focus` element or the `code` itself specifies the actual focus of the observation.
+     * The patient, or group of patients, location, device, organization, procedure or practitioner this observation is about 
+     * and into whose or what record the observation is placed. If the actual focus of the observation is different from the 
+     * subject (or a sample of, part, or region of the subject), the `focus` element or the `code` itself specifies the 
+     * actual focus of the observation.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
@@ -370,7 +432,7 @@ public class Observation extends DomainResource {
      * @return
      *     An immutable object of type {@link DateTime}, {@link Period}, {@link Timing} or {@link Instant} that may be null.
      */
-    public Element getEffective() {
+    public org.linuxforhealth.fhir.model.type.Element getEffective() {
         return effective;
     }
 
@@ -400,10 +462,10 @@ public class Observation extends DomainResource {
      * 
      * @return
      *     An immutable object of type {@link Quantity}, {@link CodeableConcept}, {@link String}, {@link Boolean}, {@link 
-     *     Integer}, {@link Range}, {@link Ratio}, {@link SampledData}, {@link Time}, {@link DateTime} or {@link Period} that may 
-     *     be null.
+     *     Integer}, {@link Range}, {@link Ratio}, {@link SampledData}, {@link Time}, {@link DateTime}, {@link Period}, {@link 
+     *     Attachment} or {@link Reference} that may be null.
      */
-    public Element getValue() {
+    public org.linuxforhealth.fhir.model.type.Element getValue() {
         return value;
     }
 
@@ -448,6 +510,16 @@ public class Observation extends DomainResource {
     }
 
     /**
+     * Indicates the body structure on the subject's body where the observation was made (i.e. the target site).
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getBodyStructure() {
+        return bodyStructure;
+    }
+
+    /**
      * Indicates the mechanism used to perform the observation.
      * 
      * @return
@@ -468,7 +540,7 @@ public class Observation extends DomainResource {
     }
 
     /**
-     * The device used to generate the observation data.
+     * A reference to the device that generates the measurements or the device settings for the device.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
@@ -527,7 +599,9 @@ public class Observation extends DomainResource {
     public boolean hasChildren() {
         return super.hasChildren() || 
             !identifier.isEmpty() || 
+            (instantiates != null) || 
             !basedOn.isEmpty() || 
+            !triggeredBy.isEmpty() || 
             !partOf.isEmpty() || 
             (status != null) || 
             !category.isEmpty() || 
@@ -543,6 +617,7 @@ public class Observation extends DomainResource {
             !interpretation.isEmpty() || 
             !note.isEmpty() || 
             (bodySite != null) || 
+            (bodyStructure != null) || 
             (method != null) || 
             (specimen != null) || 
             (device != null) || 
@@ -567,7 +642,9 @@ public class Observation extends DomainResource {
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(identifier, "identifier", visitor, Identifier.class);
+                accept(instantiates, "instantiates", visitor);
                 accept(basedOn, "basedOn", visitor, Reference.class);
+                accept(triggeredBy, "triggeredBy", visitor, TriggeredBy.class);
                 accept(partOf, "partOf", visitor, Reference.class);
                 accept(status, "status", visitor);
                 accept(category, "category", visitor, CodeableConcept.class);
@@ -583,6 +660,7 @@ public class Observation extends DomainResource {
                 accept(interpretation, "interpretation", visitor, CodeableConcept.class);
                 accept(note, "note", visitor, Annotation.class);
                 accept(bodySite, "bodySite", visitor);
+                accept(bodyStructure, "bodyStructure", visitor);
                 accept(method, "method", visitor);
                 accept(specimen, "specimen", visitor);
                 accept(device, "device", visitor);
@@ -617,7 +695,9 @@ public class Observation extends DomainResource {
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(identifier, other.identifier) && 
+            Objects.equals(instantiates, other.instantiates) && 
             Objects.equals(basedOn, other.basedOn) && 
+            Objects.equals(triggeredBy, other.triggeredBy) && 
             Objects.equals(partOf, other.partOf) && 
             Objects.equals(status, other.status) && 
             Objects.equals(category, other.category) && 
@@ -633,6 +713,7 @@ public class Observation extends DomainResource {
             Objects.equals(interpretation, other.interpretation) && 
             Objects.equals(note, other.note) && 
             Objects.equals(bodySite, other.bodySite) && 
+            Objects.equals(bodyStructure, other.bodyStructure) && 
             Objects.equals(method, other.method) && 
             Objects.equals(specimen, other.specimen) && 
             Objects.equals(device, other.device) && 
@@ -655,7 +736,9 @@ public class Observation extends DomainResource {
                 extension, 
                 modifierExtension, 
                 identifier, 
+                instantiates, 
                 basedOn, 
+                triggeredBy, 
                 partOf, 
                 status, 
                 category, 
@@ -671,6 +754,7 @@ public class Observation extends DomainResource {
                 interpretation, 
                 note, 
                 bodySite, 
+                bodyStructure, 
                 method, 
                 specimen, 
                 device, 
@@ -694,7 +778,9 @@ public class Observation extends DomainResource {
 
     public static class Builder extends DomainResource.Builder {
         private List<Identifier> identifier = new ArrayList<>();
+        private org.linuxforhealth.fhir.model.type.Element instantiates;
         private List<Reference> basedOn = new ArrayList<>();
+        private List<TriggeredBy> triggeredBy = new ArrayList<>();
         private List<Reference> partOf = new ArrayList<>();
         private ObservationStatus status;
         private List<CodeableConcept> category = new ArrayList<>();
@@ -702,14 +788,15 @@ public class Observation extends DomainResource {
         private Reference subject;
         private List<Reference> focus = new ArrayList<>();
         private Reference encounter;
-        private Element effective;
+        private org.linuxforhealth.fhir.model.type.Element effective;
         private Instant issued;
         private List<Reference> performer = new ArrayList<>();
-        private Element value;
+        private org.linuxforhealth.fhir.model.type.Element value;
         private CodeableConcept dataAbsentReason;
         private List<CodeableConcept> interpretation = new ArrayList<>();
         private List<Annotation> note = new ArrayList<>();
         private CodeableConcept bodySite;
+        private Reference bodyStructure;
         private CodeableConcept method;
         private Reference specimen;
         private Reference device;
@@ -800,7 +887,8 @@ public class Observation extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -818,7 +906,8 @@ public class Observation extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -839,7 +928,7 @@ public class Observation extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -859,7 +948,7 @@ public class Observation extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -884,9 +973,9 @@ public class Observation extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -909,9 +998,9 @@ public class Observation extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -969,6 +1058,33 @@ public class Observation extends DomainResource {
          */
         public Builder identifier(Collection<Identifier> identifier) {
             this.identifier = new ArrayList<>(identifier);
+            return this;
+        }
+
+        /**
+         * The reference to a FHIR ObservationDefinition resource that provides the definition that is adhered to in whole or in 
+         * part by this Observation instance.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link Canonical}</li>
+         * <li>{@link Reference}</li>
+         * </ul>
+         * 
+         * When of type {@link Reference}, the allowed resource types for this reference are:
+         * <ul>
+         * <li>{@link ObservationDefinition}</li>
+         * <li>{@link ObservationDefinition}</li>
+         * </ul>
+         * 
+         * @param instantiates
+         *     Instantiates FHIR ObservationDefinition
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder instantiates(org.linuxforhealth.fhir.model.type.Element instantiates) {
+            this.instantiates = instantiates;
             return this;
         }
 
@@ -1034,6 +1150,45 @@ public class Observation extends DomainResource {
         }
 
         /**
+         * Identifies the observation(s) that triggered the performance of this observation.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param triggeredBy
+         *     Triggering observation(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder triggeredBy(TriggeredBy... triggeredBy) {
+            for (TriggeredBy value : triggeredBy) {
+                this.triggeredBy.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Identifies the observation(s) that triggered the performance of this observation.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param triggeredBy
+         *     Triggering observation(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder triggeredBy(Collection<TriggeredBy> triggeredBy) {
+            this.triggeredBy = new ArrayList<>(triggeredBy);
+            return this;
+        }
+
+        /**
          * A larger event of which this particular Observation is a component or step. For example, an observation as part of a 
          * procedure.
          * 
@@ -1048,6 +1203,7 @@ public class Observation extends DomainResource {
          * <li>{@link Procedure}</li>
          * <li>{@link Immunization}</li>
          * <li>{@link ImagingStudy}</li>
+         * <li>{@link GenomicStudy}</li>
          * </ul>
          * 
          * @param partOf
@@ -1078,6 +1234,7 @@ public class Observation extends DomainResource {
          * <li>{@link Procedure}</li>
          * <li>{@link Immunization}</li>
          * <li>{@link ImagingStudy}</li>
+         * <li>{@link GenomicStudy}</li>
          * </ul>
          * 
          * @param partOf
@@ -1166,9 +1323,10 @@ public class Observation extends DomainResource {
         }
 
         /**
-         * The patient, or group of patients, location, or device this observation is about and into whose record the observation 
-         * is placed. If the actual focus of the observation is different from the subject (or a sample of, part, or region of 
-         * the subject), the `focus` element or the `code` itself specifies the actual focus of the observation.
+         * The patient, or group of patients, location, device, organization, procedure or practitioner this observation is about 
+         * and into whose or what record the observation is placed. If the actual focus of the observation is different from the 
+         * subject (or a sample of, part, or region of the subject), the `focus` element or the `code` itself specifies the 
+         * actual focus of the observation.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
@@ -1181,6 +1339,8 @@ public class Observation extends DomainResource {
          * <li>{@link Practitioner}</li>
          * <li>{@link Medication}</li>
          * <li>{@link Substance}</li>
+         * <li>{@link BiologicallyDerivedProduct}</li>
+         * <li>{@link NutritionProduct}</li>
          * </ul>
          * 
          * @param subject
@@ -1297,7 +1457,7 @@ public class Observation extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder effective(Element effective) {
+        public Builder effective(org.linuxforhealth.fhir.model.type.Element effective) {
             this.effective = effective;
             return this;
         }
@@ -1472,6 +1632,13 @@ public class Observation extends DomainResource {
          * <li>{@link Time}</li>
          * <li>{@link DateTime}</li>
          * <li>{@link Period}</li>
+         * <li>{@link Attachment}</li>
+         * <li>{@link Reference}</li>
+         * </ul>
+         * 
+         * When of type {@link Reference}, the allowed resource types for this reference are:
+         * <ul>
+         * <li>{@link MolecularSequence}</li>
          * </ul>
          * 
          * @param value
@@ -1480,7 +1647,7 @@ public class Observation extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder value(Element value) {
+        public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
             this.value = value;
             return this;
         }
@@ -1506,7 +1673,7 @@ public class Observation extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param interpretation
-         *     High, low, normal, etc.
+         *     High, low, normal, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -1525,7 +1692,7 @@ public class Observation extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param interpretation
-         *     High, low, normal, etc.
+         *     High, low, normal, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -1592,6 +1759,25 @@ public class Observation extends DomainResource {
         }
 
         /**
+         * Indicates the body structure on the subject's body where the observation was made (i.e. the target site).
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link BodyStructure}</li>
+         * </ul>
+         * 
+         * @param bodyStructure
+         *     Observed body structure
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder bodyStructure(Reference bodyStructure) {
+            this.bodyStructure = bodyStructure;
+            return this;
+        }
+
+        /**
          * Indicates the mechanism used to perform the observation.
          * 
          * @param method
@@ -1611,6 +1797,7 @@ public class Observation extends DomainResource {
          * <p>Allowed resource types for this reference:
          * <ul>
          * <li>{@link Specimen}</li>
+         * <li>{@link Group}</li>
          * </ul>
          * 
          * @param specimen
@@ -1625,7 +1812,7 @@ public class Observation extends DomainResource {
         }
 
         /**
-         * The device used to generate the observation data.
+         * A reference to the device that generates the measurements or the device settings for the device.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
@@ -1634,7 +1821,7 @@ public class Observation extends DomainResource {
          * </ul>
          * 
          * @param device
-         *     (Measurement) Device
+         *     A reference to the device that generates the measurements or the device settings for the device
          * 
          * @return
          *     A reference to this Builder instance
@@ -1753,14 +1940,15 @@ public class Observation extends DomainResource {
          * <ul>
          * <li>{@link DocumentReference}</li>
          * <li>{@link ImagingStudy}</li>
-         * <li>{@link Media}</li>
+         * <li>{@link ImagingSelection}</li>
          * <li>{@link QuestionnaireResponse}</li>
          * <li>{@link Observation}</li>
          * <li>{@link MolecularSequence}</li>
+         * <li>{@link GenomicStudy}</li>
          * </ul>
          * 
          * @param derivedFrom
-         *     Related measurements the observation is made from
+         *     Related resource from which the observation is made
          * 
          * @return
          *     A reference to this Builder instance
@@ -1783,14 +1971,15 @@ public class Observation extends DomainResource {
          * <ul>
          * <li>{@link DocumentReference}</li>
          * <li>{@link ImagingStudy}</li>
-         * <li>{@link Media}</li>
+         * <li>{@link ImagingSelection}</li>
          * <li>{@link QuestionnaireResponse}</li>
          * <li>{@link Observation}</li>
          * <li>{@link MolecularSequence}</li>
+         * <li>{@link GenomicStudy}</li>
          * </ul>
          * 
          * @param derivedFrom
-         *     Related measurements the observation is made from
+         *     Related resource from which the observation is made
          * 
          * @return
          *     A reference to this Builder instance
@@ -1872,7 +2061,9 @@ public class Observation extends DomainResource {
         protected void validate(Observation observation) {
             super.validate(observation);
             ValidationSupport.checkList(observation.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(observation.instantiates, "instantiates", Canonical.class, Reference.class);
             ValidationSupport.checkList(observation.basedOn, "basedOn", Reference.class);
+            ValidationSupport.checkList(observation.triggeredBy, "triggeredBy", TriggeredBy.class);
             ValidationSupport.checkList(observation.partOf, "partOf", Reference.class);
             ValidationSupport.requireNonNull(observation.status, "status");
             ValidationSupport.checkList(observation.category, "category", CodeableConcept.class);
@@ -1880,28 +2071,33 @@ public class Observation extends DomainResource {
             ValidationSupport.checkList(observation.focus, "focus", Reference.class);
             ValidationSupport.choiceElement(observation.effective, "effective", DateTime.class, Period.class, Timing.class, Instant.class);
             ValidationSupport.checkList(observation.performer, "performer", Reference.class);
-            ValidationSupport.choiceElement(observation.value, "value", Quantity.class, CodeableConcept.class, String.class, Boolean.class, Integer.class, Range.class, Ratio.class, SampledData.class, Time.class, DateTime.class, Period.class);
+            ValidationSupport.choiceElement(observation.value, "value", Quantity.class, CodeableConcept.class, String.class, Boolean.class, Integer.class, Range.class, Ratio.class, SampledData.class, Time.class, DateTime.class, Period.class, Attachment.class, Reference.class);
             ValidationSupport.checkList(observation.interpretation, "interpretation", CodeableConcept.class);
             ValidationSupport.checkList(observation.note, "note", Annotation.class);
             ValidationSupport.checkList(observation.referenceRange, "referenceRange", ReferenceRange.class);
             ValidationSupport.checkList(observation.hasMember, "hasMember", Reference.class);
             ValidationSupport.checkList(observation.derivedFrom, "derivedFrom", Reference.class);
             ValidationSupport.checkList(observation.component, "component", Component.class);
+            ValidationSupport.checkReferenceType(observation.instantiates, "instantiates", "ObservationDefinition", "ObservationDefinition");
             ValidationSupport.checkReferenceType(observation.basedOn, "basedOn", "CarePlan", "DeviceRequest", "ImmunizationRecommendation", "MedicationRequest", "NutritionOrder", "ServiceRequest");
-            ValidationSupport.checkReferenceType(observation.partOf, "partOf", "MedicationAdministration", "MedicationDispense", "MedicationStatement", "Procedure", "Immunization", "ImagingStudy");
-            ValidationSupport.checkReferenceType(observation.subject, "subject", "Patient", "Group", "Device", "Location", "Organization", "Procedure", "Practitioner", "Medication", "Substance");
+            ValidationSupport.checkReferenceType(observation.partOf, "partOf", "MedicationAdministration", "MedicationDispense", "MedicationStatement", "Procedure", "Immunization", "ImagingStudy", "GenomicStudy");
+            ValidationSupport.checkReferenceType(observation.subject, "subject", "Patient", "Group", "Device", "Location", "Organization", "Procedure", "Practitioner", "Medication", "Substance", "BiologicallyDerivedProduct", "NutritionProduct");
             ValidationSupport.checkReferenceType(observation.encounter, "encounter", "Encounter");
             ValidationSupport.checkReferenceType(observation.performer, "performer", "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient", "RelatedPerson");
-            ValidationSupport.checkReferenceType(observation.specimen, "specimen", "Specimen");
+            ValidationSupport.checkReferenceType(observation.value, "value", "MolecularSequence");
+            ValidationSupport.checkReferenceType(observation.bodyStructure, "bodyStructure", "BodyStructure");
+            ValidationSupport.checkReferenceType(observation.specimen, "specimen", "Specimen", "Group");
             ValidationSupport.checkReferenceType(observation.device, "device", "Device", "DeviceMetric");
             ValidationSupport.checkReferenceType(observation.hasMember, "hasMember", "Observation", "QuestionnaireResponse", "MolecularSequence");
-            ValidationSupport.checkReferenceType(observation.derivedFrom, "derivedFrom", "DocumentReference", "ImagingStudy", "Media", "QuestionnaireResponse", "Observation", "MolecularSequence");
+            ValidationSupport.checkReferenceType(observation.derivedFrom, "derivedFrom", "DocumentReference", "ImagingStudy", "ImagingSelection", "QuestionnaireResponse", "Observation", "MolecularSequence", "GenomicStudy");
         }
 
         protected Builder from(Observation observation) {
             super.from(observation);
             identifier.addAll(observation.identifier);
+            instantiates = observation.instantiates;
             basedOn.addAll(observation.basedOn);
+            triggeredBy.addAll(observation.triggeredBy);
             partOf.addAll(observation.partOf);
             status = observation.status;
             category.addAll(observation.category);
@@ -1917,6 +2113,7 @@ public class Observation extends DomainResource {
             interpretation.addAll(observation.interpretation);
             note.addAll(observation.note);
             bodySite = observation.bodySite;
+            bodyStructure = observation.bodyStructure;
             method = observation.method;
             specimen = observation.specimen;
             device = observation.device;
@@ -1929,6 +2126,362 @@ public class Observation extends DomainResource {
     }
 
     /**
+     * Identifies the observation(s) that triggered the performance of this observation.
+     */
+    public static class TriggeredBy extends BackboneElement {
+        @Summary
+        @ReferenceTarget({ "Observation" })
+        @Required
+        private final Reference observation;
+        @Summary
+        @Binding(
+            bindingName = "TriggeredByType",
+            strength = BindingStrength.Value.REQUIRED,
+            description = "The type of TriggeredBy Observation.",
+            valueSet = "http://hl7.org/fhir/ValueSet/observation-triggeredbytype|5.0.0"
+        )
+        @Required
+        private final TriggeredByType type;
+        private final String reason;
+
+        private TriggeredBy(Builder builder) {
+            super(builder);
+            observation = builder.observation;
+            type = builder.type;
+            reason = builder.reason;
+        }
+
+        /**
+         * Reference to the triggering observation.
+         * 
+         * @return
+         *     An immutable object of type {@link Reference} that is non-null.
+         */
+        public Reference getObservation() {
+            return observation;
+        }
+
+        /**
+         * The type of trigger.
+         * Reflex | Repeat | Re-run.
+         * 
+         * @return
+         *     An immutable object of type {@link TriggeredByType} that is non-null.
+         */
+        public TriggeredByType getType() {
+            return type;
+        }
+
+        /**
+         * Provides the reason why this observation was performed as a result of the observation(s) referenced.
+         * 
+         * @return
+         *     An immutable object of type {@link String} that may be null.
+         */
+        public String getReason() {
+            return reason;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (observation != null) || 
+                (type != null) || 
+                (reason != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(observation, "observation", visitor);
+                    accept(type, "type", visitor);
+                    accept(reason, "reason", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            TriggeredBy other = (TriggeredBy) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(observation, other.observation) && 
+                Objects.equals(type, other.type) && 
+                Objects.equals(reason, other.reason);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    observation, 
+                    type, 
+                    reason);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private Reference observation;
+            private TriggeredByType type;
+            private String reason;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * Reference to the triggering observation.
+             * 
+             * <p>This element is required.
+             * 
+             * <p>Allowed resource types for this reference:
+             * <ul>
+             * <li>{@link Observation}</li>
+             * </ul>
+             * 
+             * @param observation
+             *     Triggering observation
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder observation(Reference observation) {
+                this.observation = observation;
+                return this;
+            }
+
+            /**
+             * The type of trigger.
+             * Reflex | Repeat | Re-run.
+             * 
+             * <p>This element is required.
+             * 
+             * @param type
+             *     reflex | repeat | re-run
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder type(TriggeredByType type) {
+                this.type = type;
+                return this;
+            }
+
+            /**
+             * Convenience method for setting {@code reason}.
+             * 
+             * @param reason
+             *     Reason that the observation was triggered
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #reason(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder reason(java.lang.String reason) {
+                this.reason = (reason == null) ? null : String.of(reason);
+                return this;
+            }
+
+            /**
+             * Provides the reason why this observation was performed as a result of the observation(s) referenced.
+             * 
+             * @param reason
+             *     Reason that the observation was triggered
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder reason(String reason) {
+                this.reason = reason;
+                return this;
+            }
+
+            /**
+             * Build the {@link TriggeredBy}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>observation</li>
+             * <li>type</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link TriggeredBy}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid TriggeredBy per the base specification
+             */
+            @Override
+            public TriggeredBy build() {
+                TriggeredBy triggeredBy = new TriggeredBy(this);
+                if (validating) {
+                    validate(triggeredBy);
+                }
+                return triggeredBy;
+            }
+
+            protected void validate(TriggeredBy triggeredBy) {
+                super.validate(triggeredBy);
+                ValidationSupport.requireNonNull(triggeredBy.observation, "observation");
+                ValidationSupport.requireNonNull(triggeredBy.type, "type");
+                ValidationSupport.checkReferenceType(triggeredBy.observation, "observation", "Observation");
+                ValidationSupport.requireValueOrChildren(triggeredBy);
+            }
+
+            protected Builder from(TriggeredBy triggeredBy) {
+                super.from(triggeredBy);
+                observation = triggeredBy.observation;
+                type = triggeredBy.type;
+                reason = triggeredBy.reason;
+                return this;
+            }
+        }
+    }
+
+    /**
      * Guidance on how to interpret the value by comparison to a normal or recommended range. Multiple reference ranges are 
      * interpreted as an "OR". In other words, to represent two distinct target populations, two `referenceRange` elements 
      * would be used.
@@ -1936,6 +2489,13 @@ public class Observation extends DomainResource {
     public static class ReferenceRange extends BackboneElement {
         private final SimpleQuantity low;
         private final SimpleQuantity high;
+        @Binding(
+            bindingName = "ObservationReferenceRangeNormalValue",
+            strength = BindingStrength.Value.EXTENSIBLE,
+            description = "Codes identifying the normal value of the observation.",
+            valueSet = "http://hl7.org/fhir/ValueSet/observation-referencerange-normalvalue"
+        )
+        private final CodeableConcept normalValue;
         @Binding(
             bindingName = "ObservationRangeMeaning",
             strength = BindingStrength.Value.PREFERRED,
@@ -1951,12 +2511,13 @@ public class Observation extends DomainResource {
         )
         private final List<CodeableConcept> appliesTo;
         private final Range age;
-        private final String text;
+        private final Markdown text;
 
         private ReferenceRange(Builder builder) {
             super(builder);
             low = builder.low;
             high = builder.high;
+            normalValue = builder.normalValue;
             type = builder.type;
             appliesTo = Collections.unmodifiableList(builder.appliesTo);
             age = builder.age;
@@ -1985,6 +2546,16 @@ public class Observation extends DomainResource {
          */
         public SimpleQuantity getHigh() {
             return high;
+        }
+
+        /**
+         * The value of the normal value of the reference range.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getNormalValue() {
+            return normalValue;
         }
 
         /**
@@ -2027,9 +2598,9 @@ public class Observation extends DomainResource {
          * observation. An example would be a reference value of "Negative" or a list or table of "normals".
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link Markdown} that may be null.
          */
-        public String getText() {
+        public Markdown getText() {
             return text;
         }
 
@@ -2038,6 +2609,7 @@ public class Observation extends DomainResource {
             return super.hasChildren() || 
                 (low != null) || 
                 (high != null) || 
+                (normalValue != null) || 
                 (type != null) || 
                 !appliesTo.isEmpty() || 
                 (age != null) || 
@@ -2055,6 +2627,7 @@ public class Observation extends DomainResource {
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(low, "low", visitor);
                     accept(high, "high", visitor);
+                    accept(normalValue, "normalValue", visitor);
                     accept(type, "type", visitor);
                     accept(appliesTo, "appliesTo", visitor, CodeableConcept.class);
                     accept(age, "age", visitor);
@@ -2082,6 +2655,7 @@ public class Observation extends DomainResource {
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(low, other.low) && 
                 Objects.equals(high, other.high) && 
+                Objects.equals(normalValue, other.normalValue) && 
                 Objects.equals(type, other.type) && 
                 Objects.equals(appliesTo, other.appliesTo) && 
                 Objects.equals(age, other.age) && 
@@ -2097,6 +2671,7 @@ public class Observation extends DomainResource {
                     modifierExtension, 
                     low, 
                     high, 
+                    normalValue, 
                     type, 
                     appliesTo, 
                     age, 
@@ -2118,10 +2693,11 @@ public class Observation extends DomainResource {
         public static class Builder extends BackboneElement.Builder {
             private SimpleQuantity low;
             private SimpleQuantity high;
+            private CodeableConcept normalValue;
             private CodeableConcept type;
             private List<CodeableConcept> appliesTo = new ArrayList<>();
             private Range age;
-            private String text;
+            private Markdown text;
 
             private Builder() {
                 super();
@@ -2144,7 +2720,7 @@ public class Observation extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2164,7 +2740,7 @@ public class Observation extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2189,7 +2765,7 @@ public class Observation extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2214,7 +2790,7 @@ public class Observation extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2267,6 +2843,20 @@ public class Observation extends DomainResource {
              */
             public Builder high(SimpleQuantity high) {
                 this.high = high;
+                return this;
+            }
+
+            /**
+             * The value of the normal value of the reference range.
+             * 
+             * @param normalValue
+             *     Normal value, if relevant
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder normalValue(CodeableConcept normalValue) {
+                this.normalValue = normalValue;
                 return this;
             }
 
@@ -2346,22 +2936,6 @@ public class Observation extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code text}.
-             * 
-             * @param text
-             *     Text based reference range in an observation
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #text(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder text(java.lang.String text) {
-                this.text = (text == null) ? null : String.of(text);
-                return this;
-            }
-
-            /**
              * Text based reference range in an observation which may be used when a quantitative range is not appropriate for an 
              * observation. An example would be a reference value of "Negative" or a list or table of "normals".
              * 
@@ -2371,7 +2945,7 @@ public class Observation extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder text(String text) {
+            public Builder text(Markdown text) {
                 this.text = text;
                 return this;
             }
@@ -2403,6 +2977,7 @@ public class Observation extends DomainResource {
                 super.from(referenceRange);
                 low = referenceRange.low;
                 high = referenceRange.high;
+                normalValue = referenceRange.normalValue;
                 type = referenceRange.type;
                 appliesTo.addAll(referenceRange.appliesTo);
                 age = referenceRange.age;
@@ -2428,8 +3003,9 @@ public class Observation extends DomainResource {
         @Required
         private final CodeableConcept code;
         @Summary
-        @Choice({ Quantity.class, CodeableConcept.class, String.class, Boolean.class, Integer.class, Range.class, Ratio.class, SampledData.class, Time.class, DateTime.class, Period.class })
-        private final Element value;
+        @ReferenceTarget({ "MolecularSequence" })
+        @Choice({ Quantity.class, CodeableConcept.class, String.class, Boolean.class, Integer.class, Range.class, Ratio.class, SampledData.class, Time.class, DateTime.class, Period.class, Attachment.class, Reference.class })
+        private final org.linuxforhealth.fhir.model.type.Element value;
         @Binding(
             bindingName = "ObservationValueAbsentReason",
             strength = BindingStrength.Value.EXTENSIBLE,
@@ -2470,10 +3046,10 @@ public class Observation extends DomainResource {
          * 
          * @return
          *     An immutable object of type {@link Quantity}, {@link CodeableConcept}, {@link String}, {@link Boolean}, {@link 
-         *     Integer}, {@link Range}, {@link Ratio}, {@link SampledData}, {@link Time}, {@link DateTime} or {@link Period} that may 
-         *     be null.
+         *     Integer}, {@link Range}, {@link Ratio}, {@link SampledData}, {@link Time}, {@link DateTime}, {@link Period}, {@link 
+         *     Attachment} or {@link Reference} that may be null.
          */
-        public Element getValue() {
+        public org.linuxforhealth.fhir.model.type.Element getValue() {
             return value;
         }
 
@@ -2587,7 +3163,7 @@ public class Observation extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private CodeableConcept code;
-            private Element value;
+            private org.linuxforhealth.fhir.model.type.Element value;
             private CodeableConcept dataAbsentReason;
             private List<CodeableConcept> interpretation = new ArrayList<>();
             private List<Observation.ReferenceRange> referenceRange = new ArrayList<>();
@@ -2613,7 +3189,7 @@ public class Observation extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2633,7 +3209,7 @@ public class Observation extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2658,7 +3234,7 @@ public class Observation extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2683,7 +3259,7 @@ public class Observation extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2803,6 +3379,13 @@ public class Observation extends DomainResource {
              * <li>{@link Time}</li>
              * <li>{@link DateTime}</li>
              * <li>{@link Period}</li>
+             * <li>{@link Attachment}</li>
+             * <li>{@link Reference}</li>
+             * </ul>
+             * 
+             * When of type {@link Reference}, the allowed resource types for this reference are:
+             * <ul>
+             * <li>{@link MolecularSequence}</li>
              * </ul>
              * 
              * @param value
@@ -2811,7 +3394,7 @@ public class Observation extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder value(Element value) {
+            public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                 this.value = value;
                 return this;
             }
@@ -2837,7 +3420,7 @@ public class Observation extends DomainResource {
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param interpretation
-             *     High, low, normal, etc.
+             *     High, low, normal, etc
              * 
              * @return
              *     A reference to this Builder instance
@@ -2856,7 +3439,7 @@ public class Observation extends DomainResource {
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param interpretation
-             *     High, low, normal, etc.
+             *     High, low, normal, etc
              * 
              * @return
              *     A reference to this Builder instance
@@ -2933,9 +3516,10 @@ public class Observation extends DomainResource {
             protected void validate(Component component) {
                 super.validate(component);
                 ValidationSupport.requireNonNull(component.code, "code");
-                ValidationSupport.choiceElement(component.value, "value", Quantity.class, CodeableConcept.class, String.class, Boolean.class, Integer.class, Range.class, Ratio.class, SampledData.class, Time.class, DateTime.class, Period.class);
+                ValidationSupport.choiceElement(component.value, "value", Quantity.class, CodeableConcept.class, String.class, Boolean.class, Integer.class, Range.class, Ratio.class, SampledData.class, Time.class, DateTime.class, Period.class, Attachment.class, Reference.class);
                 ValidationSupport.checkList(component.interpretation, "interpretation", CodeableConcept.class);
                 ValidationSupport.checkList(component.referenceRange, "referenceRange", Observation.ReferenceRange.class);
+                ValidationSupport.checkReferenceType(component.value, "value", "MolecularSequence");
                 ValidationSupport.requireValueOrChildren(component);
             }
 

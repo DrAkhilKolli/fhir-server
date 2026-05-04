@@ -27,6 +27,8 @@ public class CarePlanIntent extends Code {
 
     public static final CarePlanIntent OPTION = CarePlanIntent.builder().value(Value.OPTION).build();
 
+    public static final CarePlanIntent DIRECTIVE = CarePlanIntent.builder().value(Value.DIRECTIVE).build();
+
     private volatile int hashCode;
 
     private CarePlanIntent(Builder builder) {
@@ -53,6 +55,8 @@ public class CarePlanIntent extends Code {
             return ORDER;
         case OPTION:
             return OPTION;
+        case DIRECTIVE:
+            return DIRECTIVE;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -191,7 +195,9 @@ public class CarePlanIntent extends Code {
 
         ORDER("order"),
 
-        OPTION("option");
+        OPTION("option"),
+
+        DIRECTIVE("directive");
 
         private final java.lang.String value;
 
@@ -230,6 +236,8 @@ public class CarePlanIntent extends Code {
                 return ORDER;
             case "option":
                 return OPTION;
+            case "directive":
+                return DIRECTIVE;
             default:
                 throw new IllegalArgumentException(value);
             }

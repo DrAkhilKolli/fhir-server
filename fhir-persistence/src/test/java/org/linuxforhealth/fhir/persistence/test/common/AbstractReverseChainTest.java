@@ -158,8 +158,8 @@ public abstract class AbstractReverseChainTest extends AbstractPersistenceTest {
                                        .build();
         savedObservation5 = FHIRPersistenceTestSupport.create(persistence, getDefaultPersistenceContext(), savedObservation5).getResource();
 
-        // a Device with a reference to a Patient and a versioned reference to an Organization
-        savedDevice1 = device.toBuilder().patient(reference("Patient/" + savedPatient3.getId())).build();
+        // a Device with a versioned reference to an Organization (R5: Device no longer references Patient directly)
+        savedDevice1 = device.toBuilder().build();
         savedDevice1 = FHIRPersistenceTestSupport.create(persistence, getDefaultPersistenceContext(), savedDevice1).getResource();
         savedDevice1 = savedDevice1.toBuilder()
                                    .manufacturer(string("Updated Manufacturer"))

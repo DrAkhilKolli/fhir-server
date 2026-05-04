@@ -15,6 +15,7 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
+import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.Required;
@@ -27,6 +28,7 @@ import org.linuxforhealth.fhir.model.type.CodeableConcept;
 import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
 import org.linuxforhealth.fhir.model.type.DateTime;
+import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.ElementDefinition;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Id;
@@ -58,11 +60,11 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     status = StandardsStatus.Value.NORMATIVE
 )
 @Constraint(
-    id = "sdf-0",
+    id = "cnl-0",
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
     source = "http://hl7.org/fhir/StructureDefinition/StructureDefinition"
 )
 @Constraint(
@@ -71,6 +73,14 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     location = "(base)",
     description = "Element paths must be unique unless the structure is a constraint",
     expression = "derivation = 'constraint' or snapshot.element.select(path).isDistinct()",
+    source = "http://hl7.org/fhir/StructureDefinition/StructureDefinition"
+)
+@Constraint(
+    id = "cnl-1",
+    level = "Warning",
+    location = "StructureDefinition.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
     source = "http://hl7.org/fhir/StructureDefinition/StructureDefinition"
 )
 @Constraint(
@@ -85,8 +95,8 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "sdf-3",
     level = "Rule",
     location = "StructureDefinition.snapshot",
-    description = "Each element definition in a snapshot must have a formal definition and cardinalities",
-    expression = "element.all(definition.exists() and min.exists() and max.exists())",
+    description = "Each element definition in a snapshot must have a formal definition and cardinalities, unless model is a logical model",
+    expression = "%resource.kind = 'logical' or element.all(definition.exists() and min.exists() and max.exists())",
     source = "http://hl7.org/fhir/StructureDefinition/StructureDefinition"
 )
 @Constraint(
@@ -126,7 +136,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Rule",
     location = "StructureDefinition.differential",
     description = "In any differential, all the elements must start with the StructureDefinition's specified type for non-logical models, or with the same type name for logical models",
-    expression = "(%resource.kind = 'logical' or element.first().path.startsWith(%resource.type)) and (element.tail().empty() or element.tail().all(path.startsWith(%resource.differential.element.first().path.replaceMatches('\\..*','')&'.')))",
+    expression = "(%resource.kind = 'logical' or element.first().path.startsWith(%resource.type)) and (element.tail().empty() or  element.tail().all(path.startsWith(%resource.differential.element.first().path.replaceMatches('\\..*','')&'.')))",
     source = "http://hl7.org/fhir/StructureDefinition/StructureDefinition"
 )
 @Constraint(
@@ -174,7 +184,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Rule",
     location = "(base)",
     description = "The first element in a snapshot has no type unless model is a logical model.",
-    expression = "kind!='logical' implies snapshot.element.first().type.empty()",
+    expression = "kind!='logical'  implies snapshot.element.first().type.empty()",
     source = "http://hl7.org/fhir/StructureDefinition/StructureDefinition"
 )
 @Constraint(
@@ -214,7 +224,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Rule",
     location = "(base)",
     description = "FHIR Specification models only use FHIR defined types",
-    expression = "url.startsWith('http://hl7.org/fhir/StructureDefinition') implies (differential.element.type.code.all(matches('^[a-zA-Z0-9]+$') or matches('^http:\\/\\/hl7\\.org\\/fhirpath\\/System\\.[A-Z][A-Za-z]+$')) and snapshot.element.type.code.all(matches('^[a-zA-Z0-9\\.]+$') or matches('^http:\\/\\/hl7\\.org\\/fhirpath\\/System\\.[A-Z][A-Za-z]+$')))",
+    expression = "url.startsWith('http://hl7.org/fhir/StructureDefinition') implies (differential | snapshot).element.type.code.all(matches('^[a-zA-Z0-9]+$') or matches('^http:\\/\\/hl7\\.org\\/fhirpath\\/System\\.[A-Z][A-Za-z]+$'))",
     source = "http://hl7.org/fhir/StructureDefinition/StructureDefinition"
 )
 @Constraint(
@@ -254,7 +264,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Rule",
     location = "StructureDefinition.snapshot",
     description = "For CodeableReference elements, target profiles must be listed on the CodeableReference, not the CodeableReference.reference",
-    expression = "element.where(type.code='Reference' and id.endsWith('.reference') and type.targetProfile.exists() and id.substring(0,$this.length()-10) in %context.element.where(type.code='CodeableReference').id).exists().not()",
+    expression = "element.where(type.where(code='Reference').exists() and path.endsWith('.reference') and type.targetProfile.exists() and (path.substring(0,$this.path.length()-10) in %context.element.where(type.where(code='CodeableReference').exists()).path)).exists().not()",
     source = "http://hl7.org/fhir/StructureDefinition/StructureDefinition"
 )
 @Constraint(
@@ -262,11 +272,52 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Rule",
     location = "StructureDefinition.snapshot",
     description = "For CodeableReference elements, bindings must be listed on the CodeableReference, not the CodeableReference.concept",
-    expression = "element.where(type.code='CodeableConcept' and id.endsWith('.concept') and binding.exists() and id.substring(0,$this.length()-8) in %context.element.where(type.code='CodeableReference').id).exists().not()",
+    expression = "element.where(type.where(code='CodeableConcept').exists() and path.endsWith('.concept') and binding.exists() and (path.substring(0,$this.path.length()-8) in %context.element.where(type.where(code='CodeableReference').exists()).path)).exists().not()",
     source = "http://hl7.org/fhir/StructureDefinition/StructureDefinition"
 )
 @Constraint(
-    id = "structureDefinition-26",
+    id = "sdf-26",
+    level = "Warning",
+    location = "StructureDefinition.snapshot",
+    description = "The root element of a profile should not have mustSupport = true",
+    expression = "$this.where(element[0].mustSupport='true').exists().not()",
+    source = "http://hl7.org/fhir/StructureDefinition/StructureDefinition"
+)
+@Constraint(
+    id = "sdf-27",
+    level = "Rule",
+    location = "(base)",
+    description = "If there's a base definition, there must be a derivation ",
+    expression = "baseDefinition.exists() implies derivation.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/StructureDefinition"
+)
+@Constraint(
+    id = "sdf-28",
+    level = "Rule",
+    location = "StructureDefinition.snapshot.element",
+    description = "If there are no discriminators, there must be a definition",
+    expression = "slicing.exists().not() or (slicing.discriminator.exists() or slicing.description.exists())",
+    source = "http://hl7.org/fhir/StructureDefinition/StructureDefinition"
+)
+@Constraint(
+    id = "sdf-29",
+    level = "Warning",
+    location = "(base)",
+    description = "Elements in Resources must have a min cardinality or 0 or 1 and a max cardinality of 1 or *",
+    expression = "((kind in 'resource' | 'complex-type') and (derivation = 'specialization')) implies differential.element.where((min != 0 and min != 1) or (max != '1' and max != '*')).empty()",
+    source = "http://hl7.org/fhir/StructureDefinition/StructureDefinition"
+)
+@Constraint(
+    id = "structureDefinition-30",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/StructureDefinition",
+    generated = true
+)
+@Constraint(
+    id = "structureDefinition-31",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
@@ -275,7 +326,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "structureDefinition-27",
+    id = "structureDefinition-32",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/definition-use",
@@ -284,11 +335,11 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "structureDefinition-28",
+    id = "structureDefinition-33",
     level = "Warning",
     location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/defined-types",
-    expression = "type.exists() and type.memberOf('http://hl7.org/fhir/ValueSet/defined-types', 'extensible')",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/fhir-types",
+    expression = "type.exists() and type.memberOf('http://hl7.org/fhir/ValueSet/fhir-types', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/StructureDefinition",
     generated = true
 )
@@ -302,6 +353,13 @@ public class StructureDefinition extends DomainResource {
     @Summary
     private final String version;
     @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+    @Summary
     @Required
     private final String name;
     @Summary
@@ -311,7 +369,7 @@ public class StructureDefinition extends DomainResource {
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -336,6 +394,7 @@ public class StructureDefinition extends DomainResource {
     private final List<CodeableConcept> jurisdiction;
     private final Markdown purpose;
     private final Markdown copyright;
+    private final String copyrightLabel;
     @Summary
     @Binding(
         bindingName = "StructureDefinitionKeyword",
@@ -349,7 +408,7 @@ public class StructureDefinition extends DomainResource {
         bindingName = "FHIRVersion",
         strength = BindingStrength.Value.REQUIRED,
         description = "All published FHIR Versions.",
-        valueSet = "http://hl7.org/fhir/ValueSet/FHIR-version|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/FHIR-version|5.0.0"
     )
     private final FHIRVersion fhirVersion;
     private final List<Mapping> mapping;
@@ -358,7 +417,7 @@ public class StructureDefinition extends DomainResource {
         bindingName = "StructureDefinitionKind",
         strength = BindingStrength.Value.REQUIRED,
         description = "Defines the type of structure that a definition is describing.",
-        valueSet = "http://hl7.org/fhir/ValueSet/structure-definition-kind|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/structure-definition-kind|5.0.0"
     )
     @Required
     private final StructureDefinitionKind kind;
@@ -371,10 +430,10 @@ public class StructureDefinition extends DomainResource {
     private final List<String> contextInvariant;
     @Summary
     @Binding(
-        bindingName = "FHIRDefinedTypeExt",
+        bindingName = "FHIRTypes",
         strength = BindingStrength.Value.EXTENSIBLE,
         description = "Either a resource or a data type, including logical model types.",
-        valueSet = "http://hl7.org/fhir/ValueSet/defined-types"
+        valueSet = "http://hl7.org/fhir/ValueSet/fhir-types"
     )
     @Required
     private final Uri type;
@@ -385,7 +444,7 @@ public class StructureDefinition extends DomainResource {
         bindingName = "TypeDerivationRule",
         strength = BindingStrength.Value.REQUIRED,
         description = "How a type relates to its baseDefinition.",
-        valueSet = "http://hl7.org/fhir/ValueSet/type-derivation-rule|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/type-derivation-rule|5.0.0"
     )
     private final TypeDerivationRule derivation;
     private final Snapshot snapshot;
@@ -396,6 +455,7 @@ public class StructureDefinition extends DomainResource {
         url = builder.url;
         identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
         title = builder.title;
         status = builder.status;
@@ -408,6 +468,7 @@ public class StructureDefinition extends DomainResource {
         jurisdiction = Collections.unmodifiableList(builder.jurisdiction);
         purpose = builder.purpose;
         copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
         keyword = Collections.unmodifiableList(builder.keyword);
         fhirVersion = builder.fhirVersion;
         mapping = Collections.unmodifiableList(builder.mapping);
@@ -425,9 +486,8 @@ public class StructureDefinition extends DomainResource {
     /**
      * An absolute URI that is used to identify this structure definition when it is referenced in a specification, model, 
      * design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal 
-     * address at which at which an authoritative instance of this structure definition is (or will be) published. This URL 
-     * can be the target of a canonical reference. It SHALL remain the same when the structure definition is stored on 
-     * different servers.
+     * address at which an authoritative instance of this structure definition is (or will be) published. This URL can be the 
+     * target of a canonical reference. It SHALL remain the same when the structure definition is stored on different servers.
      * 
      * @return
      *     An immutable object of type {@link Uri} that is non-null.
@@ -450,14 +510,25 @@ public class StructureDefinition extends DomainResource {
     /**
      * The identifier that is used to identify this version of the structure definition when it is referenced in a 
      * specification, model, design or instance. This is an arbitrary value managed by the structure definition author and is 
-     * not expected to be globally unique. For example, it might be a timestamp (e.g. yyyymmdd) if a managed version is not 
-     * available. There is also no expectation that versions can be placed in a lexicographical sequence.
+     * not expected to be globally unique. There is no expectation that versions can be placed in a lexicographical sequence, 
+     * so authors are encouraged to populate the StructureDefinition.versionAlgorithm[x] element to enable comparisons. If 
+     * there is no managed version available, authors can consider using ISO date/time syntax (e.g., '2023-01-01').
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
      */
     public String getVersion() {
         return version;
+    }
+
+    /**
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
     }
 
     /**
@@ -503,9 +574,9 @@ public class StructureDefinition extends DomainResource {
     }
 
     /**
-     * The date (and optionally time) when the structure definition was published. The date must change when the business 
-     * version changes and it must change if the status code changes. In addition, it should change when the substantive 
-     * content of the structure definition changes.
+     * The date (and optionally time) when the structure definition was last significantly changed. The date must change when 
+     * the business version changes and it must change if the status code changes. In addition, it should change when the 
+     * substantive content of the structure definition changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -515,7 +586,8 @@ public class StructureDefinition extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the structure definition.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the structure 
+     * definition.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -578,7 +650,8 @@ public class StructureDefinition extends DomainResource {
 
     /**
      * A copyright statement relating to the structure definition and/or its contents. Copyright statements are generally 
-     * legal restrictions on the use and publishing of the structure definition.
+     * legal restrictions on the use and publishing of the structure definition. The short copyright declaration (e.g. (c) 
+     * '2015+ xyz organization' should be sent in the copyrightLabel element.
      * 
      * @return
      *     An immutable object of type {@link Markdown} that may be null.
@@ -588,8 +661,19 @@ public class StructureDefinition extends DomainResource {
     }
 
     /**
-     * A set of key words or terms from external terminologies that may be used to assist with indexing and searching of 
-     * templates nby describing the use of this structure definition, or the content it describes.
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
+    }
+
+    /**
+     * (DEPRECATED) A set of key words or terms from external terminologies that may be used to assist with indexing and 
+     * searching of templates nby describing the use of this structure definition, or the content it describes.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Coding} that may be empty.
@@ -600,8 +684,7 @@ public class StructureDefinition extends DomainResource {
 
     /**
      * The version of the FHIR specification on which this StructureDefinition is based - this is the formal version of the 
-     * specification, without the revision number, e.g. [publication].[major].[minor], which is 4.3.0-cibuild for this 
-     * version.
+     * specification, without the revision number, e.g. [publication].[major].[minor], which is 4.6.0. for this version.
      * 
      * @return
      *     An immutable object of type {@link FHIRVersion} that may be null.
@@ -642,7 +725,8 @@ public class StructureDefinition extends DomainResource {
     }
 
     /**
-     * Identifies the types of resource or data type elements to which the extension can be applied.
+     * Identifies the types of resource or data type elements to which the extension can be applied. For more guidance on 
+     * using the 'context' element, see the [defining extensions page](defining-extensions.html#context).
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Context} that may be empty.
@@ -667,7 +751,7 @@ public class StructureDefinition extends DomainResource {
      * type, and there is always one of these (a data type, an extension, a resource, including abstract ones). Otherwise the 
      * structure definition is a constraint on the stated type (and in this case, the type cannot be an abstract type). 
      * References are URLs that are relative to http://hl7.org/fhir/StructureDefinition e.g. "string" is a reference to http:
-     * //hl7.org/fhir/StructureDefinition/string. Absolute URLs are only allowed in logical models.
+     * //hl7.org/fhir/StructureDefinition/string. Absolute URLs are only allowed in logical models, where they are required.
      * 
      * @return
      *     An immutable object of type {@link Uri} that is non-null.
@@ -723,6 +807,7 @@ public class StructureDefinition extends DomainResource {
             (url != null) || 
             !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
             (title != null) || 
             (status != null) || 
@@ -735,6 +820,7 @@ public class StructureDefinition extends DomainResource {
             !jurisdiction.isEmpty() || 
             (purpose != null) || 
             (copyright != null) || 
+            (copyrightLabel != null) || 
             !keyword.isEmpty() || 
             (fhirVersion != null) || 
             !mapping.isEmpty() || 
@@ -766,6 +852,7 @@ public class StructureDefinition extends DomainResource {
                 accept(url, "url", visitor);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(status, "status", visitor);
@@ -778,6 +865,7 @@ public class StructureDefinition extends DomainResource {
                 accept(jurisdiction, "jurisdiction", visitor, CodeableConcept.class);
                 accept(purpose, "purpose", visitor);
                 accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
                 accept(keyword, "keyword", visitor, Coding.class);
                 accept(fhirVersion, "fhirVersion", visitor);
                 accept(mapping, "mapping", visitor, Mapping.class);
@@ -819,6 +907,7 @@ public class StructureDefinition extends DomainResource {
             Objects.equals(url, other.url) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(status, other.status) && 
@@ -831,6 +920,7 @@ public class StructureDefinition extends DomainResource {
             Objects.equals(jurisdiction, other.jurisdiction) && 
             Objects.equals(purpose, other.purpose) && 
             Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
             Objects.equals(keyword, other.keyword) && 
             Objects.equals(fhirVersion, other.fhirVersion) && 
             Objects.equals(mapping, other.mapping) && 
@@ -860,6 +950,7 @@ public class StructureDefinition extends DomainResource {
                 url, 
                 identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
                 title, 
                 status, 
@@ -872,6 +963,7 @@ public class StructureDefinition extends DomainResource {
                 jurisdiction, 
                 purpose, 
                 copyright, 
+                copyrightLabel, 
                 keyword, 
                 fhirVersion, 
                 mapping, 
@@ -902,6 +994,7 @@ public class StructureDefinition extends DomainResource {
         private Uri url;
         private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
         private String title;
         private PublicationStatus status;
@@ -914,6 +1007,7 @@ public class StructureDefinition extends DomainResource {
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
         private Markdown purpose;
         private Markdown copyright;
+        private String copyrightLabel;
         private List<Coding> keyword = new ArrayList<>();
         private FHIRVersion fhirVersion;
         private List<Mapping> mapping = new ArrayList<>();
@@ -1009,7 +1103,8 @@ public class StructureDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1027,7 +1122,8 @@ public class StructureDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1048,7 +1144,7 @@ public class StructureDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -1068,7 +1164,7 @@ public class StructureDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -1093,9 +1189,9 @@ public class StructureDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1118,9 +1214,9 @@ public class StructureDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1145,9 +1241,8 @@ public class StructureDefinition extends DomainResource {
         /**
          * An absolute URI that is used to identify this structure definition when it is referenced in a specification, model, 
          * design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal 
-         * address at which at which an authoritative instance of this structure definition is (or will be) published. This URL 
-         * can be the target of a canonical reference. It SHALL remain the same when the structure definition is stored on 
-         * different servers.
+         * address at which an authoritative instance of this structure definition is (or will be) published. This URL can be the 
+         * target of a canonical reference. It SHALL remain the same when the structure definition is stored on different servers.
          * 
          * <p>This element is required.
          * 
@@ -1222,8 +1317,9 @@ public class StructureDefinition extends DomainResource {
         /**
          * The identifier that is used to identify this version of the structure definition when it is referenced in a 
          * specification, model, design or instance. This is an arbitrary value managed by the structure definition author and is 
-         * not expected to be globally unique. For example, it might be a timestamp (e.g. yyyymmdd) if a managed version is not 
-         * available. There is also no expectation that versions can be placed in a lexicographical sequence.
+         * not expected to be globally unique. There is no expectation that versions can be placed in a lexicographical sequence, 
+         * so authors are encouraged to populate the StructureDefinition.versionAlgorithm[x] element to enable comparisons. If 
+         * there is no managed version available, authors can consider using ISO date/time syntax (e.g., '2023-01-01').
          * 
          * @param version
          *     Business version of the structure definition
@@ -1233,6 +1329,42 @@ public class StructureDefinition extends DomainResource {
          */
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
             return this;
         }
 
@@ -1349,9 +1481,9 @@ public class StructureDefinition extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the structure definition was published. The date must change when the business 
-         * version changes and it must change if the status code changes. In addition, it should change when the substantive 
-         * content of the structure definition changes.
+         * The date (and optionally time) when the structure definition was last significantly changed. The date must change when 
+         * the business version changes and it must change if the status code changes. In addition, it should change when the 
+         * substantive content of the structure definition changes.
          * 
          * @param date
          *     Date last changed
@@ -1368,7 +1500,7 @@ public class StructureDefinition extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1381,10 +1513,11 @@ public class StructureDefinition extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the structure definition.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the structure 
+         * definition.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1545,7 +1678,8 @@ public class StructureDefinition extends DomainResource {
 
         /**
          * A copyright statement relating to the structure definition and/or its contents. Copyright statements are generally 
-         * legal restrictions on the use and publishing of the structure definition.
+         * legal restrictions on the use and publishing of the structure definition. The short copyright declaration (e.g. (c) 
+         * '2015+ xyz organization' should be sent in the copyrightLabel element.
          * 
          * @param copyright
          *     Use and/or publishing restrictions
@@ -1559,8 +1693,39 @@ public class StructureDefinition extends DomainResource {
         }
 
         /**
-         * A set of key words or terms from external terminologies that may be used to assist with indexing and searching of 
-         * templates nby describing the use of this structure definition, or the content it describes.
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
+            return this;
+        }
+
+        /**
+         * (DEPRECATED) A set of key words or terms from external terminologies that may be used to assist with indexing and 
+         * searching of templates nby describing the use of this structure definition, or the content it describes.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1579,8 +1744,8 @@ public class StructureDefinition extends DomainResource {
         }
 
         /**
-         * A set of key words or terms from external terminologies that may be used to assist with indexing and searching of 
-         * templates nby describing the use of this structure definition, or the content it describes.
+         * (DEPRECATED) A set of key words or terms from external terminologies that may be used to assist with indexing and 
+         * searching of templates nby describing the use of this structure definition, or the content it describes.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1601,8 +1766,7 @@ public class StructureDefinition extends DomainResource {
 
         /**
          * The version of the FHIR specification on which this StructureDefinition is based - this is the formal version of the 
-         * specification, without the revision number, e.g. [publication].[major].[minor], which is 4.3.0-cibuild for this 
-         * version.
+         * specification, without the revision number, e.g. [publication].[major].[minor], which is 4.6.0. for this version.
          * 
          * @param fhirVersion
          *     FHIR Version this StructureDefinition targets
@@ -1706,7 +1870,8 @@ public class StructureDefinition extends DomainResource {
         }
 
         /**
-         * Identifies the types of resource or data type elements to which the extension can be applied.
+         * Identifies the types of resource or data type elements to which the extension can be applied. For more guidance on 
+         * using the 'context' element, see the [defining extensions page](defining-extensions.html#context).
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1725,7 +1890,8 @@ public class StructureDefinition extends DomainResource {
         }
 
         /**
-         * Identifies the types of resource or data type elements to which the extension can be applied.
+         * Identifies the types of resource or data type elements to which the extension can be applied. For more guidance on 
+         * using the 'context' element, see the [defining extensions page](defining-extensions.html#context).
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1811,7 +1977,7 @@ public class StructureDefinition extends DomainResource {
          * type, and there is always one of these (a data type, an extension, a resource, including abstract ones). Otherwise the 
          * structure definition is a constraint on the stated type (and in this case, the type cannot be an abstract type). 
          * References are URLs that are relative to http://hl7.org/fhir/StructureDefinition e.g. "string" is a reference to http:
-         * //hl7.org/fhir/StructureDefinition/string. Absolute URLs are only allowed in logical models.
+         * //hl7.org/fhir/StructureDefinition/string. Absolute URLs are only allowed in logical models, where they are required.
          * 
          * <p>This element is required.
          * 
@@ -1914,6 +2080,7 @@ public class StructureDefinition extends DomainResource {
             super.validate(structureDefinition);
             ValidationSupport.requireNonNull(structureDefinition.url, "url");
             ValidationSupport.checkList(structureDefinition.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(structureDefinition.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.requireNonNull(structureDefinition.name, "name");
             ValidationSupport.requireNonNull(structureDefinition.status, "status");
             ValidationSupport.checkList(structureDefinition.contact, "contact", ContactDetail.class);
@@ -1933,6 +2100,7 @@ public class StructureDefinition extends DomainResource {
             url = structureDefinition.url;
             identifier.addAll(structureDefinition.identifier);
             version = structureDefinition.version;
+            versionAlgorithm = structureDefinition.versionAlgorithm;
             name = structureDefinition.name;
             title = structureDefinition.title;
             status = structureDefinition.status;
@@ -1945,6 +2113,7 @@ public class StructureDefinition extends DomainResource {
             jurisdiction.addAll(structureDefinition.jurisdiction);
             purpose = structureDefinition.purpose;
             copyright = structureDefinition.copyright;
+            copyrightLabel = structureDefinition.copyrightLabel;
             keyword.addAll(structureDefinition.keyword);
             fhirVersion = structureDefinition.fhirVersion;
             mapping.addAll(structureDefinition.mapping);
@@ -2120,7 +2289,7 @@ public class StructureDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2140,7 +2309,7 @@ public class StructureDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2165,7 +2334,7 @@ public class StructureDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2190,7 +2359,7 @@ public class StructureDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2278,7 +2447,7 @@ public class StructureDefinition extends DomainResource {
              * Convenience method for setting {@code comment}.
              * 
              * @param comment
-             *     Versions, Issues, Scope limitations etc.
+             *     Versions, Issues, Scope limitations etc
              * 
              * @return
              *     A reference to this Builder instance
@@ -2294,7 +2463,7 @@ public class StructureDefinition extends DomainResource {
              * Comments about this mapping, including version notes, issues, scope limitations, and other important notes for usage.
              * 
              * @param comment
-             *     Versions, Issues, Scope limitations etc.
+             *     Versions, Issues, Scope limitations etc
              * 
              * @return
              *     A reference to this Builder instance
@@ -2344,7 +2513,8 @@ public class StructureDefinition extends DomainResource {
     }
 
     /**
-     * Identifies the types of resource or data type elements to which the extension can be applied.
+     * Identifies the types of resource or data type elements to which the extension can be applied. For more guidance on 
+     * using the 'context' element, see the [defining extensions page](defining-extensions.html#context).
      */
     public static class Context extends BackboneElement {
         @Summary
@@ -2352,7 +2522,7 @@ public class StructureDefinition extends DomainResource {
             bindingName = "ExtensionContextType",
             strength = BindingStrength.Value.REQUIRED,
             description = "How an extension context is interpreted.",
-            valueSet = "http://hl7.org/fhir/ValueSet/extension-context-type|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/extension-context-type|5.0.0"
         )
         @Required
         private final ExtensionContextType type;
@@ -2477,7 +2647,7 @@ public class StructureDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2497,7 +2667,7 @@ public class StructureDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2522,7 +2692,7 @@ public class StructureDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2547,7 +2717,7 @@ public class StructureDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2769,7 +2939,7 @@ public class StructureDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2789,7 +2959,7 @@ public class StructureDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2814,7 +2984,7 @@ public class StructureDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2839,7 +3009,7 @@ public class StructureDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3050,7 +3220,7 @@ public class StructureDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3070,7 +3240,7 @@ public class StructureDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3095,7 +3265,7 @@ public class StructureDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3120,7 +3290,7 @@ public class StructureDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 

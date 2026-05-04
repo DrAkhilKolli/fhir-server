@@ -20,64 +20,31 @@ import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
-import org.linuxforhealth.fhir.model.type.Address;
-import org.linuxforhealth.fhir.model.type.Age;
-import org.linuxforhealth.fhir.model.type.Annotation;
-import org.linuxforhealth.fhir.model.type.Attachment;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
-import org.linuxforhealth.fhir.model.type.Base64Binary;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
 import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
-import org.linuxforhealth.fhir.model.type.ContactPoint;
-import org.linuxforhealth.fhir.model.type.Contributor;
-import org.linuxforhealth.fhir.model.type.Count;
-import org.linuxforhealth.fhir.model.type.DataRequirement;
 import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Decimal;
-import org.linuxforhealth.fhir.model.type.Distance;
-import org.linuxforhealth.fhir.model.type.Dosage;
-import org.linuxforhealth.fhir.model.type.Duration;
 import org.linuxforhealth.fhir.model.type.Element;
-import org.linuxforhealth.fhir.model.type.Expression;
 import org.linuxforhealth.fhir.model.type.Extension;
-import org.linuxforhealth.fhir.model.type.HumanName;
 import org.linuxforhealth.fhir.model.type.Id;
 import org.linuxforhealth.fhir.model.type.Identifier;
-import org.linuxforhealth.fhir.model.type.Instant;
 import org.linuxforhealth.fhir.model.type.Integer;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
-import org.linuxforhealth.fhir.model.type.Money;
 import org.linuxforhealth.fhir.model.type.Narrative;
-import org.linuxforhealth.fhir.model.type.Oid;
-import org.linuxforhealth.fhir.model.type.ParameterDefinition;
-import org.linuxforhealth.fhir.model.type.Period;
-import org.linuxforhealth.fhir.model.type.PositiveInt;
-import org.linuxforhealth.fhir.model.type.Quantity;
-import org.linuxforhealth.fhir.model.type.Range;
-import org.linuxforhealth.fhir.model.type.Ratio;
-import org.linuxforhealth.fhir.model.type.Reference;
-import org.linuxforhealth.fhir.model.type.RelatedArtifact;
-import org.linuxforhealth.fhir.model.type.SampledData;
-import org.linuxforhealth.fhir.model.type.Signature;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Time;
-import org.linuxforhealth.fhir.model.type.Timing;
-import org.linuxforhealth.fhir.model.type.TriggerDefinition;
-import org.linuxforhealth.fhir.model.type.UnsignedInt;
 import org.linuxforhealth.fhir.model.type.Uri;
-import org.linuxforhealth.fhir.model.type.Url;
 import org.linuxforhealth.fhir.model.type.UsageContext;
-import org.linuxforhealth.fhir.model.type.Uuid;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
-import org.linuxforhealth.fhir.model.type.code.StructureMapContextType;
 import org.linuxforhealth.fhir.model.type.code.StructureMapGroupTypeMode;
 import org.linuxforhealth.fhir.model.type.code.StructureMapInputMode;
 import org.linuxforhealth.fhir.model.type.code.StructureMapModelMode;
@@ -90,18 +57,26 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 /**
  * A Map of relationships between 2 structures that can be used to transform data.
  * 
- * <p>Maturity level: FMM2 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 2,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "smp-0",
+    id = "cnl-0",
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
+    source = "http://hl7.org/fhir/StructureDefinition/StructureMap"
+)
+@Constraint(
+    id = "cnl-1",
+    level = "Warning",
+    location = "StructureMap.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
     source = "http://hl7.org/fhir/StructureDefinition/StructureMap"
 )
 @Constraint(
@@ -113,12 +88,13 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     source = "http://hl7.org/fhir/StructureDefinition/StructureMap"
 )
 @Constraint(
-    id = "smp-2",
-    level = "Rule",
-    location = "StructureMap.group.rule.target",
-    description = "Must have a contextType if you have a context",
-    expression = "context.exists() implies contextType.exists()",
-    source = "http://hl7.org/fhir/StructureDefinition/StructureMap"
+    id = "structureMap-2",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/StructureMap",
+    generated = true
 )
 @Constraint(
     id = "structureMap-3",
@@ -139,6 +115,13 @@ public class StructureMap extends DomainResource {
     @Summary
     private final String version;
     @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+    @Summary
     @Required
     private final String name;
     @Summary
@@ -148,7 +131,7 @@ public class StructureMap extends DomainResource {
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -173,10 +156,13 @@ public class StructureMap extends DomainResource {
     private final List<CodeableConcept> jurisdiction;
     private final Markdown purpose;
     private final Markdown copyright;
+    private final String copyrightLabel;
     @Summary
     private final List<Structure> structure;
     @Summary
     private final List<Canonical> _import;
+    @Summary
+    private final List<Const> _const;
     @Summary
     @Required
     private final List<Group> group;
@@ -186,6 +172,7 @@ public class StructureMap extends DomainResource {
         url = builder.url;
         identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
         title = builder.title;
         status = builder.status;
@@ -198,16 +185,18 @@ public class StructureMap extends DomainResource {
         jurisdiction = Collections.unmodifiableList(builder.jurisdiction);
         purpose = builder.purpose;
         copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
         structure = Collections.unmodifiableList(builder.structure);
         _import = Collections.unmodifiableList(builder._import);
+        _const = Collections.unmodifiableList(builder._const);
         group = Collections.unmodifiableList(builder.group);
     }
 
     /**
      * An absolute URI that is used to identify this structure map when it is referenced in a specification, model, design or 
      * an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
-     * which at which an authoritative instance of this structure map is (or will be) published. This URL can be the target 
-     * of a canonical reference. It SHALL remain the same when the structure map is stored on different servers.
+     * which an authoritative instance of this structure map is (or will be) published. This URL can be the target of a 
+     * canonical reference. It SHALL remain the same when the structure map is stored on different servers.
      * 
      * @return
      *     An immutable object of type {@link Uri} that is non-null.
@@ -238,6 +227,16 @@ public class StructureMap extends DomainResource {
      */
     public String getVersion() {
         return version;
+    }
+
+    /**
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
     }
 
     /**
@@ -283,9 +282,9 @@ public class StructureMap extends DomainResource {
     }
 
     /**
-     * The date (and optionally time) when the structure map was published. The date must change when the business version 
-     * changes and it must change if the status code changes. In addition, it should change when the substantive content of 
-     * the structure map changes.
+     * The date (and optionally time) when the structure map was last significantly changed. The date must change when the 
+     * business version changes and it must change if the status code changes. In addition, it should change when the 
+     * substantive content of the structure map changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -295,7 +294,7 @@ public class StructureMap extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the structure map.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the structure map.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -368,6 +367,17 @@ public class StructureMap extends DomainResource {
     }
 
     /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
+    }
+
+    /**
      * A structure definition used by this map. The structure definition may describe instances that are converted, or the 
      * instances that are produced.
      * 
@@ -389,7 +399,17 @@ public class StructureMap extends DomainResource {
     }
 
     /**
-     * Organizes the mapping into manageable chunks for human review/ease of maintenance.
+     * Definition of a constant value used in the map rules.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Const} that may be empty.
+     */
+    public List<Const> getConst() {
+        return _const;
+    }
+
+    /**
+     * Organizes the mapping into managable chunks for human review/ease of maintenance.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Group} that is non-empty.
@@ -404,6 +424,7 @@ public class StructureMap extends DomainResource {
             (url != null) || 
             !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
             (title != null) || 
             (status != null) || 
@@ -416,8 +437,10 @@ public class StructureMap extends DomainResource {
             !jurisdiction.isEmpty() || 
             (purpose != null) || 
             (copyright != null) || 
+            (copyrightLabel != null) || 
             !structure.isEmpty() || 
             !_import.isEmpty() || 
+            !_const.isEmpty() || 
             !group.isEmpty();
     }
 
@@ -438,6 +461,7 @@ public class StructureMap extends DomainResource {
                 accept(url, "url", visitor);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(status, "status", visitor);
@@ -450,8 +474,10 @@ public class StructureMap extends DomainResource {
                 accept(jurisdiction, "jurisdiction", visitor, CodeableConcept.class);
                 accept(purpose, "purpose", visitor);
                 accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
                 accept(structure, "structure", visitor, Structure.class);
                 accept(_import, "import", visitor, Canonical.class);
+                accept(_const, "const", visitor, Const.class);
                 accept(group, "group", visitor, Group.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
@@ -482,6 +508,7 @@ public class StructureMap extends DomainResource {
             Objects.equals(url, other.url) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(status, other.status) && 
@@ -494,8 +521,10 @@ public class StructureMap extends DomainResource {
             Objects.equals(jurisdiction, other.jurisdiction) && 
             Objects.equals(purpose, other.purpose) && 
             Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
             Objects.equals(structure, other.structure) && 
             Objects.equals(_import, other._import) && 
+            Objects.equals(_const, other._const) && 
             Objects.equals(group, other.group);
     }
 
@@ -514,6 +543,7 @@ public class StructureMap extends DomainResource {
                 url, 
                 identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
                 title, 
                 status, 
@@ -526,8 +556,10 @@ public class StructureMap extends DomainResource {
                 jurisdiction, 
                 purpose, 
                 copyright, 
+                copyrightLabel, 
                 structure, 
                 _import, 
+                _const, 
                 group);
             hashCode = result;
         }
@@ -547,6 +579,7 @@ public class StructureMap extends DomainResource {
         private Uri url;
         private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
         private String title;
         private PublicationStatus status;
@@ -559,8 +592,10 @@ public class StructureMap extends DomainResource {
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
         private Markdown purpose;
         private Markdown copyright;
+        private String copyrightLabel;
         private List<Structure> structure = new ArrayList<>();
         private List<Canonical> _import = new ArrayList<>();
+        private List<Const> _const = new ArrayList<>();
         private List<Group> group = new ArrayList<>();
 
         private Builder() {
@@ -645,7 +680,8 @@ public class StructureMap extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -663,7 +699,8 @@ public class StructureMap extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -684,7 +721,7 @@ public class StructureMap extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -704,7 +741,7 @@ public class StructureMap extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -729,9 +766,9 @@ public class StructureMap extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -754,9 +791,9 @@ public class StructureMap extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -781,8 +818,8 @@ public class StructureMap extends DomainResource {
         /**
          * An absolute URI that is used to identify this structure map when it is referenced in a specification, model, design or 
          * an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
-         * which at which an authoritative instance of this structure map is (or will be) published. This URL can be the target 
-         * of a canonical reference. It SHALL remain the same when the structure map is stored on different servers.
+         * which an authoritative instance of this structure map is (or will be) published. This URL can be the target of a 
+         * canonical reference. It SHALL remain the same when the structure map is stored on different servers.
          * 
          * <p>This element is required.
          * 
@@ -868,6 +905,42 @@ public class StructureMap extends DomainResource {
          */
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
             return this;
         }
 
@@ -984,9 +1057,9 @@ public class StructureMap extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the structure map was published. The date must change when the business version 
-         * changes and it must change if the status code changes. In addition, it should change when the substantive content of 
-         * the structure map changes.
+         * The date (and optionally time) when the structure map was last significantly changed. The date must change when the 
+         * business version changes and it must change if the status code changes. In addition, it should change when the 
+         * substantive content of the structure map changes.
          * 
          * @param date
          *     Date last changed
@@ -1003,7 +1076,7 @@ public class StructureMap extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1016,10 +1089,10 @@ public class StructureMap extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the structure map.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the structure map.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1194,6 +1267,37 @@ public class StructureMap extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
+            return this;
+        }
+
+        /**
          * A structure definition used by this map. The structure definition may describe instances that are converted, or the 
          * instances that are produced.
          * 
@@ -1274,7 +1378,46 @@ public class StructureMap extends DomainResource {
         }
 
         /**
-         * Organizes the mapping into manageable chunks for human review/ease of maintenance.
+         * Definition of a constant value used in the map rules.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param _const
+         *     Definition of the constant value used in the map rules
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder _const(Const... _const) {
+            for (Const value : _const) {
+                this._const.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Definition of a constant value used in the map rules.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param _const
+         *     Definition of the constant value used in the map rules
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder _const(Collection<Const> _const) {
+            this._const = new ArrayList<>(_const);
+            return this;
+        }
+
+        /**
+         * Organizes the mapping into managable chunks for human review/ease of maintenance.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1295,7 +1438,7 @@ public class StructureMap extends DomainResource {
         }
 
         /**
-         * Organizes the mapping into manageable chunks for human review/ease of maintenance.
+         * Organizes the mapping into managable chunks for human review/ease of maintenance.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1345,6 +1488,7 @@ public class StructureMap extends DomainResource {
             super.validate(structureMap);
             ValidationSupport.requireNonNull(structureMap.url, "url");
             ValidationSupport.checkList(structureMap.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(structureMap.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.requireNonNull(structureMap.name, "name");
             ValidationSupport.requireNonNull(structureMap.status, "status");
             ValidationSupport.checkList(structureMap.contact, "contact", ContactDetail.class);
@@ -1352,6 +1496,7 @@ public class StructureMap extends DomainResource {
             ValidationSupport.checkList(structureMap.jurisdiction, "jurisdiction", CodeableConcept.class);
             ValidationSupport.checkList(structureMap.structure, "structure", Structure.class);
             ValidationSupport.checkList(structureMap._import, "import", Canonical.class);
+            ValidationSupport.checkList(structureMap._const, "const", Const.class);
             ValidationSupport.checkNonEmptyList(structureMap.group, "group", Group.class);
         }
 
@@ -1360,6 +1505,7 @@ public class StructureMap extends DomainResource {
             url = structureMap.url;
             identifier.addAll(structureMap.identifier);
             version = structureMap.version;
+            versionAlgorithm = structureMap.versionAlgorithm;
             name = structureMap.name;
             title = structureMap.title;
             status = structureMap.status;
@@ -1372,8 +1518,10 @@ public class StructureMap extends DomainResource {
             jurisdiction.addAll(structureMap.jurisdiction);
             purpose = structureMap.purpose;
             copyright = structureMap.copyright;
+            copyrightLabel = structureMap.copyrightLabel;
             structure.addAll(structureMap.structure);
             _import.addAll(structureMap._import);
+            _const.addAll(structureMap._const);
             group.addAll(structureMap.group);
             return this;
         }
@@ -1392,7 +1540,7 @@ public class StructureMap extends DomainResource {
             bindingName = "StructureMapModelMode",
             strength = BindingStrength.Value.REQUIRED,
             description = "How the referenced structure is used in this mapping.",
-            valueSet = "http://hl7.org/fhir/ValueSet/map-model-mode|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/map-model-mode|5.0.0"
         )
         @Required
         private final StructureMapModelMode mode;
@@ -1549,7 +1697,7 @@ public class StructureMap extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1569,7 +1717,7 @@ public class StructureMap extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1594,7 +1742,7 @@ public class StructureMap extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1619,7 +1767,7 @@ public class StructureMap extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1777,7 +1925,302 @@ public class StructureMap extends DomainResource {
     }
 
     /**
-     * Organizes the mapping into manageable chunks for human review/ease of maintenance.
+     * Definition of a constant value used in the map rules.
+     */
+    public static class Const extends BackboneElement {
+        @Summary
+        private final Id name;
+        @Summary
+        private final String value;
+
+        private Const(Builder builder) {
+            super(builder);
+            name = builder.name;
+            value = builder.value;
+        }
+
+        /**
+         * Other maps used by this map (canonical URLs).
+         * 
+         * @return
+         *     An immutable object of type {@link Id} that may be null.
+         */
+        public Id getName() {
+            return name;
+        }
+
+        /**
+         * A FHIRPath expression that is the value of this variable.
+         * 
+         * @return
+         *     An immutable object of type {@link String} that may be null.
+         */
+        public String getValue() {
+            return value;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (name != null) || 
+                (value != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(name, "name", visitor);
+                    accept(value, "value", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Const other = (Const) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(name, other.name) && 
+                Objects.equals(value, other.value);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    name, 
+                    value);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private Id name;
+            private String value;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * Other maps used by this map (canonical URLs).
+             * 
+             * @param name
+             *     Constant name
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder name(Id name) {
+                this.name = name;
+                return this;
+            }
+
+            /**
+             * Convenience method for setting {@code value}.
+             * 
+             * @param value
+             *     FHIRPath exression - value of the constant
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #value(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder value(java.lang.String value) {
+                this.value = (value == null) ? null : String.of(value);
+                return this;
+            }
+
+            /**
+             * A FHIRPath expression that is the value of this variable.
+             * 
+             * @param value
+             *     FHIRPath exression - value of the constant
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder value(String value) {
+                this.value = value;
+                return this;
+            }
+
+            /**
+             * Build the {@link Const}
+             * 
+             * @return
+             *     An immutable object of type {@link Const}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Const per the base specification
+             */
+            @Override
+            public Const build() {
+                Const _const = new Const(this);
+                if (validating) {
+                    validate(_const);
+                }
+                return _const;
+            }
+
+            protected void validate(Const _const) {
+                super.validate(_const);
+                ValidationSupport.requireValueOrChildren(_const);
+            }
+
+            protected Builder from(Const _const) {
+                super.from(_const);
+                name = _const.name;
+                value = _const.value;
+                return this;
+            }
+        }
+    }
+
+    /**
+     * Organizes the mapping into managable chunks for human review/ease of maintenance.
      */
     public static class Group extends BackboneElement {
         @Summary
@@ -1790,9 +2233,8 @@ public class StructureMap extends DomainResource {
             bindingName = "StructureMapGroupTypeMode",
             strength = BindingStrength.Value.REQUIRED,
             description = "If this is the default rule set to apply for the source type, or this combination of types.",
-            valueSet = "http://hl7.org/fhir/ValueSet/map-group-type-mode|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/map-group-type-mode|5.0.0"
         )
-        @Required
         private final StructureMapGroupTypeMode typeMode;
         @Summary
         private final String documentation;
@@ -1800,7 +2242,6 @@ public class StructureMap extends DomainResource {
         @Required
         private final List<Input> input;
         @Summary
-        @Required
         private final List<Rule> rule;
 
         private Group(Builder builder) {
@@ -1837,7 +2278,7 @@ public class StructureMap extends DomainResource {
          * If this is the default rule set to apply for the source type or this combination of types.
          * 
          * @return
-         *     An immutable object of type {@link StructureMapGroupTypeMode} that is non-null.
+         *     An immutable object of type {@link StructureMapGroupTypeMode} that may be null.
          */
         public StructureMapGroupTypeMode getTypeMode() {
             return typeMode;
@@ -1867,7 +2308,7 @@ public class StructureMap extends DomainResource {
          * Transform Rule from source to target.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link Rule} that is non-empty.
+         *     An unmodifiable list containing immutable objects of type {@link Rule} that may be empty.
          */
         public List<Rule> getRule() {
             return rule;
@@ -1984,7 +2425,7 @@ public class StructureMap extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2004,7 +2445,7 @@ public class StructureMap extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2029,7 +2470,7 @@ public class StructureMap extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2054,7 +2495,7 @@ public class StructureMap extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2111,10 +2552,8 @@ public class StructureMap extends DomainResource {
             /**
              * If this is the default rule set to apply for the source type or this combination of types.
              * 
-             * <p>This element is required.
-             * 
              * @param typeMode
-             *     none | types | type-and-types
+             *     types | type-and-types
              * 
              * @return
              *     A reference to this Builder instance
@@ -2203,8 +2642,6 @@ public class StructureMap extends DomainResource {
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * <p>This element is required.
-             * 
              * @param rule
              *     Transform Rule from source to target
              * 
@@ -2223,8 +2660,6 @@ public class StructureMap extends DomainResource {
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * <p>This element is required.
              * 
              * @param rule
              *     Transform Rule from source to target
@@ -2246,9 +2681,7 @@ public class StructureMap extends DomainResource {
              * <p>Required elements:
              * <ul>
              * <li>name</li>
-             * <li>typeMode</li>
              * <li>input</li>
-             * <li>rule</li>
              * </ul>
              * 
              * @return
@@ -2268,9 +2701,8 @@ public class StructureMap extends DomainResource {
             protected void validate(Group group) {
                 super.validate(group);
                 ValidationSupport.requireNonNull(group.name, "name");
-                ValidationSupport.requireNonNull(group.typeMode, "typeMode");
                 ValidationSupport.checkNonEmptyList(group.input, "input", Input.class);
-                ValidationSupport.checkNonEmptyList(group.rule, "rule", Rule.class);
+                ValidationSupport.checkList(group.rule, "rule", Rule.class);
                 ValidationSupport.requireValueOrChildren(group);
             }
 
@@ -2300,7 +2732,7 @@ public class StructureMap extends DomainResource {
                 bindingName = "StructureMapInputMode",
                 strength = BindingStrength.Value.REQUIRED,
                 description = "Mode for this instance of data.",
-                valueSet = "http://hl7.org/fhir/ValueSet/map-input-mode|4.3.0"
+                valueSet = "http://hl7.org/fhir/ValueSet/map-input-mode|5.0.0"
             )
             @Required
             private final StructureMapInputMode mode;
@@ -2455,7 +2887,7 @@ public class StructureMap extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2475,7 +2907,7 @@ public class StructureMap extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2500,7 +2932,7 @@ public class StructureMap extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2525,7 +2957,7 @@ public class StructureMap extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2687,7 +3119,6 @@ public class StructureMap extends DomainResource {
          */
         public static class Rule extends BackboneElement {
             @Summary
-            @Required
             private final Id name;
             @Summary
             @Required
@@ -2714,7 +3145,7 @@ public class StructureMap extends DomainResource {
              * Name of the rule for internal references.
              * 
              * @return
-             *     An immutable object of type {@link Id} that is non-null.
+             *     An immutable object of type {@link Id} that may be null.
              */
             public Id getName() {
                 return name;
@@ -2881,7 +3312,7 @@ public class StructureMap extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2901,7 +3332,7 @@ public class StructureMap extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2926,7 +3357,7 @@ public class StructureMap extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2951,7 +3382,7 @@ public class StructureMap extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2977,8 +3408,6 @@ public class StructureMap extends DomainResource {
 
                 /**
                  * Name of the rule for internal references.
-                 * 
-                 * <p>This element is required.
                  * 
                  * @param name
                  *     Name of the rule for internal references
@@ -3186,7 +3615,6 @@ public class StructureMap extends DomainResource {
                  * 
                  * <p>Required elements:
                  * <ul>
-                 * <li>name</li>
                  * <li>source</li>
                  * </ul>
                  * 
@@ -3206,7 +3634,6 @@ public class StructureMap extends DomainResource {
 
                 protected void validate(Rule rule) {
                     super.validate(rule);
-                    ValidationSupport.requireNonNull(rule.name, "name");
                     ValidationSupport.checkNonEmptyList(rule.source, "source", Source.class);
                     ValidationSupport.checkList(rule.target, "target", Target.class);
                     ValidationSupport.checkList(rule.rule, "rule", StructureMap.Group.Rule.class);
@@ -3240,8 +3667,7 @@ public class StructureMap extends DomainResource {
                 @Summary
                 private final String type;
                 @Summary
-                @Choice({ Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, Contributor.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Dosage.class, Meta.class })
-                private final Element defaultValue;
+                private final String defaultValue;
                 @Summary
                 private final String element;
                 @Summary
@@ -3249,7 +3675,7 @@ public class StructureMap extends DomainResource {
                     bindingName = "StructureMapSourceListMode",
                     strength = BindingStrength.Value.REQUIRED,
                     description = "If field is a list, how to manage the source.",
-                    valueSet = "http://hl7.org/fhir/ValueSet/map-source-list-mode|4.3.0"
+                    valueSet = "http://hl7.org/fhir/ValueSet/map-source-list-mode|5.0.0"
                 )
                 private final StructureMapSourceListMode listMode;
                 @Summary
@@ -3322,17 +3748,9 @@ public class StructureMap extends DomainResource {
                  * A value to use if there is no existing value in the source object.
                  * 
                  * @return
-                 *     An immutable object of type {@link Base64Binary}, {@link Boolean}, {@link Canonical}, {@link Code}, {@link Date}, 
-                 *     {@link DateTime}, {@link Decimal}, {@link Id}, {@link Instant}, {@link Integer}, {@link Markdown}, {@link Oid}, {@link 
-                 *     PositiveInt}, {@link String}, {@link Time}, {@link UnsignedInt}, {@link Uri}, {@link Url}, {@link Uuid}, {@link 
-                 *     Address}, {@link Age}, {@link Annotation}, {@link Attachment}, {@link CodeableConcept}, {@link Coding}, {@link 
-                 *     ContactPoint}, {@link Count}, {@link Distance}, {@link Duration}, {@link HumanName}, {@link Identifier}, {@link 
-                 *     Money}, {@link Period}, {@link Quantity}, {@link Range}, {@link Ratio}, {@link Reference}, {@link SampledData}, {@link 
-                 *     Signature}, {@link Timing}, {@link ContactDetail}, {@link Contributor}, {@link DataRequirement}, {@link Expression}, 
-                 *     {@link ParameterDefinition}, {@link RelatedArtifact}, {@link TriggerDefinition}, {@link UsageContext}, {@link Dosage} 
-                 *     or {@link Meta} that may be null.
+                 *     An immutable object of type {@link String} that may be null.
                  */
-                public Element getDefaultValue() {
+                public String getDefaultValue() {
                     return defaultValue;
                 }
 
@@ -3504,7 +3922,7 @@ public class StructureMap extends DomainResource {
                     private Integer min;
                     private String max;
                     private String type;
-                    private Element defaultValue;
+                    private String defaultValue;
                     private String element;
                     private StructureMapSourceListMode listMode;
                     private Id variable;
@@ -3533,7 +3951,7 @@ public class StructureMap extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -3553,7 +3971,7 @@ public class StructureMap extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -3578,7 +3996,7 @@ public class StructureMap extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -3603,7 +4021,7 @@ public class StructureMap extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -3736,7 +4154,7 @@ public class StructureMap extends DomainResource {
                     }
 
                     /**
-                     * Convenience method for setting {@code defaultValue} with choice type Boolean.
+                     * Convenience method for setting {@code defaultValue}.
                      * 
                      * @param defaultValue
                      *     Default value if no value exists
@@ -3744,71 +4162,7 @@ public class StructureMap extends DomainResource {
                      * @return
                      *     A reference to this Builder instance
                      * 
-                     * @see #defaultValue(Element)
-                     */
-                    public Builder defaultValue(java.lang.Boolean defaultValue) {
-                        this.defaultValue = (defaultValue == null) ? null : Boolean.of(defaultValue);
-                        return this;
-                    }
-
-                    /**
-                     * Convenience method for setting {@code defaultValue} with choice type Date.
-                     * 
-                     * @param defaultValue
-                     *     Default value if no value exists
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @see #defaultValue(Element)
-                     */
-                    public Builder defaultValue(java.time.LocalDate defaultValue) {
-                        this.defaultValue = (defaultValue == null) ? null : Date.of(defaultValue);
-                        return this;
-                    }
-
-                    /**
-                     * Convenience method for setting {@code defaultValue} with choice type Instant.
-                     * 
-                     * @param defaultValue
-                     *     Default value if no value exists
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @see #defaultValue(Element)
-                     */
-                    public Builder defaultValue(java.time.ZonedDateTime defaultValue) {
-                        this.defaultValue = (defaultValue == null) ? null : Instant.of(defaultValue);
-                        return this;
-                    }
-
-                    /**
-                     * Convenience method for setting {@code defaultValue} with choice type Integer.
-                     * 
-                     * @param defaultValue
-                     *     Default value if no value exists
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @see #defaultValue(Element)
-                     */
-                    public Builder defaultValue(java.lang.Integer defaultValue) {
-                        this.defaultValue = (defaultValue == null) ? null : Integer.of(defaultValue);
-                        return this;
-                    }
-
-                    /**
-                     * Convenience method for setting {@code defaultValue} with choice type String.
-                     * 
-                     * @param defaultValue
-                     *     Default value if no value exists
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @see #defaultValue(Element)
+                     * @see #defaultValue(org.linuxforhealth.fhir.model.type.String)
                      */
                     public Builder defaultValue(java.lang.String defaultValue) {
                         this.defaultValue = (defaultValue == null) ? null : String.of(defaultValue);
@@ -3816,85 +4170,15 @@ public class StructureMap extends DomainResource {
                     }
 
                     /**
-                     * Convenience method for setting {@code defaultValue} with choice type Time.
-                     * 
-                     * @param defaultValue
-                     *     Default value if no value exists
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @see #defaultValue(Element)
-                     */
-                    public Builder defaultValue(java.time.LocalTime defaultValue) {
-                        this.defaultValue = (defaultValue == null) ? null : Time.of(defaultValue);
-                        return this;
-                    }
-
-                    /**
                      * A value to use if there is no existing value in the source object.
                      * 
-                     * <p>This is a choice element with the following allowed types:
-                     * <ul>
-                     * <li>{@link Base64Binary}</li>
-                     * <li>{@link Boolean}</li>
-                     * <li>{@link Canonical}</li>
-                     * <li>{@link Code}</li>
-                     * <li>{@link Date}</li>
-                     * <li>{@link DateTime}</li>
-                     * <li>{@link Decimal}</li>
-                     * <li>{@link Id}</li>
-                     * <li>{@link Instant}</li>
-                     * <li>{@link Integer}</li>
-                     * <li>{@link Markdown}</li>
-                     * <li>{@link Oid}</li>
-                     * <li>{@link PositiveInt}</li>
-                     * <li>{@link String}</li>
-                     * <li>{@link Time}</li>
-                     * <li>{@link UnsignedInt}</li>
-                     * <li>{@link Uri}</li>
-                     * <li>{@link Url}</li>
-                     * <li>{@link Uuid}</li>
-                     * <li>{@link Address}</li>
-                     * <li>{@link Age}</li>
-                     * <li>{@link Annotation}</li>
-                     * <li>{@link Attachment}</li>
-                     * <li>{@link CodeableConcept}</li>
-                     * <li>{@link Coding}</li>
-                     * <li>{@link ContactPoint}</li>
-                     * <li>{@link Count}</li>
-                     * <li>{@link Distance}</li>
-                     * <li>{@link Duration}</li>
-                     * <li>{@link HumanName}</li>
-                     * <li>{@link Identifier}</li>
-                     * <li>{@link Money}</li>
-                     * <li>{@link Period}</li>
-                     * <li>{@link Quantity}</li>
-                     * <li>{@link Range}</li>
-                     * <li>{@link Ratio}</li>
-                     * <li>{@link Reference}</li>
-                     * <li>{@link SampledData}</li>
-                     * <li>{@link Signature}</li>
-                     * <li>{@link Timing}</li>
-                     * <li>{@link ContactDetail}</li>
-                     * <li>{@link Contributor}</li>
-                     * <li>{@link DataRequirement}</li>
-                     * <li>{@link Expression}</li>
-                     * <li>{@link ParameterDefinition}</li>
-                     * <li>{@link RelatedArtifact}</li>
-                     * <li>{@link TriggerDefinition}</li>
-                     * <li>{@link UsageContext}</li>
-                     * <li>{@link Dosage}</li>
-                     * <li>{@link Meta}</li>
-                     * </ul>
-                     * 
                      * @param defaultValue
                      *     Default value if no value exists
                      * 
                      * @return
                      *     A reference to this Builder instance
                      */
-                    public Builder defaultValue(Element defaultValue) {
+                    public Builder defaultValue(String defaultValue) {
                         this.defaultValue = defaultValue;
                         return this;
                     }
@@ -4073,7 +4357,6 @@ public class StructureMap extends DomainResource {
                     protected void validate(Source source) {
                         super.validate(source);
                         ValidationSupport.requireNonNull(source.context, "context");
-                        ValidationSupport.choiceElement(source.defaultValue, "defaultValue", Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, Contributor.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Dosage.class, Meta.class);
                         ValidationSupport.requireValueOrChildren(source);
                     }
 
@@ -4100,15 +4383,7 @@ public class StructureMap extends DomainResource {
              */
             public static class Target extends BackboneElement {
                 @Summary
-                private final Id context;
-                @Summary
-                @Binding(
-                    bindingName = "StructureMapContextType",
-                    strength = BindingStrength.Value.REQUIRED,
-                    description = "How to interpret the context.",
-                    valueSet = "http://hl7.org/fhir/ValueSet/map-context-type|4.3.0"
-                )
-                private final StructureMapContextType contextType;
+                private final String context;
                 @Summary
                 private final String element;
                 @Summary
@@ -4118,7 +4393,7 @@ public class StructureMap extends DomainResource {
                     bindingName = "StructureMapTargetListMode",
                     strength = BindingStrength.Value.REQUIRED,
                     description = "If field is a list, how to manage the production.",
-                    valueSet = "http://hl7.org/fhir/ValueSet/map-target-list-mode|4.3.0"
+                    valueSet = "http://hl7.org/fhir/ValueSet/map-target-list-mode|5.0.0"
                 )
                 private final List<StructureMapTargetListMode> listMode;
                 @Summary
@@ -4128,7 +4403,7 @@ public class StructureMap extends DomainResource {
                     bindingName = "StructureMapTransform",
                     strength = BindingStrength.Value.REQUIRED,
                     description = "How data is copied/created.",
-                    valueSet = "http://hl7.org/fhir/ValueSet/map-transform|4.3.0"
+                    valueSet = "http://hl7.org/fhir/ValueSet/map-transform|5.0.0"
                 )
                 private final StructureMapTransform transform;
                 @Summary
@@ -4137,7 +4412,6 @@ public class StructureMap extends DomainResource {
                 private Target(Builder builder) {
                     super(builder);
                     context = builder.context;
-                    contextType = builder.contextType;
                     element = builder.element;
                     variable = builder.variable;
                     listMode = Collections.unmodifiableList(builder.listMode);
@@ -4147,23 +4421,13 @@ public class StructureMap extends DomainResource {
                 }
 
                 /**
-                 * Type or variable this rule applies to.
+                 * Variable this rule applies to.
                  * 
                  * @return
-                 *     An immutable object of type {@link Id} that may be null.
+                 *     An immutable object of type {@link String} that may be null.
                  */
-                public Id getContext() {
+                public String getContext() {
                     return context;
-                }
-
-                /**
-                 * How to interpret the context.
-                 * 
-                 * @return
-                 *     An immutable object of type {@link StructureMapContextType} that may be null.
-                 */
-                public StructureMapContextType getContextType() {
-                    return contextType;
                 }
 
                 /**
@@ -4230,7 +4494,6 @@ public class StructureMap extends DomainResource {
                 public boolean hasChildren() {
                     return super.hasChildren() || 
                         (context != null) || 
-                        (contextType != null) || 
                         (element != null) || 
                         (variable != null) || 
                         !listMode.isEmpty() || 
@@ -4249,7 +4512,6 @@ public class StructureMap extends DomainResource {
                             accept(extension, "extension", visitor, Extension.class);
                             accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                             accept(context, "context", visitor);
-                            accept(contextType, "contextType", visitor);
                             accept(element, "element", visitor);
                             accept(variable, "variable", visitor);
                             accept(listMode, "listMode", visitor, StructureMapTargetListMode.class);
@@ -4278,7 +4540,6 @@ public class StructureMap extends DomainResource {
                         Objects.equals(extension, other.extension) && 
                         Objects.equals(modifierExtension, other.modifierExtension) && 
                         Objects.equals(context, other.context) && 
-                        Objects.equals(contextType, other.contextType) && 
                         Objects.equals(element, other.element) && 
                         Objects.equals(variable, other.variable) && 
                         Objects.equals(listMode, other.listMode) && 
@@ -4295,7 +4556,6 @@ public class StructureMap extends DomainResource {
                             extension, 
                             modifierExtension, 
                             context, 
-                            contextType, 
                             element, 
                             variable, 
                             listMode, 
@@ -4317,8 +4577,7 @@ public class StructureMap extends DomainResource {
                 }
 
                 public static class Builder extends BackboneElement.Builder {
-                    private Id context;
-                    private StructureMapContextType contextType;
+                    private String context;
                     private String element;
                     private Id variable;
                     private List<StructureMapTargetListMode> listMode = new ArrayList<>();
@@ -4347,7 +4606,7 @@ public class StructureMap extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -4367,7 +4626,7 @@ public class StructureMap extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -4392,7 +4651,7 @@ public class StructureMap extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -4417,7 +4676,7 @@ public class StructureMap extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -4442,30 +4701,32 @@ public class StructureMap extends DomainResource {
                     }
 
                     /**
-                     * Type or variable this rule applies to.
+                     * Convenience method for setting {@code context}.
                      * 
                      * @param context
-                     *     Type or variable this rule applies to
+                     *     Variable this rule applies to
                      * 
                      * @return
                      *     A reference to this Builder instance
+                     * 
+                     * @see #context(org.linuxforhealth.fhir.model.type.String)
                      */
-                    public Builder context(Id context) {
-                        this.context = context;
+                    public Builder context(java.lang.String context) {
+                        this.context = (context == null) ? null : String.of(context);
                         return this;
                     }
 
                     /**
-                     * How to interpret the context.
+                     * Variable this rule applies to.
                      * 
-                     * @param contextType
-                     *     type | variable
+                     * @param context
+                     *     Variable this rule applies to
                      * 
                      * @return
                      *     A reference to this Builder instance
                      */
-                    public Builder contextType(StructureMapContextType contextType) {
-                        this.contextType = contextType;
+                    public Builder context(String context) {
+                        this.context = context;
                         return this;
                     }
 
@@ -4520,7 +4781,7 @@ public class StructureMap extends DomainResource {
                      * If any of the elements are null, calling {@link #build()} will fail.
                      * 
                      * @param listMode
-                     *     first | share | last | collate
+                     *     first | share | last | single
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -4539,7 +4800,7 @@ public class StructureMap extends DomainResource {
                      * If any of the elements are null, calling {@link #build()} will fail.
                      * 
                      * @param listMode
-                     *     first | share | last | collate
+                     *     first | share | last | single
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -4646,7 +4907,6 @@ public class StructureMap extends DomainResource {
                     protected Builder from(Target target) {
                         super.from(target);
                         context = target.context;
-                        contextType = target.contextType;
                         element = target.element;
                         variable = target.variable;
                         listMode.addAll(target.listMode);
@@ -4662,9 +4922,9 @@ public class StructureMap extends DomainResource {
                  */
                 public static class Parameter extends BackboneElement {
                     @Summary
-                    @Choice({ Id.class, String.class, Boolean.class, Integer.class, Decimal.class })
+                    @Choice({ Id.class, String.class, Boolean.class, Integer.class, Decimal.class, Date.class, Time.class, DateTime.class })
                     @Required
-                    private final Element value;
+                    private final org.linuxforhealth.fhir.model.type.Element value;
 
                     private Parameter(Builder builder) {
                         super(builder);
@@ -4675,10 +4935,10 @@ public class StructureMap extends DomainResource {
                      * Parameter value - variable or literal.
                      * 
                      * @return
-                     *     An immutable object of type {@link Id}, {@link String}, {@link Boolean}, {@link Integer} or {@link Decimal} that is 
-                     *     non-null.
+                     *     An immutable object of type {@link Id}, {@link String}, {@link Boolean}, {@link Integer}, {@link Decimal}, {@link 
+                     *     Date}, {@link Time} or {@link DateTime} that is non-null.
                      */
-                    public Element getValue() {
+                    public org.linuxforhealth.fhir.model.type.Element getValue() {
                         return value;
                     }
 
@@ -4745,7 +5005,7 @@ public class StructureMap extends DomainResource {
                     }
 
                     public static class Builder extends BackboneElement.Builder {
-                        private Element value;
+                        private org.linuxforhealth.fhir.model.type.Element value;
 
                         private Builder() {
                             super();
@@ -4768,7 +5028,7 @@ public class StructureMap extends DomainResource {
 
                         /**
                          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                          * of the definition of the extension.
                          * 
@@ -4788,7 +5048,7 @@ public class StructureMap extends DomainResource {
 
                         /**
                          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                          * of the definition of the extension.
                          * 
@@ -4813,7 +5073,7 @@ public class StructureMap extends DomainResource {
                          * May be used to represent additional information that is not part of the basic definition of the element and that 
                          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                          * extension. Applications processing a resource are required to check for modifier extensions.
                          * 
@@ -4838,7 +5098,7 @@ public class StructureMap extends DomainResource {
                          * May be used to represent additional information that is not part of the basic definition of the element and that 
                          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                          * extension. Applications processing a resource are required to check for modifier extensions.
                          * 
@@ -4917,6 +5177,42 @@ public class StructureMap extends DomainResource {
                         }
 
                         /**
+                         * Convenience method for setting {@code value} with choice type Date.
+                         * 
+                         * <p>This element is required.
+                         * 
+                         * @param value
+                         *     Parameter value - variable or literal
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         * 
+                         * @see #value(Element)
+                         */
+                        public Builder value(java.time.LocalDate value) {
+                            this.value = (value == null) ? null : Date.of(value);
+                            return this;
+                        }
+
+                        /**
+                         * Convenience method for setting {@code value} with choice type Time.
+                         * 
+                         * <p>This element is required.
+                         * 
+                         * @param value
+                         *     Parameter value - variable or literal
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         * 
+                         * @see #value(Element)
+                         */
+                        public Builder value(java.time.LocalTime value) {
+                            this.value = (value == null) ? null : Time.of(value);
+                            return this;
+                        }
+
+                        /**
                          * Parameter value - variable or literal.
                          * 
                          * <p>This element is required.
@@ -4928,6 +5224,9 @@ public class StructureMap extends DomainResource {
                          * <li>{@link Boolean}</li>
                          * <li>{@link Integer}</li>
                          * <li>{@link Decimal}</li>
+                         * <li>{@link Date}</li>
+                         * <li>{@link Time}</li>
+                         * <li>{@link DateTime}</li>
                          * </ul>
                          * 
                          * @param value
@@ -4936,7 +5235,7 @@ public class StructureMap extends DomainResource {
                          * @return
                          *     A reference to this Builder instance
                          */
-                        public Builder value(Element value) {
+                        public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                             this.value = value;
                             return this;
                         }
@@ -4965,7 +5264,7 @@ public class StructureMap extends DomainResource {
 
                         protected void validate(Parameter parameter) {
                             super.validate(parameter);
-                            ValidationSupport.requireChoiceElement(parameter.value, "value", Id.class, String.class, Boolean.class, Integer.class, Decimal.class);
+                            ValidationSupport.requireChoiceElement(parameter.value, "value", Id.class, String.class, Boolean.class, Integer.class, Decimal.class, Date.class, Time.class, DateTime.class);
                             ValidationSupport.requireValueOrChildren(parameter);
                         }
 
@@ -4987,12 +5286,12 @@ public class StructureMap extends DomainResource {
                 private final Id name;
                 @Summary
                 @Required
-                private final List<String> variable;
+                private final List<StructureMap.Group.Rule.Target.Parameter> parameter;
 
                 private Dependent(Builder builder) {
                     super(builder);
                     name = builder.name;
-                    variable = Collections.unmodifiableList(builder.variable);
+                    parameter = Collections.unmodifiableList(builder.parameter);
                 }
 
                 /**
@@ -5006,20 +5305,20 @@ public class StructureMap extends DomainResource {
                 }
 
                 /**
-                 * Variable to pass to the rule or group.
+                 * Parameter to pass to the rule or group.
                  * 
                  * @return
-                 *     An unmodifiable list containing immutable objects of type {@link String} that is non-empty.
+                 *     An unmodifiable list containing immutable objects of type {@link Parameter} that is non-empty.
                  */
-                public List<String> getVariable() {
-                    return variable;
+                public List<StructureMap.Group.Rule.Target.Parameter> getParameter() {
+                    return parameter;
                 }
 
                 @Override
                 public boolean hasChildren() {
                     return super.hasChildren() || 
                         (name != null) || 
-                        !variable.isEmpty();
+                        !parameter.isEmpty();
                 }
 
                 @Override
@@ -5032,7 +5331,7 @@ public class StructureMap extends DomainResource {
                             accept(extension, "extension", visitor, Extension.class);
                             accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                             accept(name, "name", visitor);
-                            accept(variable, "variable", visitor, String.class);
+                            accept(parameter, "parameter", visitor, StructureMap.Group.Rule.Target.Parameter.class);
                         }
                         visitor.visitEnd(elementName, elementIndex, this);
                         visitor.postVisit(this);
@@ -5055,7 +5354,7 @@ public class StructureMap extends DomainResource {
                         Objects.equals(extension, other.extension) && 
                         Objects.equals(modifierExtension, other.modifierExtension) && 
                         Objects.equals(name, other.name) && 
-                        Objects.equals(variable, other.variable);
+                        Objects.equals(parameter, other.parameter);
                 }
 
                 @Override
@@ -5066,7 +5365,7 @@ public class StructureMap extends DomainResource {
                             extension, 
                             modifierExtension, 
                             name, 
-                            variable);
+                            parameter);
                         hashCode = result;
                     }
                     return result;
@@ -5083,7 +5382,7 @@ public class StructureMap extends DomainResource {
 
                 public static class Builder extends BackboneElement.Builder {
                     private Id name;
-                    private List<String> variable = new ArrayList<>();
+                    private List<StructureMap.Group.Rule.Target.Parameter> parameter = new ArrayList<>();
 
                     private Builder() {
                         super();
@@ -5106,7 +5405,7 @@ public class StructureMap extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -5126,7 +5425,7 @@ public class StructureMap extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -5151,7 +5450,7 @@ public class StructureMap extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -5176,7 +5475,7 @@ public class StructureMap extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -5217,59 +5516,36 @@ public class StructureMap extends DomainResource {
                     }
 
                     /**
-                     * Convenience method for setting {@code variable}.
+                     * Parameter to pass to the rule or group.
                      * 
                      * <p>Adds new element(s) to the existing list.
                      * If any of the elements are null, calling {@link #build()} will fail.
                      * 
                      * <p>This element is required.
                      * 
-                     * @param variable
-                     *     Variable to pass to the rule or group
+                     * @param parameter
+                     *     Parameter to pass to the rule or group
                      * 
                      * @return
                      *     A reference to this Builder instance
-                     * 
-                     * @see #variable(org.linuxforhealth.fhir.model.type.String)
                      */
-                    public Builder variable(java.lang.String... variable) {
-                        for (java.lang.String value : variable) {
-                            this.variable.add((value == null) ? null : String.of(value));
+                    public Builder parameter(StructureMap.Group.Rule.Target.Parameter... parameter) {
+                        for (StructureMap.Group.Rule.Target.Parameter value : parameter) {
+                            this.parameter.add(value);
                         }
                         return this;
                     }
 
                     /**
-                     * Variable to pass to the rule or group.
-                     * 
-                     * <p>Adds new element(s) to the existing list.
-                     * If any of the elements are null, calling {@link #build()} will fail.
-                     * 
-                     * <p>This element is required.
-                     * 
-                     * @param variable
-                     *     Variable to pass to the rule or group
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    public Builder variable(String... variable) {
-                        for (String value : variable) {
-                            this.variable.add(value);
-                        }
-                        return this;
-                    }
-
-                    /**
-                     * Variable to pass to the rule or group.
+                     * Parameter to pass to the rule or group.
                      * 
                      * <p>Replaces the existing list with a new one containing elements from the Collection.
                      * If any of the elements are null, calling {@link #build()} will fail.
                      * 
                      * <p>This element is required.
                      * 
-                     * @param variable
-                     *     Variable to pass to the rule or group
+                     * @param parameter
+                     *     Parameter to pass to the rule or group
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -5277,8 +5553,8 @@ public class StructureMap extends DomainResource {
                      * @throws NullPointerException
                      *     If the passed collection is null
                      */
-                    public Builder variable(Collection<String> variable) {
-                        this.variable = new ArrayList<>(variable);
+                    public Builder parameter(Collection<StructureMap.Group.Rule.Target.Parameter> parameter) {
+                        this.parameter = new ArrayList<>(parameter);
                         return this;
                     }
 
@@ -5288,7 +5564,7 @@ public class StructureMap extends DomainResource {
                      * <p>Required elements:
                      * <ul>
                      * <li>name</li>
-                     * <li>variable</li>
+                     * <li>parameter</li>
                      * </ul>
                      * 
                      * @return
@@ -5308,14 +5584,14 @@ public class StructureMap extends DomainResource {
                     protected void validate(Dependent dependent) {
                         super.validate(dependent);
                         ValidationSupport.requireNonNull(dependent.name, "name");
-                        ValidationSupport.checkNonEmptyList(dependent.variable, "variable", String.class);
+                        ValidationSupport.checkNonEmptyList(dependent.parameter, "parameter", StructureMap.Group.Rule.Target.Parameter.class);
                         ValidationSupport.requireValueOrChildren(dependent);
                     }
 
                     protected Builder from(Dependent dependent) {
                         super.from(dependent);
                         name = dependent.name;
-                        variable.addAll(dependent.variable);
+                        parameter.addAll(dependent.parameter);
                         return this;
                     }
                 }

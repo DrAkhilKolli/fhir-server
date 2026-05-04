@@ -24,6 +24,7 @@ import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
@@ -49,38 +50,35 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * Completion - has the artifact been legally authenticated), all of which may impact security, privacy, and trust 
  * policies.
  * 
- * <p>Maturity level: FMM3 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 3,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "provenance-0",
-    level = "Warning",
-    location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://terminology.hl7.org/ValueSet/v3-PurposeOfUse",
-    expression = "reason.exists() implies (reason.all(memberOf('http://terminology.hl7.org/ValueSet/v3-PurposeOfUse', 'extensible')))",
-    source = "http://hl7.org/fhir/StructureDefinition/Provenance",
-    generated = true
+    id = "prov-1",
+    level = "Rule",
+    location = "Provenance.agent",
+    description = "Who and onBehalfOf cannot be the same",
+    expression = "who.resolve().exists() and onBehalfOf.resolve().exists() implies who.resolve() != onBehalfOf.resolve()",
+    source = "http://hl7.org/fhir/StructureDefinition/Provenance"
 )
 @Constraint(
-    id = "provenance-1",
-    level = "Warning",
-    location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/provenance-activity-type",
-    expression = "activity.exists() implies (activity.memberOf('http://hl7.org/fhir/ValueSet/provenance-activity-type', 'extensible'))",
-    source = "http://hl7.org/fhir/StructureDefinition/Provenance",
-    generated = true
+    id = "prov-2",
+    level = "Rule",
+    location = "Provenance.agent",
+    description = "If who is a PractitionerRole, onBehalfOf can't reference the same Practitioner",
+    expression = "who.resolve().ofType(PractitionerRole).practitioner.resolve().exists() and onBehalfOf.resolve().ofType(Practitioner).exists() implies who.resolve().practitioner.resolve() != onBehalfOf.resolve()",
+    source = "http://hl7.org/fhir/StructureDefinition/Provenance"
 )
 @Constraint(
-    id = "provenance-2",
-    level = "Warning",
-    location = "agent.type",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/provenance-agent-type",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/provenance-agent-type', 'extensible')",
-    source = "http://hl7.org/fhir/StructureDefinition/Provenance",
-    generated = true
+    id = "prov-3",
+    level = "Rule",
+    location = "Provenance.agent",
+    description = "If who is an organization, onBehalfOf can't be a PractitionerRole within that organization",
+    expression = "who.resolve().ofType(Organization).exists() and onBehalfOf.resolve().ofType(PractitionerRole).organization.resolve().exists() implies who.resolve() != onBehalfOf.resolve().organization.resolve()",
+    source = "http://hl7.org/fhir/StructureDefinition/Provenance"
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class Provenance extends DomainResource {
@@ -88,29 +86,36 @@ public class Provenance extends DomainResource {
     @Required
     private final List<Reference> target;
     @Choice({ Period.class, DateTime.class })
-    private final Element occurred;
+    private final org.linuxforhealth.fhir.model.type.Element occurred;
     @Summary
-    @Required
     private final Instant recorded;
     private final List<Uri> policy;
     @ReferenceTarget({ "Location" })
     private final Reference location;
     @Binding(
         bindingName = "ProvenanceReason",
-        strength = BindingStrength.Value.EXTENSIBLE,
-        description = "The reason the activity took place.",
+        strength = BindingStrength.Value.EXAMPLE,
+        description = "The authorized purposeOfUse for the activity.",
         valueSet = "http://terminology.hl7.org/ValueSet/v3-PurposeOfUse"
     )
-    private final List<CodeableConcept> reason;
+    private final List<CodeableReference> authorization;
     @Binding(
         bindingName = "ProvenanceActivity",
-        strength = BindingStrength.Value.EXTENSIBLE,
+        strength = BindingStrength.Value.EXAMPLE,
         description = "The activity that took place.",
         valueSet = "http://hl7.org/fhir/ValueSet/provenance-activity-type"
     )
     private final CodeableConcept activity;
+    @ReferenceTarget({ "CarePlan", "DeviceRequest", "ImmunizationRecommendation", "MedicationRequest", "NutritionOrder", "ServiceRequest", "Task" })
+    private final List<Reference> basedOn;
+    @ReferenceTarget({ "Patient" })
+    private final Reference patient;
+    @ReferenceTarget({ "Encounter" })
+    private final Reference encounter;
+    @Summary
     @Required
     private final List<Agent> agent;
+    @Summary
     private final List<Entity> entity;
     private final List<Signature> signature;
 
@@ -121,8 +126,11 @@ public class Provenance extends DomainResource {
         recorded = builder.recorded;
         policy = Collections.unmodifiableList(builder.policy);
         location = builder.location;
-        reason = Collections.unmodifiableList(builder.reason);
+        authorization = Collections.unmodifiableList(builder.authorization);
         activity = builder.activity;
+        basedOn = Collections.unmodifiableList(builder.basedOn);
+        patient = builder.patient;
+        encounter = builder.encounter;
         agent = Collections.unmodifiableList(builder.agent);
         entity = Collections.unmodifiableList(builder.entity);
         signature = Collections.unmodifiableList(builder.signature);
@@ -145,7 +153,7 @@ public class Provenance extends DomainResource {
      * @return
      *     An immutable object of type {@link Period} or {@link DateTime} that may be null.
      */
-    public Element getOccurred() {
+    public org.linuxforhealth.fhir.model.type.Element getOccurred() {
         return occurred;
     }
 
@@ -153,7 +161,7 @@ public class Provenance extends DomainResource {
      * The instant of time at which the activity was recorded.
      * 
      * @return
-     *     An immutable object of type {@link Instant} that is non-null.
+     *     An immutable object of type {@link Instant} that may be null.
      */
     public Instant getRecorded() {
         return recorded;
@@ -181,13 +189,13 @@ public class Provenance extends DomainResource {
     }
 
     /**
-     * The reason that the activity was taking place.
+     * The authorization (e.g., PurposeOfUse) that was used during the event being recorded.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<CodeableConcept> getReason() {
-        return reason;
+    public List<CodeableReference> getAuthorization() {
+        return authorization;
     }
 
     /**
@@ -199,6 +207,38 @@ public class Provenance extends DomainResource {
      */
     public CodeableConcept getActivity() {
         return activity;
+    }
+
+    /**
+     * Allows tracing of authorizatino for the events and tracking whether proposals/recommendations were acted upon.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getBasedOn() {
+        return basedOn;
+    }
+
+    /**
+     * The patient element is available to enable deterministic tracking of activities that involve the patient as the 
+     * subject of the data used in an activity.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getPatient() {
+        return patient;
+    }
+
+    /**
+     * This will typically be the encounter the event occurred, but some events may be initiated prior to or after the 
+     * official completion of an encounter but still be tied to the context of the encounter (e.g. pre-admission lab tests).
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getEncounter() {
+        return encounter;
     }
 
     /**
@@ -241,8 +281,11 @@ public class Provenance extends DomainResource {
             (recorded != null) || 
             !policy.isEmpty() || 
             (location != null) || 
-            !reason.isEmpty() || 
+            !authorization.isEmpty() || 
             (activity != null) || 
+            !basedOn.isEmpty() || 
+            (patient != null) || 
+            (encounter != null) || 
             !agent.isEmpty() || 
             !entity.isEmpty() || 
             !signature.isEmpty();
@@ -267,8 +310,11 @@ public class Provenance extends DomainResource {
                 accept(recorded, "recorded", visitor);
                 accept(policy, "policy", visitor, Uri.class);
                 accept(location, "location", visitor);
-                accept(reason, "reason", visitor, CodeableConcept.class);
+                accept(authorization, "authorization", visitor, CodeableReference.class);
                 accept(activity, "activity", visitor);
+                accept(basedOn, "basedOn", visitor, Reference.class);
+                accept(patient, "patient", visitor);
+                accept(encounter, "encounter", visitor);
                 accept(agent, "agent", visitor, Agent.class);
                 accept(entity, "entity", visitor, Entity.class);
                 accept(signature, "signature", visitor, Signature.class);
@@ -303,8 +349,11 @@ public class Provenance extends DomainResource {
             Objects.equals(recorded, other.recorded) && 
             Objects.equals(policy, other.policy) && 
             Objects.equals(location, other.location) && 
-            Objects.equals(reason, other.reason) && 
+            Objects.equals(authorization, other.authorization) && 
             Objects.equals(activity, other.activity) && 
+            Objects.equals(basedOn, other.basedOn) && 
+            Objects.equals(patient, other.patient) && 
+            Objects.equals(encounter, other.encounter) && 
             Objects.equals(agent, other.agent) && 
             Objects.equals(entity, other.entity) && 
             Objects.equals(signature, other.signature);
@@ -327,8 +376,11 @@ public class Provenance extends DomainResource {
                 recorded, 
                 policy, 
                 location, 
-                reason, 
+                authorization, 
                 activity, 
+                basedOn, 
+                patient, 
+                encounter, 
                 agent, 
                 entity, 
                 signature);
@@ -348,12 +400,15 @@ public class Provenance extends DomainResource {
 
     public static class Builder extends DomainResource.Builder {
         private List<Reference> target = new ArrayList<>();
-        private Element occurred;
+        private org.linuxforhealth.fhir.model.type.Element occurred;
         private Instant recorded;
         private List<Uri> policy = new ArrayList<>();
         private Reference location;
-        private List<CodeableConcept> reason = new ArrayList<>();
+        private List<CodeableReference> authorization = new ArrayList<>();
         private CodeableConcept activity;
+        private List<Reference> basedOn = new ArrayList<>();
+        private Reference patient;
+        private Reference encounter;
         private List<Agent> agent = new ArrayList<>();
         private List<Entity> entity = new ArrayList<>();
         private List<Signature> signature = new ArrayList<>();
@@ -440,7 +495,8 @@ public class Provenance extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -458,7 +514,8 @@ public class Provenance extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -479,7 +536,7 @@ public class Provenance extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -499,7 +556,7 @@ public class Provenance extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -524,9 +581,9 @@ public class Provenance extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -549,9 +606,9 @@ public class Provenance extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -633,15 +690,13 @@ public class Provenance extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder occurred(Element occurred) {
+        public Builder occurred(org.linuxforhealth.fhir.model.type.Element occurred) {
             this.occurred = occurred;
             return this;
         }
 
         /**
          * Convenience method for setting {@code recorded}.
-         * 
-         * <p>This element is required.
          * 
          * @param recorded
          *     When the activity was recorded / updated
@@ -658,8 +713,6 @@ public class Provenance extends DomainResource {
 
         /**
          * The instant of time at which the activity was recorded.
-         * 
-         * <p>This element is required.
          * 
          * @param recorded
          *     When the activity was recorded / updated
@@ -733,32 +786,32 @@ public class Provenance extends DomainResource {
         }
 
         /**
-         * The reason that the activity was taking place.
+         * The authorization (e.g., PurposeOfUse) that was used during the event being recorded.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reason
-         *     Reason the activity is occurring
+         * @param authorization
+         *     Authorization (purposeOfUse) related to the event
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder reason(CodeableConcept... reason) {
-            for (CodeableConcept value : reason) {
-                this.reason.add(value);
+        public Builder authorization(CodeableReference... authorization) {
+            for (CodeableReference value : authorization) {
+                this.authorization.add(value);
             }
             return this;
         }
 
         /**
-         * The reason that the activity was taking place.
+         * The authorization (e.g., PurposeOfUse) that was used during the event being recorded.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reason
-         *     Reason the activity is occurring
+         * @param authorization
+         *     Authorization (purposeOfUse) related to the event
          * 
          * @return
          *     A reference to this Builder instance
@@ -766,8 +819,8 @@ public class Provenance extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder reason(Collection<CodeableConcept> reason) {
-            this.reason = new ArrayList<>(reason);
+        public Builder authorization(Collection<CodeableReference> authorization) {
+            this.authorization = new ArrayList<>(authorization);
             return this;
         }
 
@@ -783,6 +836,107 @@ public class Provenance extends DomainResource {
          */
         public Builder activity(CodeableConcept activity) {
             this.activity = activity;
+            return this;
+        }
+
+        /**
+         * Allows tracing of authorizatino for the events and tracking whether proposals/recommendations were acted upon.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link CarePlan}</li>
+         * <li>{@link DeviceRequest}</li>
+         * <li>{@link ImmunizationRecommendation}</li>
+         * <li>{@link MedicationRequest}</li>
+         * <li>{@link NutritionOrder}</li>
+         * <li>{@link ServiceRequest}</li>
+         * <li>{@link Task}</li>
+         * </ul>
+         * 
+         * @param basedOn
+         *     Workflow authorization within which this event occurred
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder basedOn(Reference... basedOn) {
+            for (Reference value : basedOn) {
+                this.basedOn.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Allows tracing of authorizatino for the events and tracking whether proposals/recommendations were acted upon.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link CarePlan}</li>
+         * <li>{@link DeviceRequest}</li>
+         * <li>{@link ImmunizationRecommendation}</li>
+         * <li>{@link MedicationRequest}</li>
+         * <li>{@link NutritionOrder}</li>
+         * <li>{@link ServiceRequest}</li>
+         * <li>{@link Task}</li>
+         * </ul>
+         * 
+         * @param basedOn
+         *     Workflow authorization within which this event occurred
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder basedOn(Collection<Reference> basedOn) {
+            this.basedOn = new ArrayList<>(basedOn);
+            return this;
+        }
+
+        /**
+         * The patient element is available to enable deterministic tracking of activities that involve the patient as the 
+         * subject of the data used in an activity.
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link Patient}</li>
+         * </ul>
+         * 
+         * @param patient
+         *     The patient is the subject of the data created/updated (.target) by the activity
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder patient(Reference patient) {
+            this.patient = patient;
+            return this;
+        }
+
+        /**
+         * This will typically be the encounter the event occurred, but some events may be initiated prior to or after the 
+         * official completion of an encounter but still be tied to the context of the encounter (e.g. pre-admission lab tests).
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link Encounter}</li>
+         * </ul>
+         * 
+         * @param encounter
+         *     Encounter within which this event occurred or which the event is tightly associated
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder encounter(Reference encounter) {
+            this.encounter = encounter;
             return this;
         }
 
@@ -917,7 +1071,6 @@ public class Provenance extends DomainResource {
          * <p>Required elements:
          * <ul>
          * <li>target</li>
-         * <li>recorded</li>
          * <li>agent</li>
          * </ul>
          * 
@@ -939,13 +1092,16 @@ public class Provenance extends DomainResource {
             super.validate(provenance);
             ValidationSupport.checkNonEmptyList(provenance.target, "target", Reference.class);
             ValidationSupport.choiceElement(provenance.occurred, "occurred", Period.class, DateTime.class);
-            ValidationSupport.requireNonNull(provenance.recorded, "recorded");
             ValidationSupport.checkList(provenance.policy, "policy", Uri.class);
-            ValidationSupport.checkList(provenance.reason, "reason", CodeableConcept.class);
+            ValidationSupport.checkList(provenance.authorization, "authorization", CodeableReference.class);
+            ValidationSupport.checkList(provenance.basedOn, "basedOn", Reference.class);
             ValidationSupport.checkNonEmptyList(provenance.agent, "agent", Agent.class);
             ValidationSupport.checkList(provenance.entity, "entity", Entity.class);
             ValidationSupport.checkList(provenance.signature, "signature", Signature.class);
             ValidationSupport.checkReferenceType(provenance.location, "location", "Location");
+            ValidationSupport.checkReferenceType(provenance.basedOn, "basedOn", "CarePlan", "DeviceRequest", "ImmunizationRecommendation", "MedicationRequest", "NutritionOrder", "ServiceRequest", "Task");
+            ValidationSupport.checkReferenceType(provenance.patient, "patient", "Patient");
+            ValidationSupport.checkReferenceType(provenance.encounter, "encounter", "Encounter");
         }
 
         protected Builder from(Provenance provenance) {
@@ -955,8 +1111,11 @@ public class Provenance extends DomainResource {
             recorded = provenance.recorded;
             policy.addAll(provenance.policy);
             location = provenance.location;
-            reason.addAll(provenance.reason);
+            authorization.addAll(provenance.authorization);
             activity = provenance.activity;
+            basedOn.addAll(provenance.basedOn);
+            patient = provenance.patient;
+            encounter = provenance.encounter;
             agent.addAll(provenance.agent);
             entity.addAll(provenance.entity);
             signature.addAll(provenance.signature);
@@ -972,9 +1131,9 @@ public class Provenance extends DomainResource {
         @Summary
         @Binding(
             bindingName = "ProvenanceAgentType",
-            strength = BindingStrength.Value.EXTENSIBLE,
+            strength = BindingStrength.Value.EXAMPLE,
             description = "The type of participation that a provenance agent played with respect to the activity.",
-            valueSet = "http://hl7.org/fhir/ValueSet/provenance-agent-type"
+            valueSet = "http://hl7.org/fhir/ValueSet/participation-role-type"
         )
         private final CodeableConcept type;
         @Binding(
@@ -985,10 +1144,10 @@ public class Provenance extends DomainResource {
         )
         private final List<CodeableConcept> role;
         @Summary
-        @ReferenceTarget({ "Practitioner", "PractitionerRole", "RelatedPerson", "Patient", "Device", "Organization" })
+        @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient", "Device", "RelatedPerson" })
         @Required
         private final Reference who;
-        @ReferenceTarget({ "Practitioner", "PractitionerRole", "RelatedPerson", "Patient", "Device", "Organization" })
+        @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient" })
         private final Reference onBehalfOf;
 
         private Agent(Builder builder) {
@@ -1000,7 +1159,7 @@ public class Provenance extends DomainResource {
         }
 
         /**
-         * The participation the agent had with respect to the activity.
+         * The Functional Role of the agent with respect to the activity.
          * 
          * @return
          *     An immutable object of type {@link CodeableConcept} that may be null.
@@ -1010,8 +1169,8 @@ public class Provenance extends DomainResource {
         }
 
         /**
-         * The function of the agent with respect to the activity. The security role enabling the agent with respect to the 
-         * activity.
+         * The structural roles of the agent indicating the agent's competency. The security role enabling the agent with respect 
+         * to the activity.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
@@ -1021,7 +1180,7 @@ public class Provenance extends DomainResource {
         }
 
         /**
-         * The individual, device or organization that participated in the event.
+         * Indicates who or what performed in the event.
          * 
          * @return
          *     An immutable object of type {@link Reference} that is non-null.
@@ -1031,7 +1190,7 @@ public class Provenance extends DomainResource {
         }
 
         /**
-         * The individual, device, or organization for whom the change was made.
+         * The agent that delegated authority to perform the activity performed by the agent.who element.
          * 
          * @return
          *     An immutable object of type {@link Reference} that may be null.
@@ -1141,7 +1300,7 @@ public class Provenance extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1161,7 +1320,7 @@ public class Provenance extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1186,7 +1345,7 @@ public class Provenance extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1211,7 +1370,7 @@ public class Provenance extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1236,7 +1395,7 @@ public class Provenance extends DomainResource {
             }
 
             /**
-             * The participation the agent had with respect to the activity.
+             * The Functional Role of the agent with respect to the activity.
              * 
              * @param type
              *     How the agent participated
@@ -1250,8 +1409,8 @@ public class Provenance extends DomainResource {
             }
 
             /**
-             * The function of the agent with respect to the activity. The security role enabling the agent with respect to the 
-             * activity.
+             * The structural roles of the agent indicating the agent's competency. The security role enabling the agent with respect 
+             * to the activity.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -1270,8 +1429,8 @@ public class Provenance extends DomainResource {
             }
 
             /**
-             * The function of the agent with respect to the activity. The security role enabling the agent with respect to the 
-             * activity.
+             * The structural roles of the agent indicating the agent's competency. The security role enabling the agent with respect 
+             * to the activity.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -1291,7 +1450,7 @@ public class Provenance extends DomainResource {
             }
 
             /**
-             * The individual, device or organization that participated in the event.
+             * Indicates who or what performed in the event.
              * 
              * <p>This element is required.
              * 
@@ -1299,14 +1458,15 @@ public class Provenance extends DomainResource {
              * <ul>
              * <li>{@link Practitioner}</li>
              * <li>{@link PractitionerRole}</li>
-             * <li>{@link RelatedPerson}</li>
+             * <li>{@link Organization}</li>
+             * <li>{@link CareTeam}</li>
              * <li>{@link Patient}</li>
              * <li>{@link Device}</li>
-             * <li>{@link Organization}</li>
+             * <li>{@link RelatedPerson}</li>
              * </ul>
              * 
              * @param who
-             *     Who participated
+             *     The agent that participated in the event
              * 
              * @return
              *     A reference to this Builder instance
@@ -1317,20 +1477,19 @@ public class Provenance extends DomainResource {
             }
 
             /**
-             * The individual, device, or organization for whom the change was made.
+             * The agent that delegated authority to perform the activity performed by the agent.who element.
              * 
              * <p>Allowed resource types for this reference:
              * <ul>
              * <li>{@link Practitioner}</li>
              * <li>{@link PractitionerRole}</li>
-             * <li>{@link RelatedPerson}</li>
-             * <li>{@link Patient}</li>
-             * <li>{@link Device}</li>
              * <li>{@link Organization}</li>
+             * <li>{@link CareTeam}</li>
+             * <li>{@link Patient}</li>
              * </ul>
              * 
              * @param onBehalfOf
-             *     Who the agent is representing
+             *     The agent that delegated
              * 
              * @return
              *     A reference to this Builder instance
@@ -1366,8 +1525,8 @@ public class Provenance extends DomainResource {
                 super.validate(agent);
                 ValidationSupport.checkList(agent.role, "role", CodeableConcept.class);
                 ValidationSupport.requireNonNull(agent.who, "who");
-                ValidationSupport.checkReferenceType(agent.who, "who", "Practitioner", "PractitionerRole", "RelatedPerson", "Patient", "Device", "Organization");
-                ValidationSupport.checkReferenceType(agent.onBehalfOf, "onBehalfOf", "Practitioner", "PractitionerRole", "RelatedPerson", "Patient", "Device", "Organization");
+                ValidationSupport.checkReferenceType(agent.who, "who", "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient", "Device", "RelatedPerson");
+                ValidationSupport.checkReferenceType(agent.onBehalfOf, "onBehalfOf", "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient");
                 ValidationSupport.requireValueOrChildren(agent);
             }
 
@@ -1391,7 +1550,7 @@ public class Provenance extends DomainResource {
             bindingName = "ProvenanceEntityRole",
             strength = BindingStrength.Value.REQUIRED,
             description = "How an entity was used in an activity.",
-            valueSet = "http://hl7.org/fhir/ValueSet/provenance-entity-role|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/provenance-entity-role|5.0.0"
         )
         @Required
         private final ProvenanceEntityRole role;
@@ -1430,7 +1589,7 @@ public class Provenance extends DomainResource {
         /**
          * The entity is attributed to an agent to express the agent's responsibility for that entity, possibly along with other 
          * agents. This description can be understood as shorthand for saying that the agent was responsible for the activity 
-         * which generated the entity.
+         * which used the entity.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link Agent} that may be empty.
@@ -1535,7 +1694,7 @@ public class Provenance extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1555,7 +1714,7 @@ public class Provenance extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1580,7 +1739,7 @@ public class Provenance extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1605,7 +1764,7 @@ public class Provenance extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1635,7 +1794,7 @@ public class Provenance extends DomainResource {
              * <p>This element is required.
              * 
              * @param role
-             *     derivation | revision | quotation | source | removal
+             *     revision | quotation | source | instantiates | removal
              * 
              * @return
              *     A reference to this Builder instance
@@ -1664,7 +1823,7 @@ public class Provenance extends DomainResource {
             /**
              * The entity is attributed to an agent to express the agent's responsibility for that entity, possibly along with other 
              * agents. This description can be understood as shorthand for saying that the agent was responsible for the activity 
-             * which generated the entity.
+             * which used the entity.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -1685,7 +1844,7 @@ public class Provenance extends DomainResource {
             /**
              * The entity is attributed to an agent to express the agent's responsibility for that entity, possibly along with other 
              * agents. This description can be understood as shorthand for saying that the agent was responsible for the activity 
-             * which generated the entity.
+             * which used the entity.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.

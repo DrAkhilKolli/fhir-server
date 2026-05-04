@@ -14,7 +14,7 @@ import java.util.Objects;
 
 import javax.annotation.Generated;
 
-import org.linuxforhealth.fhir.model.annotation.Required;
+import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
@@ -23,34 +23,20 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * The shelf-life and storage information for a medicinal product item or container can be described using this class.
  */
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class ProductShelfLife extends BackboneElement {
+public class ProductShelfLife extends BackboneType {
     @Summary
-    private final Identifier identifier;
-    @Summary
-    @Required
     private final CodeableConcept type;
     @Summary
-    @Required
-    private final Quantity period;
+    @Choice({ Duration.class, String.class })
+    private final org.linuxforhealth.fhir.model.type.Element period;
     @Summary
     private final List<CodeableConcept> specialPrecautionsForStorage;
 
     private ProductShelfLife(Builder builder) {
         super(builder);
-        identifier = builder.identifier;
         type = builder.type;
         period = builder.period;
         specialPrecautionsForStorage = Collections.unmodifiableList(builder.specialPrecautionsForStorage);
-    }
-
-    /**
-     * Unique identifier for the packaged Medicinal Product.
-     * 
-     * @return
-     *     An immutable object of type {@link Identifier} that may be null.
-     */
-    public Identifier getIdentifier() {
-        return identifier;
     }
 
     /**
@@ -60,7 +46,7 @@ public class ProductShelfLife extends BackboneElement {
      * controlled term identifier shall be specified.
      * 
      * @return
-     *     An immutable object of type {@link CodeableConcept} that is non-null.
+     *     An immutable object of type {@link CodeableConcept} that may be null.
      */
     public CodeableConcept getType() {
         return type;
@@ -72,9 +58,9 @@ public class ProductShelfLife extends BackboneElement {
      * symbol and the symbol identifier shall be used.
      * 
      * @return
-     *     An immutable object of type {@link Quantity} that is non-null.
+     *     An immutable object of type {@link Duration} or {@link String} that may be null.
      */
-    public Quantity getPeriod() {
+    public org.linuxforhealth.fhir.model.type.Element getPeriod() {
         return period;
     }
 
@@ -92,7 +78,6 @@ public class ProductShelfLife extends BackboneElement {
     @Override
     public boolean hasChildren() {
         return super.hasChildren() || 
-            (identifier != null) || 
             (type != null) || 
             (period != null) || 
             !specialPrecautionsForStorage.isEmpty();
@@ -107,7 +92,6 @@ public class ProductShelfLife extends BackboneElement {
                 accept(id, "id", visitor);
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                accept(identifier, "identifier", visitor);
                 accept(type, "type", visitor);
                 accept(period, "period", visitor);
                 accept(specialPrecautionsForStorage, "specialPrecautionsForStorage", visitor, CodeableConcept.class);
@@ -132,7 +116,6 @@ public class ProductShelfLife extends BackboneElement {
         return Objects.equals(id, other.id) && 
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
-            Objects.equals(identifier, other.identifier) && 
             Objects.equals(type, other.type) && 
             Objects.equals(period, other.period) && 
             Objects.equals(specialPrecautionsForStorage, other.specialPrecautionsForStorage);
@@ -145,7 +128,6 @@ public class ProductShelfLife extends BackboneElement {
             result = Objects.hash(id, 
                 extension, 
                 modifierExtension, 
-                identifier, 
                 type, 
                 period, 
                 specialPrecautionsForStorage);
@@ -163,10 +145,9 @@ public class ProductShelfLife extends BackboneElement {
         return new Builder();
     }
 
-    public static class Builder extends BackboneElement.Builder {
-        private Identifier identifier;
+    public static class Builder extends BackboneType.Builder {
         private CodeableConcept type;
-        private Quantity period;
+        private org.linuxforhealth.fhir.model.type.Element period;
         private List<CodeableConcept> specialPrecautionsForStorage = new ArrayList<>();
 
         private Builder() {
@@ -190,7 +171,7 @@ public class ProductShelfLife extends BackboneElement {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -210,7 +191,7 @@ public class ProductShelfLife extends BackboneElement {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -235,7 +216,7 @@ public class ProductShelfLife extends BackboneElement {
          * May be used to represent additional information that is not part of the basic definition of the element and that 
          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
          * extension. Applications processing a resource are required to check for modifier extensions.
          * 
@@ -260,7 +241,7 @@ public class ProductShelfLife extends BackboneElement {
          * May be used to represent additional information that is not part of the basic definition of the element and that 
          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
          * extension. Applications processing a resource are required to check for modifier extensions.
          * 
@@ -285,26 +266,10 @@ public class ProductShelfLife extends BackboneElement {
         }
 
         /**
-         * Unique identifier for the packaged Medicinal Product.
-         * 
-         * @param identifier
-         *     Unique identifier for the packaged Medicinal Product
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder identifier(Identifier identifier) {
-            this.identifier = identifier;
-            return this;
-        }
-
-        /**
          * This describes the shelf life, taking into account various scenarios such as shelf life of the packaged Medicinal 
          * Product itself, shelf life after transformation where necessary and shelf life after the first opening of a bottle, 
          * etc. The shelf life type shall be specified using an appropriate controlled vocabulary The controlled term and the 
          * controlled term identifier shall be specified.
-         * 
-         * <p>This element is required.
          * 
          * @param type
          *     This describes the shelf life, taking into account various scenarios such as shelf life of the packaged Medicinal 
@@ -321,11 +286,33 @@ public class ProductShelfLife extends BackboneElement {
         }
 
         /**
+         * Convenience method for setting {@code period} with choice type String.
+         * 
+         * @param period
+         *     The shelf life time period can be specified using a numerical value for the period of time and its unit of time 
+         *     measurement The unit of measurement shall be specified in accordance with ISO 11240 and the resulting terminology The 
+         *     symbol and the symbol identifier shall be used
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #period(Element)
+         */
+        public Builder period(java.lang.String period) {
+            this.period = (period == null) ? null : String.of(period);
+            return this;
+        }
+
+        /**
          * The shelf life time period can be specified using a numerical value for the period of time and its unit of time 
          * measurement The unit of measurement shall be specified in accordance with ISO 11240 and the resulting terminology The 
          * symbol and the symbol identifier shall be used.
          * 
-         * <p>This element is required.
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link Duration}</li>
+         * <li>{@link String}</li>
+         * </ul>
          * 
          * @param period
          *     The shelf life time period can be specified using a numerical value for the period of time and its unit of time 
@@ -335,7 +322,7 @@ public class ProductShelfLife extends BackboneElement {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder period(Quantity period) {
+        public Builder period(org.linuxforhealth.fhir.model.type.Element period) {
             this.period = period;
             return this;
         }
@@ -386,12 +373,6 @@ public class ProductShelfLife extends BackboneElement {
         /**
          * Build the {@link ProductShelfLife}
          * 
-         * <p>Required elements:
-         * <ul>
-         * <li>type</li>
-         * <li>period</li>
-         * </ul>
-         * 
          * @return
          *     An immutable object of type {@link ProductShelfLife}
          * @throws IllegalStateException
@@ -408,15 +389,13 @@ public class ProductShelfLife extends BackboneElement {
 
         protected void validate(ProductShelfLife productShelfLife) {
             super.validate(productShelfLife);
-            ValidationSupport.requireNonNull(productShelfLife.type, "type");
-            ValidationSupport.requireNonNull(productShelfLife.period, "period");
+            ValidationSupport.choiceElement(productShelfLife.period, "period", Duration.class, String.class);
             ValidationSupport.checkList(productShelfLife.specialPrecautionsForStorage, "specialPrecautionsForStorage", CodeableConcept.class);
             ValidationSupport.requireValueOrChildren(productShelfLife);
         }
 
         protected Builder from(ProductShelfLife productShelfLife) {
             super.from(productShelfLife);
-            identifier = productShelfLife.identifier;
             type = productShelfLife.type;
             period = productShelfLife.period;
             specialPrecautionsForStorage.addAll(productShelfLife.specialPrecautionsForStorage);

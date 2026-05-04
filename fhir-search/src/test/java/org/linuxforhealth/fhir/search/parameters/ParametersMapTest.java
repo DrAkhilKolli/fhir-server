@@ -16,7 +16,7 @@ import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
-import org.linuxforhealth.fhir.model.type.code.ResourceTypeCode;
+import org.linuxforhealth.fhir.model.type.code.FHIRTypes;
 import org.linuxforhealth.fhir.model.type.code.SearchParamType;
 
 /**
@@ -28,7 +28,7 @@ public class ParametersMapTest {
             .status(PublicationStatus.ACTIVE)
             .name(string("a"))
             .description(Markdown.of("First param with code 'a'"))
-            .base(ResourceTypeCode.RESOURCE)
+            .base(FHIRTypes.RESOURCE)
             .type(SearchParamType.STRING)
             .code(Code.of("a"))
             .expression(string("extension.value as String"))
@@ -38,7 +38,7 @@ public class ParametersMapTest {
             .status(PublicationStatus.ACTIVE)
             .name(string("a"))
             .description(Markdown.of("Second param with code 'a'"))
-            .base(ResourceTypeCode.RESOURCE)
+            .base(FHIRTypes.RESOURCE)
             .type(SearchParamType.STRING)
             .code(Code.of("a"))
             .expression(string("extension.value as String"))
@@ -47,7 +47,7 @@ public class ParametersMapTest {
             .url(Uri.of("http://example.com/fhir/test/sp_b"))
             .status(PublicationStatus.ACTIVE)
             .name(string("b"))
-            .base(ResourceTypeCode.RESOURCE)
+            .base(FHIRTypes.RESOURCE)
             .type(SearchParamType.STRING)
             .description(Markdown.of("Param with code 'b'"))
             .code(Code.of("b"))
@@ -58,7 +58,7 @@ public class ParametersMapTest {
             .version("1")
             .status(PublicationStatus.ACTIVE)
             .name(string("b"))
-            .base(ResourceTypeCode.RESOURCE)
+            .base(FHIRTypes.RESOURCE)
             .type(SearchParamType.STRING)
             .description(Markdown.of("Param with code 'b'"))
             .code(Code.of("b"))
@@ -69,7 +69,7 @@ public class ParametersMapTest {
             .version("2")
             .status(PublicationStatus.ACTIVE)
             .name(string("b"))
-            .base(ResourceTypeCode.RESOURCE)
+            .base(FHIRTypes.RESOURCE)
             .type(SearchParamType.STRING)
             .description(Markdown.of("Param with code 'b'"))
             .code(Code.of("b"))

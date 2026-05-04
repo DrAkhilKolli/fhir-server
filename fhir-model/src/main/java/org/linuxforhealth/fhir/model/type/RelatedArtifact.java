@@ -6,7 +6,10 @@
 
 package org.linuxforhealth.fhir.model.type;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 import javax.annotation.Generated;
@@ -15,6 +18,7 @@ import org.linuxforhealth.fhir.model.annotation.Binding;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
+import org.linuxforhealth.fhir.model.type.code.RelatedArtifactPublicationStatus;
 import org.linuxforhealth.fhir.model.type.code.RelatedArtifactType;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
@@ -23,15 +27,24 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * Related artifacts such as additional documentation, justification, or bibliographic references.
  */
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class RelatedArtifact extends Element {
+public class RelatedArtifact extends DataType {
     @Summary
     @Binding(
         bindingName = "RelatedArtifactType",
         strength = BindingStrength.Value.REQUIRED,
-        valueSet = "http://hl7.org/fhir/ValueSet/related-artifact-type|4.3.0"
+        description = "The type of relationship to the related artifact.",
+        valueSet = "http://hl7.org/fhir/ValueSet/related-artifact-type|5.0.0"
     )
     @Required
     private final RelatedArtifactType type;
+    @Summary
+    @Binding(
+        bindingName = "RelatedArtifactClassifier",
+        strength = BindingStrength.Value.EXAMPLE,
+        description = "Additional classifiers for the related artifact.",
+        valueSet = "http://hl7.org/fhir/ValueSet/citation-artifact-classifier"
+    )
+    private final List<CodeableConcept> classifier;
     @Summary
     private final String label;
     @Summary
@@ -39,21 +52,34 @@ public class RelatedArtifact extends Element {
     @Summary
     private final Markdown citation;
     @Summary
-    private final Url url;
-    @Summary
     private final Attachment document;
     @Summary
     private final Canonical resource;
+    @Summary
+    private final Reference resourceReference;
+    @Summary
+    @Binding(
+        bindingName = "RelatedArtifactPublicationStatus",
+        strength = BindingStrength.Value.REQUIRED,
+        description = "Publication status of an artifact being referred to.",
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
+    )
+    private final RelatedArtifactPublicationStatus publicationStatus;
+    @Summary
+    private final Date publicationDate;
 
     private RelatedArtifact(Builder builder) {
         super(builder);
         type = builder.type;
+        classifier = Collections.unmodifiableList(builder.classifier);
         label = builder.label;
         display = builder.display;
         citation = builder.citation;
-        url = builder.url;
         document = builder.document;
         resource = builder.resource;
+        resourceReference = builder.resourceReference;
+        publicationStatus = builder.publicationStatus;
+        publicationDate = builder.publicationDate;
     }
 
     /**
@@ -64,6 +90,16 @@ public class RelatedArtifact extends Element {
      */
     public RelatedArtifactType getType() {
         return type;
+    }
+
+    /**
+     * Provides additional classifiers of the related artifact.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     */
+    public List<CodeableConcept> getClassifier() {
+        return classifier;
     }
 
     /**
@@ -99,16 +135,6 @@ public class RelatedArtifact extends Element {
     }
 
     /**
-     * A url for the artifact that can be followed to access the actual content.
-     * 
-     * @return
-     *     An immutable object of type {@link Url} that may be null.
-     */
-    public Url getUrl() {
-        return url;
-    }
-
-    /**
      * The document being referenced, represented as an attachment. This is exclusive with the resource element.
      * 
      * @return
@@ -119,7 +145,7 @@ public class RelatedArtifact extends Element {
     }
 
     /**
-     * The related resource, such as a library, value set, profile, or other knowledge resource.
+     * The related artifact, such as a library, value set, profile, or other knowledge resource.
      * 
      * @return
      *     An immutable object of type {@link Canonical} that may be null.
@@ -128,16 +154,49 @@ public class RelatedArtifact extends Element {
         return resource;
     }
 
+    /**
+     * The related artifact, if the artifact is not a canonical resource, or a resource reference to a canonical resource.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getResourceReference() {
+        return resourceReference;
+    }
+
+    /**
+     * The publication status of the artifact being referred to.
+     * 
+     * @return
+     *     An immutable object of type {@link RelatedArtifactPublicationStatus} that may be null.
+     */
+    public RelatedArtifactPublicationStatus getPublicationStatus() {
+        return publicationStatus;
+    }
+
+    /**
+     * The date of publication of the artifact being referred to.
+     * 
+     * @return
+     *     An immutable object of type {@link Date} that may be null.
+     */
+    public Date getPublicationDate() {
+        return publicationDate;
+    }
+
     @Override
     public boolean hasChildren() {
         return super.hasChildren() || 
             (type != null) || 
+            !classifier.isEmpty() || 
             (label != null) || 
             (display != null) || 
             (citation != null) || 
-            (url != null) || 
             (document != null) || 
-            (resource != null);
+            (resource != null) || 
+            (resourceReference != null) || 
+            (publicationStatus != null) || 
+            (publicationDate != null);
     }
 
     @Override
@@ -149,12 +208,15 @@ public class RelatedArtifact extends Element {
                 accept(id, "id", visitor);
                 accept(extension, "extension", visitor, Extension.class);
                 accept(type, "type", visitor);
+                accept(classifier, "classifier", visitor, CodeableConcept.class);
                 accept(label, "label", visitor);
                 accept(display, "display", visitor);
                 accept(citation, "citation", visitor);
-                accept(url, "url", visitor);
                 accept(document, "document", visitor);
                 accept(resource, "resource", visitor);
+                accept(resourceReference, "resourceReference", visitor);
+                accept(publicationStatus, "publicationStatus", visitor);
+                accept(publicationDate, "publicationDate", visitor);
             }
             visitor.visitEnd(elementName, elementIndex, this);
             visitor.postVisit(this);
@@ -176,12 +238,15 @@ public class RelatedArtifact extends Element {
         return Objects.equals(id, other.id) && 
             Objects.equals(extension, other.extension) && 
             Objects.equals(type, other.type) && 
+            Objects.equals(classifier, other.classifier) && 
             Objects.equals(label, other.label) && 
             Objects.equals(display, other.display) && 
             Objects.equals(citation, other.citation) && 
-            Objects.equals(url, other.url) && 
             Objects.equals(document, other.document) && 
-            Objects.equals(resource, other.resource);
+            Objects.equals(resource, other.resource) && 
+            Objects.equals(resourceReference, other.resourceReference) && 
+            Objects.equals(publicationStatus, other.publicationStatus) && 
+            Objects.equals(publicationDate, other.publicationDate);
     }
 
     @Override
@@ -191,12 +256,15 @@ public class RelatedArtifact extends Element {
             result = Objects.hash(id, 
                 extension, 
                 type, 
+                classifier, 
                 label, 
                 display, 
                 citation, 
-                url, 
                 document, 
-                resource);
+                resource, 
+                resourceReference, 
+                publicationStatus, 
+                publicationDate);
             hashCode = result;
         }
         return result;
@@ -211,14 +279,17 @@ public class RelatedArtifact extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private RelatedArtifactType type;
+        private List<CodeableConcept> classifier = new ArrayList<>();
         private String label;
         private String display;
         private Markdown citation;
-        private Url url;
         private Attachment document;
         private Canonical resource;
+        private Reference resourceReference;
+        private RelatedArtifactPublicationStatus publicationStatus;
+        private Date publicationDate;
 
         private Builder() {
             super();
@@ -241,7 +312,7 @@ public class RelatedArtifact extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -261,7 +332,7 @@ public class RelatedArtifact extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -288,13 +359,56 @@ public class RelatedArtifact extends Element {
          * <p>This element is required.
          * 
          * @param type
-         *     documentation | justification | citation | predecessor | successor | derived-from | depends-on | composed-of
+         *     documentation | justification | citation | predecessor | successor | derived-from | depends-on | composed-of | part-of 
+         *     | amends | amended-with | appends | appended-with | cites | cited-by | comments-on | comment-in | contains | contained-
+         *     in | corrects | correction-in | replaces | replaced-with | retracts | retracted-by | signs | similar-to | supports | 
+         *     supported-with | transforms | transformed-into | transformed-with | documents | specification-of | created-with | cite-
+         *     as
          * 
          * @return
          *     A reference to this Builder instance
          */
         public Builder type(RelatedArtifactType type) {
             this.type = type;
+            return this;
+        }
+
+        /**
+         * Provides additional classifiers of the related artifact.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param classifier
+         *     Additional classifiers
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder classifier(CodeableConcept... classifier) {
+            for (CodeableConcept value : classifier) {
+                this.classifier.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Provides additional classifiers of the related artifact.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param classifier
+         *     Additional classifiers
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder classifier(Collection<CodeableConcept> classifier) {
+            this.classifier = new ArrayList<>(classifier);
             return this;
         }
 
@@ -375,20 +489,6 @@ public class RelatedArtifact extends Element {
         }
 
         /**
-         * A url for the artifact that can be followed to access the actual content.
-         * 
-         * @param url
-         *     Where the artifact can be accessed
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder url(Url url) {
-            this.url = url;
-            return this;
-        }
-
-        /**
          * The document being referenced, represented as an attachment. This is exclusive with the resource element.
          * 
          * @param document
@@ -403,16 +503,74 @@ public class RelatedArtifact extends Element {
         }
 
         /**
-         * The related resource, such as a library, value set, profile, or other knowledge resource.
+         * The related artifact, such as a library, value set, profile, or other knowledge resource.
          * 
          * @param resource
-         *     What resource is being referenced
+         *     What artifact is being referenced
          * 
          * @return
          *     A reference to this Builder instance
          */
         public Builder resource(Canonical resource) {
             this.resource = resource;
+            return this;
+        }
+
+        /**
+         * The related artifact, if the artifact is not a canonical resource, or a resource reference to a canonical resource.
+         * 
+         * @param resourceReference
+         *     What artifact, if not a conformance resource
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder resourceReference(Reference resourceReference) {
+            this.resourceReference = resourceReference;
+            return this;
+        }
+
+        /**
+         * The publication status of the artifact being referred to.
+         * 
+         * @param publicationStatus
+         *     draft | active | retired | unknown
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder publicationStatus(RelatedArtifactPublicationStatus publicationStatus) {
+            this.publicationStatus = publicationStatus;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code publicationDate}.
+         * 
+         * @param publicationDate
+         *     Date of publication of the artifact being referred to
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #publicationDate(org.linuxforhealth.fhir.model.type.Date)
+         */
+        public Builder publicationDate(java.time.LocalDate publicationDate) {
+            this.publicationDate = (publicationDate == null) ? null : Date.of(publicationDate);
+            return this;
+        }
+
+        /**
+         * The date of publication of the artifact being referred to.
+         * 
+         * @param publicationDate
+         *     Date of publication of the artifact being referred to
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder publicationDate(Date publicationDate) {
+            this.publicationDate = publicationDate;
             return this;
         }
 
@@ -441,18 +599,22 @@ public class RelatedArtifact extends Element {
         protected void validate(RelatedArtifact relatedArtifact) {
             super.validate(relatedArtifact);
             ValidationSupport.requireNonNull(relatedArtifact.type, "type");
+            ValidationSupport.checkList(relatedArtifact.classifier, "classifier", CodeableConcept.class);
             ValidationSupport.requireValueOrChildren(relatedArtifact);
         }
 
         protected Builder from(RelatedArtifact relatedArtifact) {
             super.from(relatedArtifact);
             type = relatedArtifact.type;
+            classifier.addAll(relatedArtifact.classifier);
             label = relatedArtifact.label;
             display = relatedArtifact.display;
             citation = relatedArtifact.citation;
-            url = relatedArtifact.url;
             document = relatedArtifact.document;
             resource = relatedArtifact.resource;
+            resourceReference = relatedArtifact.resourceReference;
+            publicationStatus = relatedArtifact.publicationStatus;
+            publicationDate = relatedArtifact.publicationDate;
             return this;
         }
     }

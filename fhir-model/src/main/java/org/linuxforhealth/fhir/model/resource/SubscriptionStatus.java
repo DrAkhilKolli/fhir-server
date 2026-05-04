@@ -26,10 +26,10 @@ import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Instant;
+import org.linuxforhealth.fhir.model.type.Integer64;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Reference;
-import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
@@ -41,18 +41,26 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 /**
  * The SubscriptionStatus resource describes the state of a Subscription during notifications.
  * 
- * <p>Maturity level: FMM0 (draft)
+ * <p>Maturity level: FMM2 (Trial Use)
  */
 @Maturity(
-    level = 0,
-    status = StandardsStatus.Value.DRAFT
+    level = 2,
+    status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
     id = "sst-1",
     level = "Rule",
     location = "(base)",
-    description = "events listed in event notifications",
-    expression = "type = 'event-notification' implies (notificationEvent.exists() and notificationEvent.first().exists())",
+    description = "Event notifications must contain events",
+    expression = "(type = 'event-notification' or type = 'query-event') implies notificationEvent.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/SubscriptionStatus"
+)
+@Constraint(
+    id = "sst-2",
+    level = "Rule",
+    location = "(base)",
+    description = "Status messages must contain status",
+    expression = "type = 'query-status' implies status.exists()",
     source = "http://hl7.org/fhir/StructureDefinition/SubscriptionStatus"
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
@@ -62,7 +70,7 @@ public class SubscriptionStatus extends DomainResource {
         bindingName = "SubscriptionStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The status of a subscription at the time this notification was generated.",
-        valueSet = "http://hl7.org/fhir/ValueSet/subscription-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/subscription-status|5.0.0"
     )
     private final SubscriptionStatusCode status;
     @Summary
@@ -70,12 +78,12 @@ public class SubscriptionStatus extends DomainResource {
         bindingName = "SubscriptionNotificationType",
         strength = BindingStrength.Value.REQUIRED,
         description = "The type of notification represented by the status message.",
-        valueSet = "http://hl7.org/fhir/ValueSet/subscription-notification-type|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/subscription-notification-type|5.0.0"
     )
     @Required
     private final SubscriptionNotificationType type;
     @Summary
-    private final String eventsSinceSubscriptionStart;
+    private final Integer64 eventsSinceSubscriptionStart;
     private final List<NotificationEvent> notificationEvent;
     @Summary
     @ReferenceTarget({ "Subscription" })
@@ -114,7 +122,7 @@ public class SubscriptionStatus extends DomainResource {
     }
 
     /**
-     * The type of event being conveyed with this notificaiton.
+     * The type of event being conveyed with this notification.
      * 
      * @return
      *     An immutable object of type {@link SubscriptionNotificationType} that is non-null.
@@ -129,9 +137,9 @@ public class SubscriptionStatus extends DomainResource {
      * handshake and heartbeat notifications.
      * 
      * @return
-     *     An immutable object of type {@link String} that may be null.
+     *     An immutable object of type {@link Integer64} that may be null.
      */
-    public String getEventsSinceSubscriptionStart() {
+    public Integer64 getEventsSinceSubscriptionStart() {
         return eventsSinceSubscriptionStart;
     }
 
@@ -279,7 +287,7 @@ public class SubscriptionStatus extends DomainResource {
     public static class Builder extends DomainResource.Builder {
         private SubscriptionStatusCode status;
         private SubscriptionNotificationType type;
-        private String eventsSinceSubscriptionStart;
+        private Integer64 eventsSinceSubscriptionStart;
         private List<NotificationEvent> notificationEvent = new ArrayList<>();
         private Reference subscription;
         private Canonical topic;
@@ -367,7 +375,8 @@ public class SubscriptionStatus extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -385,7 +394,8 @@ public class SubscriptionStatus extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -406,7 +416,7 @@ public class SubscriptionStatus extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -426,7 +436,7 @@ public class SubscriptionStatus extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -451,9 +461,9 @@ public class SubscriptionStatus extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -476,9 +486,9 @@ public class SubscriptionStatus extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -515,7 +525,7 @@ public class SubscriptionStatus extends DomainResource {
         }
 
         /**
-         * The type of event being conveyed with this notificaiton.
+         * The type of event being conveyed with this notification.
          * 
          * <p>This element is required.
          * 
@@ -531,22 +541,6 @@ public class SubscriptionStatus extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code eventsSinceSubscriptionStart}.
-         * 
-         * @param eventsSinceSubscriptionStart
-         *     Events since the Subscription was created
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #eventsSinceSubscriptionStart(org.linuxforhealth.fhir.model.type.String)
-         */
-        public Builder eventsSinceSubscriptionStart(java.lang.String eventsSinceSubscriptionStart) {
-            this.eventsSinceSubscriptionStart = (eventsSinceSubscriptionStart == null) ? null : String.of(eventsSinceSubscriptionStart);
-            return this;
-        }
-
-        /**
          * The total number of actual events which have been generated since the Subscription was created (inclusive of this 
          * notification) - regardless of how many have been successfully communicated. This number is NOT incremented for 
          * handshake and heartbeat notifications.
@@ -557,7 +551,7 @@ public class SubscriptionStatus extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder eventsSinceSubscriptionStart(String eventsSinceSubscriptionStart) {
+        public Builder eventsSinceSubscriptionStart(Integer64 eventsSinceSubscriptionStart) {
             this.eventsSinceSubscriptionStart = eventsSinceSubscriptionStart;
             return this;
         }
@@ -725,7 +719,7 @@ public class SubscriptionStatus extends DomainResource {
      */
     public static class NotificationEvent extends BackboneElement {
         @Required
-        private final String eventNumber;
+        private final Integer64 eventNumber;
         private final Instant timestamp;
         private final Reference focus;
         private final List<Reference> additionalContext;
@@ -739,18 +733,18 @@ public class SubscriptionStatus extends DomainResource {
         }
 
         /**
-         * The sequential number of this event in this subscription context. Note that this value is a 64-bit integer value, 
-         * encoded as a string.
+         * Either the sequential number of this event in this subscription context or a relative event number for this 
+         * notification.
          * 
          * @return
-         *     An immutable object of type {@link String} that is non-null.
+         *     An immutable object of type {@link Integer64} that is non-null.
          */
-        public String getEventNumber() {
+        public Integer64 getEventNumber() {
             return eventNumber;
         }
 
         /**
-         * The actual time this event occured on the server.
+         * The actual time this event occurred on the server.
          * 
          * @return
          *     An immutable object of type {@link Instant} that may be null.
@@ -856,7 +850,7 @@ public class SubscriptionStatus extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private String eventNumber;
+            private Integer64 eventNumber;
             private Instant timestamp;
             private Reference focus;
             private List<Reference> additionalContext = new ArrayList<>();
@@ -882,7 +876,7 @@ public class SubscriptionStatus extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -902,7 +896,7 @@ public class SubscriptionStatus extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -927,7 +921,7 @@ public class SubscriptionStatus extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -952,7 +946,7 @@ public class SubscriptionStatus extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -977,36 +971,18 @@ public class SubscriptionStatus extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code eventNumber}.
+             * Either the sequential number of this event in this subscription context or a relative event number for this 
+             * notification.
              * 
              * <p>This element is required.
              * 
              * @param eventNumber
-             *     Event number
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #eventNumber(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder eventNumber(java.lang.String eventNumber) {
-                this.eventNumber = (eventNumber == null) ? null : String.of(eventNumber);
-                return this;
-            }
-
-            /**
-             * The sequential number of this event in this subscription context. Note that this value is a 64-bit integer value, 
-             * encoded as a string.
-             * 
-             * <p>This element is required.
-             * 
-             * @param eventNumber
-             *     Event number
+             *     Sequencing index of this event
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder eventNumber(String eventNumber) {
+            public Builder eventNumber(Integer64 eventNumber) {
                 this.eventNumber = eventNumber;
                 return this;
             }
@@ -1028,7 +1004,7 @@ public class SubscriptionStatus extends DomainResource {
             }
 
             /**
-             * The actual time this event occured on the server.
+             * The actual time this event occurred on the server.
              * 
              * @param timestamp
              *     The instant this event occurred
@@ -1046,7 +1022,7 @@ public class SubscriptionStatus extends DomainResource {
              * reference to a non-FHIR object.
              * 
              * @param focus
-             *     The focus of this event
+             *     Reference to the primary resource or information of this event
              * 
              * @return
              *     A reference to this Builder instance
@@ -1064,7 +1040,7 @@ public class SubscriptionStatus extends DomainResource {
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param additionalContext
-             *     Additional context for this event
+             *     References related to the focus resource and/or context of this event
              * 
              * @return
              *     A reference to this Builder instance
@@ -1084,7 +1060,7 @@ public class SubscriptionStatus extends DomainResource {
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param additionalContext
-             *     Additional context for this event
+             *     References related to the focus resource and/or context of this event
              * 
              * @return
              *     A reference to this Builder instance

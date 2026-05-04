@@ -21,23 +21,23 @@ import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.Address;
+import org.linuxforhealth.fhir.model.type.Availability;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
-import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
 import org.linuxforhealth.fhir.model.type.Coding;
-import org.linuxforhealth.fhir.model.type.ContactPoint;
 import org.linuxforhealth.fhir.model.type.Decimal;
+import org.linuxforhealth.fhir.model.type.ExtendedContactDetail;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
+import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.String;
-import org.linuxforhealth.fhir.model.type.Time;
 import org.linuxforhealth.fhir.model.type.Uri;
+import org.linuxforhealth.fhir.model.type.VirtualServiceDetail;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
-import org.linuxforhealth.fhir.model.type.code.DaysOfWeek;
 import org.linuxforhealth.fhir.model.type.code.LocationMode;
 import org.linuxforhealth.fhir.model.type.code.LocationStatus;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
@@ -45,13 +45,13 @@ import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
- * Details and position information for a physical place where services are provided and resources and participants may 
- * be stored, found, contained, or accommodated.
+ * Details and position information for a place where services are provided and resources and participants may be stored, 
+ * found, contained, or accommodated.
  * 
- * <p>Maturity level: FMM3 (Trial Use)
+ * <p>Maturity level: FMM5 (Trial Use)
  */
 @Maturity(
-    level = 3,
+    level = 5,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
@@ -81,7 +81,7 @@ public class Location extends DomainResource {
         bindingName = "LocationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "Indicates whether the location is still in use.",
-        valueSet = "http://hl7.org/fhir/ValueSet/location-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/location-status|5.0.0"
     )
     private final LocationStatus status;
     @Summary
@@ -96,13 +96,13 @@ public class Location extends DomainResource {
     private final String name;
     private final List<String> alias;
     @Summary
-    private final String description;
+    private final Markdown description;
     @Summary
     @Binding(
         bindingName = "LocationMode",
         strength = BindingStrength.Value.REQUIRED,
         description = "Indicates whether a resource instance represents a specific location or a class of locations.",
-        valueSet = "http://hl7.org/fhir/ValueSet/location-mode|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/location-mode|5.0.0"
     )
     private final LocationMode mode;
     @Summary
@@ -113,24 +113,31 @@ public class Location extends DomainResource {
         valueSet = "http://terminology.hl7.org/ValueSet/v3-ServiceDeliveryLocationRoleType"
     )
     private final List<CodeableConcept> type;
-    private final List<ContactPoint> telecom;
+    private final List<ExtendedContactDetail> contact;
     private final Address address;
     @Summary
     @Binding(
-        bindingName = "PhysicalType",
+        bindingName = "LocationForm",
         strength = BindingStrength.Value.EXAMPLE,
         description = "Physical form of the location.",
-        valueSet = "http://hl7.org/fhir/ValueSet/location-physical-type"
+        valueSet = "http://hl7.org/fhir/ValueSet/location-form"
     )
-    private final CodeableConcept physicalType;
+    private final CodeableConcept form;
     private final Position position;
     @Summary
     @ReferenceTarget({ "Organization" })
     private final Reference managingOrganization;
     @ReferenceTarget({ "Location" })
     private final Reference partOf;
-    private final List<HoursOfOperation> hoursOfOperation;
-    private final String availabilityExceptions;
+    @Binding(
+        bindingName = "LocationCharacteristic",
+        strength = BindingStrength.Value.EXAMPLE,
+        description = "A custom attribute that could be provided at a service (e.g. Wheelchair accessibiliy).",
+        valueSet = "http://hl7.org/fhir/ValueSet/location-characteristic"
+    )
+    private final List<CodeableConcept> characteristic;
+    private final List<Availability> hoursOfOperation;
+    private final List<VirtualServiceDetail> virtualService;
     @ReferenceTarget({ "Endpoint" })
     private final List<Reference> endpoint;
 
@@ -144,14 +151,15 @@ public class Location extends DomainResource {
         description = builder.description;
         mode = builder.mode;
         type = Collections.unmodifiableList(builder.type);
-        telecom = Collections.unmodifiableList(builder.telecom);
+        contact = Collections.unmodifiableList(builder.contact);
         address = builder.address;
-        physicalType = builder.physicalType;
+        form = builder.form;
         position = builder.position;
         managingOrganization = builder.managingOrganization;
         partOf = builder.partOf;
+        characteristic = Collections.unmodifiableList(builder.characteristic);
         hoursOfOperation = Collections.unmodifiableList(builder.hoursOfOperation);
-        availabilityExceptions = builder.availabilityExceptions;
+        virtualService = Collections.unmodifiableList(builder.virtualService);
         endpoint = Collections.unmodifiableList(builder.endpoint);
     }
 
@@ -212,9 +220,9 @@ public class Location extends DomainResource {
      * Description of the Location, which helps in finding or referencing the place.
      * 
      * @return
-     *     An immutable object of type {@link String} that may be null.
+     *     An immutable object of type {@link Markdown} that may be null.
      */
-    public String getDescription() {
+    public Markdown getDescription() {
         return description;
     }
 
@@ -239,14 +247,14 @@ public class Location extends DomainResource {
     }
 
     /**
-     * The contact details of communication devices available at the location. This can include phone numbers, fax numbers, 
-     * mobile numbers, email addresses and web sites.
+     * The contact details of communication devices available at the location. This can include addresses, phone numbers, fax 
+     * numbers, mobile numbers, email addresses and web sites.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link ContactPoint} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link ExtendedContactDetail} that may be empty.
      */
-    public List<ContactPoint> getTelecom() {
-        return telecom;
+    public List<ExtendedContactDetail> getContact() {
+        return contact;
     }
 
     /**
@@ -260,13 +268,13 @@ public class Location extends DomainResource {
     }
 
     /**
-     * Physical form of the location, e.g. building, room, vehicle, road.
+     * Physical form of the location, e.g. building, room, vehicle, road, virtual.
      * 
      * @return
      *     An immutable object of type {@link CodeableConcept} that may be null.
      */
-    public CodeableConcept getPhysicalType() {
-        return physicalType;
+    public CodeableConcept getForm() {
+        return form;
     }
 
     /**
@@ -301,24 +309,33 @@ public class Location extends DomainResource {
     }
 
     /**
-     * What days/times during a week is this location usually open.
+     * Collection of characteristics (attributes).
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link HoursOfOperation} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
      */
-    public List<HoursOfOperation> getHoursOfOperation() {
+    public List<CodeableConcept> getCharacteristic() {
+        return characteristic;
+    }
+
+    /**
+     * What days/times during a week is this location usually open, and any exceptions where the location is not available.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Availability} that may be empty.
+     */
+    public List<Availability> getHoursOfOperation() {
         return hoursOfOperation;
     }
 
     /**
-     * A description of when the locations opening ours are different to normal, e.g. public holiday availability. Succinctly 
-     * describing all possible exceptions to normal site availability as detailed in the opening hours Times.
+     * Connection details of a virtual service (e.g. shared conference call facility with dedicated number/details).
      * 
      * @return
-     *     An immutable object of type {@link String} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link VirtualServiceDetail} that may be empty.
      */
-    public String getAvailabilityExceptions() {
-        return availabilityExceptions;
+    public List<VirtualServiceDetail> getVirtualService() {
+        return virtualService;
     }
 
     /**
@@ -342,14 +359,15 @@ public class Location extends DomainResource {
             (description != null) || 
             (mode != null) || 
             !type.isEmpty() || 
-            !telecom.isEmpty() || 
+            !contact.isEmpty() || 
             (address != null) || 
-            (physicalType != null) || 
+            (form != null) || 
             (position != null) || 
             (managingOrganization != null) || 
             (partOf != null) || 
+            !characteristic.isEmpty() || 
             !hoursOfOperation.isEmpty() || 
-            (availabilityExceptions != null) || 
+            !virtualService.isEmpty() || 
             !endpoint.isEmpty();
     }
 
@@ -375,14 +393,15 @@ public class Location extends DomainResource {
                 accept(description, "description", visitor);
                 accept(mode, "mode", visitor);
                 accept(type, "type", visitor, CodeableConcept.class);
-                accept(telecom, "telecom", visitor, ContactPoint.class);
+                accept(contact, "contact", visitor, ExtendedContactDetail.class);
                 accept(address, "address", visitor);
-                accept(physicalType, "physicalType", visitor);
+                accept(form, "form", visitor);
                 accept(position, "position", visitor);
                 accept(managingOrganization, "managingOrganization", visitor);
                 accept(partOf, "partOf", visitor);
-                accept(hoursOfOperation, "hoursOfOperation", visitor, HoursOfOperation.class);
-                accept(availabilityExceptions, "availabilityExceptions", visitor);
+                accept(characteristic, "characteristic", visitor, CodeableConcept.class);
+                accept(hoursOfOperation, "hoursOfOperation", visitor, Availability.class);
+                accept(virtualService, "virtualService", visitor, VirtualServiceDetail.class);
                 accept(endpoint, "endpoint", visitor, Reference.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
@@ -418,14 +437,15 @@ public class Location extends DomainResource {
             Objects.equals(description, other.description) && 
             Objects.equals(mode, other.mode) && 
             Objects.equals(type, other.type) && 
-            Objects.equals(telecom, other.telecom) && 
+            Objects.equals(contact, other.contact) && 
             Objects.equals(address, other.address) && 
-            Objects.equals(physicalType, other.physicalType) && 
+            Objects.equals(form, other.form) && 
             Objects.equals(position, other.position) && 
             Objects.equals(managingOrganization, other.managingOrganization) && 
             Objects.equals(partOf, other.partOf) && 
+            Objects.equals(characteristic, other.characteristic) && 
             Objects.equals(hoursOfOperation, other.hoursOfOperation) && 
-            Objects.equals(availabilityExceptions, other.availabilityExceptions) && 
+            Objects.equals(virtualService, other.virtualService) && 
             Objects.equals(endpoint, other.endpoint);
     }
 
@@ -449,14 +469,15 @@ public class Location extends DomainResource {
                 description, 
                 mode, 
                 type, 
-                telecom, 
+                contact, 
                 address, 
-                physicalType, 
+                form, 
                 position, 
                 managingOrganization, 
                 partOf, 
+                characteristic, 
                 hoursOfOperation, 
-                availabilityExceptions, 
+                virtualService, 
                 endpoint);
             hashCode = result;
         }
@@ -478,17 +499,18 @@ public class Location extends DomainResource {
         private Coding operationalStatus;
         private String name;
         private List<String> alias = new ArrayList<>();
-        private String description;
+        private Markdown description;
         private LocationMode mode;
         private List<CodeableConcept> type = new ArrayList<>();
-        private List<ContactPoint> telecom = new ArrayList<>();
+        private List<ExtendedContactDetail> contact = new ArrayList<>();
         private Address address;
-        private CodeableConcept physicalType;
+        private CodeableConcept form;
         private Position position;
         private Reference managingOrganization;
         private Reference partOf;
-        private List<HoursOfOperation> hoursOfOperation = new ArrayList<>();
-        private String availabilityExceptions;
+        private List<CodeableConcept> characteristic = new ArrayList<>();
+        private List<Availability> hoursOfOperation = new ArrayList<>();
+        private List<VirtualServiceDetail> virtualService = new ArrayList<>();
         private List<Reference> endpoint = new ArrayList<>();
 
         private Builder() {
@@ -573,7 +595,8 @@ public class Location extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -591,7 +614,8 @@ public class Location extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -612,7 +636,7 @@ public class Location extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -632,7 +656,7 @@ public class Location extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -657,9 +681,9 @@ public class Location extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -682,9 +706,9 @@ public class Location extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -867,23 +891,6 @@ public class Location extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code description}.
-         * 
-         * @param description
-         *     Additional details about the location that could be displayed as further information to identify the location beyond 
-         *     its name
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #description(org.linuxforhealth.fhir.model.type.String)
-         */
-        public Builder description(java.lang.String description) {
-            this.description = (description == null) ? null : String.of(description);
-            return this;
-        }
-
-        /**
          * Description of the Location, which helps in finding or referencing the place.
          * 
          * @param description
@@ -893,7 +900,7 @@ public class Location extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder description(String description) {
+        public Builder description(Markdown description) {
             this.description = description;
             return this;
         }
@@ -952,34 +959,34 @@ public class Location extends DomainResource {
         }
 
         /**
-         * The contact details of communication devices available at the location. This can include phone numbers, fax numbers, 
-         * mobile numbers, email addresses and web sites.
+         * The contact details of communication devices available at the location. This can include addresses, phone numbers, fax 
+         * numbers, mobile numbers, email addresses and web sites.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param telecom
-         *     Contact details of the location
+         * @param contact
+         *     Official contact details for the location
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder telecom(ContactPoint... telecom) {
-            for (ContactPoint value : telecom) {
-                this.telecom.add(value);
+        public Builder contact(ExtendedContactDetail... contact) {
+            for (ExtendedContactDetail value : contact) {
+                this.contact.add(value);
             }
             return this;
         }
 
         /**
-         * The contact details of communication devices available at the location. This can include phone numbers, fax numbers, 
-         * mobile numbers, email addresses and web sites.
+         * The contact details of communication devices available at the location. This can include addresses, phone numbers, fax 
+         * numbers, mobile numbers, email addresses and web sites.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param telecom
-         *     Contact details of the location
+         * @param contact
+         *     Official contact details for the location
          * 
          * @return
          *     A reference to this Builder instance
@@ -987,8 +994,8 @@ public class Location extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder telecom(Collection<ContactPoint> telecom) {
-            this.telecom = new ArrayList<>(telecom);
+        public Builder contact(Collection<ExtendedContactDetail> contact) {
+            this.contact = new ArrayList<>(contact);
             return this;
         }
 
@@ -1007,16 +1014,16 @@ public class Location extends DomainResource {
         }
 
         /**
-         * Physical form of the location, e.g. building, room, vehicle, road.
+         * Physical form of the location, e.g. building, room, vehicle, road, virtual.
          * 
-         * @param physicalType
+         * @param form
          *     Physical form of the location
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder physicalType(CodeableConcept physicalType) {
-            this.physicalType = physicalType;
+        public Builder form(CodeableConcept form) {
+            this.form = form;
             return this;
         }
 
@@ -1074,32 +1081,32 @@ public class Location extends DomainResource {
         }
 
         /**
-         * What days/times during a week is this location usually open.
+         * Collection of characteristics (attributes).
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param hoursOfOperation
-         *     What days/times during a week is this location usually open
+         * @param characteristic
+         *     Collection of characteristics (attributes)
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder hoursOfOperation(HoursOfOperation... hoursOfOperation) {
-            for (HoursOfOperation value : hoursOfOperation) {
-                this.hoursOfOperation.add(value);
+        public Builder characteristic(CodeableConcept... characteristic) {
+            for (CodeableConcept value : characteristic) {
+                this.characteristic.add(value);
             }
             return this;
         }
 
         /**
-         * What days/times during a week is this location usually open.
+         * Collection of characteristics (attributes).
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param hoursOfOperation
-         *     What days/times during a week is this location usually open
+         * @param characteristic
+         *     Collection of characteristics (attributes)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1107,39 +1114,86 @@ public class Location extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder hoursOfOperation(Collection<HoursOfOperation> hoursOfOperation) {
+        public Builder characteristic(Collection<CodeableConcept> characteristic) {
+            this.characteristic = new ArrayList<>(characteristic);
+            return this;
+        }
+
+        /**
+         * What days/times during a week is this location usually open, and any exceptions where the location is not available.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param hoursOfOperation
+         *     What days/times during a week is this location usually open (including exceptions)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder hoursOfOperation(Availability... hoursOfOperation) {
+            for (Availability value : hoursOfOperation) {
+                this.hoursOfOperation.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * What days/times during a week is this location usually open, and any exceptions where the location is not available.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param hoursOfOperation
+         *     What days/times during a week is this location usually open (including exceptions)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder hoursOfOperation(Collection<Availability> hoursOfOperation) {
             this.hoursOfOperation = new ArrayList<>(hoursOfOperation);
             return this;
         }
 
         /**
-         * Convenience method for setting {@code availabilityExceptions}.
+         * Connection details of a virtual service (e.g. shared conference call facility with dedicated number/details).
          * 
-         * @param availabilityExceptions
-         *     Description of availability exceptions
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param virtualService
+         *     Connection details of a virtual service (e.g. conference call)
          * 
          * @return
          *     A reference to this Builder instance
-         * 
-         * @see #availabilityExceptions(org.linuxforhealth.fhir.model.type.String)
          */
-        public Builder availabilityExceptions(java.lang.String availabilityExceptions) {
-            this.availabilityExceptions = (availabilityExceptions == null) ? null : String.of(availabilityExceptions);
+        public Builder virtualService(VirtualServiceDetail... virtualService) {
+            for (VirtualServiceDetail value : virtualService) {
+                this.virtualService.add(value);
+            }
             return this;
         }
 
         /**
-         * A description of when the locations opening ours are different to normal, e.g. public holiday availability. Succinctly 
-         * describing all possible exceptions to normal site availability as detailed in the opening hours Times.
+         * Connection details of a virtual service (e.g. shared conference call facility with dedicated number/details).
          * 
-         * @param availabilityExceptions
-         *     Description of availability exceptions
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param virtualService
+         *     Connection details of a virtual service (e.g. conference call)
          * 
          * @return
          *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
          */
-        public Builder availabilityExceptions(String availabilityExceptions) {
-            this.availabilityExceptions = availabilityExceptions;
+        public Builder virtualService(Collection<VirtualServiceDetail> virtualService) {
+            this.virtualService = new ArrayList<>(virtualService);
             return this;
         }
 
@@ -1214,8 +1268,10 @@ public class Location extends DomainResource {
             ValidationSupport.checkList(location.identifier, "identifier", Identifier.class);
             ValidationSupport.checkList(location.alias, "alias", String.class);
             ValidationSupport.checkList(location.type, "type", CodeableConcept.class);
-            ValidationSupport.checkList(location.telecom, "telecom", ContactPoint.class);
-            ValidationSupport.checkList(location.hoursOfOperation, "hoursOfOperation", HoursOfOperation.class);
+            ValidationSupport.checkList(location.contact, "contact", ExtendedContactDetail.class);
+            ValidationSupport.checkList(location.characteristic, "characteristic", CodeableConcept.class);
+            ValidationSupport.checkList(location.hoursOfOperation, "hoursOfOperation", Availability.class);
+            ValidationSupport.checkList(location.virtualService, "virtualService", VirtualServiceDetail.class);
             ValidationSupport.checkList(location.endpoint, "endpoint", Reference.class);
             ValidationSupport.checkReferenceType(location.managingOrganization, "managingOrganization", "Organization");
             ValidationSupport.checkReferenceType(location.partOf, "partOf", "Location");
@@ -1232,14 +1288,15 @@ public class Location extends DomainResource {
             description = location.description;
             mode = location.mode;
             type.addAll(location.type);
-            telecom.addAll(location.telecom);
+            contact.addAll(location.contact);
             address = location.address;
-            physicalType = location.physicalType;
+            form = location.form;
             position = location.position;
             managingOrganization = location.managingOrganization;
             partOf = location.partOf;
+            characteristic.addAll(location.characteristic);
             hoursOfOperation.addAll(location.hoursOfOperation);
-            availabilityExceptions = location.availabilityExceptions;
+            virtualService.addAll(location.virtualService);
             endpoint.addAll(location.endpoint);
             return this;
         }
@@ -1265,7 +1322,7 @@ public class Location extends DomainResource {
 
         /**
          * Longitude. The value domain and the interpretation are the same as for the text of the longitude element in KML (see 
-         * notes below).
+         * notes on Location main page).
          * 
          * @return
          *     An immutable object of type {@link Decimal} that is non-null.
@@ -1276,7 +1333,7 @@ public class Location extends DomainResource {
 
         /**
          * Latitude. The value domain and the interpretation are the same as for the text of the latitude element in KML (see 
-         * notes below).
+         * notes on Location main page).
          * 
          * @return
          *     An immutable object of type {@link Decimal} that is non-null.
@@ -1287,7 +1344,7 @@ public class Location extends DomainResource {
 
         /**
          * Altitude. The value domain and the interpretation are the same as for the text of the altitude element in KML (see 
-         * notes below).
+         * notes on Location main page).
          * 
          * @return
          *     An immutable object of type {@link Decimal} that may be null.
@@ -1392,7 +1449,7 @@ public class Location extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1412,7 +1469,7 @@ public class Location extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1437,7 +1494,7 @@ public class Location extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1462,7 +1519,7 @@ public class Location extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1488,7 +1545,7 @@ public class Location extends DomainResource {
 
             /**
              * Longitude. The value domain and the interpretation are the same as for the text of the longitude element in KML (see 
-             * notes below).
+             * notes on Location main page).
              * 
              * <p>This element is required.
              * 
@@ -1505,7 +1562,7 @@ public class Location extends DomainResource {
 
             /**
              * Latitude. The value domain and the interpretation are the same as for the text of the latitude element in KML (see 
-             * notes below).
+             * notes on Location main page).
              * 
              * <p>This element is required.
              * 
@@ -1522,7 +1579,7 @@ public class Location extends DomainResource {
 
             /**
              * Altitude. The value domain and the interpretation are the same as for the text of the altitude element in KML (see 
-             * notes below).
+             * notes on Location main page).
              * 
              * @param altitude
              *     Altitude with WGS84 datum
@@ -1570,427 +1627,6 @@ public class Location extends DomainResource {
                 longitude = position.longitude;
                 latitude = position.latitude;
                 altitude = position.altitude;
-                return this;
-            }
-        }
-    }
-
-    /**
-     * What days/times during a week is this location usually open.
-     */
-    public static class HoursOfOperation extends BackboneElement {
-        @Binding(
-            bindingName = "DaysOfWeek",
-            strength = BindingStrength.Value.REQUIRED,
-            description = "The days of the week.",
-            valueSet = "http://hl7.org/fhir/ValueSet/days-of-week|4.3.0"
-        )
-        private final List<DaysOfWeek> daysOfWeek;
-        private final Boolean allDay;
-        private final Time openingTime;
-        private final Time closingTime;
-
-        private HoursOfOperation(Builder builder) {
-            super(builder);
-            daysOfWeek = Collections.unmodifiableList(builder.daysOfWeek);
-            allDay = builder.allDay;
-            openingTime = builder.openingTime;
-            closingTime = builder.closingTime;
-        }
-
-        /**
-         * Indicates which days of the week are available between the start and end Times.
-         * 
-         * @return
-         *     An unmodifiable list containing immutable objects of type {@link DaysOfWeek} that may be empty.
-         */
-        public List<DaysOfWeek> getDaysOfWeek() {
-            return daysOfWeek;
-        }
-
-        /**
-         * The Location is open all day.
-         * 
-         * @return
-         *     An immutable object of type {@link Boolean} that may be null.
-         */
-        public Boolean getAllDay() {
-            return allDay;
-        }
-
-        /**
-         * Time that the Location opens.
-         * 
-         * @return
-         *     An immutable object of type {@link Time} that may be null.
-         */
-        public Time getOpeningTime() {
-            return openingTime;
-        }
-
-        /**
-         * Time that the Location closes.
-         * 
-         * @return
-         *     An immutable object of type {@link Time} that may be null.
-         */
-        public Time getClosingTime() {
-            return closingTime;
-        }
-
-        @Override
-        public boolean hasChildren() {
-            return super.hasChildren() || 
-                !daysOfWeek.isEmpty() || 
-                (allDay != null) || 
-                (openingTime != null) || 
-                (closingTime != null);
-        }
-
-        @Override
-        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-            if (visitor.preVisit(this)) {
-                visitor.visitStart(elementName, elementIndex, this);
-                if (visitor.visit(elementName, elementIndex, this)) {
-                    // visit children
-                    accept(id, "id", visitor);
-                    accept(extension, "extension", visitor, Extension.class);
-                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(daysOfWeek, "daysOfWeek", visitor, DaysOfWeek.class);
-                    accept(allDay, "allDay", visitor);
-                    accept(openingTime, "openingTime", visitor);
-                    accept(closingTime, "closingTime", visitor);
-                }
-                visitor.visitEnd(elementName, elementIndex, this);
-                visitor.postVisit(this);
-            }
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            HoursOfOperation other = (HoursOfOperation) obj;
-            return Objects.equals(id, other.id) && 
-                Objects.equals(extension, other.extension) && 
-                Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(daysOfWeek, other.daysOfWeek) && 
-                Objects.equals(allDay, other.allDay) && 
-                Objects.equals(openingTime, other.openingTime) && 
-                Objects.equals(closingTime, other.closingTime);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = hashCode;
-            if (result == 0) {
-                result = Objects.hash(id, 
-                    extension, 
-                    modifierExtension, 
-                    daysOfWeek, 
-                    allDay, 
-                    openingTime, 
-                    closingTime);
-                hashCode = result;
-            }
-            return result;
-        }
-
-        @Override
-        public Builder toBuilder() {
-            return new Builder().from(this);
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public static class Builder extends BackboneElement.Builder {
-            private List<DaysOfWeek> daysOfWeek = new ArrayList<>();
-            private Boolean allDay;
-            private Time openingTime;
-            private Time closingTime;
-
-            private Builder() {
-                super();
-            }
-
-            /**
-             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-             * contain spaces.
-             * 
-             * @param id
-             *     Unique id for inter-element referencing
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder id(java.lang.String id) {
-                return (Builder) super.id(id);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder extension(Extension... extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder extension(Collection<Extension> extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder modifierExtension(Extension... modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * Indicates which days of the week are available between the start and end Times.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param daysOfWeek
-             *     mon | tue | wed | thu | fri | sat | sun
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder daysOfWeek(DaysOfWeek... daysOfWeek) {
-                for (DaysOfWeek value : daysOfWeek) {
-                    this.daysOfWeek.add(value);
-                }
-                return this;
-            }
-
-            /**
-             * Indicates which days of the week are available between the start and end Times.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param daysOfWeek
-             *     mon | tue | wed | thu | fri | sat | sun
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            public Builder daysOfWeek(Collection<DaysOfWeek> daysOfWeek) {
-                this.daysOfWeek = new ArrayList<>(daysOfWeek);
-                return this;
-            }
-
-            /**
-             * Convenience method for setting {@code allDay}.
-             * 
-             * @param allDay
-             *     The Location is open all day
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #allDay(org.linuxforhealth.fhir.model.type.Boolean)
-             */
-            public Builder allDay(java.lang.Boolean allDay) {
-                this.allDay = (allDay == null) ? null : Boolean.of(allDay);
-                return this;
-            }
-
-            /**
-             * The Location is open all day.
-             * 
-             * @param allDay
-             *     The Location is open all day
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder allDay(Boolean allDay) {
-                this.allDay = allDay;
-                return this;
-            }
-
-            /**
-             * Convenience method for setting {@code openingTime}.
-             * 
-             * @param openingTime
-             *     Time that the Location opens
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #openingTime(org.linuxforhealth.fhir.model.type.Time)
-             */
-            public Builder openingTime(java.time.LocalTime openingTime) {
-                this.openingTime = (openingTime == null) ? null : Time.of(openingTime);
-                return this;
-            }
-
-            /**
-             * Time that the Location opens.
-             * 
-             * @param openingTime
-             *     Time that the Location opens
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder openingTime(Time openingTime) {
-                this.openingTime = openingTime;
-                return this;
-            }
-
-            /**
-             * Convenience method for setting {@code closingTime}.
-             * 
-             * @param closingTime
-             *     Time that the Location closes
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #closingTime(org.linuxforhealth.fhir.model.type.Time)
-             */
-            public Builder closingTime(java.time.LocalTime closingTime) {
-                this.closingTime = (closingTime == null) ? null : Time.of(closingTime);
-                return this;
-            }
-
-            /**
-             * Time that the Location closes.
-             * 
-             * @param closingTime
-             *     Time that the Location closes
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder closingTime(Time closingTime) {
-                this.closingTime = closingTime;
-                return this;
-            }
-
-            /**
-             * Build the {@link HoursOfOperation}
-             * 
-             * @return
-             *     An immutable object of type {@link HoursOfOperation}
-             * @throws IllegalStateException
-             *     if the current state cannot be built into a valid HoursOfOperation per the base specification
-             */
-            @Override
-            public HoursOfOperation build() {
-                HoursOfOperation hoursOfOperation = new HoursOfOperation(this);
-                if (validating) {
-                    validate(hoursOfOperation);
-                }
-                return hoursOfOperation;
-            }
-
-            protected void validate(HoursOfOperation hoursOfOperation) {
-                super.validate(hoursOfOperation);
-                ValidationSupport.checkList(hoursOfOperation.daysOfWeek, "daysOfWeek", DaysOfWeek.class);
-                ValidationSupport.requireValueOrChildren(hoursOfOperation);
-            }
-
-            protected Builder from(HoursOfOperation hoursOfOperation) {
-                super.from(hoursOfOperation);
-                daysOfWeek.addAll(hoursOfOperation.daysOfWeek);
-                allDay = hoursOfOperation.allDay;
-                openingTime = hoursOfOperation.openingTime;
-                closingTime = hoursOfOperation.closingTime;
                 return this;
             }
         }

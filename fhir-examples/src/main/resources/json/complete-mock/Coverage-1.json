@@ -75,36 +75,21 @@
         ],
         "text": "k8uqey7Udb"
     },
-    "policyHolder": {
-        "reference": "Patient/KGR8864Ytm",
-        "type": "Patient",
-        "identifier": {
-            "use": "official",
-            "type": {
-                "coding": [
-                    {
-                        "system": "bBBKZV2IUF",
-                        "version": "xS7_tx9hzk",
-                        "code": "9AoYYoGs_S",
-                        "display": "TMqvVN7dtb",
-                        "userSelected": true
-                    }
-                ],
-                "text": "GKiXD4x8tZ"
-            },
-            "system": "sQp8gULy3q",
-            "value": "e7IX7z_EPF",
-            "period": {
-                "extension": [
-                    {
-                        "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
-                        "valueCode": "unknown"
-                    }
-                ]
-            }
-        },
-        "display": "T77U3S3IXu"
+    "beneficiary": {
+        "reference": "Patient/KGR8864Ytm"
     },
+    "relationship": {
+        "coding": [
+            {
+                "code": "self"
+            }
+        ]
+    },
+    "payor": [
+        {
+            "reference": "Organization/2"
+        }
+    ]
     "subscriber": {
         "reference": "Patient/LbCpLGE9gI",
         "type": "Patient",

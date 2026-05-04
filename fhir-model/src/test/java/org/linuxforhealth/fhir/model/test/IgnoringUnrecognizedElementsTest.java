@@ -26,19 +26,20 @@ public class IgnoringUnrecognizedElementsTest {
             String xmlString = "<Patient xmlns=\"http://hl7.org/fhir\"><hamburger/></Patient>";
             FHIRParser parser = FHIRParser.parser(Format.XML);
             parser.parse(new StringReader(xmlString));
-        } catch (FHIRParserException e) {
+        } catch (Exception e) {
+            assertTrue(e instanceof FHIRParserException);
             assertTrue(e.getCause() instanceof IllegalArgumentException);
             assertEquals(e.getCause().getMessage(), "Unrecognized element: 'hamburger'");
         }
     }
 
     @Test
-    public void testIgnoringUnrecognizedElements2() {
+    public void testIgnoringUnrecognizedElements2() throws FHIRParserException {
         try {
             String jsonString = "{\"resourceType\":\"Patient\",\"hamburger\":true}";
             FHIRParser parser = FHIRParser.parser(Format.JSON);
             parser.parse(new StringReader(jsonString));
-        } catch (Exception e) {
+        } catch (FHIRParserException e) {
             assertTrue(e.getCause() instanceof IllegalArgumentException);
             assertEquals(e.getCause().getMessage(), "Unrecognized element: 'hamburger'");
         }

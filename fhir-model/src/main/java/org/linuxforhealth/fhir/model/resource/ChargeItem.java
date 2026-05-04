@@ -25,18 +25,17 @@ import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.DateTime;
-import org.linuxforhealth.fhir.model.type.Decimal;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Meta;
-import org.linuxforhealth.fhir.model.type.Money;
+import org.linuxforhealth.fhir.model.type.MonetaryComponent;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
 import org.linuxforhealth.fhir.model.type.Quantity;
 import org.linuxforhealth.fhir.model.type.Reference;
-import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Timing;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
@@ -51,10 +50,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * participating organizations and persons. Main Usage of the ChargeItem is to enable the billing process and internal 
  * cost allocation.
  * 
- * <p>Maturity level: FMM0 (Trial Use)
+ * <p>Maturity level: FMM1 (Trial Use)
  */
 @Maturity(
-    level = 0,
+    level = 1,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
@@ -68,7 +67,7 @@ public class ChargeItem extends DomainResource {
         bindingName = "ChargeItemStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "Codes identifying the lifecycle stage of a ChargeItem.",
-        valueSet = "http://hl7.org/fhir/ValueSet/chargeitem-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/chargeitem-status|5.0.0"
     )
     @Required
     private final ChargeItemStatus status;
@@ -88,11 +87,11 @@ public class ChargeItem extends DomainResource {
     @Required
     private final Reference subject;
     @Summary
-    @ReferenceTarget({ "Encounter", "EpisodeOfCare" })
-    private final Reference context;
+    @ReferenceTarget({ "Encounter" })
+    private final Reference encounter;
     @Summary
     @Choice({ DateTime.class, Period.class, Timing.class })
-    private final Element occurrence;
+    private final org.linuxforhealth.fhir.model.type.Element occurrence;
     private final List<Performer> performer;
     @ReferenceTarget({ "Organization" })
     private final Reference performingOrganization;
@@ -110,9 +109,14 @@ public class ChargeItem extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/body-site"
     )
     private final List<CodeableConcept> bodysite;
-    private final Decimal factorOverride;
-    private final Money priceOverride;
-    private final String overrideReason;
+    private final MonetaryComponent unitPriceComponent;
+    private final MonetaryComponent totalPriceComponent;
+    @Binding(
+        bindingName = "override-reason",
+        strength = BindingStrength.Value.EXAMPLE,
+        description = "Local or regional codes covering why a price was overridden"
+    )
+    private final CodeableConcept overrideReason;
     @Summary
     @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "Patient", "Device", "RelatedPerson" })
     private final Reference enterer;
@@ -125,17 +129,14 @@ public class ChargeItem extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/icd-10"
     )
     private final List<CodeableConcept> reason;
-    @ReferenceTarget({ "DiagnosticReport", "ImagingStudy", "Immunization", "MedicationAdministration", "MedicationDispense", "Observation", "Procedure", "SupplyDelivery" })
-    private final List<Reference> service;
-    @ReferenceTarget({ "Device", "Medication", "Substance" })
-    @Choice({ Reference.class, CodeableConcept.class })
+    private final List<CodeableReference> service;
     @Binding(
         bindingName = "ChargeItemProduct",
         strength = BindingStrength.Value.EXAMPLE,
         description = "Example binding for product type.",
-        valueSet = "http://hl7.org/fhir/ValueSet/device-kind"
+        valueSet = "http://hl7.org/fhir/ValueSet/device-type"
     )
-    private final Element product;
+    private final List<CodeableReference> product;
     @Summary
     @ReferenceTarget({ "Account" })
     private final List<Reference> account;
@@ -151,7 +152,7 @@ public class ChargeItem extends DomainResource {
         partOf = Collections.unmodifiableList(builder.partOf);
         code = builder.code;
         subject = builder.subject;
-        context = builder.context;
+        encounter = builder.encounter;
         occurrence = builder.occurrence;
         performer = Collections.unmodifiableList(builder.performer);
         performingOrganization = builder.performingOrganization;
@@ -159,14 +160,14 @@ public class ChargeItem extends DomainResource {
         costCenter = builder.costCenter;
         quantity = builder.quantity;
         bodysite = Collections.unmodifiableList(builder.bodysite);
-        factorOverride = builder.factorOverride;
-        priceOverride = builder.priceOverride;
+        unitPriceComponent = builder.unitPriceComponent;
+        totalPriceComponent = builder.totalPriceComponent;
         overrideReason = builder.overrideReason;
         enterer = builder.enterer;
         enteredDate = builder.enteredDate;
         reason = Collections.unmodifiableList(builder.reason);
         service = Collections.unmodifiableList(builder.service);
-        product = builder.product;
+        product = Collections.unmodifiableList(builder.product);
         account = Collections.unmodifiableList(builder.account);
         note = Collections.unmodifiableList(builder.note);
         supportingInformation = Collections.unmodifiableList(builder.supportingInformation);
@@ -243,13 +244,14 @@ public class ChargeItem extends DomainResource {
     }
 
     /**
-     * The encounter or episode of care that establishes the context for this event.
+     * This ChargeItem has the details of how the associated Encounter should be billed or otherwise be handled by finance 
+     * systems.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
      */
-    public Reference getContext() {
-        return context;
+    public Reference getEncounter() {
+        return encounter;
     }
 
     /**
@@ -258,7 +260,7 @@ public class ChargeItem extends DomainResource {
      * @return
      *     An immutable object of type {@link DateTime}, {@link Period} or {@link Timing} that may be null.
      */
-    public Element getOccurrence() {
+    public org.linuxforhealth.fhir.model.type.Element getOccurrence() {
         return occurrence;
     }
 
@@ -273,7 +275,7 @@ public class ChargeItem extends DomainResource {
     }
 
     /**
-     * The organization requesting the service.
+     * The organization performing the service.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
@@ -283,7 +285,7 @@ public class ChargeItem extends DomainResource {
     }
 
     /**
-     * The organization performing the service.
+     * The organization requesting the service.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
@@ -323,23 +325,23 @@ public class ChargeItem extends DomainResource {
     }
 
     /**
-     * Factor overriding the factor determined by the rules associated with the code.
+     * The unit price of the chargable item.
      * 
      * @return
-     *     An immutable object of type {@link Decimal} that may be null.
+     *     An immutable object of type {@link MonetaryComponent} that may be null.
      */
-    public Decimal getFactorOverride() {
-        return factorOverride;
+    public MonetaryComponent getUnitPriceComponent() {
+        return unitPriceComponent;
     }
 
     /**
-     * Total price of the charge overriding the list price associated with the code.
+     * The total price for the chargable item, accounting for the quantity.
      * 
      * @return
-     *     An immutable object of type {@link Money} that may be null.
+     *     An immutable object of type {@link MonetaryComponent} that may be null.
      */
-    public Money getPriceOverride() {
-        return priceOverride;
+    public MonetaryComponent getTotalPriceComponent() {
+        return totalPriceComponent;
     }
 
     /**
@@ -347,9 +349,9 @@ public class ChargeItem extends DomainResource {
      * to indicate the reason for this action.
      * 
      * @return
-     *     An immutable object of type {@link String} that may be null.
+     *     An immutable object of type {@link CodeableConcept} that may be null.
      */
-    public String getOverrideReason() {
+    public CodeableConcept getOverrideReason() {
         return overrideReason;
     }
 
@@ -387,9 +389,9 @@ public class ChargeItem extends DomainResource {
      * Indicated the rendered service that caused this charge.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<Reference> getService() {
+    public List<CodeableReference> getService() {
         return service;
     }
 
@@ -397,9 +399,9 @@ public class ChargeItem extends DomainResource {
      * Identifies the device, food, drug or other product being charged either by type code or reference to an instance.
      * 
      * @return
-     *     An immutable object of type {@link Reference} or {@link CodeableConcept} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public Element getProduct() {
+    public List<CodeableReference> getProduct() {
         return product;
     }
 
@@ -443,7 +445,7 @@ public class ChargeItem extends DomainResource {
             !partOf.isEmpty() || 
             (code != null) || 
             (subject != null) || 
-            (context != null) || 
+            (encounter != null) || 
             (occurrence != null) || 
             !performer.isEmpty() || 
             (performingOrganization != null) || 
@@ -451,14 +453,14 @@ public class ChargeItem extends DomainResource {
             (costCenter != null) || 
             (quantity != null) || 
             !bodysite.isEmpty() || 
-            (factorOverride != null) || 
-            (priceOverride != null) || 
+            (unitPriceComponent != null) || 
+            (totalPriceComponent != null) || 
             (overrideReason != null) || 
             (enterer != null) || 
             (enteredDate != null) || 
             !reason.isEmpty() || 
             !service.isEmpty() || 
-            (product != null) || 
+            !product.isEmpty() || 
             !account.isEmpty() || 
             !note.isEmpty() || 
             !supportingInformation.isEmpty();
@@ -485,7 +487,7 @@ public class ChargeItem extends DomainResource {
                 accept(partOf, "partOf", visitor, Reference.class);
                 accept(code, "code", visitor);
                 accept(subject, "subject", visitor);
-                accept(context, "context", visitor);
+                accept(encounter, "encounter", visitor);
                 accept(occurrence, "occurrence", visitor);
                 accept(performer, "performer", visitor, Performer.class);
                 accept(performingOrganization, "performingOrganization", visitor);
@@ -493,14 +495,14 @@ public class ChargeItem extends DomainResource {
                 accept(costCenter, "costCenter", visitor);
                 accept(quantity, "quantity", visitor);
                 accept(bodysite, "bodysite", visitor, CodeableConcept.class);
-                accept(factorOverride, "factorOverride", visitor);
-                accept(priceOverride, "priceOverride", visitor);
+                accept(unitPriceComponent, "unitPriceComponent", visitor);
+                accept(totalPriceComponent, "totalPriceComponent", visitor);
                 accept(overrideReason, "overrideReason", visitor);
                 accept(enterer, "enterer", visitor);
                 accept(enteredDate, "enteredDate", visitor);
                 accept(reason, "reason", visitor, CodeableConcept.class);
-                accept(service, "service", visitor, Reference.class);
-                accept(product, "product", visitor);
+                accept(service, "service", visitor, CodeableReference.class);
+                accept(product, "product", visitor, CodeableReference.class);
                 accept(account, "account", visitor, Reference.class);
                 accept(note, "note", visitor, Annotation.class);
                 accept(supportingInformation, "supportingInformation", visitor, Reference.class);
@@ -537,7 +539,7 @@ public class ChargeItem extends DomainResource {
             Objects.equals(partOf, other.partOf) && 
             Objects.equals(code, other.code) && 
             Objects.equals(subject, other.subject) && 
-            Objects.equals(context, other.context) && 
+            Objects.equals(encounter, other.encounter) && 
             Objects.equals(occurrence, other.occurrence) && 
             Objects.equals(performer, other.performer) && 
             Objects.equals(performingOrganization, other.performingOrganization) && 
@@ -545,8 +547,8 @@ public class ChargeItem extends DomainResource {
             Objects.equals(costCenter, other.costCenter) && 
             Objects.equals(quantity, other.quantity) && 
             Objects.equals(bodysite, other.bodysite) && 
-            Objects.equals(factorOverride, other.factorOverride) && 
-            Objects.equals(priceOverride, other.priceOverride) && 
+            Objects.equals(unitPriceComponent, other.unitPriceComponent) && 
+            Objects.equals(totalPriceComponent, other.totalPriceComponent) && 
             Objects.equals(overrideReason, other.overrideReason) && 
             Objects.equals(enterer, other.enterer) && 
             Objects.equals(enteredDate, other.enteredDate) && 
@@ -577,7 +579,7 @@ public class ChargeItem extends DomainResource {
                 partOf, 
                 code, 
                 subject, 
-                context, 
+                encounter, 
                 occurrence, 
                 performer, 
                 performingOrganization, 
@@ -585,8 +587,8 @@ public class ChargeItem extends DomainResource {
                 costCenter, 
                 quantity, 
                 bodysite, 
-                factorOverride, 
-                priceOverride, 
+                unitPriceComponent, 
+                totalPriceComponent, 
                 overrideReason, 
                 enterer, 
                 enteredDate, 
@@ -618,22 +620,22 @@ public class ChargeItem extends DomainResource {
         private List<Reference> partOf = new ArrayList<>();
         private CodeableConcept code;
         private Reference subject;
-        private Reference context;
-        private Element occurrence;
+        private Reference encounter;
+        private org.linuxforhealth.fhir.model.type.Element occurrence;
         private List<Performer> performer = new ArrayList<>();
         private Reference performingOrganization;
         private Reference requestingOrganization;
         private Reference costCenter;
         private Quantity quantity;
         private List<CodeableConcept> bodysite = new ArrayList<>();
-        private Decimal factorOverride;
-        private Money priceOverride;
-        private String overrideReason;
+        private MonetaryComponent unitPriceComponent;
+        private MonetaryComponent totalPriceComponent;
+        private CodeableConcept overrideReason;
         private Reference enterer;
         private DateTime enteredDate;
         private List<CodeableConcept> reason = new ArrayList<>();
-        private List<Reference> service = new ArrayList<>();
-        private Element product;
+        private List<CodeableReference> service = new ArrayList<>();
+        private List<CodeableReference> product = new ArrayList<>();
         private List<Reference> account = new ArrayList<>();
         private List<Annotation> note = new ArrayList<>();
         private List<Reference> supportingInformation = new ArrayList<>();
@@ -720,7 +722,8 @@ public class ChargeItem extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -738,7 +741,8 @@ public class ChargeItem extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -759,7 +763,7 @@ public class ChargeItem extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -779,7 +783,7 @@ public class ChargeItem extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -804,9 +808,9 @@ public class ChargeItem extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -829,9 +833,9 @@ public class ChargeItem extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1074,22 +1078,22 @@ public class ChargeItem extends DomainResource {
         }
 
         /**
-         * The encounter or episode of care that establishes the context for this event.
+         * This ChargeItem has the details of how the associated Encounter should be billed or otherwise be handled by finance 
+         * systems.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
          * <li>{@link Encounter}</li>
-         * <li>{@link EpisodeOfCare}</li>
          * </ul>
          * 
-         * @param context
-         *     Encounter / Episode associated with event
+         * @param encounter
+         *     Encounter associated with this ChargeItem
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder context(Reference context) {
-            this.context = context;
+        public Builder encounter(Reference encounter) {
+            this.encounter = encounter;
             return this;
         }
 
@@ -1109,7 +1113,7 @@ public class ChargeItem extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder occurrence(Element occurrence) {
+        public Builder occurrence(org.linuxforhealth.fhir.model.type.Element occurrence) {
             this.occurrence = occurrence;
             return this;
         }
@@ -1154,7 +1158,7 @@ public class ChargeItem extends DomainResource {
         }
 
         /**
-         * The organization requesting the service.
+         * The organization performing the service.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
@@ -1173,7 +1177,7 @@ public class ChargeItem extends DomainResource {
         }
 
         /**
-         * The organization performing the service.
+         * The organization requesting the service.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
@@ -1264,46 +1268,30 @@ public class ChargeItem extends DomainResource {
         }
 
         /**
-         * Factor overriding the factor determined by the rules associated with the code.
+         * The unit price of the chargable item.
          * 
-         * @param factorOverride
-         *     Factor overriding the associated rules
+         * @param unitPriceComponent
+         *     Unit price overriding the associated rules
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder factorOverride(Decimal factorOverride) {
-            this.factorOverride = factorOverride;
+        public Builder unitPriceComponent(MonetaryComponent unitPriceComponent) {
+            this.unitPriceComponent = unitPriceComponent;
             return this;
         }
 
         /**
-         * Total price of the charge overriding the list price associated with the code.
+         * The total price for the chargable item, accounting for the quantity.
          * 
-         * @param priceOverride
-         *     Price overriding the associated rules
+         * @param totalPriceComponent
+         *     Total price overriding the associated rules
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder priceOverride(Money priceOverride) {
-            this.priceOverride = priceOverride;
-            return this;
-        }
-
-        /**
-         * Convenience method for setting {@code overrideReason}.
-         * 
-         * @param overrideReason
-         *     Reason for overriding the list price/factor
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #overrideReason(org.linuxforhealth.fhir.model.type.String)
-         */
-        public Builder overrideReason(java.lang.String overrideReason) {
-            this.overrideReason = (overrideReason == null) ? null : String.of(overrideReason);
+        public Builder totalPriceComponent(MonetaryComponent totalPriceComponent) {
+            this.totalPriceComponent = totalPriceComponent;
             return this;
         }
 
@@ -1317,7 +1305,7 @@ public class ChargeItem extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder overrideReason(String overrideReason) {
+        public Builder overrideReason(CodeableConcept overrideReason) {
             this.overrideReason = overrideReason;
             return this;
         }
@@ -1405,26 +1393,14 @@ public class ChargeItem extends DomainResource {
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link DiagnosticReport}</li>
-         * <li>{@link ImagingStudy}</li>
-         * <li>{@link Immunization}</li>
-         * <li>{@link MedicationAdministration}</li>
-         * <li>{@link MedicationDispense}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link Procedure}</li>
-         * <li>{@link SupplyDelivery}</li>
-         * </ul>
-         * 
          * @param service
          *     Which rendered service is being charged?
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder service(Reference... service) {
-            for (Reference value : service) {
+        public Builder service(CodeableReference... service) {
+            for (CodeableReference value : service) {
                 this.service.add(value);
             }
             return this;
@@ -1436,18 +1412,6 @@ public class ChargeItem extends DomainResource {
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link DiagnosticReport}</li>
-         * <li>{@link ImagingStudy}</li>
-         * <li>{@link Immunization}</li>
-         * <li>{@link MedicationAdministration}</li>
-         * <li>{@link MedicationDispense}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link Procedure}</li>
-         * <li>{@link SupplyDelivery}</li>
-         * </ul>
-         * 
          * @param service
          *     Which rendered service is being charged?
          * 
@@ -1457,7 +1421,7 @@ public class ChargeItem extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder service(Collection<Reference> service) {
+        public Builder service(Collection<CodeableReference> service) {
             this.service = new ArrayList<>(service);
             return this;
         }
@@ -1465,18 +1429,8 @@ public class ChargeItem extends DomainResource {
         /**
          * Identifies the device, food, drug or other product being charged either by type code or reference to an instance.
          * 
-         * <p>This is a choice element with the following allowed types:
-         * <ul>
-         * <li>{@link Reference}</li>
-         * <li>{@link CodeableConcept}</li>
-         * </ul>
-         * 
-         * When of type {@link Reference}, the allowed resource types for this reference are:
-         * <ul>
-         * <li>{@link Device}</li>
-         * <li>{@link Medication}</li>
-         * <li>{@link Substance}</li>
-         * </ul>
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param product
          *     Product charged
@@ -1484,8 +1438,30 @@ public class ChargeItem extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder product(Element product) {
-            this.product = product;
+        public Builder product(CodeableReference... product) {
+            for (CodeableReference value : product) {
+                this.product.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Identifies the device, food, drug or other product being charged either by type code or reference to an instance.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param product
+         *     Product charged
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder product(Collection<CodeableReference> product) {
+            this.product = new ArrayList<>(product);
             return this;
         }
 
@@ -1653,20 +1629,18 @@ public class ChargeItem extends DomainResource {
             ValidationSupport.checkList(chargeItem.performer, "performer", Performer.class);
             ValidationSupport.checkList(chargeItem.bodysite, "bodysite", CodeableConcept.class);
             ValidationSupport.checkList(chargeItem.reason, "reason", CodeableConcept.class);
-            ValidationSupport.checkList(chargeItem.service, "service", Reference.class);
-            ValidationSupport.choiceElement(chargeItem.product, "product", Reference.class, CodeableConcept.class);
+            ValidationSupport.checkList(chargeItem.service, "service", CodeableReference.class);
+            ValidationSupport.checkList(chargeItem.product, "product", CodeableReference.class);
             ValidationSupport.checkList(chargeItem.account, "account", Reference.class);
             ValidationSupport.checkList(chargeItem.note, "note", Annotation.class);
             ValidationSupport.checkList(chargeItem.supportingInformation, "supportingInformation", Reference.class);
             ValidationSupport.checkReferenceType(chargeItem.partOf, "partOf", "ChargeItem");
             ValidationSupport.checkReferenceType(chargeItem.subject, "subject", "Patient", "Group");
-            ValidationSupport.checkReferenceType(chargeItem.context, "context", "Encounter", "EpisodeOfCare");
+            ValidationSupport.checkReferenceType(chargeItem.encounter, "encounter", "Encounter");
             ValidationSupport.checkReferenceType(chargeItem.performingOrganization, "performingOrganization", "Organization");
             ValidationSupport.checkReferenceType(chargeItem.requestingOrganization, "requestingOrganization", "Organization");
             ValidationSupport.checkReferenceType(chargeItem.costCenter, "costCenter", "Organization");
             ValidationSupport.checkReferenceType(chargeItem.enterer, "enterer", "Practitioner", "PractitionerRole", "Organization", "Patient", "Device", "RelatedPerson");
-            ValidationSupport.checkReferenceType(chargeItem.service, "service", "DiagnosticReport", "ImagingStudy", "Immunization", "MedicationAdministration", "MedicationDispense", "Observation", "Procedure", "SupplyDelivery");
-            ValidationSupport.checkReferenceType(chargeItem.product, "product", "Device", "Medication", "Substance");
             ValidationSupport.checkReferenceType(chargeItem.account, "account", "Account");
         }
 
@@ -1679,7 +1653,7 @@ public class ChargeItem extends DomainResource {
             partOf.addAll(chargeItem.partOf);
             code = chargeItem.code;
             subject = chargeItem.subject;
-            context = chargeItem.context;
+            encounter = chargeItem.encounter;
             occurrence = chargeItem.occurrence;
             performer.addAll(chargeItem.performer);
             performingOrganization = chargeItem.performingOrganization;
@@ -1687,14 +1661,14 @@ public class ChargeItem extends DomainResource {
             costCenter = chargeItem.costCenter;
             quantity = chargeItem.quantity;
             bodysite.addAll(chargeItem.bodysite);
-            factorOverride = chargeItem.factorOverride;
-            priceOverride = chargeItem.priceOverride;
+            unitPriceComponent = chargeItem.unitPriceComponent;
+            totalPriceComponent = chargeItem.totalPriceComponent;
             overrideReason = chargeItem.overrideReason;
             enterer = chargeItem.enterer;
             enteredDate = chargeItem.enteredDate;
             reason.addAll(chargeItem.reason);
             service.addAll(chargeItem.service);
-            product = chargeItem.product;
+            product.addAll(chargeItem.product);
             account.addAll(chargeItem.account);
             note.addAll(chargeItem.note);
             supportingInformation.addAll(chargeItem.supportingInformation);
@@ -1713,7 +1687,7 @@ public class ChargeItem extends DomainResource {
             valueSet = "http://hl7.org/fhir/ValueSet/performer-role"
         )
         private final CodeableConcept function;
-        @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient", "Device", "RelatedPerson" })
+        @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "HealthcareService", "CareTeam", "Patient", "Device", "RelatedPerson" })
         @Required
         private final Reference actor;
 
@@ -1834,7 +1808,7 @@ public class ChargeItem extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1854,7 +1828,7 @@ public class ChargeItem extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1879,7 +1853,7 @@ public class ChargeItem extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1904,7 +1878,7 @@ public class ChargeItem extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1952,6 +1926,7 @@ public class ChargeItem extends DomainResource {
              * <li>{@link Practitioner}</li>
              * <li>{@link PractitionerRole}</li>
              * <li>{@link Organization}</li>
+             * <li>{@link HealthcareService}</li>
              * <li>{@link CareTeam}</li>
              * <li>{@link Patient}</li>
              * <li>{@link Device}</li>
@@ -1994,7 +1969,7 @@ public class ChargeItem extends DomainResource {
             protected void validate(Performer performer) {
                 super.validate(performer);
                 ValidationSupport.requireNonNull(performer.actor, "actor");
-                ValidationSupport.checkReferenceType(performer.actor, "actor", "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient", "Device", "RelatedPerson");
+                ValidationSupport.checkReferenceType(performer.actor, "actor", "Practitioner", "PractitionerRole", "Organization", "HealthcareService", "CareTeam", "Patient", "Device", "RelatedPerson");
                 ValidationSupport.requireValueOrChildren(performer);
             }
 

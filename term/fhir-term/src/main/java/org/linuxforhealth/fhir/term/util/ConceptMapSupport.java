@@ -21,9 +21,6 @@ public final class ConceptMapSupport {
         return conceptMap.getGroup().stream()
                 .filter(group -> group.getSource() != null)
                 .filter(group -> group.getSource().equals(coding.getSystem()))
-                .filter(group -> group.getSourceVersion() == null ||
-                    coding.getVersion() == null ||
-                    group.getSourceVersion().equals(coding.getVersion()))
                 .map(group -> group.toBuilder()
                     .element(group.getElement().stream()
                         .filter(element -> element.getCode() != null)

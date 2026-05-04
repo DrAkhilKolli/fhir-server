@@ -92,7 +92,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Rule",
     location = "Timing.repeat",
     description = "If there's an offset, there must be a when (and not C, CM, CD, CV)",
-    expression = "offset.empty() or (when.exists() and ((when in ('C' | 'CM' | 'CD' | 'CV')).not()))",
+    expression = "offset.empty() or (when.exists() and when.select($this in ('C' | 'CM' | 'CD' | 'CV')).allFalse())",
     source = "http://hl7.org/fhir/StructureDefinition/Timing"
 )
 @Constraint(
@@ -113,7 +113,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Timing extends BackboneElement {
+public class Timing extends BackboneType {
     @Summary
     private final List<DateTime> event;
     @Summary
@@ -122,6 +122,7 @@ public class Timing extends BackboneElement {
     @Binding(
         bindingName = "TimingAbbreviation",
         strength = BindingStrength.Value.PREFERRED,
+        description = "Code for a known / defined timing pattern.",
         valueSet = "http://hl7.org/fhir/ValueSet/timing-abbreviation"
     )
     private final CodeableConcept code;
@@ -237,7 +238,7 @@ public class Timing extends BackboneElement {
         return new Builder();
     }
 
-    public static class Builder extends BackboneElement.Builder {
+    public static class Builder extends BackboneType.Builder {
         private List<DateTime> event = new ArrayList<>();
         private Repeat repeat;
         private CodeableConcept code;
@@ -263,7 +264,7 @@ public class Timing extends BackboneElement {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -283,7 +284,7 @@ public class Timing extends BackboneElement {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -308,7 +309,7 @@ public class Timing extends BackboneElement {
          * May be used to represent additional information that is not part of the basic definition of the element and that 
          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
          * extension. Applications processing a resource are required to check for modifier extensions.
          * 
@@ -333,7 +334,7 @@ public class Timing extends BackboneElement {
          * May be used to represent additional information that is not part of the basic definition of the element and that 
          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
          * extension. Applications processing a resource are required to check for modifier extensions.
          * 
@@ -418,7 +419,7 @@ public class Timing extends BackboneElement {
          * code).
          * 
          * @param code
-         *     BID | TID | QID | AM | PM | QD | QOD | +
+         *     C | BID | TID | QID | AM | PM | QD | QOD | +
          * 
          * @return
          *     A reference to this Builder instance
@@ -466,7 +467,7 @@ public class Timing extends BackboneElement {
     public static class Repeat extends BackboneElement {
         @Summary
         @Choice({ Duration.class, Range.class, Period.class })
-        private final Element bounds;
+        private final org.linuxforhealth.fhir.model.type.Element bounds;
         @Summary
         private final PositiveInt count;
         @Summary
@@ -479,7 +480,8 @@ public class Timing extends BackboneElement {
         @Binding(
             bindingName = "UnitsOfTime",
             strength = BindingStrength.Value.REQUIRED,
-            valueSet = "http://hl7.org/fhir/ValueSet/units-of-time|4.3.0"
+            description = "A unit of time (units from UCUM).",
+            valueSet = "http://hl7.org/fhir/ValueSet/units-of-time|5.0.0"
         )
         private final UnitsOfTime durationUnit;
         @Summary
@@ -494,14 +496,15 @@ public class Timing extends BackboneElement {
         @Binding(
             bindingName = "UnitsOfTime",
             strength = BindingStrength.Value.REQUIRED,
-            valueSet = "http://hl7.org/fhir/ValueSet/units-of-time|4.3.0"
+            description = "A unit of time (units from UCUM).",
+            valueSet = "http://hl7.org/fhir/ValueSet/units-of-time|5.0.0"
         )
         private final UnitsOfTime periodUnit;
         @Summary
         @Binding(
             bindingName = "DayOfWeek",
             strength = BindingStrength.Value.REQUIRED,
-            valueSet = "http://hl7.org/fhir/ValueSet/days-of-week|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/days-of-week|5.0.0"
         )
         private final List<DayOfWeek> dayOfWeek;
         @Summary
@@ -510,7 +513,8 @@ public class Timing extends BackboneElement {
         @Binding(
             bindingName = "EventTiming",
             strength = BindingStrength.Value.REQUIRED,
-            valueSet = "http://hl7.org/fhir/ValueSet/event-timing|4.3.0"
+            description = "Real-world event relating to the schedule.",
+            valueSet = "http://hl7.org/fhir/ValueSet/event-timing|5.0.0"
         )
         private final List<EventTiming> when;
         @Summary
@@ -542,7 +546,7 @@ public class Timing extends BackboneElement {
          * @return
          *     An immutable object of type {@link Duration}, {@link Range} or {@link Period} that may be null.
          */
-        public Element getBounds() {
+        public org.linuxforhealth.fhir.model.type.Element getBounds() {
             return bounds;
         }
 
@@ -590,7 +594,8 @@ public class Timing extends BackboneElement {
         }
 
         /**
-         * The units of time for the duration, in UCUM units.
+         * The units of time for the duration, in UCUM units
+         * Normal practice is to use the 'mo' code as a calendar month when calculating the next occurrence.
          * 
          * @return
          *     An immutable object of type {@link UnitsOfTime} that may be null.
@@ -645,7 +650,8 @@ public class Timing extends BackboneElement {
         }
 
         /**
-         * The units of time for the period in UCUM units.
+         * The units of time for the period in UCUM units
+         * Normal practice is to use the 'mo' code as a calendar month when calculating the next occurrence.
          * 
          * @return
          *     An immutable object of type {@link UnitsOfTime} that may be null.
@@ -815,7 +821,7 @@ public class Timing extends BackboneElement {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private Element bounds;
+            private org.linuxforhealth.fhir.model.type.Element bounds;
             private PositiveInt count;
             private PositiveInt countMax;
             private Decimal duration;
@@ -852,7 +858,7 @@ public class Timing extends BackboneElement {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -872,7 +878,7 @@ public class Timing extends BackboneElement {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -961,7 +967,7 @@ public class Timing extends BackboneElement {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder bounds(Element bounds) {
+            public Builder bounds(org.linuxforhealth.fhir.model.type.Element bounds) {
                 this.bounds = bounds;
                 return this;
             }
@@ -1026,7 +1032,8 @@ public class Timing extends BackboneElement {
             }
 
             /**
-             * The units of time for the duration, in UCUM units.
+             * The units of time for the duration, in UCUM units
+             * Normal practice is to use the 'mo' code as a calendar month when calculating the next occurrence.
              * 
              * @param durationUnit
              *     s | min | h | d | wk | mo | a - unit of time (UCUM)
@@ -1044,7 +1051,7 @@ public class Timing extends BackboneElement {
              * indicates the lower bound of the allowed range of the frequency.
              * 
              * @param frequency
-             *     Event occurs frequency times per period
+             *     Indicates the number of repetitions that should occur within a period. I.e. Event occurs frequency times per period
              * 
              * @return
              *     A reference to this Builder instance
@@ -1075,7 +1082,7 @@ public class Timing extends BackboneElement {
              * allowed range of the period length.
              * 
              * @param period
-             *     Event occurs frequency times per period
+             *     The duration to which the frequency applies. I.e. Event occurs frequency times per period
              * 
              * @return
              *     A reference to this Builder instance
@@ -1101,7 +1108,8 @@ public class Timing extends BackboneElement {
             }
 
             /**
-             * The units of time for the period in UCUM units.
+             * The units of time for the period in UCUM units
+             * Normal practice is to use the 'mo' code as a calendar month when calculating the next occurrence.
              * 
              * @param periodUnit
              *     s | min | h | d | wk | mo | a - unit of time (UCUM)

@@ -51,6 +51,7 @@ import org.linuxforhealth.fhir.model.test.TestUtil;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.DateTime;
@@ -267,7 +268,7 @@ public class SearchRevIncludeTest extends FHIRServerTestBase {
                 .status(ProcedureStatus.COMPLETED)
                 .subject(Reference.builder().reference(of("Patient/" + patient2Id)).build())
                 .basedOn(Reference.builder().reference(of("CarePlan/" + tag)).build())
-                .performed(DateTime.of(now.toString()))
+                .occurrence(DateTime.of(now.toString()))
                 .instantiatesUri(Uri.of("1" + tag))
                 .code(CodeableConcept.builder().coding(Coding.builder().code(Code.of("1" + tag)).build()).build())
                 .build();
@@ -298,7 +299,7 @@ public class SearchRevIncludeTest extends FHIRServerTestBase {
                 .status(ProcedureStatus.COMPLETED)
                 .subject(Reference.builder().reference(of("Patient/" + patient2Id)).build())
                 .basedOn(Reference.builder().reference(of("ServiceRequest/" + tag)).build())
-                .performed(DateTime.of(now.toString()))
+                .occurrence(DateTime.of(now.toString()))
                 .instantiatesUri(Uri.of("2" + tag))
                 .code(CodeableConcept.builder().coding(Coding.builder().code(Code.of("2" + tag)).build()).build())
                 .build();
@@ -328,7 +329,7 @@ public class SearchRevIncludeTest extends FHIRServerTestBase {
         procedure = procedure.toBuilder()
                 .status(ProcedureStatus.COMPLETED)
                 .performer(Performer.builder().actor(Reference.builder().reference(of("Patient/" + patient2Id)).build()).build())
-                .performed(DateTime.of(now.toString()))
+                .occurrence(DateTime.of(now.toString()))
                 .instantiatesUri(Uri.of("3" + tag))
                 .code(CodeableConcept.builder().coding(Coding.builder().code(Code.of("3" + tag)).build()).build())
                 .build();
@@ -358,7 +359,7 @@ public class SearchRevIncludeTest extends FHIRServerTestBase {
         procedure = procedure.toBuilder()
                 .status(ProcedureStatus.COMPLETED)
                 .subject(Reference.builder().reference(of("Patient/" + patient1Id)).build())
-                .performed(DateTime.of(now.toString()))
+                .occurrence(DateTime.of(now.toString()))
                 .instantiatesUri(Uri.of("4" + tag))
                 .code(CodeableConcept.builder().coding(Coding.builder().code(Code.of("4" + tag)).build()).build())
                 .build();
@@ -389,11 +390,11 @@ public class SearchRevIncludeTest extends FHIRServerTestBase {
         procedure = procedure.toBuilder()
                 .status(ProcedureStatus.COMPLETED)
                 .subject(Reference.builder().reference(of("Patient/" + patient3Id)).build())
-                .performed(DateTime.of(now.toString()))
+                .occurrence(DateTime.of(now.toString()))
                 .instantiatesUri(Uri.of("5" + tag))
                 .code(CodeableConcept.builder().coding(Coding.builder().code(Code.of("5" + tag)).build()).build())
                 .partOf(Reference.builder().reference(of("Procedure/" + procedure2Id)).build())
-                .reasonReference(Reference.builder().reference(of("Procedure/" + procedure2Id)).build())
+                .reason(CodeableReference.builder().reference(Reference.builder().reference(of("Procedure/" + procedure2Id)).build()).build())
                 .build();
 
         // Call the 'create' API.
@@ -419,7 +420,7 @@ public class SearchRevIncludeTest extends FHIRServerTestBase {
         // Build a new Encounter and add subject reference to patient.
         Encounter encounter = TestUtil.getMinimalResource(Encounter.class);
         encounter = encounter.toBuilder()
-                .status(EncounterStatus.FINISHED)
+                .status(EncounterStatus.COMPLETED)
                 .subject(Reference.builder().reference(of("Patient/" + patient2Id)).build())
                 .build();
 
@@ -447,7 +448,7 @@ public class SearchRevIncludeTest extends FHIRServerTestBase {
                 .status(NutritionOrderStatus.ACTIVE)
                 .intent(NutritionOrderIntent.DIRECTIVE)
                 .dateTime(DateTime.of(now.toString()))
-                .patient(Reference.builder().reference(of("Patient/" + patient3Id)).build())
+                .subject(Reference.builder().reference(of("Patient/" + patient3Id)).build())
                 .build();
 
         String uuid = UUID.randomUUID().toString();

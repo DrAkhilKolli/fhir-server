@@ -76,7 +76,7 @@ public class ImportOperationDefinitionGenerator {
         opBuilder.use(OperationParameterUse.IN);
         opBuilder.min(org.linuxforhealth.fhir.model.type.Integer.of(1));
         opBuilder.max(string("1"));
-        opBuilder.documentation(string(
+        opBuilder.documentation(Markdown.of(
                 "The format of the imported content. Servers SHALL support Newline Delimited JSON with a format type of application/fhir+ndjson but MAY choose to support additional input formats."));
         opBuilder.type(FHIRAllTypes.STRING);
         parameters.add(opBuilder.build());
@@ -86,7 +86,7 @@ public class ImportOperationDefinitionGenerator {
         opBuilder.use(OperationParameterUse.IN);
         opBuilder.min(org.linuxforhealth.fhir.model.type.Integer.of(1));
         opBuilder.max(string("1"));
-        opBuilder.documentation(string(
+        opBuilder.documentation(Markdown.of(
                 "URI for tracking this set of imported data throughout its lifecycle. MAY be used to specify a FHIR endpoint that can by the importing system when matching references to previously imported data."));
         opBuilder.type(FHIRAllTypes.URI);
         parameters.add(opBuilder.build());
@@ -96,14 +96,14 @@ public class ImportOperationDefinitionGenerator {
         opBuilder.use(OperationParameterUse.IN);
         opBuilder.min(org.linuxforhealth.fhir.model.type.Integer.of(1));
         opBuilder.max(string("*"));
-        opBuilder.documentation(string("a set of parameters with input types, urls as extensions"));
+        opBuilder.documentation(Markdown.of("a set of parameters with input types, urls as extensions"));
 
         OperationDefinition.Parameter part1 =
                 OperationDefinition.Parameter.builder()
                         .name(Code.code("type"))
                         .min(org.linuxforhealth.fhir.model.type.Integer.of(1))
                         .max(string("1"))
-                        .documentation(string("FHIR resource type"))
+                        .documentation(Markdown.of("FHIR resource type"))
                         .type(FHIRAllTypes.STRING)
                         .use(OperationParameterUse.IN)
                         .build();
@@ -113,7 +113,7 @@ public class ImportOperationDefinitionGenerator {
                         .name(Code.code("url"))
                         .min(org.linuxforhealth.fhir.model.type.Integer.of(1))
                         .max(string("1"))
-                        .documentation(string(
+                        .documentation(Markdown.of(
                                 "Path to bulk data file of the type reflected in inputFormat containing FHIR resources"))
                         .type(FHIRAllTypes.URL)
                         .use(OperationParameterUse.IN)
@@ -128,14 +128,14 @@ public class ImportOperationDefinitionGenerator {
         opBuilder.type(FHIRAllTypes.STRING);
         opBuilder.min(org.linuxforhealth.fhir.model.type.Integer.of(1));
         opBuilder.max(string("1"));
-        opBuilder.documentation(string("The type of storage input"));
+        opBuilder.documentation(Markdown.of("The type of storage input"));
 
         OperationDefinition.Parameter part4 =
                 OperationDefinition.Parameter.builder()
                         .name(Code.code("contentEncoding"))
                         .min(org.linuxforhealth.fhir.model.type.Integer.of(0))
                         .max(string("*"))
-                        .documentation(string("Content Encoding for the specific type of storage"))
+                        .documentation(Markdown.of("Content Encoding for the specific type of storage"))
                         .type(FHIRAllTypes.STRING)
                         .use(OperationParameterUse.IN)
                         .build();
@@ -145,7 +145,7 @@ public class ImportOperationDefinitionGenerator {
                         .name(Code.code("type"))
                         .min(org.linuxforhealth.fhir.model.type.Integer.of(1))
                         .max(string("1"))
-                        .documentation(string(
+                        .documentation(Markdown.of(
                                 "Parameters depending on type:"))
                         .type(FHIRAllTypes.STRING)
                         .use(OperationParameterUse.IN)

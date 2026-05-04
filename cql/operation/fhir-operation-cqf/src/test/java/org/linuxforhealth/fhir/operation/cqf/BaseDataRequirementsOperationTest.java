@@ -38,7 +38,7 @@ import org.linuxforhealth.fhir.model.type.Attachment;
 import org.linuxforhealth.fhir.model.type.Base64Binary;
 import org.linuxforhealth.fhir.model.type.DataRequirement;
 import org.linuxforhealth.fhir.model.type.ParameterDefinition;
-import org.linuxforhealth.fhir.model.type.code.FHIRAllTypes;
+import org.linuxforhealth.fhir.model.type.code.FHIRTypes;
 import org.linuxforhealth.fhir.model.type.code.ParameterUse;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
 import org.linuxforhealth.fhir.model.type.code.RelatedArtifactType;
@@ -114,10 +114,10 @@ public abstract class BaseDataRequirementsOperationTest {
             .relatedArtifact( relatedArtifact(RelatedArtifactType.DEPENDS_ON, modelInfo.getUrl(), modelInfo.getVersion()) )
             .relatedArtifact( relatedArtifact(RelatedArtifactType.DEPENDS_ON, fhirHelpers.getUrl(), fhirHelpers.getVersion()) )
             .relatedArtifact( relatedArtifact(RelatedArtifactType.DEPENDS_ON, sde.getUrl(), sde.getVersion()) )
-            .parameter( ParameterDefinition.builder().name(fhircode("Measurement Period")).min(fhirinteger(0)).max(fhirstring("1")).type(FHIRAllTypes.PERIOD).use(ParameterUse.IN).build())
-            .parameter( ParameterDefinition.builder().name(fhircode("Patient")).min(fhirinteger(0)).max(fhirstring("1")).type(FHIRAllTypes.PATIENT).use(ParameterUse.OUT).build() )
-            .parameter( ParameterDefinition.builder().name(fhircode("BirthDate")).min(fhirinteger(0)).max(fhirstring("1")).type(FHIRAllTypes.DATE).use(ParameterUse.OUT).build() )
-            .dataRequirement( DataRequirement.builder().type( FHIRAllTypes.PATIENT ).profile(canonical("http://hl7.org/fhir/StructureDefinition/Patient")).build() );
+            .parameter( ParameterDefinition.builder().name(fhircode("Measurement Period")).min(fhirinteger(0)).max(fhirstring("1")).type(FHIRTypes.PERIOD).use(ParameterUse.IN).build())
+            .parameter( ParameterDefinition.builder().name(fhircode("Patient")).min(fhirinteger(0)).max(fhirstring("1")).type(FHIRTypes.PATIENT).use(ParameterUse.OUT).build() )
+            .parameter( ParameterDefinition.builder().name(fhircode("BirthDate")).min(fhirinteger(0)).max(fhirstring("1")).type(FHIRTypes.DATE).use(ParameterUse.OUT).build() )
+            .dataRequirement( DataRequirement.builder().type( FHIRTypes.PATIENT ).profile(canonical("http://hl7.org/fhir/StructureDefinition/Patient")).build() );
 
         Library primaryLibrary = builder.build();
         return primaryLibrary;
@@ -153,12 +153,12 @@ public abstract class BaseDataRequirementsOperationTest {
         String cql = cqlBuilder.build();
 
         return getTemplateLibrary("SupplementalDataElements", "2.0.0", cql)
-                .parameter( ParameterDefinition.builder().name(fhircode("Patient")).min(fhirinteger(0)).max(fhirstring("1")).type(FHIRAllTypes.PATIENT).use(ParameterUse.OUT).build() )
-                .parameter( ParameterDefinition.builder().name(fhircode("SDE Payer")).min(fhirinteger(0)).max(fhirstring("1")).type(FHIRAllTypes.ANY).use(ParameterUse.OUT).build() )
+                .parameter( ParameterDefinition.builder().name(fhircode("Patient")).min(fhirinteger(0)).max(fhirstring("1")).type(FHIRTypes.PATIENT).use(ParameterUse.OUT).build() )
+                .parameter( ParameterDefinition.builder().name(fhircode("SDE Payer")).min(fhirinteger(0)).max(fhirstring("1")).type(FHIRTypes.BASE).use(ParameterUse.OUT).build() )
                 .relatedArtifact( relatedArtifact( RelatedArtifactType.DEPENDS_ON, URL_BASE + "FHIR-ModelInfo", Constants.FHIR_VERSION) )
                 .relatedArtifact( relatedArtifact( RelatedArtifactType.DEPENDS_ON, URL_BASE + "Library/FHIRHelpers", Constants.FHIR_VERSION) )
-                .dataRequirement( DataRequirement.builder().type( FHIRAllTypes.PATIENT ).profile(canonical("http://hl7.org/fhir/StructureDefinition/Patient")).build() )
-                .dataRequirement( DataRequirement.builder().type( FHIRAllTypes.COVERAGE ).profile(canonical("http://hl7.org/fhir/StructureDefinition/Coverage")).build() )
+                .dataRequirement( DataRequirement.builder().type( FHIRTypes.PATIENT ).profile(canonical("http://hl7.org/fhir/StructureDefinition/Patient")).build() )
+                .dataRequirement( DataRequirement.builder().type( FHIRTypes.COVERAGE ).profile(canonical("http://hl7.org/fhir/StructureDefinition/Coverage")).build() )
                 .build();
 
     }

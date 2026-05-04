@@ -41,6 +41,14 @@ public class DiagnosticReportStatus extends Code {
     public static final DiagnosticReportStatus PRELIMINARY = DiagnosticReportStatus.builder().value(Value.PRELIMINARY).build();
 
     /**
+     * Modified
+     * 
+     * <p>Prior to being final, the report has been modified. This includes any change in the results, diagnosis, narrative 
+     * text, or other content of a non-finalized (e.g., preliminary) report that has been issued.
+     */
+    public static final DiagnosticReportStatus MODIFIED = DiagnosticReportStatus.builder().value(Value.MODIFIED).build();
+
+    /**
      * Final
      * 
      * <p>The report is complete and verified by an authorized person.
@@ -119,6 +127,8 @@ public class DiagnosticReportStatus extends Code {
             return PARTIAL;
         case PRELIMINARY:
             return PRELIMINARY;
+        case MODIFIED:
+            return MODIFIED;
         case FINAL:
             return FINAL;
         case AMENDED:
@@ -287,6 +297,14 @@ public class DiagnosticReportStatus extends Code {
         PRELIMINARY("preliminary"),
 
         /**
+         * Modified
+         * 
+         * <p>Prior to being final, the report has been modified. This includes any change in the results, diagnosis, narrative 
+         * text, or other content of a non-finalized (e.g., preliminary) report that has been issued.
+         */
+        MODIFIED("modified"),
+
+        /**
          * Final
          * 
          * <p>The report is complete and verified by an authorized person.
@@ -376,6 +394,8 @@ public class DiagnosticReportStatus extends Code {
                 return PARTIAL;
             case "preliminary":
                 return PRELIMINARY;
+            case "modified":
+                return MODIFIED;
             case "final":
                 return FINAL;
             case "amended":

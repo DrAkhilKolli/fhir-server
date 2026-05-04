@@ -15,6 +15,7 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
+import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.Required;
@@ -24,9 +25,13 @@ import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
 import org.linuxforhealth.fhir.model.type.DateTime;
+import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
+import org.linuxforhealth.fhir.model.type.Id;
+import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Integer;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
@@ -36,10 +41,10 @@ import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.UsageContext;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.CompartmentCode;
+import org.linuxforhealth.fhir.model.type.code.FHIRTypes;
 import org.linuxforhealth.fhir.model.type.code.GraphCompartmentRule;
 import org.linuxforhealth.fhir.model.type.code.GraphCompartmentUse;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
-import org.linuxforhealth.fhir.model.type.code.ResourceTypeCode;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
@@ -48,22 +53,39 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * A formal computable definition of a graph of resources - that is, a coherent set of resources that form a graph by 
  * following references. The Graph Definition resource defines a set and makes rules about the set.
  * 
- * <p>Maturity level: FMM1 (Trial Use)
+ * <p>Maturity level: FMM2 (Trial Use)
  */
 @Maturity(
-    level = 1,
+    level = 2,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "gdf-0",
+    id = "cnl-0",
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
     source = "http://hl7.org/fhir/StructureDefinition/GraphDefinition"
 )
 @Constraint(
-    id = "graphDefinition-1",
+    id = "cnl-1",
+    level = "Warning",
+    location = "GraphDefinition.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
+    source = "http://hl7.org/fhir/StructureDefinition/GraphDefinition"
+)
+@Constraint(
+    id = "graphDefinition-2",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/GraphDefinition",
+    generated = true
+)
+@Constraint(
+    id = "graphDefinition-3",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
@@ -76,16 +98,27 @@ public class GraphDefinition extends DomainResource {
     @Summary
     private final Uri url;
     @Summary
+    private final List<Identifier> identifier;
+    @Summary
     private final String version;
+    @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
     @Summary
     @Required
     private final String name;
+    @Summary
+    private final String title;
     @Summary
     @Binding(
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -109,23 +142,20 @@ public class GraphDefinition extends DomainResource {
     )
     private final List<CodeableConcept> jurisdiction;
     private final Markdown purpose;
-    @Summary
-    @Binding(
-        bindingName = "ResourceType",
-        strength = BindingStrength.Value.REQUIRED,
-        description = "One of the resource types defined as part of this version of FHIR.",
-        valueSet = "http://hl7.org/fhir/ValueSet/resource-types|4.3.0"
-    )
-    @Required
-    private final ResourceTypeCode start;
-    private final Canonical profile;
+    private final Markdown copyright;
+    private final String copyrightLabel;
+    private final Id start;
+    private final List<Node> node;
     private final List<Link> link;
 
     private GraphDefinition(Builder builder) {
         super(builder);
         url = builder.url;
+        identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
+        title = builder.title;
         status = builder.status;
         experimental = builder.experimental;
         date = builder.date;
@@ -135,22 +165,35 @@ public class GraphDefinition extends DomainResource {
         useContext = Collections.unmodifiableList(builder.useContext);
         jurisdiction = Collections.unmodifiableList(builder.jurisdiction);
         purpose = builder.purpose;
+        copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
         start = builder.start;
-        profile = builder.profile;
+        node = Collections.unmodifiableList(builder.node);
         link = Collections.unmodifiableList(builder.link);
     }
 
     /**
      * An absolute URI that is used to identify this graph definition when it is referenced in a specification, model, design 
      * or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address 
-     * at which at which an authoritative instance of this graph definition is (or will be) published. This URL can be the 
-     * target of a canonical reference. It SHALL remain the same when the graph definition is stored on different servers.
+     * at which an authoritative instance of this graph definition is (or will be) published. This URL can be the target of a 
+     * canonical reference. It SHALL remain the same when the graph definition is stored on different servers.
      * 
      * @return
      *     An immutable object of type {@link Uri} that may be null.
      */
     public Uri getUrl() {
         return url;
+    }
+
+    /**
+     * A formal identifier that is used to identify this GraphDefinition when it is represented in other formats, or 
+     * referenced in a specification, model, design or an instance.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
+     */
+    public List<Identifier> getIdentifier() {
+        return identifier;
     }
 
     /**
@@ -167,6 +210,16 @@ public class GraphDefinition extends DomainResource {
     }
 
     /**
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
+    }
+
+    /**
      * A natural language name identifying the graph definition. This name should be usable as an identifier for the module 
      * by machine processing applications such as code generation.
      * 
@@ -175,6 +228,16 @@ public class GraphDefinition extends DomainResource {
      */
     public String getName() {
         return name;
+    }
+
+    /**
+     * A short, descriptive, user-friendly title for the capability statement.
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getTitle() {
+        return title;
     }
 
     /**
@@ -199,9 +262,9 @@ public class GraphDefinition extends DomainResource {
     }
 
     /**
-     * The date (and optionally time) when the graph definition was published. The date must change when the business version 
-     * changes and it must change if the status code changes. In addition, it should change when the substantive content of 
-     * the graph definition changes.
+     * The date (and optionally time) when the graph definition was last significantly changed. The date must change when the 
+     * business version changes and it must change if the status code changes. In addition, it should change when the 
+     * substantive content of the graph definition changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -211,7 +274,7 @@ public class GraphDefinition extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the graph definition.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the graph definition.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -273,23 +336,46 @@ public class GraphDefinition extends DomainResource {
     }
 
     /**
-     * The type of FHIR resource at which instances of this graph start.
+     * A copyright statement relating to the graph definition and/or its contents. Copyright statements are generally legal 
+     * restrictions on the use and publishing of the graph definition.
      * 
      * @return
-     *     An immutable object of type {@link ResourceTypeCode} that is non-null.
+     *     An immutable object of type {@link Markdown} that may be null.
      */
-    public ResourceTypeCode getStart() {
+    public Markdown getCopyright() {
+        return copyright;
+    }
+
+    /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
+    }
+
+    /**
+     * The Node at which instances of this graph start. If there is no nominated start, the graph can start at any of the 
+     * nodes.
+     * 
+     * @return
+     *     An immutable object of type {@link Id} that may be null.
+     */
+    public Id getStart() {
         return start;
     }
 
     /**
-     * The profile that describes the use of the base resource.
+     * Potential target for the link.
      * 
      * @return
-     *     An immutable object of type {@link Canonical} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Node} that may be empty.
      */
-    public Canonical getProfile() {
-        return profile;
+    public List<Node> getNode() {
+        return node;
     }
 
     /**
@@ -306,8 +392,11 @@ public class GraphDefinition extends DomainResource {
     public boolean hasChildren() {
         return super.hasChildren() || 
             (url != null) || 
+            !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
+            (title != null) || 
             (status != null) || 
             (experimental != null) || 
             (date != null) || 
@@ -317,8 +406,10 @@ public class GraphDefinition extends DomainResource {
             !useContext.isEmpty() || 
             !jurisdiction.isEmpty() || 
             (purpose != null) || 
+            (copyright != null) || 
+            (copyrightLabel != null) || 
             (start != null) || 
-            (profile != null) || 
+            !node.isEmpty() || 
             !link.isEmpty();
     }
 
@@ -337,8 +428,11 @@ public class GraphDefinition extends DomainResource {
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(url, "url", visitor);
+                accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
+                accept(title, "title", visitor);
                 accept(status, "status", visitor);
                 accept(experimental, "experimental", visitor);
                 accept(date, "date", visitor);
@@ -348,8 +442,10 @@ public class GraphDefinition extends DomainResource {
                 accept(useContext, "useContext", visitor, UsageContext.class);
                 accept(jurisdiction, "jurisdiction", visitor, CodeableConcept.class);
                 accept(purpose, "purpose", visitor);
+                accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
                 accept(start, "start", visitor);
-                accept(profile, "profile", visitor);
+                accept(node, "node", visitor, Node.class);
                 accept(link, "link", visitor, Link.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
@@ -378,8 +474,11 @@ public class GraphDefinition extends DomainResource {
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(url, other.url) && 
+            Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
+            Objects.equals(title, other.title) && 
             Objects.equals(status, other.status) && 
             Objects.equals(experimental, other.experimental) && 
             Objects.equals(date, other.date) && 
@@ -389,8 +488,10 @@ public class GraphDefinition extends DomainResource {
             Objects.equals(useContext, other.useContext) && 
             Objects.equals(jurisdiction, other.jurisdiction) && 
             Objects.equals(purpose, other.purpose) && 
+            Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
             Objects.equals(start, other.start) && 
-            Objects.equals(profile, other.profile) && 
+            Objects.equals(node, other.node) && 
             Objects.equals(link, other.link);
     }
 
@@ -407,8 +508,11 @@ public class GraphDefinition extends DomainResource {
                 extension, 
                 modifierExtension, 
                 url, 
+                identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
+                title, 
                 status, 
                 experimental, 
                 date, 
@@ -418,8 +522,10 @@ public class GraphDefinition extends DomainResource {
                 useContext, 
                 jurisdiction, 
                 purpose, 
+                copyright, 
+                copyrightLabel, 
                 start, 
-                profile, 
+                node, 
                 link);
             hashCode = result;
         }
@@ -437,8 +543,11 @@ public class GraphDefinition extends DomainResource {
 
     public static class Builder extends DomainResource.Builder {
         private Uri url;
+        private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
+        private String title;
         private PublicationStatus status;
         private Boolean experimental;
         private DateTime date;
@@ -448,8 +557,10 @@ public class GraphDefinition extends DomainResource {
         private List<UsageContext> useContext = new ArrayList<>();
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
         private Markdown purpose;
-        private ResourceTypeCode start;
-        private Canonical profile;
+        private Markdown copyright;
+        private String copyrightLabel;
+        private Id start;
+        private List<Node> node = new ArrayList<>();
         private List<Link> link = new ArrayList<>();
 
         private Builder() {
@@ -534,7 +645,8 @@ public class GraphDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -552,7 +664,8 @@ public class GraphDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -573,7 +686,7 @@ public class GraphDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -593,7 +706,7 @@ public class GraphDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -618,9 +731,9 @@ public class GraphDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -643,9 +756,9 @@ public class GraphDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -670,8 +783,8 @@ public class GraphDefinition extends DomainResource {
         /**
          * An absolute URI that is used to identify this graph definition when it is referenced in a specification, model, design 
          * or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address 
-         * at which at which an authoritative instance of this graph definition is (or will be) published. This URL can be the 
-         * target of a canonical reference. It SHALL remain the same when the graph definition is stored on different servers.
+         * at which an authoritative instance of this graph definition is (or will be) published. This URL can be the target of a 
+         * canonical reference. It SHALL remain the same when the graph definition is stored on different servers.
          * 
          * @param url
          *     Canonical identifier for this graph definition, represented as a URI (globally unique)
@@ -681,6 +794,47 @@ public class GraphDefinition extends DomainResource {
          */
         public Builder url(Uri url) {
             this.url = url;
+            return this;
+        }
+
+        /**
+         * A formal identifier that is used to identify this GraphDefinition when it is represented in other formats, or 
+         * referenced in a specification, model, design or an instance.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param identifier
+         *     Additional identifier for the GraphDefinition (business identifier)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder identifier(Identifier... identifier) {
+            for (Identifier value : identifier) {
+                this.identifier.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A formal identifier that is used to identify this GraphDefinition when it is represented in other formats, or 
+         * referenced in a specification, model, design or an instance.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param identifier
+         *     Additional identifier for the GraphDefinition (business identifier)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder identifier(Collection<Identifier> identifier) {
+            this.identifier = new ArrayList<>(identifier);
             return this;
         }
 
@@ -718,6 +872,42 @@ public class GraphDefinition extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
+            return this;
+        }
+
+        /**
          * Convenience method for setting {@code name}.
          * 
          * <p>This element is required.
@@ -749,6 +939,36 @@ public class GraphDefinition extends DomainResource {
          */
         public Builder name(String name) {
             this.name = name;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code title}.
+         * 
+         * @param title
+         *     Name for this graph definition (human friendly)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #title(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder title(java.lang.String title) {
+            this.title = (title == null) ? null : String.of(title);
+            return this;
+        }
+
+        /**
+         * A short, descriptive, user-friendly title for the capability statement.
+         * 
+         * @param title
+         *     Name for this graph definition (human friendly)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder title(String title) {
+            this.title = title;
             return this;
         }
 
@@ -800,9 +1020,9 @@ public class GraphDefinition extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the graph definition was published. The date must change when the business version 
-         * changes and it must change if the status code changes. In addition, it should change when the substantive content of 
-         * the graph definition changes.
+         * The date (and optionally time) when the graph definition was last significantly changed. The date must change when the 
+         * business version changes and it must change if the status code changes. In addition, it should change when the 
+         * substantive content of the graph definition changes.
          * 
          * @param date
          *     Date last changed
@@ -819,7 +1039,7 @@ public class GraphDefinition extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -832,10 +1052,10 @@ public class GraphDefinition extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the graph definition.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the graph definition.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -995,32 +1215,102 @@ public class GraphDefinition extends DomainResource {
         }
 
         /**
-         * The type of FHIR resource at which instances of this graph start.
+         * A copyright statement relating to the graph definition and/or its contents. Copyright statements are generally legal 
+         * restrictions on the use and publishing of the graph definition.
          * 
-         * <p>This element is required.
-         * 
-         * @param start
-         *     Type of resource at which the graph starts
+         * @param copyright
+         *     Use and/or publishing restrictions
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder start(ResourceTypeCode start) {
+        public Builder copyright(Markdown copyright) {
+            this.copyright = copyright;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
+            return this;
+        }
+
+        /**
+         * The Node at which instances of this graph start. If there is no nominated start, the graph can start at any of the 
+         * nodes.
+         * 
+         * @param start
+         *     Starting Node
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder start(Id start) {
             this.start = start;
             return this;
         }
 
         /**
-         * The profile that describes the use of the base resource.
+         * Potential target for the link.
          * 
-         * @param profile
-         *     Profile on base resource
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param node
+         *     Potential target for the link
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder profile(Canonical profile) {
-            this.profile = profile;
+        public Builder node(Node... node) {
+            for (Node value : node) {
+                this.node.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Potential target for the link.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param node
+         *     Potential target for the link
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder node(Collection<Node> node) {
+            this.node = new ArrayList<>(node);
             return this;
         }
 
@@ -1070,7 +1360,6 @@ public class GraphDefinition extends DomainResource {
          * <ul>
          * <li>name</li>
          * <li>status</li>
-         * <li>start</li>
          * </ul>
          * 
          * @return
@@ -1089,20 +1378,25 @@ public class GraphDefinition extends DomainResource {
 
         protected void validate(GraphDefinition graphDefinition) {
             super.validate(graphDefinition);
+            ValidationSupport.checkList(graphDefinition.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(graphDefinition.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.requireNonNull(graphDefinition.name, "name");
             ValidationSupport.requireNonNull(graphDefinition.status, "status");
             ValidationSupport.checkList(graphDefinition.contact, "contact", ContactDetail.class);
             ValidationSupport.checkList(graphDefinition.useContext, "useContext", UsageContext.class);
             ValidationSupport.checkList(graphDefinition.jurisdiction, "jurisdiction", CodeableConcept.class);
-            ValidationSupport.requireNonNull(graphDefinition.start, "start");
+            ValidationSupport.checkList(graphDefinition.node, "node", Node.class);
             ValidationSupport.checkList(graphDefinition.link, "link", Link.class);
         }
 
         protected Builder from(GraphDefinition graphDefinition) {
             super.from(graphDefinition);
             url = graphDefinition.url;
+            identifier.addAll(graphDefinition.identifier);
             version = graphDefinition.version;
+            versionAlgorithm = graphDefinition.versionAlgorithm;
             name = graphDefinition.name;
+            title = graphDefinition.title;
             status = graphDefinition.status;
             experimental = graphDefinition.experimental;
             date = graphDefinition.date;
@@ -1112,76 +1406,52 @@ public class GraphDefinition extends DomainResource {
             useContext.addAll(graphDefinition.useContext);
             jurisdiction.addAll(graphDefinition.jurisdiction);
             purpose = graphDefinition.purpose;
+            copyright = graphDefinition.copyright;
+            copyrightLabel = graphDefinition.copyrightLabel;
             start = graphDefinition.start;
-            profile = graphDefinition.profile;
+            node.addAll(graphDefinition.node);
             link.addAll(graphDefinition.link);
             return this;
         }
     }
 
     /**
-     * Links this graph makes rules about.
+     * Potential target for the link.
      */
-    public static class Link extends BackboneElement {
-        private final String path;
-        private final String sliceName;
-        private final Integer min;
-        private final String max;
+    public static class Node extends BackboneElement {
+        @Required
+        private final Id nodeId;
         private final String description;
-        private final List<Target> target;
+        @Binding(
+            bindingName = "FHIRTypes",
+            strength = BindingStrength.Value.REQUIRED,
+            description = "A type of resource, or a Reference (from all versions)",
+            valueSet = "http://hl7.org/fhir/ValueSet/version-independent-all-resource-types|5.0.0"
+        )
+        @Required
+        private final FHIRTypes type;
+        private final Canonical profile;
 
-        private Link(Builder builder) {
+        private Node(Builder builder) {
             super(builder);
-            path = builder.path;
-            sliceName = builder.sliceName;
-            min = builder.min;
-            max = builder.max;
+            nodeId = builder.nodeId;
             description = builder.description;
-            target = Collections.unmodifiableList(builder.target);
+            type = builder.type;
+            profile = builder.profile;
         }
 
         /**
-         * A FHIR expression that identifies one of FHIR References to other resources.
+         * Internal ID of node - target for link references.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link Id} that is non-null.
          */
-        public String getPath() {
-            return path;
+        public Id getNodeId() {
+            return nodeId;
         }
 
         /**
-         * Which slice (if profiled).
-         * 
-         * @return
-         *     An immutable object of type {@link String} that may be null.
-         */
-        public String getSliceName() {
-            return sliceName;
-        }
-
-        /**
-         * Minimum occurrences for this link.
-         * 
-         * @return
-         *     An immutable object of type {@link Integer} that may be null.
-         */
-        public Integer getMin() {
-            return min;
-        }
-
-        /**
-         * Maximum occurrences for this link.
-         * 
-         * @return
-         *     An immutable object of type {@link String} that may be null.
-         */
-        public String getMax() {
-            return max;
-        }
-
-        /**
-         * Information about why this link is of interest in this graph definition.
+         * Information about why this node is of interest in this graph definition.
          * 
          * @return
          *     An immutable object of type {@link String} that may be null.
@@ -1191,24 +1461,32 @@ public class GraphDefinition extends DomainResource {
         }
 
         /**
-         * Potential target for the link.
+         * Type of resource this link refers to.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link Target} that may be empty.
+         *     An immutable object of type {@link FHIRTypes} that is non-null.
          */
-        public List<Target> getTarget() {
-            return target;
+        public FHIRTypes getType() {
+            return type;
+        }
+
+        /**
+         * Profile for the target resource.
+         * 
+         * @return
+         *     An immutable object of type {@link Canonical} that may be null.
+         */
+        public Canonical getProfile() {
+            return profile;
         }
 
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                (path != null) || 
-                (sliceName != null) || 
-                (min != null) || 
-                (max != null) || 
+                (nodeId != null) || 
                 (description != null) || 
-                !target.isEmpty();
+                (type != null) || 
+                (profile != null);
         }
 
         @Override
@@ -1220,12 +1498,10 @@ public class GraphDefinition extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(path, "path", visitor);
-                    accept(sliceName, "sliceName", visitor);
-                    accept(min, "min", visitor);
-                    accept(max, "max", visitor);
+                    accept(nodeId, "nodeId", visitor);
                     accept(description, "description", visitor);
-                    accept(target, "target", visitor, Target.class);
+                    accept(type, "type", visitor);
+                    accept(profile, "profile", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -1243,16 +1519,14 @@ public class GraphDefinition extends DomainResource {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            Link other = (Link) obj;
+            Node other = (Node) obj;
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(path, other.path) && 
-                Objects.equals(sliceName, other.sliceName) && 
-                Objects.equals(min, other.min) && 
-                Objects.equals(max, other.max) && 
+                Objects.equals(nodeId, other.nodeId) && 
                 Objects.equals(description, other.description) && 
-                Objects.equals(target, other.target);
+                Objects.equals(type, other.type) && 
+                Objects.equals(profile, other.profile);
         }
 
         @Override
@@ -1262,12 +1536,10 @@ public class GraphDefinition extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    path, 
-                    sliceName, 
-                    min, 
-                    max, 
+                    nodeId, 
                     description, 
-                    target);
+                    type, 
+                    profile);
                 hashCode = result;
             }
             return result;
@@ -1283,12 +1555,10 @@ public class GraphDefinition extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private String path;
-            private String sliceName;
-            private Integer min;
-            private String max;
+            private Id nodeId;
             private String description;
-            private List<Target> target = new ArrayList<>();
+            private FHIRTypes type;
+            private Canonical profile;
 
             private Builder() {
                 super();
@@ -1311,7 +1581,7 @@ public class GraphDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1331,7 +1601,7 @@ public class GraphDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1356,7 +1626,7 @@ public class GraphDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1381,7 +1651,7 @@ public class GraphDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1406,62 +1676,488 @@ public class GraphDefinition extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code path}.
+             * Internal ID of node - target for link references.
              * 
-             * @param path
-             *     Path in the resource that contains the link
+             * <p>This element is required.
+             * 
+             * @param nodeId
+             *     Internal ID - target for link references
              * 
              * @return
              *     A reference to this Builder instance
-             * 
-             * @see #path(org.linuxforhealth.fhir.model.type.String)
              */
-            public Builder path(java.lang.String path) {
-                this.path = (path == null) ? null : String.of(path);
+            public Builder nodeId(Id nodeId) {
+                this.nodeId = nodeId;
                 return this;
             }
 
             /**
-             * A FHIR expression that identifies one of FHIR References to other resources.
+             * Convenience method for setting {@code description}.
              * 
-             * @param path
-             *     Path in the resource that contains the link
+             * @param description
+             *     Why this node is specified
              * 
              * @return
              *     A reference to this Builder instance
+             * 
+             * @see #description(org.linuxforhealth.fhir.model.type.String)
              */
-            public Builder path(String path) {
-                this.path = path;
+            public Builder description(java.lang.String description) {
+                this.description = (description == null) ? null : String.of(description);
                 return this;
             }
 
             /**
-             * Convenience method for setting {@code sliceName}.
+             * Information about why this node is of interest in this graph definition.
              * 
-             * @param sliceName
-             *     Which slice (if profiled)
+             * @param description
+             *     Why this node is specified
              * 
              * @return
              *     A reference to this Builder instance
-             * 
-             * @see #sliceName(org.linuxforhealth.fhir.model.type.String)
              */
-            public Builder sliceName(java.lang.String sliceName) {
-                this.sliceName = (sliceName == null) ? null : String.of(sliceName);
+            public Builder description(String description) {
+                this.description = description;
                 return this;
             }
 
             /**
-             * Which slice (if profiled).
+             * Type of resource this link refers to.
              * 
-             * @param sliceName
-             *     Which slice (if profiled)
+             * <p>This element is required.
+             * 
+             * @param type
+             *     Type of resource this link refers to
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder sliceName(String sliceName) {
-                this.sliceName = sliceName;
+            public Builder type(FHIRTypes type) {
+                this.type = type;
+                return this;
+            }
+
+            /**
+             * Profile for the target resource.
+             * 
+             * @param profile
+             *     Profile for the target resource
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder profile(Canonical profile) {
+                this.profile = profile;
+                return this;
+            }
+
+            /**
+             * Build the {@link Node}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>nodeId</li>
+             * <li>type</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link Node}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Node per the base specification
+             */
+            @Override
+            public Node build() {
+                Node node = new Node(this);
+                if (validating) {
+                    validate(node);
+                }
+                return node;
+            }
+
+            protected void validate(Node node) {
+                super.validate(node);
+                ValidationSupport.requireNonNull(node.nodeId, "nodeId");
+                ValidationSupport.requireNonNull(node.type, "type");
+                ValidationSupport.requireValueOrChildren(node);
+            }
+
+            protected Builder from(Node node) {
+                super.from(node);
+                nodeId = node.nodeId;
+                description = node.description;
+                type = node.type;
+                profile = node.profile;
+                return this;
+            }
+        }
+    }
+
+    /**
+     * Links this graph makes rules about.
+     */
+    public static class Link extends BackboneElement {
+        private final String description;
+        private final Integer min;
+        private final String max;
+        @Required
+        private final Id sourceId;
+        private final String path;
+        private final String sliceName;
+        @Required
+        private final Id targetId;
+        private final String params;
+        private final List<Compartment> compartment;
+
+        private Link(Builder builder) {
+            super(builder);
+            description = builder.description;
+            min = builder.min;
+            max = builder.max;
+            sourceId = builder.sourceId;
+            path = builder.path;
+            sliceName = builder.sliceName;
+            targetId = builder.targetId;
+            params = builder.params;
+            compartment = Collections.unmodifiableList(builder.compartment);
+        }
+
+        /**
+         * Information about why this link is of interest in this graph definition.
+         * 
+         * @return
+         *     An immutable object of type {@link String} that may be null.
+         */
+        public String getDescription() {
+            return description;
+        }
+
+        /**
+         * Minimum occurrences for this link.
+         * 
+         * @return
+         *     An immutable object of type {@link Integer} that may be null.
+         */
+        public Integer getMin() {
+            return min;
+        }
+
+        /**
+         * Maximum occurrences for this link.
+         * 
+         * @return
+         *     An immutable object of type {@link String} that may be null.
+         */
+        public String getMax() {
+            return max;
+        }
+
+        /**
+         * The source node for this link.
+         * 
+         * @return
+         *     An immutable object of type {@link Id} that is non-null.
+         */
+        public Id getSourceId() {
+            return sourceId;
+        }
+
+        /**
+         * A FHIRPath expression that identifies one of FHIR References to other resources.
+         * 
+         * @return
+         *     An immutable object of type {@link String} that may be null.
+         */
+        public String getPath() {
+            return path;
+        }
+
+        /**
+         * Which slice (if profiled).
+         * 
+         * @return
+         *     An immutable object of type {@link String} that may be null.
+         */
+        public String getSliceName() {
+            return sliceName;
+        }
+
+        /**
+         * The target node for this link.
+         * 
+         * @return
+         *     An immutable object of type {@link Id} that is non-null.
+         */
+        public Id getTargetId() {
+            return targetId;
+        }
+
+        /**
+         * A set of parameters to look up.
+         * 
+         * @return
+         *     An immutable object of type {@link String} that may be null.
+         */
+        public String getParams() {
+            return params;
+        }
+
+        /**
+         * Compartment Consistency Rules.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link Compartment} that may be empty.
+         */
+        public List<Compartment> getCompartment() {
+            return compartment;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (description != null) || 
+                (min != null) || 
+                (max != null) || 
+                (sourceId != null) || 
+                (path != null) || 
+                (sliceName != null) || 
+                (targetId != null) || 
+                (params != null) || 
+                !compartment.isEmpty();
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(description, "description", visitor);
+                    accept(min, "min", visitor);
+                    accept(max, "max", visitor);
+                    accept(sourceId, "sourceId", visitor);
+                    accept(path, "path", visitor);
+                    accept(sliceName, "sliceName", visitor);
+                    accept(targetId, "targetId", visitor);
+                    accept(params, "params", visitor);
+                    accept(compartment, "compartment", visitor, Compartment.class);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Link other = (Link) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(description, other.description) && 
+                Objects.equals(min, other.min) && 
+                Objects.equals(max, other.max) && 
+                Objects.equals(sourceId, other.sourceId) && 
+                Objects.equals(path, other.path) && 
+                Objects.equals(sliceName, other.sliceName) && 
+                Objects.equals(targetId, other.targetId) && 
+                Objects.equals(params, other.params) && 
+                Objects.equals(compartment, other.compartment);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    description, 
+                    min, 
+                    max, 
+                    sourceId, 
+                    path, 
+                    sliceName, 
+                    targetId, 
+                    params, 
+                    compartment);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private String description;
+            private Integer min;
+            private String max;
+            private Id sourceId;
+            private String path;
+            private String sliceName;
+            private Id targetId;
+            private String params;
+            private List<Compartment> compartment = new ArrayList<>();
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * Convenience method for setting {@code description}.
+             * 
+             * @param description
+             *     Why this link is specified
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #description(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder description(java.lang.String description) {
+                this.description = (description == null) ? null : String.of(description);
+                return this;
+            }
+
+            /**
+             * Information about why this link is of interest in this graph definition.
+             * 
+             * @param description
+             *     Why this link is specified
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder description(String description) {
+                this.description = description;
                 return this;
             }
 
@@ -1526,62 +2222,154 @@ public class GraphDefinition extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code description}.
+             * The source node for this link.
              * 
-             * @param description
-             *     Why this link is specified
+             * <p>This element is required.
              * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #description(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder description(java.lang.String description) {
-                this.description = (description == null) ? null : String.of(description);
-                return this;
-            }
-
-            /**
-             * Information about why this link is of interest in this graph definition.
-             * 
-             * @param description
-             *     Why this link is specified
+             * @param sourceId
+             *     Source Node for this link
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder description(String description) {
-                this.description = description;
+            public Builder sourceId(Id sourceId) {
+                this.sourceId = sourceId;
                 return this;
             }
 
             /**
-             * Potential target for the link.
+             * Convenience method for setting {@code path}.
+             * 
+             * @param path
+             *     Path in the resource that contains the link
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #path(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder path(java.lang.String path) {
+                this.path = (path == null) ? null : String.of(path);
+                return this;
+            }
+
+            /**
+             * A FHIRPath expression that identifies one of FHIR References to other resources.
+             * 
+             * @param path
+             *     Path in the resource that contains the link
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder path(String path) {
+                this.path = path;
+                return this;
+            }
+
+            /**
+             * Convenience method for setting {@code sliceName}.
+             * 
+             * @param sliceName
+             *     Which slice (if profiled)
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #sliceName(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder sliceName(java.lang.String sliceName) {
+                this.sliceName = (sliceName == null) ? null : String.of(sliceName);
+                return this;
+            }
+
+            /**
+             * Which slice (if profiled).
+             * 
+             * @param sliceName
+             *     Which slice (if profiled)
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder sliceName(String sliceName) {
+                this.sliceName = sliceName;
+                return this;
+            }
+
+            /**
+             * The target node for this link.
+             * 
+             * <p>This element is required.
+             * 
+             * @param targetId
+             *     Target Node for this link
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder targetId(Id targetId) {
+                this.targetId = targetId;
+                return this;
+            }
+
+            /**
+             * Convenience method for setting {@code params}.
+             * 
+             * @param params
+             *     Criteria for reverse lookup
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #params(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder params(java.lang.String params) {
+                this.params = (params == null) ? null : String.of(params);
+                return this;
+            }
+
+            /**
+             * A set of parameters to look up.
+             * 
+             * @param params
+             *     Criteria for reverse lookup
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder params(String params) {
+                this.params = params;
+                return this;
+            }
+
+            /**
+             * Compartment Consistency Rules.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * @param target
-             *     Potential target for the link
+             * @param compartment
+             *     Compartment Consistency Rules
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder target(Target... target) {
-                for (Target value : target) {
-                    this.target.add(value);
+            public Builder compartment(Compartment... compartment) {
+                for (Compartment value : compartment) {
+                    this.compartment.add(value);
                 }
                 return this;
             }
 
             /**
-             * Potential target for the link.
+             * Compartment Consistency Rules.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * @param target
-             *     Potential target for the link
+             * @param compartment
+             *     Compartment Consistency Rules
              * 
              * @return
              *     A reference to this Builder instance
@@ -1589,13 +2377,19 @@ public class GraphDefinition extends DomainResource {
              * @throws NullPointerException
              *     If the passed collection is null
              */
-            public Builder target(Collection<Target> target) {
-                this.target = new ArrayList<>(target);
+            public Builder compartment(Collection<Compartment> compartment) {
+                this.compartment = new ArrayList<>(compartment);
                 return this;
             }
 
             /**
              * Build the {@link Link}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>sourceId</li>
+             * <li>targetId</li>
+             * </ul>
              * 
              * @return
              *     An immutable object of type {@link Link}
@@ -1613,106 +2407,123 @@ public class GraphDefinition extends DomainResource {
 
             protected void validate(Link link) {
                 super.validate(link);
-                ValidationSupport.checkList(link.target, "target", Target.class);
+                ValidationSupport.requireNonNull(link.sourceId, "sourceId");
+                ValidationSupport.requireNonNull(link.targetId, "targetId");
+                ValidationSupport.checkList(link.compartment, "compartment", Compartment.class);
                 ValidationSupport.requireValueOrChildren(link);
             }
 
             protected Builder from(Link link) {
                 super.from(link);
-                path = link.path;
-                sliceName = link.sliceName;
+                description = link.description;
                 min = link.min;
                 max = link.max;
-                description = link.description;
-                target.addAll(link.target);
+                sourceId = link.sourceId;
+                path = link.path;
+                sliceName = link.sliceName;
+                targetId = link.targetId;
+                params = link.params;
+                compartment.addAll(link.compartment);
                 return this;
             }
         }
 
         /**
-         * Potential target for the link.
+         * Compartment Consistency Rules.
          */
-        public static class Target extends BackboneElement {
+        public static class Compartment extends BackboneElement {
             @Binding(
-                bindingName = "ResourceType",
+                bindingName = "GraphCompartmentUse",
                 strength = BindingStrength.Value.REQUIRED,
-                description = "One of the resource types defined as part of this version of FHIR.",
-                valueSet = "http://hl7.org/fhir/ValueSet/resource-types|4.3.0"
+                valueSet = "http://hl7.org/fhir/ValueSet/graph-compartment-use|5.0.0"
             )
             @Required
-            private final ResourceTypeCode type;
-            private final String params;
-            private final Canonical profile;
-            private final List<Compartment> compartment;
-            private final List<GraphDefinition.Link> link;
+            private final GraphCompartmentUse use;
+            @Binding(
+                bindingName = "GraphCompartmentRule",
+                strength = BindingStrength.Value.REQUIRED,
+                valueSet = "http://hl7.org/fhir/ValueSet/graph-compartment-rule|5.0.0"
+            )
+            @Required
+            private final GraphCompartmentRule rule;
+            @Binding(
+                bindingName = "CompartmentCode",
+                strength = BindingStrength.Value.REQUIRED,
+                valueSet = "http://hl7.org/fhir/ValueSet/compartment-type|5.0.0"
+            )
+            @Required
+            private final CompartmentCode code;
+            private final String expression;
+            private final String description;
 
-            private Target(Builder builder) {
+            private Compartment(Builder builder) {
                 super(builder);
-                type = builder.type;
-                params = builder.params;
-                profile = builder.profile;
-                compartment = Collections.unmodifiableList(builder.compartment);
-                link = Collections.unmodifiableList(builder.link);
+                use = builder.use;
+                rule = builder.rule;
+                code = builder.code;
+                expression = builder.expression;
+                description = builder.description;
             }
 
             /**
-             * Type of resource this link refers to.
+             * Defines how the compartment rule is used - whether it it is used to test whether resources are subject to the rule, or 
+             * whether it is a rule that must be followed.
              * 
              * @return
-             *     An immutable object of type {@link ResourceTypeCode} that is non-null.
+             *     An immutable object of type {@link GraphCompartmentUse} that is non-null.
              */
-            public ResourceTypeCode getType() {
-                return type;
+            public GraphCompartmentUse getUse() {
+                return use;
             }
 
             /**
-             * A set of parameters to look up.
+             * identical | matching | different | no-rule | custom.
+             * 
+             * @return
+             *     An immutable object of type {@link GraphCompartmentRule} that is non-null.
+             */
+            public GraphCompartmentRule getRule() {
+                return rule;
+            }
+
+            /**
+             * Identifies the compartment.
+             * 
+             * @return
+             *     An immutable object of type {@link CompartmentCode} that is non-null.
+             */
+            public CompartmentCode getCode() {
+                return code;
+            }
+
+            /**
+             * Custom rule, as a FHIRPath expression.
              * 
              * @return
              *     An immutable object of type {@link String} that may be null.
              */
-            public String getParams() {
-                return params;
+            public String getExpression() {
+                return expression;
             }
 
             /**
-             * Profile for the target resource.
+             * Documentation for FHIRPath expression.
              * 
              * @return
-             *     An immutable object of type {@link Canonical} that may be null.
+             *     An immutable object of type {@link String} that may be null.
              */
-            public Canonical getProfile() {
-                return profile;
-            }
-
-            /**
-             * Compartment Consistency Rules.
-             * 
-             * @return
-             *     An unmodifiable list containing immutable objects of type {@link Compartment} that may be empty.
-             */
-            public List<Compartment> getCompartment() {
-                return compartment;
-            }
-
-            /**
-             * Additional links from target resource.
-             * 
-             * @return
-             *     An unmodifiable list containing immutable objects of type {@link Link} that may be empty.
-             */
-            public List<GraphDefinition.Link> getLink() {
-                return link;
+            public String getDescription() {
+                return description;
             }
 
             @Override
             public boolean hasChildren() {
                 return super.hasChildren() || 
-                    (type != null) || 
-                    (params != null) || 
-                    (profile != null) || 
-                    !compartment.isEmpty() || 
-                    !link.isEmpty();
+                    (use != null) || 
+                    (rule != null) || 
+                    (code != null) || 
+                    (expression != null) || 
+                    (description != null);
             }
 
             @Override
@@ -1724,11 +2535,11 @@ public class GraphDefinition extends DomainResource {
                         accept(id, "id", visitor);
                         accept(extension, "extension", visitor, Extension.class);
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                        accept(type, "type", visitor);
-                        accept(params, "params", visitor);
-                        accept(profile, "profile", visitor);
-                        accept(compartment, "compartment", visitor, Compartment.class);
-                        accept(link, "link", visitor, GraphDefinition.Link.class);
+                        accept(use, "use", visitor);
+                        accept(rule, "rule", visitor);
+                        accept(code, "code", visitor);
+                        accept(expression, "expression", visitor);
+                        accept(description, "description", visitor);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
                     visitor.postVisit(this);
@@ -1746,15 +2557,15 @@ public class GraphDefinition extends DomainResource {
                 if (getClass() != obj.getClass()) {
                     return false;
                 }
-                Target other = (Target) obj;
+                Compartment other = (Compartment) obj;
                 return Objects.equals(id, other.id) && 
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
-                    Objects.equals(type, other.type) && 
-                    Objects.equals(params, other.params) && 
-                    Objects.equals(profile, other.profile) && 
-                    Objects.equals(compartment, other.compartment) && 
-                    Objects.equals(link, other.link);
+                    Objects.equals(use, other.use) && 
+                    Objects.equals(rule, other.rule) && 
+                    Objects.equals(code, other.code) && 
+                    Objects.equals(expression, other.expression) && 
+                    Objects.equals(description, other.description);
             }
 
             @Override
@@ -1764,11 +2575,11 @@ public class GraphDefinition extends DomainResource {
                     result = Objects.hash(id, 
                         extension, 
                         modifierExtension, 
-                        type, 
-                        params, 
-                        profile, 
-                        compartment, 
-                        link);
+                        use, 
+                        rule, 
+                        code, 
+                        expression, 
+                        description);
                     hashCode = result;
                 }
                 return result;
@@ -1784,11 +2595,11 @@ public class GraphDefinition extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private ResourceTypeCode type;
-                private String params;
-                private Canonical profile;
-                private List<Compartment> compartment = new ArrayList<>();
-                private List<GraphDefinition.Link> link = new ArrayList<>();
+                private GraphCompartmentUse use;
+                private GraphCompartmentRule rule;
+                private CompartmentCode code;
+                private String expression;
+                private String description;
 
                 private Builder() {
                     super();
@@ -1811,7 +2622,7 @@ public class GraphDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1831,7 +2642,7 @@ public class GraphDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1856,7 +2667,7 @@ public class GraphDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -1881,7 +2692,7 @@ public class GraphDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -1906,625 +2717,154 @@ public class GraphDefinition extends DomainResource {
                 }
 
                 /**
-                 * Type of resource this link refers to.
-                 * 
-                 * <p>This element is required.
-                 * 
-                 * @param type
-                 *     Type of resource this link refers to
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder type(ResourceTypeCode type) {
-                    this.type = type;
-                    return this;
-                }
-
-                /**
-                 * Convenience method for setting {@code params}.
-                 * 
-                 * @param params
-                 *     Criteria for reverse lookup
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @see #params(org.linuxforhealth.fhir.model.type.String)
-                 */
-                public Builder params(java.lang.String params) {
-                    this.params = (params == null) ? null : String.of(params);
-                    return this;
-                }
-
-                /**
-                 * A set of parameters to look up.
-                 * 
-                 * @param params
-                 *     Criteria for reverse lookup
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder params(String params) {
-                    this.params = params;
-                    return this;
-                }
-
-                /**
-                 * Profile for the target resource.
-                 * 
-                 * @param profile
-                 *     Profile for the target resource
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder profile(Canonical profile) {
-                    this.profile = profile;
-                    return this;
-                }
-
-                /**
-                 * Compartment Consistency Rules.
-                 * 
-                 * <p>Adds new element(s) to the existing list.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param compartment
-                 *     Compartment Consistency Rules
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder compartment(Compartment... compartment) {
-                    for (Compartment value : compartment) {
-                        this.compartment.add(value);
-                    }
-                    return this;
-                }
-
-                /**
-                 * Compartment Consistency Rules.
-                 * 
-                 * <p>Replaces the existing list with a new one containing elements from the Collection.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param compartment
-                 *     Compartment Consistency Rules
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @throws NullPointerException
-                 *     If the passed collection is null
-                 */
-                public Builder compartment(Collection<Compartment> compartment) {
-                    this.compartment = new ArrayList<>(compartment);
-                    return this;
-                }
-
-                /**
-                 * Additional links from target resource.
-                 * 
-                 * <p>Adds new element(s) to the existing list.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param link
-                 *     Additional links from target resource
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder link(GraphDefinition.Link... link) {
-                    for (GraphDefinition.Link value : link) {
-                        this.link.add(value);
-                    }
-                    return this;
-                }
-
-                /**
-                 * Additional links from target resource.
-                 * 
-                 * <p>Replaces the existing list with a new one containing elements from the Collection.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param link
-                 *     Additional links from target resource
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @throws NullPointerException
-                 *     If the passed collection is null
-                 */
-                public Builder link(Collection<GraphDefinition.Link> link) {
-                    this.link = new ArrayList<>(link);
-                    return this;
-                }
-
-                /**
-                 * Build the {@link Target}
-                 * 
-                 * <p>Required elements:
-                 * <ul>
-                 * <li>type</li>
-                 * </ul>
-                 * 
-                 * @return
-                 *     An immutable object of type {@link Target}
-                 * @throws IllegalStateException
-                 *     if the current state cannot be built into a valid Target per the base specification
-                 */
-                @Override
-                public Target build() {
-                    Target target = new Target(this);
-                    if (validating) {
-                        validate(target);
-                    }
-                    return target;
-                }
-
-                protected void validate(Target target) {
-                    super.validate(target);
-                    ValidationSupport.requireNonNull(target.type, "type");
-                    ValidationSupport.checkList(target.compartment, "compartment", Compartment.class);
-                    ValidationSupport.checkList(target.link, "link", GraphDefinition.Link.class);
-                    ValidationSupport.requireValueOrChildren(target);
-                }
-
-                protected Builder from(Target target) {
-                    super.from(target);
-                    type = target.type;
-                    params = target.params;
-                    profile = target.profile;
-                    compartment.addAll(target.compartment);
-                    link.addAll(target.link);
-                    return this;
-                }
-            }
-
-            /**
-             * Compartment Consistency Rules.
-             */
-            public static class Compartment extends BackboneElement {
-                @Binding(
-                    bindingName = "GraphCompartmentUse",
-                    strength = BindingStrength.Value.REQUIRED,
-                    description = "Defines how a compartment rule is used.",
-                    valueSet = "http://hl7.org/fhir/ValueSet/graph-compartment-use|4.3.0"
-                )
-                @Required
-                private final GraphCompartmentUse use;
-                @Binding(
-                    bindingName = "CompartmentCode",
-                    strength = BindingStrength.Value.REQUIRED,
-                    description = "Identifies a compartment.",
-                    valueSet = "http://hl7.org/fhir/ValueSet/compartment-type|4.3.0"
-                )
-                @Required
-                private final CompartmentCode code;
-                @Binding(
-                    bindingName = "GraphCompartmentRule",
-                    strength = BindingStrength.Value.REQUIRED,
-                    description = "How a compartment must be linked.",
-                    valueSet = "http://hl7.org/fhir/ValueSet/graph-compartment-rule|4.3.0"
-                )
-                @Required
-                private final GraphCompartmentRule rule;
-                private final String expression;
-                private final String description;
-
-                private Compartment(Builder builder) {
-                    super(builder);
-                    use = builder.use;
-                    code = builder.code;
-                    rule = builder.rule;
-                    expression = builder.expression;
-                    description = builder.description;
-                }
-
-                /**
                  * Defines how the compartment rule is used - whether it it is used to test whether resources are subject to the rule, or 
                  * whether it is a rule that must be followed.
                  * 
-                 * @return
-                 *     An immutable object of type {@link GraphCompartmentUse} that is non-null.
-                 */
-                public GraphCompartmentUse getUse() {
-                    return use;
-                }
-
-                /**
-                 * Identifies the compartment.
+                 * <p>This element is required.
+                 * 
+                 * @param use
+                 *     where | requires
                  * 
                  * @return
-                 *     An immutable object of type {@link CompartmentCode} that is non-null.
+                 *     A reference to this Builder instance
                  */
-                public CompartmentCode getCode() {
-                    return code;
+                public Builder use(GraphCompartmentUse use) {
+                    this.use = use;
+                    return this;
                 }
 
                 /**
                  * identical | matching | different | no-rule | custom.
                  * 
+                 * <p>This element is required.
+                 * 
+                 * @param rule
+                 *     identical | matching | different | custom
+                 * 
                  * @return
-                 *     An immutable object of type {@link GraphCompartmentRule} that is non-null.
+                 *     A reference to this Builder instance
                  */
-                public GraphCompartmentRule getRule() {
-                    return rule;
+                public Builder rule(GraphCompartmentRule rule) {
+                    this.rule = rule;
+                    return this;
+                }
+
+                /**
+                 * Identifies the compartment.
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * @param code
+                 *     Patient | Encounter | RelatedPerson | Practitioner | Device | EpisodeOfCare
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder code(CompartmentCode code) {
+                    this.code = code;
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code expression}.
+                 * 
+                 * @param expression
+                 *     Custom rule, as a FHIRPath expression
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #expression(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder expression(java.lang.String expression) {
+                    this.expression = (expression == null) ? null : String.of(expression);
+                    return this;
                 }
 
                 /**
                  * Custom rule, as a FHIRPath expression.
                  * 
+                 * @param expression
+                 *     Custom rule, as a FHIRPath expression
+                 * 
                  * @return
-                 *     An immutable object of type {@link String} that may be null.
+                 *     A reference to this Builder instance
                  */
-                public String getExpression() {
-                    return expression;
+                public Builder expression(String expression) {
+                    this.expression = expression;
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code description}.
+                 * 
+                 * @param description
+                 *     Documentation for FHIRPath expression
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #description(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder description(java.lang.String description) {
+                    this.description = (description == null) ? null : String.of(description);
+                    return this;
                 }
 
                 /**
                  * Documentation for FHIRPath expression.
                  * 
+                 * @param description
+                 *     Documentation for FHIRPath expression
+                 * 
                  * @return
-                 *     An immutable object of type {@link String} that may be null.
+                 *     A reference to this Builder instance
                  */
-                public String getDescription() {
-                    return description;
+                public Builder description(String description) {
+                    this.description = description;
+                    return this;
                 }
 
+                /**
+                 * Build the {@link Compartment}
+                 * 
+                 * <p>Required elements:
+                 * <ul>
+                 * <li>use</li>
+                 * <li>rule</li>
+                 * <li>code</li>
+                 * </ul>
+                 * 
+                 * @return
+                 *     An immutable object of type {@link Compartment}
+                 * @throws IllegalStateException
+                 *     if the current state cannot be built into a valid Compartment per the base specification
+                 */
                 @Override
-                public boolean hasChildren() {
-                    return super.hasChildren() || 
-                        (use != null) || 
-                        (code != null) || 
-                        (rule != null) || 
-                        (expression != null) || 
-                        (description != null);
+                public Compartment build() {
+                    Compartment compartment = new Compartment(this);
+                    if (validating) {
+                        validate(compartment);
+                    }
+                    return compartment;
                 }
 
-                @Override
-                public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-                    if (visitor.preVisit(this)) {
-                        visitor.visitStart(elementName, elementIndex, this);
-                        if (visitor.visit(elementName, elementIndex, this)) {
-                            // visit children
-                            accept(id, "id", visitor);
-                            accept(extension, "extension", visitor, Extension.class);
-                            accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                            accept(use, "use", visitor);
-                            accept(code, "code", visitor);
-                            accept(rule, "rule", visitor);
-                            accept(expression, "expression", visitor);
-                            accept(description, "description", visitor);
-                        }
-                        visitor.visitEnd(elementName, elementIndex, this);
-                        visitor.postVisit(this);
-                    }
+                protected void validate(Compartment compartment) {
+                    super.validate(compartment);
+                    ValidationSupport.requireNonNull(compartment.use, "use");
+                    ValidationSupport.requireNonNull(compartment.rule, "rule");
+                    ValidationSupport.requireNonNull(compartment.code, "code");
+                    ValidationSupport.requireValueOrChildren(compartment);
                 }
 
-                @Override
-                public boolean equals(Object obj) {
-                    if (this == obj) {
-                        return true;
-                    }
-                    if (obj == null) {
-                        return false;
-                    }
-                    if (getClass() != obj.getClass()) {
-                        return false;
-                    }
-                    Compartment other = (Compartment) obj;
-                    return Objects.equals(id, other.id) && 
-                        Objects.equals(extension, other.extension) && 
-                        Objects.equals(modifierExtension, other.modifierExtension) && 
-                        Objects.equals(use, other.use) && 
-                        Objects.equals(code, other.code) && 
-                        Objects.equals(rule, other.rule) && 
-                        Objects.equals(expression, other.expression) && 
-                        Objects.equals(description, other.description);
-                }
-
-                @Override
-                public int hashCode() {
-                    int result = hashCode;
-                    if (result == 0) {
-                        result = Objects.hash(id, 
-                            extension, 
-                            modifierExtension, 
-                            use, 
-                            code, 
-                            rule, 
-                            expression, 
-                            description);
-                        hashCode = result;
-                    }
-                    return result;
-                }
-
-                @Override
-                public Builder toBuilder() {
-                    return new Builder().from(this);
-                }
-
-                public static Builder builder() {
-                    return new Builder();
-                }
-
-                public static class Builder extends BackboneElement.Builder {
-                    private GraphCompartmentUse use;
-                    private CompartmentCode code;
-                    private GraphCompartmentRule rule;
-                    private String expression;
-                    private String description;
-
-                    private Builder() {
-                        super();
-                    }
-
-                    /**
-                     * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-                     * contain spaces.
-                     * 
-                     * @param id
-                     *     Unique id for inter-element referencing
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    @Override
-                    public Builder id(java.lang.String id) {
-                        return (Builder) super.id(id);
-                    }
-
-                    /**
-                     * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-                     * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-                     * of the definition of the extension.
-                     * 
-                     * <p>Adds new element(s) to the existing list.
-                     * If any of the elements are null, calling {@link #build()} will fail.
-                     * 
-                     * @param extension
-                     *     Additional content defined by implementations
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    @Override
-                    public Builder extension(Extension... extension) {
-                        return (Builder) super.extension(extension);
-                    }
-
-                    /**
-                     * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-                     * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-                     * of the definition of the extension.
-                     * 
-                     * <p>Replaces the existing list with a new one containing elements from the Collection.
-                     * If any of the elements are null, calling {@link #build()} will fail.
-                     * 
-                     * @param extension
-                     *     Additional content defined by implementations
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @throws NullPointerException
-                     *     If the passed collection is null
-                     */
-                    @Override
-                    public Builder extension(Collection<Extension> extension) {
-                        return (Builder) super.extension(extension);
-                    }
-
-                    /**
-                     * May be used to represent additional information that is not part of the basic definition of the element and that 
-                     * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-                     * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-                     * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-                     * extension. Applications processing a resource are required to check for modifier extensions.
-                     * 
-                     * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-                     * change the meaning of modifierExtension itself).
-                     * 
-                     * <p>Adds new element(s) to the existing list.
-                     * If any of the elements are null, calling {@link #build()} will fail.
-                     * 
-                     * @param modifierExtension
-                     *     Extensions that cannot be ignored even if unrecognized
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    @Override
-                    public Builder modifierExtension(Extension... modifierExtension) {
-                        return (Builder) super.modifierExtension(modifierExtension);
-                    }
-
-                    /**
-                     * May be used to represent additional information that is not part of the basic definition of the element and that 
-                     * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-                     * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-                     * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-                     * extension. Applications processing a resource are required to check for modifier extensions.
-                     * 
-                     * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-                     * change the meaning of modifierExtension itself).
-                     * 
-                     * <p>Replaces the existing list with a new one containing elements from the Collection.
-                     * If any of the elements are null, calling {@link #build()} will fail.
-                     * 
-                     * @param modifierExtension
-                     *     Extensions that cannot be ignored even if unrecognized
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @throws NullPointerException
-                     *     If the passed collection is null
-                     */
-                    @Override
-                    public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                        return (Builder) super.modifierExtension(modifierExtension);
-                    }
-
-                    /**
-                     * Defines how the compartment rule is used - whether it it is used to test whether resources are subject to the rule, or 
-                     * whether it is a rule that must be followed.
-                     * 
-                     * <p>This element is required.
-                     * 
-                     * @param use
-                     *     condition | requirement
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    public Builder use(GraphCompartmentUse use) {
-                        this.use = use;
-                        return this;
-                    }
-
-                    /**
-                     * Identifies the compartment.
-                     * 
-                     * <p>This element is required.
-                     * 
-                     * @param code
-                     *     Patient | Encounter | RelatedPerson | Practitioner | Device
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    public Builder code(CompartmentCode code) {
-                        this.code = code;
-                        return this;
-                    }
-
-                    /**
-                     * identical | matching | different | no-rule | custom.
-                     * 
-                     * <p>This element is required.
-                     * 
-                     * @param rule
-                     *     identical | matching | different | custom
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    public Builder rule(GraphCompartmentRule rule) {
-                        this.rule = rule;
-                        return this;
-                    }
-
-                    /**
-                     * Convenience method for setting {@code expression}.
-                     * 
-                     * @param expression
-                     *     Custom rule, as a FHIRPath expression
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @see #expression(org.linuxforhealth.fhir.model.type.String)
-                     */
-                    public Builder expression(java.lang.String expression) {
-                        this.expression = (expression == null) ? null : String.of(expression);
-                        return this;
-                    }
-
-                    /**
-                     * Custom rule, as a FHIRPath expression.
-                     * 
-                     * @param expression
-                     *     Custom rule, as a FHIRPath expression
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    public Builder expression(String expression) {
-                        this.expression = expression;
-                        return this;
-                    }
-
-                    /**
-                     * Convenience method for setting {@code description}.
-                     * 
-                     * @param description
-                     *     Documentation for FHIRPath expression
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @see #description(org.linuxforhealth.fhir.model.type.String)
-                     */
-                    public Builder description(java.lang.String description) {
-                        this.description = (description == null) ? null : String.of(description);
-                        return this;
-                    }
-
-                    /**
-                     * Documentation for FHIRPath expression.
-                     * 
-                     * @param description
-                     *     Documentation for FHIRPath expression
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    public Builder description(String description) {
-                        this.description = description;
-                        return this;
-                    }
-
-                    /**
-                     * Build the {@link Compartment}
-                     * 
-                     * <p>Required elements:
-                     * <ul>
-                     * <li>use</li>
-                     * <li>code</li>
-                     * <li>rule</li>
-                     * </ul>
-                     * 
-                     * @return
-                     *     An immutable object of type {@link Compartment}
-                     * @throws IllegalStateException
-                     *     if the current state cannot be built into a valid Compartment per the base specification
-                     */
-                    @Override
-                    public Compartment build() {
-                        Compartment compartment = new Compartment(this);
-                        if (validating) {
-                            validate(compartment);
-                        }
-                        return compartment;
-                    }
-
-                    protected void validate(Compartment compartment) {
-                        super.validate(compartment);
-                        ValidationSupport.requireNonNull(compartment.use, "use");
-                        ValidationSupport.requireNonNull(compartment.code, "code");
-                        ValidationSupport.requireNonNull(compartment.rule, "rule");
-                        ValidationSupport.requireValueOrChildren(compartment);
-                    }
-
-                    protected Builder from(Compartment compartment) {
-                        super.from(compartment);
-                        use = compartment.use;
-                        code = compartment.code;
-                        rule = compartment.rule;
-                        expression = compartment.expression;
-                        description = compartment.description;
-                        return this;
-                    }
+                protected Builder from(Compartment compartment) {
+                    super.from(compartment);
+                    use = compartment.use;
+                    rule = compartment.rule;
+                    code = compartment.code;
+                    expression = compartment.expression;
+                    description = compartment.description;
+                    return this;
                 }
             }
         }

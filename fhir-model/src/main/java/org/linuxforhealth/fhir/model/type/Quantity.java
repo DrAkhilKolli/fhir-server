@@ -32,14 +32,15 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     source = "http://hl7.org/fhir/StructureDefinition/Quantity"
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Quantity extends Element {
+public class Quantity extends DataType {
     @Summary
     protected final Decimal value;
     @Summary
     @Binding(
         bindingName = "QuantityComparator",
         strength = BindingStrength.Value.REQUIRED,
-        valueSet = "http://hl7.org/fhir/ValueSet/quantity-comparator|4.3.0"
+        description = "How the Quantity should be understood and represented.",
+        valueSet = "http://hl7.org/fhir/ValueSet/quantity-comparator|5.0.0"
     )
     protected final QuantityComparator comparator;
     @Summary
@@ -184,7 +185,7 @@ public class Quantity extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         protected Decimal value;
         protected QuantityComparator comparator;
         protected String unit;
@@ -212,7 +213,7 @@ public class Quantity extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -232,7 +233,7 @@ public class Quantity extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -272,7 +273,7 @@ public class Quantity extends Element {
          * due to measurement issues; e.g. if the comparator is "&lt;" , then the real value is &lt; stated value.
          * 
          * @param comparator
-         *     &lt; | &lt;= | &gt;= | &gt; - how to understand the value
+         *     &lt; | &lt;= | &gt;= | &gt; | ad - how to understand the value
          * 
          * @return
          *     A reference to this Builder instance

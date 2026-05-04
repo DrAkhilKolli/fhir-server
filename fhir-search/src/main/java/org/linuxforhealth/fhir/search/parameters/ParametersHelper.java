@@ -25,7 +25,7 @@ import org.linuxforhealth.fhir.config.PropertyGroup;
 import org.linuxforhealth.fhir.config.PropertyGroup.PropertyEntry;
 import org.linuxforhealth.fhir.exception.FHIRException;
 import org.linuxforhealth.fhir.model.resource.SearchParameter;
-import org.linuxforhealth.fhir.model.type.code.ResourceTypeCode;
+import org.linuxforhealth.fhir.model.type.code.FHIRTypes;
 import org.linuxforhealth.fhir.model.type.code.SearchParamType;
 import org.linuxforhealth.fhir.model.util.ModelSupport;
 import org.linuxforhealth.fhir.registry.FHIRRegistry;
@@ -222,7 +222,7 @@ public class ParametersHelper {
         for (SearchParameter sp : getAllSearchParameters()) {
             String code = sp.getCode().getValue();
             // For each resource type this search parameter applies to
-            for (ResourceTypeCode resourceType : sp.getBase()) {
+            for (FHIRTypes resourceType : sp.getBase()) {
 
                 // If this resource type includes a wildcard entry (i.e. includes codes that weren't explicitly configured)
                 if (resourceTypesWithWildcardParams.contains(resourceType.getValue()) && sp.getCode().hasValue()) {
@@ -390,13 +390,13 @@ public class ParametersHelper {
      */
     public static void printSearchParameter(SearchParameter parameter, PrintStream out) {
         String code = parameter.getCode().getValue();
-        List<ResourceTypeCode> types = parameter.getBase();
+        List<FHIRTypes> types = parameter.getBase();
 
         StringBuilder builder = new StringBuilder();
         builder.append(code);
         builder.append(EQUALS);
         builder.append(LEFT);
-        for (ResourceTypeCode type : types) {
+        for (FHIRTypes type : types) {
             builder.append(type.getValue());
             builder.append(COMMA);
         }

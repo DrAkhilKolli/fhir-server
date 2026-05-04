@@ -36,7 +36,8 @@ public class AggregationMode extends Code {
     /**
      * Bundled
      * 
-     * <p>The resource the reference points to will be found in the same bundle as the resource that includes the reference.
+     * <p>When the resource is in a Bundle, the resource the reference points to will be found in the same bundle as the 
+     * resource that includes the reference.
      */
     public static final AggregationMode BUNDLED = AggregationMode.builder().value(Value.BUNDLED).build();
 
@@ -213,7 +214,8 @@ public class AggregationMode extends Code {
         /**
          * Bundled
          * 
-         * <p>The resource the reference points to will be found in the same bundle as the resource that includes the reference.
+         * <p>When the resource is in a Bundle, the resource the reference points to will be found in the same bundle as the 
+         * resource that includes the reference.
          */
         BUNDLED("bundled");
 

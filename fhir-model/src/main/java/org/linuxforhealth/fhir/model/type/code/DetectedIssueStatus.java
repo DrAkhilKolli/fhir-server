@@ -20,69 +20,24 @@ import javax.annotation.Generated;
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class DetectedIssueStatus extends Code {
     /**
-     * Registered
-     * 
-     * <p>The existence of the observation is registered, but there is no result yet available.
-     */
-    public static final DetectedIssueStatus REGISTERED = DetectedIssueStatus.builder().value(Value.REGISTERED).build();
-
-    /**
      * Preliminary
-     * 
-     * <p>This is an initial or interim observation: data may be incomplete or unverified.
      */
     public static final DetectedIssueStatus PRELIMINARY = DetectedIssueStatus.builder().value(Value.PRELIMINARY).build();
 
     /**
      * Final
-     * 
-     * <p>The observation is complete and there are no further actions needed. Additional information such "released", 
-     * "signed", etc would be represented using [Provenance](provenance.html) which provides not only the act but also the 
-     * actors and dates and other related data. These act states would be associated with an observation status of 
-     * `preliminary` until they are all completed and then a status of `final` would be applied.
      */
     public static final DetectedIssueStatus FINAL = DetectedIssueStatus.builder().value(Value.FINAL).build();
 
     /**
-     * Amended
-     * 
-     * <p>Subsequent to being Final, the observation has been modified subsequent. This includes updates/new information and 
-     * corrections.
-     */
-    public static final DetectedIssueStatus AMENDED = DetectedIssueStatus.builder().value(Value.AMENDED).build();
-
-    /**
-     * Corrected
-     * 
-     * <p>Subsequent to being Final, the observation has been modified to correct an error in the test result.
-     */
-    public static final DetectedIssueStatus CORRECTED = DetectedIssueStatus.builder().value(Value.CORRECTED).build();
-
-    /**
-     * Cancelled
-     * 
-     * <p>The observation is unavailable because the measurement was not started or not completed (also sometimes called 
-     * "aborted").
-     */
-    public static final DetectedIssueStatus CANCELLED = DetectedIssueStatus.builder().value(Value.CANCELLED).build();
-
-    /**
      * Entered in Error
-     * 
-     * <p>The observation has been withdrawn following previous final release. This electronic record should never have 
-     * existed, though it is possible that real-world decisions were based on it. (If real-world activity has occurred, the 
-     * status should be "cancelled" rather than "entered-in-error".).
      */
     public static final DetectedIssueStatus ENTERED_IN_ERROR = DetectedIssueStatus.builder().value(Value.ENTERED_IN_ERROR).build();
 
     /**
-     * Unknown
-     * 
-     * <p>The authoring/source system does not know which of the status values currently applies for this observation. Note: 
-     * This concept is not to be used for "other" - one of the listed statuses is presumed to apply, but the authoring/source 
-     * system does not know which.
+     * Mitigated
      */
-    public static final DetectedIssueStatus UNKNOWN = DetectedIssueStatus.builder().value(Value.UNKNOWN).build();
+    public static final DetectedIssueStatus MITIGATED = DetectedIssueStatus.builder().value(Value.MITIGATED).build();
 
     private volatile int hashCode;
 
@@ -102,22 +57,14 @@ public class DetectedIssueStatus extends Code {
      */
     public static DetectedIssueStatus of(Value value) {
         switch (value) {
-        case REGISTERED:
-            return REGISTERED;
         case PRELIMINARY:
             return PRELIMINARY;
         case FINAL:
             return FINAL;
-        case AMENDED:
-            return AMENDED;
-        case CORRECTED:
-            return CORRECTED;
-        case CANCELLED:
-            return CANCELLED;
         case ENTERED_IN_ERROR:
             return ENTERED_IN_ERROR;
-        case UNKNOWN:
-            return UNKNOWN;
+        case MITIGATED:
+            return MITIGATED;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -251,69 +198,24 @@ public class DetectedIssueStatus extends Code {
 
     public enum Value {
         /**
-         * Registered
-         * 
-         * <p>The existence of the observation is registered, but there is no result yet available.
-         */
-        REGISTERED("registered"),
-
-        /**
          * Preliminary
-         * 
-         * <p>This is an initial or interim observation: data may be incomplete or unverified.
          */
         PRELIMINARY("preliminary"),
 
         /**
          * Final
-         * 
-         * <p>The observation is complete and there are no further actions needed. Additional information such "released", 
-         * "signed", etc would be represented using [Provenance](provenance.html) which provides not only the act but also the 
-         * actors and dates and other related data. These act states would be associated with an observation status of 
-         * `preliminary` until they are all completed and then a status of `final` would be applied.
          */
         FINAL("final"),
 
         /**
-         * Amended
-         * 
-         * <p>Subsequent to being Final, the observation has been modified subsequent. This includes updates/new information and 
-         * corrections.
-         */
-        AMENDED("amended"),
-
-        /**
-         * Corrected
-         * 
-         * <p>Subsequent to being Final, the observation has been modified to correct an error in the test result.
-         */
-        CORRECTED("corrected"),
-
-        /**
-         * Cancelled
-         * 
-         * <p>The observation is unavailable because the measurement was not started or not completed (also sometimes called 
-         * "aborted").
-         */
-        CANCELLED("cancelled"),
-
-        /**
          * Entered in Error
-         * 
-         * <p>The observation has been withdrawn following previous final release. This electronic record should never have 
-         * existed, though it is possible that real-world decisions were based on it. (If real-world activity has occurred, the 
-         * status should be "cancelled" rather than "entered-in-error".).
          */
         ENTERED_IN_ERROR("entered-in-error"),
 
         /**
-         * Unknown
-         * 
-         * <p>The authoring/source system does not know which of the status values currently applies for this observation. Note: 
-         * This concept is not to be used for "other" - one of the listed statuses is presumed to apply, but the authoring/source 
-         * system does not know which.
+         * Mitigated
          */
-        UNKNOWN("unknown");
+        MITIGATED("mitigated");
 
         private final java.lang.String value;
 
@@ -344,22 +246,14 @@ public class DetectedIssueStatus extends Code {
                 return null;
             }
             switch (value) {
-            case "registered":
-                return REGISTERED;
             case "preliminary":
                 return PRELIMINARY;
             case "final":
                 return FINAL;
-            case "amended":
-                return AMENDED;
-            case "corrected":
-                return CORRECTED;
-            case "cancelled":
-                return CANCELLED;
             case "entered-in-error":
                 return ENTERED_IN_ERROR;
-            case "unknown":
-                return UNKNOWN;
+            case "mitigated":
+                return MITIGATED;
             default:
                 throw new IllegalArgumentException(value);
             }

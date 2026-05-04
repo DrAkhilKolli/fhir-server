@@ -30,18 +30,19 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "usageContext-0",
     level = "Warning",
     location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/usage-context-type",
-    expression = "code.exists() and code.memberOf('http://hl7.org/fhir/ValueSet/usage-context-type', 'extensible')",
+    description = "SHALL, if possible, contain a code from value set http://terminology.hl7.org/ValueSet/usage-context-type",
+    expression = "code.exists() and code.memberOf('http://terminology.hl7.org/ValueSet/usage-context-type', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/UsageContext",
     generated = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class UsageContext extends Element {
+public class UsageContext extends DataType {
     @Summary
     @Binding(
         bindingName = "UsageContextType",
         strength = BindingStrength.Value.EXTENSIBLE,
-        valueSet = "http://hl7.org/fhir/ValueSet/usage-context-type"
+        description = "A code that specifies a type of context being specified by a usage context.",
+        valueSet = "http://terminology.hl7.org/ValueSet/usage-context-type"
     )
     @Required
     private final Coding code;
@@ -51,10 +52,11 @@ public class UsageContext extends Element {
     @Binding(
         bindingName = "UsageContextValue",
         strength = BindingStrength.Value.EXAMPLE,
+        description = "A code that defines the specific value for the context being specified.",
         valueSet = "http://hl7.org/fhir/ValueSet/use-context"
     )
     @Required
-    private final Element value;
+    private final org.linuxforhealth.fhir.model.type.Element value;
 
     private UsageContext(Builder builder) {
         super(builder);
@@ -80,7 +82,7 @@ public class UsageContext extends Element {
      *     An immutable object of type {@link CodeableConcept}, {@link Quantity}, {@link Range} or {@link Reference} that is non-
      *     null.
      */
-    public Element getValue() {
+    public org.linuxforhealth.fhir.model.type.Element getValue() {
         return value;
     }
 
@@ -147,9 +149,9 @@ public class UsageContext extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private Coding code;
-        private Element value;
+        private org.linuxforhealth.fhir.model.type.Element value;
 
         private Builder() {
             super();
@@ -172,7 +174,7 @@ public class UsageContext extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -192,7 +194,7 @@ public class UsageContext extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -260,7 +262,7 @@ public class UsageContext extends Element {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder value(Element value) {
+        public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
             this.value = value;
             return this;
         }

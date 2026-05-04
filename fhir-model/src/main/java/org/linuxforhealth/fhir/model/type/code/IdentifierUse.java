@@ -22,7 +22,8 @@ public class IdentifierUse extends Code {
     /**
      * Usual
      * 
-     * <p>The identifier recommended for display and use in real-world interactions.
+     * <p>The identifier recommended for display and use in real-world interactions which should be used when such identifier 
+     * is different from the "official" identifier.
      */
     public static final IdentifierUse USUAL = IdentifierUse.builder().value(Value.USUAL).build();
 
@@ -221,7 +222,8 @@ public class IdentifierUse extends Code {
         /**
          * Usual
          * 
-         * <p>The identifier recommended for display and use in real-world interactions.
+         * <p>The identifier recommended for display and use in real-world interactions which should be used when such identifier 
+         * is different from the "official" identifier.
          */
         USUAL("usual"),
 

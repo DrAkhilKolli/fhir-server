@@ -24,6 +24,7 @@ import org.linuxforhealth.fhir.model.type.Annotation;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Extension;
@@ -47,18 +48,18 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * common context. A series is of only one modality (e.g. X-ray, CT, MR, ultrasound), but a study may have multiple 
  * series of different modalities.
  * 
- * <p>Maturity level: FMM3 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 3,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
     id = "imagingStudy-0",
     level = "Warning",
     location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://dicom.nema.org/medical/dicom/current/output/chtml/part16/sect_CID_29.html",
-    expression = "modality.exists() implies (modality.all(memberOf('http://dicom.nema.org/medical/dicom/current/output/chtml/part16/sect_CID_29.html', 'extensible')))",
+    description = "SHALL, if possible, contain a code from value set http://dicom.nema.org/medical/dicom/current/output/chtml/part16/sect_CID_33.html",
+    expression = "modality.exists() implies (modality.all(memberOf('http://dicom.nema.org/medical/dicom/current/output/chtml/part16/sect_CID_33.html', 'extensible')))",
     source = "http://hl7.org/fhir/StructureDefinition/ImagingStudy",
     generated = true
 )
@@ -66,8 +67,8 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "imagingStudy-1",
     level = "Warning",
     location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://www.rsna.org/RadLex_Playbook.aspx",
-    expression = "procedureCode.exists() implies (procedureCode.all(memberOf('http://www.rsna.org/RadLex_Playbook.aspx', 'extensible')))",
+    description = "SHOULD contain a code from value set http://loinc.org/vs/loinc-rsna-radiology-playbook",
+    expression = "procedure.exists() implies (procedure.all(memberOf('http://loinc.org/vs/loinc-rsna-radiology-playbook', 'preferred')))",
     source = "http://hl7.org/fhir/StructureDefinition/ImagingStudy",
     generated = true
 )
@@ -75,8 +76,8 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "imagingStudy-2",
     level = "Warning",
     location = "series.modality",
-    description = "SHALL, if possible, contain a code from value set http://dicom.nema.org/medical/dicom/current/output/chtml/part16/sect_CID_29.html",
-    expression = "$this.memberOf('http://dicom.nema.org/medical/dicom/current/output/chtml/part16/sect_CID_29.html', 'extensible')",
+    description = "SHALL, if possible, contain a code from value set http://dicom.nema.org/medical/dicom/current/output/chtml/part16/sect_CID_33.html",
+    expression = "$this.memberOf('http://dicom.nema.org/medical/dicom/current/output/chtml/part16/sect_CID_33.html', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/ImagingStudy",
     generated = true
 )
@@ -107,7 +108,7 @@ public class ImagingStudy extends DomainResource {
         bindingName = "ImagingStudyStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The status of the ImagingStudy.",
-        valueSet = "http://hl7.org/fhir/ValueSet/imagingstudy-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/imagingstudy-status|5.0.0"
     )
     @Required
     private final ImagingStudyStatus status;
@@ -116,9 +117,9 @@ public class ImagingStudy extends DomainResource {
         bindingName = "ImagingModality",
         strength = BindingStrength.Value.EXTENSIBLE,
         description = "Type of acquired data in the instance.",
-        valueSet = "http://dicom.nema.org/medical/dicom/current/output/chtml/part16/sect_CID_29.html"
+        valueSet = "http://dicom.nema.org/medical/dicom/current/output/chtml/part16/sect_CID_33.html"
     )
-    private final List<Coding> modality;
+    private final List<CodeableConcept> modality;
     @Summary
     @ReferenceTarget({ "Patient", "Device", "Group" })
     @Required
@@ -132,11 +133,11 @@ public class ImagingStudy extends DomainResource {
     @ReferenceTarget({ "CarePlan", "ServiceRequest", "Appointment", "AppointmentResponse", "Task" })
     private final List<Reference> basedOn;
     @Summary
-    @ReferenceTarget({ "Practitioner", "PractitionerRole" })
-    private final Reference referrer;
+    @ReferenceTarget({ "Procedure" })
+    private final List<Reference> partOf;
     @Summary
     @ReferenceTarget({ "Practitioner", "PractitionerRole" })
-    private final List<Reference> interpreter;
+    private final Reference referrer;
     @Summary
     @ReferenceTarget({ "Endpoint" })
     private final List<Reference> endpoint;
@@ -145,16 +146,13 @@ public class ImagingStudy extends DomainResource {
     @Summary
     private final UnsignedInt numberOfInstances;
     @Summary
-    @ReferenceTarget({ "Procedure" })
-    private final Reference procedureReference;
-    @Summary
     @Binding(
         bindingName = "ImagingProcedureCode",
-        strength = BindingStrength.Value.EXTENSIBLE,
+        strength = BindingStrength.Value.PREFERRED,
         description = "Use of RadLex is preferred",
-        valueSet = "http://www.rsna.org/RadLex_Playbook.aspx"
+        valueSet = "http://loinc.org/vs/loinc-rsna-radiology-playbook"
     )
-    private final List<CodeableConcept> procedureCode;
+    private final List<CodeableReference> procedure;
     @Summary
     @ReferenceTarget({ "Location" })
     private final Reference location;
@@ -165,10 +163,7 @@ public class ImagingStudy extends DomainResource {
         description = "The reason for the study.",
         valueSet = "http://hl7.org/fhir/ValueSet/procedure-reason"
     )
-    private final List<CodeableConcept> reasonCode;
-    @Summary
-    @ReferenceTarget({ "Condition", "Observation", "Media", "DiagnosticReport", "DocumentReference" })
-    private final List<Reference> reasonReference;
+    private final List<CodeableReference> reason;
     @Summary
     private final List<Annotation> note;
     @Summary
@@ -185,23 +180,21 @@ public class ImagingStudy extends DomainResource {
         encounter = builder.encounter;
         started = builder.started;
         basedOn = Collections.unmodifiableList(builder.basedOn);
+        partOf = Collections.unmodifiableList(builder.partOf);
         referrer = builder.referrer;
-        interpreter = Collections.unmodifiableList(builder.interpreter);
         endpoint = Collections.unmodifiableList(builder.endpoint);
         numberOfSeries = builder.numberOfSeries;
         numberOfInstances = builder.numberOfInstances;
-        procedureReference = builder.procedureReference;
-        procedureCode = Collections.unmodifiableList(builder.procedureCode);
+        procedure = Collections.unmodifiableList(builder.procedure);
         location = builder.location;
-        reasonCode = Collections.unmodifiableList(builder.reasonCode);
-        reasonReference = Collections.unmodifiableList(builder.reasonReference);
+        reason = Collections.unmodifiableList(builder.reason);
         note = Collections.unmodifiableList(builder.note);
         description = builder.description;
         series = Collections.unmodifiableList(builder.series);
     }
 
     /**
-     * Identifiers for the ImagingStudy such as DICOM Study Instance UID, and Accession Number.
+     * Identifiers for the ImagingStudy such as DICOM Study Instance UID.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
@@ -211,7 +204,8 @@ public class ImagingStudy extends DomainResource {
     }
 
     /**
-     * The current state of the ImagingStudy.
+     * The current state of the ImagingStudy resource. This is not the status of any ServiceRequest or Task resources 
+     * associated with the ImagingStudy.
      * 
      * @return
      *     An immutable object of type {@link ImagingStudyStatus} that is non-null.
@@ -221,13 +215,12 @@ public class ImagingStudy extends DomainResource {
     }
 
     /**
-     * A list of all the series.modality values that are actual acquisition modalities, i.e. those in the DICOM Context Group 
-     * 29 (value set OID 1.2.840.10008.6.1.19).
+     * A list of all the distinct values of series.modality. This may include both acquisition and non-acquisition modalities.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Coding} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
      */
-    public List<Coding> getModality() {
+    public List<CodeableConcept> getModality() {
         return modality;
     }
 
@@ -272,6 +265,17 @@ public class ImagingStudy extends DomainResource {
     }
 
     /**
+     * A larger event of which this particular ImagingStudy is a component or step. For example, an ImagingStudy as part of a 
+     * procedure.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getPartOf() {
+        return partOf;
+    }
+
+    /**
      * The requesting/referring physician.
      * 
      * @return
@@ -279,16 +283,6 @@ public class ImagingStudy extends DomainResource {
      */
     public Reference getReferrer() {
         return referrer;
-    }
-
-    /**
-     * Who read the study and interpreted the images or other content.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-     */
-    public List<Reference> getInterpreter() {
-        return interpreter;
     }
 
     /**
@@ -328,23 +322,14 @@ public class ImagingStudy extends DomainResource {
     }
 
     /**
-     * The procedure which this ImagingStudy was part of.
+     * This field corresponds to the DICOM Procedure Code Sequence (0008,1032). This is different from the FHIR Procedure 
+     * resource that may include the ImagingStudy.
      * 
      * @return
-     *     An immutable object of type {@link Reference} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public Reference getProcedureReference() {
-        return procedureReference;
-    }
-
-    /**
-     * The code for the performed procedure type.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
-     */
-    public List<CodeableConcept> getProcedureCode() {
-        return procedureCode;
+    public List<CodeableReference> getProcedure() {
+        return procedure;
     }
 
     /**
@@ -358,23 +343,14 @@ public class ImagingStudy extends DomainResource {
     }
 
     /**
-     * Description of clinical condition indicating why the ImagingStudy was requested.
+     * Description of clinical condition indicating why the ImagingStudy was requested, and/or Indicates another resource 
+     * whose existence justifies this Study.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<CodeableConcept> getReasonCode() {
-        return reasonCode;
-    }
-
-    /**
-     * Indicates another resource whose existence justifies this Study.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-     */
-    public List<Reference> getReasonReference() {
-        return reasonReference;
+    public List<CodeableReference> getReason() {
+        return reason;
     }
 
     /**
@@ -420,16 +396,14 @@ public class ImagingStudy extends DomainResource {
             (encounter != null) || 
             (started != null) || 
             !basedOn.isEmpty() || 
+            !partOf.isEmpty() || 
             (referrer != null) || 
-            !interpreter.isEmpty() || 
             !endpoint.isEmpty() || 
             (numberOfSeries != null) || 
             (numberOfInstances != null) || 
-            (procedureReference != null) || 
-            !procedureCode.isEmpty() || 
+            !procedure.isEmpty() || 
             (location != null) || 
-            !reasonCode.isEmpty() || 
-            !reasonReference.isEmpty() || 
+            !reason.isEmpty() || 
             !note.isEmpty() || 
             (description != null) || 
             !series.isEmpty();
@@ -451,21 +425,19 @@ public class ImagingStudy extends DomainResource {
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(status, "status", visitor);
-                accept(modality, "modality", visitor, Coding.class);
+                accept(modality, "modality", visitor, CodeableConcept.class);
                 accept(subject, "subject", visitor);
                 accept(encounter, "encounter", visitor);
                 accept(started, "started", visitor);
                 accept(basedOn, "basedOn", visitor, Reference.class);
+                accept(partOf, "partOf", visitor, Reference.class);
                 accept(referrer, "referrer", visitor);
-                accept(interpreter, "interpreter", visitor, Reference.class);
                 accept(endpoint, "endpoint", visitor, Reference.class);
                 accept(numberOfSeries, "numberOfSeries", visitor);
                 accept(numberOfInstances, "numberOfInstances", visitor);
-                accept(procedureReference, "procedureReference", visitor);
-                accept(procedureCode, "procedureCode", visitor, CodeableConcept.class);
+                accept(procedure, "procedure", visitor, CodeableReference.class);
                 accept(location, "location", visitor);
-                accept(reasonCode, "reasonCode", visitor, CodeableConcept.class);
-                accept(reasonReference, "reasonReference", visitor, Reference.class);
+                accept(reason, "reason", visitor, CodeableReference.class);
                 accept(note, "note", visitor, Annotation.class);
                 accept(description, "description", visitor);
                 accept(series, "series", visitor, Series.class);
@@ -502,16 +474,14 @@ public class ImagingStudy extends DomainResource {
             Objects.equals(encounter, other.encounter) && 
             Objects.equals(started, other.started) && 
             Objects.equals(basedOn, other.basedOn) && 
+            Objects.equals(partOf, other.partOf) && 
             Objects.equals(referrer, other.referrer) && 
-            Objects.equals(interpreter, other.interpreter) && 
             Objects.equals(endpoint, other.endpoint) && 
             Objects.equals(numberOfSeries, other.numberOfSeries) && 
             Objects.equals(numberOfInstances, other.numberOfInstances) && 
-            Objects.equals(procedureReference, other.procedureReference) && 
-            Objects.equals(procedureCode, other.procedureCode) && 
+            Objects.equals(procedure, other.procedure) && 
             Objects.equals(location, other.location) && 
-            Objects.equals(reasonCode, other.reasonCode) && 
-            Objects.equals(reasonReference, other.reasonReference) && 
+            Objects.equals(reason, other.reason) && 
             Objects.equals(note, other.note) && 
             Objects.equals(description, other.description) && 
             Objects.equals(series, other.series);
@@ -536,16 +506,14 @@ public class ImagingStudy extends DomainResource {
                 encounter, 
                 started, 
                 basedOn, 
+                partOf, 
                 referrer, 
-                interpreter, 
                 endpoint, 
                 numberOfSeries, 
                 numberOfInstances, 
-                procedureReference, 
-                procedureCode, 
+                procedure, 
                 location, 
-                reasonCode, 
-                reasonReference, 
+                reason, 
                 note, 
                 description, 
                 series);
@@ -566,21 +534,19 @@ public class ImagingStudy extends DomainResource {
     public static class Builder extends DomainResource.Builder {
         private List<Identifier> identifier = new ArrayList<>();
         private ImagingStudyStatus status;
-        private List<Coding> modality = new ArrayList<>();
+        private List<CodeableConcept> modality = new ArrayList<>();
         private Reference subject;
         private Reference encounter;
         private DateTime started;
         private List<Reference> basedOn = new ArrayList<>();
+        private List<Reference> partOf = new ArrayList<>();
         private Reference referrer;
-        private List<Reference> interpreter = new ArrayList<>();
         private List<Reference> endpoint = new ArrayList<>();
         private UnsignedInt numberOfSeries;
         private UnsignedInt numberOfInstances;
-        private Reference procedureReference;
-        private List<CodeableConcept> procedureCode = new ArrayList<>();
+        private List<CodeableReference> procedure = new ArrayList<>();
         private Reference location;
-        private List<CodeableConcept> reasonCode = new ArrayList<>();
-        private List<Reference> reasonReference = new ArrayList<>();
+        private List<CodeableReference> reason = new ArrayList<>();
         private List<Annotation> note = new ArrayList<>();
         private String description;
         private List<Series> series = new ArrayList<>();
@@ -667,7 +633,8 @@ public class ImagingStudy extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -685,7 +652,8 @@ public class ImagingStudy extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -706,7 +674,7 @@ public class ImagingStudy extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -726,7 +694,7 @@ public class ImagingStudy extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -751,9 +719,9 @@ public class ImagingStudy extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -776,9 +744,9 @@ public class ImagingStudy extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -801,7 +769,7 @@ public class ImagingStudy extends DomainResource {
         }
 
         /**
-         * Identifiers for the ImagingStudy such as DICOM Study Instance UID, and Accession Number.
+         * Identifiers for the ImagingStudy such as DICOM Study Instance UID.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -820,7 +788,7 @@ public class ImagingStudy extends DomainResource {
         }
 
         /**
-         * Identifiers for the ImagingStudy such as DICOM Study Instance UID, and Accession Number.
+         * Identifiers for the ImagingStudy such as DICOM Study Instance UID.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -840,7 +808,8 @@ public class ImagingStudy extends DomainResource {
         }
 
         /**
-         * The current state of the ImagingStudy.
+         * The current state of the ImagingStudy resource. This is not the status of any ServiceRequest or Task resources 
+         * associated with the ImagingStudy.
          * 
          * <p>This element is required.
          * 
@@ -856,34 +825,32 @@ public class ImagingStudy extends DomainResource {
         }
 
         /**
-         * A list of all the series.modality values that are actual acquisition modalities, i.e. those in the DICOM Context Group 
-         * 29 (value set OID 1.2.840.10008.6.1.19).
+         * A list of all the distinct values of series.modality. This may include both acquisition and non-acquisition modalities.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param modality
-         *     All series modality if actual acquisition modalities
+         *     All of the distinct values for series' modalities
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder modality(Coding... modality) {
-            for (Coding value : modality) {
+        public Builder modality(CodeableConcept... modality) {
+            for (CodeableConcept value : modality) {
                 this.modality.add(value);
             }
             return this;
         }
 
         /**
-         * A list of all the series.modality values that are actual acquisition modalities, i.e. those in the DICOM Context Group 
-         * 29 (value set OID 1.2.840.10008.6.1.19).
+         * A list of all the distinct values of series.modality. This may include both acquisition and non-acquisition modalities.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param modality
-         *     All series modality if actual acquisition modalities
+         *     All of the distinct values for series' modalities
          * 
          * @return
          *     A reference to this Builder instance
@@ -891,7 +858,7 @@ public class ImagingStudy extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder modality(Collection<Coding> modality) {
+        public Builder modality(Collection<CodeableConcept> modality) {
             this.modality = new ArrayList<>(modality);
             return this;
         }
@@ -1010,6 +977,57 @@ public class ImagingStudy extends DomainResource {
         }
 
         /**
+         * A larger event of which this particular ImagingStudy is a component or step. For example, an ImagingStudy as part of a 
+         * procedure.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link Procedure}</li>
+         * </ul>
+         * 
+         * @param partOf
+         *     Part of referenced event
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder partOf(Reference... partOf) {
+            for (Reference value : partOf) {
+                this.partOf.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A larger event of which this particular ImagingStudy is a component or step. For example, an ImagingStudy as part of a 
+         * procedure.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link Procedure}</li>
+         * </ul>
+         * 
+         * @param partOf
+         *     Part of referenced event
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder partOf(Collection<Reference> partOf) {
+            this.partOf = new ArrayList<>(partOf);
+            return this;
+        }
+
+        /**
          * The requesting/referring physician.
          * 
          * <p>Allowed resource types for this reference:
@@ -1026,57 +1044,6 @@ public class ImagingStudy extends DomainResource {
          */
         public Builder referrer(Reference referrer) {
             this.referrer = referrer;
-            return this;
-        }
-
-        /**
-         * Who read the study and interpreted the images or other content.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Practitioner}</li>
-         * <li>{@link PractitionerRole}</li>
-         * </ul>
-         * 
-         * @param interpreter
-         *     Who interpreted images
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder interpreter(Reference... interpreter) {
-            for (Reference value : interpreter) {
-                this.interpreter.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Who read the study and interpreted the images or other content.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Practitioner}</li>
-         * <li>{@link PractitionerRole}</li>
-         * </ul>
-         * 
-         * @param interpreter
-         *     Who interpreted images
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder interpreter(Collection<Reference> interpreter) {
-            this.interpreter = new ArrayList<>(interpreter);
             return this;
         }
 
@@ -1166,51 +1133,34 @@ public class ImagingStudy extends DomainResource {
         }
 
         /**
-         * The procedure which this ImagingStudy was part of.
-         * 
-         * <p>Allowed resource types for this reference:
-         * <ul>
-         * <li>{@link Procedure}</li>
-         * </ul>
-         * 
-         * @param procedureReference
-         *     The performed Procedure reference
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder procedureReference(Reference procedureReference) {
-            this.procedureReference = procedureReference;
-            return this;
-        }
-
-        /**
-         * The code for the performed procedure type.
+         * This field corresponds to the DICOM Procedure Code Sequence (0008,1032). This is different from the FHIR Procedure 
+         * resource that may include the ImagingStudy.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param procedureCode
-         *     The performed procedure code
+         * @param procedure
+         *     The performed procedure or code
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder procedureCode(CodeableConcept... procedureCode) {
-            for (CodeableConcept value : procedureCode) {
-                this.procedureCode.add(value);
+        public Builder procedure(CodeableReference... procedure) {
+            for (CodeableReference value : procedure) {
+                this.procedure.add(value);
             }
             return this;
         }
 
         /**
-         * The code for the performed procedure type.
+         * This field corresponds to the DICOM Procedure Code Sequence (0008,1032). This is different from the FHIR Procedure 
+         * resource that may include the ImagingStudy.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param procedureCode
-         *     The performed procedure code
+         * @param procedure
+         *     The performed procedure or code
          * 
          * @return
          *     A reference to this Builder instance
@@ -1218,8 +1168,8 @@ public class ImagingStudy extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder procedureCode(Collection<CodeableConcept> procedureCode) {
-            this.procedureCode = new ArrayList<>(procedureCode);
+        public Builder procedure(Collection<CodeableReference> procedure) {
+            this.procedure = new ArrayList<>(procedure);
             return this;
         }
 
@@ -1243,32 +1193,34 @@ public class ImagingStudy extends DomainResource {
         }
 
         /**
-         * Description of clinical condition indicating why the ImagingStudy was requested.
+         * Description of clinical condition indicating why the ImagingStudy was requested, and/or Indicates another resource 
+         * whose existence justifies this Study.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
-         *     Why the study was requested
+         * @param reason
+         *     Why the study was requested / performed
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder reasonCode(CodeableConcept... reasonCode) {
-            for (CodeableConcept value : reasonCode) {
-                this.reasonCode.add(value);
+        public Builder reason(CodeableReference... reason) {
+            for (CodeableReference value : reason) {
+                this.reason.add(value);
             }
             return this;
         }
 
         /**
-         * Description of clinical condition indicating why the ImagingStudy was requested.
+         * Description of clinical condition indicating why the ImagingStudy was requested, and/or Indicates another resource 
+         * whose existence justifies this Study.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
-         *     Why the study was requested
+         * @param reason
+         *     Why the study was requested / performed
          * 
          * @return
          *     A reference to this Builder instance
@@ -1276,65 +1228,8 @@ public class ImagingStudy extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder reasonCode(Collection<CodeableConcept> reasonCode) {
-            this.reasonCode = new ArrayList<>(reasonCode);
-            return this;
-        }
-
-        /**
-         * Indicates another resource whose existence justifies this Study.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link Media}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Why was study performed
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder reasonReference(Reference... reasonReference) {
-            for (Reference value : reasonReference) {
-                this.reasonReference.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Indicates another resource whose existence justifies this Study.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link Media}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Why was study performed
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder reasonReference(Collection<Reference> reasonReference) {
-            this.reasonReference = new ArrayList<>(reasonReference);
+        public Builder reason(Collection<CodeableReference> reason) {
+            this.reason = new ArrayList<>(reason);
             return this;
         }
 
@@ -1478,25 +1373,22 @@ public class ImagingStudy extends DomainResource {
             super.validate(imagingStudy);
             ValidationSupport.checkList(imagingStudy.identifier, "identifier", Identifier.class);
             ValidationSupport.requireNonNull(imagingStudy.status, "status");
-            ValidationSupport.checkList(imagingStudy.modality, "modality", Coding.class);
+            ValidationSupport.checkList(imagingStudy.modality, "modality", CodeableConcept.class);
             ValidationSupport.requireNonNull(imagingStudy.subject, "subject");
             ValidationSupport.checkList(imagingStudy.basedOn, "basedOn", Reference.class);
-            ValidationSupport.checkList(imagingStudy.interpreter, "interpreter", Reference.class);
+            ValidationSupport.checkList(imagingStudy.partOf, "partOf", Reference.class);
             ValidationSupport.checkList(imagingStudy.endpoint, "endpoint", Reference.class);
-            ValidationSupport.checkList(imagingStudy.procedureCode, "procedureCode", CodeableConcept.class);
-            ValidationSupport.checkList(imagingStudy.reasonCode, "reasonCode", CodeableConcept.class);
-            ValidationSupport.checkList(imagingStudy.reasonReference, "reasonReference", Reference.class);
+            ValidationSupport.checkList(imagingStudy.procedure, "procedure", CodeableReference.class);
+            ValidationSupport.checkList(imagingStudy.reason, "reason", CodeableReference.class);
             ValidationSupport.checkList(imagingStudy.note, "note", Annotation.class);
             ValidationSupport.checkList(imagingStudy.series, "series", Series.class);
             ValidationSupport.checkReferenceType(imagingStudy.subject, "subject", "Patient", "Device", "Group");
             ValidationSupport.checkReferenceType(imagingStudy.encounter, "encounter", "Encounter");
             ValidationSupport.checkReferenceType(imagingStudy.basedOn, "basedOn", "CarePlan", "ServiceRequest", "Appointment", "AppointmentResponse", "Task");
+            ValidationSupport.checkReferenceType(imagingStudy.partOf, "partOf", "Procedure");
             ValidationSupport.checkReferenceType(imagingStudy.referrer, "referrer", "Practitioner", "PractitionerRole");
-            ValidationSupport.checkReferenceType(imagingStudy.interpreter, "interpreter", "Practitioner", "PractitionerRole");
             ValidationSupport.checkReferenceType(imagingStudy.endpoint, "endpoint", "Endpoint");
-            ValidationSupport.checkReferenceType(imagingStudy.procedureReference, "procedureReference", "Procedure");
             ValidationSupport.checkReferenceType(imagingStudy.location, "location", "Location");
-            ValidationSupport.checkReferenceType(imagingStudy.reasonReference, "reasonReference", "Condition", "Observation", "Media", "DiagnosticReport", "DocumentReference");
         }
 
         protected Builder from(ImagingStudy imagingStudy) {
@@ -1508,16 +1400,14 @@ public class ImagingStudy extends DomainResource {
             encounter = imagingStudy.encounter;
             started = imagingStudy.started;
             basedOn.addAll(imagingStudy.basedOn);
+            partOf.addAll(imagingStudy.partOf);
             referrer = imagingStudy.referrer;
-            interpreter.addAll(imagingStudy.interpreter);
             endpoint.addAll(imagingStudy.endpoint);
             numberOfSeries = imagingStudy.numberOfSeries;
             numberOfInstances = imagingStudy.numberOfInstances;
-            procedureReference = imagingStudy.procedureReference;
-            procedureCode.addAll(imagingStudy.procedureCode);
+            procedure.addAll(imagingStudy.procedure);
             location = imagingStudy.location;
-            reasonCode.addAll(imagingStudy.reasonCode);
-            reasonReference.addAll(imagingStudy.reasonReference);
+            reason.addAll(imagingStudy.reason);
             note.addAll(imagingStudy.note);
             description = imagingStudy.description;
             series.addAll(imagingStudy.series);
@@ -1539,10 +1429,10 @@ public class ImagingStudy extends DomainResource {
             bindingName = "ImagingModality",
             strength = BindingStrength.Value.EXTENSIBLE,
             description = "Type of acquired data in the instance.",
-            valueSet = "http://dicom.nema.org/medical/dicom/current/output/chtml/part16/sect_CID_29.html"
+            valueSet = "http://dicom.nema.org/medical/dicom/current/output/chtml/part16/sect_CID_33.html"
         )
         @Required
-        private final Coding modality;
+        private final CodeableConcept modality;
         @Summary
         private final String description;
         @Summary
@@ -1557,15 +1447,15 @@ public class ImagingStudy extends DomainResource {
             description = "SNOMED CT Body site concepts",
             valueSet = "http://hl7.org/fhir/ValueSet/body-site"
         )
-        private final Coding bodySite;
+        private final CodeableReference bodySite;
         @Summary
         @Binding(
             bindingName = "Laterality",
             strength = BindingStrength.Value.EXAMPLE,
             description = "Codes describing body site laterality (left, right, etc.).",
-            valueSet = "http://hl7.org/fhir/ValueSet/bodysite-laterality"
+            valueSet = "http://dicom.nema.org/medical/dicom/current/output/chtml/part16/sect_CID_244.html"
         )
-        private final Coding laterality;
+        private final CodeableConcept laterality;
         @Summary
         @ReferenceTarget({ "Specimen" })
         private final List<Reference> specimen;
@@ -1612,12 +1502,12 @@ public class ImagingStudy extends DomainResource {
         }
 
         /**
-         * The modality of this series sequence.
+         * The distinct modality for this series. This may include both acquisition and non-acquisition modalities.
          * 
          * @return
-         *     An immutable object of type {@link Coding} that is non-null.
+         *     An immutable object of type {@link CodeableConcept} that is non-null.
          */
-        public Coding getModality() {
+        public CodeableConcept getModality() {
             return modality;
         }
 
@@ -1662,9 +1552,9 @@ public class ImagingStudy extends DomainResource {
          * laterality.
          * 
          * @return
-         *     An immutable object of type {@link Coding} that may be null.
+         *     An immutable object of type {@link CodeableReference} that may be null.
          */
-        public Coding getBodySite() {
+        public CodeableReference getBodySite() {
             return bodySite;
         }
 
@@ -1673,9 +1563,9 @@ public class ImagingStudy extends DomainResource {
          * abdomen. If present, shall be consistent with any laterality information indicated in ImagingStudy.series.bodySite.
          * 
          * @return
-         *     An immutable object of type {@link Coding} that may be null.
+         *     An immutable object of type {@link CodeableConcept} that may be null.
          */
-        public Coding getLaterality() {
+        public CodeableConcept getLaterality() {
             return laterality;
         }
 
@@ -1828,12 +1718,12 @@ public class ImagingStudy extends DomainResource {
         public static class Builder extends BackboneElement.Builder {
             private Id uid;
             private UnsignedInt number;
-            private Coding modality;
+            private CodeableConcept modality;
             private String description;
             private UnsignedInt numberOfInstances;
             private List<Reference> endpoint = new ArrayList<>();
-            private Coding bodySite;
-            private Coding laterality;
+            private CodeableReference bodySite;
+            private CodeableConcept laterality;
             private List<Reference> specimen = new ArrayList<>();
             private DateTime started;
             private List<Performer> performer = new ArrayList<>();
@@ -1860,7 +1750,7 @@ public class ImagingStudy extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1880,7 +1770,7 @@ public class ImagingStudy extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1905,7 +1795,7 @@ public class ImagingStudy extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1930,7 +1820,7 @@ public class ImagingStudy extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1985,17 +1875,17 @@ public class ImagingStudy extends DomainResource {
             }
 
             /**
-             * The modality of this series sequence.
+             * The distinct modality for this series. This may include both acquisition and non-acquisition modalities.
              * 
              * <p>This element is required.
              * 
              * @param modality
-             *     The modality of the instances in the series
+             *     The modality used for this series
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder modality(Coding modality) {
+            public Builder modality(CodeableConcept modality) {
                 this.modality = modality;
                 return this;
             }
@@ -2111,7 +2001,7 @@ public class ImagingStudy extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder bodySite(Coding bodySite) {
+            public Builder bodySite(CodeableReference bodySite) {
                 this.bodySite = bodySite;
                 return this;
             }
@@ -2126,7 +2016,7 @@ public class ImagingStudy extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder laterality(Coding laterality) {
+            public Builder laterality(CodeableConcept laterality) {
                 this.laterality = laterality;
                 return this;
             }
@@ -2339,7 +2229,7 @@ public class ImagingStudy extends DomainResource {
             )
             private final CodeableConcept function;
             @Summary
-            @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient", "Device", "RelatedPerson" })
+            @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient", "Device", "RelatedPerson", "HealthcareService" })
             @Required
             private final Reference actor;
 
@@ -2460,7 +2350,7 @@ public class ImagingStudy extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2480,7 +2370,7 @@ public class ImagingStudy extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2505,7 +2395,7 @@ public class ImagingStudy extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2530,7 +2420,7 @@ public class ImagingStudy extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2582,6 +2472,7 @@ public class ImagingStudy extends DomainResource {
                  * <li>{@link Patient}</li>
                  * <li>{@link Device}</li>
                  * <li>{@link RelatedPerson}</li>
+                 * <li>{@link HealthcareService}</li>
                  * </ul>
                  * 
                  * @param actor
@@ -2620,7 +2511,7 @@ public class ImagingStudy extends DomainResource {
                 protected void validate(Performer performer) {
                     super.validate(performer);
                     ValidationSupport.requireNonNull(performer.actor, "actor");
-                    ValidationSupport.checkReferenceType(performer.actor, "actor", "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient", "Device", "RelatedPerson");
+                    ValidationSupport.checkReferenceType(performer.actor, "actor", "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient", "Device", "RelatedPerson", "HealthcareService");
                     ValidationSupport.requireValueOrChildren(performer);
                 }
 
@@ -2799,7 +2690,7 @@ public class ImagingStudy extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2819,7 +2710,7 @@ public class ImagingStudy extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2844,7 +2735,7 @@ public class ImagingStudy extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2869,7 +2760,7 @@ public class ImagingStudy extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 

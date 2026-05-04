@@ -25,6 +25,7 @@ import org.linuxforhealth.fhir.model.type.Annotation;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Decimal;
 import org.linuxforhealth.fhir.model.type.Element;
@@ -46,10 +47,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 /**
  * An assessment of the likely outcome(s) for a patient or other subject as well as the likelihood of each outcome.
  * 
- * <p>Maturity level: FMM1 (Trial Use)
+ * <p>Maturity level: FMM2 (Trial Use)
  */
 @Maturity(
-    level = 1,
+    level = 2,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
@@ -64,8 +65,8 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "ras-2",
     level = "Rule",
     location = "RiskAssessment.prediction",
-    description = "Must be <= 100",
-    expression = "probability.exists($this is decimal) implies (probability as decimal) <= 100",
+    description = "Probability as a deciml must be <= 100",
+    expression = "probability.empty() or ((probability is decimal) implies ((probability as decimal) <= 100))",
     source = "http://hl7.org/fhir/StructureDefinition/RiskAssessment"
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
@@ -79,7 +80,7 @@ public class RiskAssessment extends DomainResource {
         bindingName = "RiskAssessmentStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The status of the risk assessment; e.g. preliminary, final, amended, etc.",
-        valueSet = "http://hl7.org/fhir/ValueSet/observation-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/observation-status|5.0.0"
     )
     @Required
     private final RiskAssessmentStatus status;
@@ -101,16 +102,14 @@ public class RiskAssessment extends DomainResource {
     private final Reference encounter;
     @Summary
     @Choice({ DateTime.class, Period.class })
-    private final Element occurrence;
+    private final org.linuxforhealth.fhir.model.type.Element occurrence;
     @Summary
     @ReferenceTarget({ "Condition" })
     private final Reference condition;
     @Summary
-    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Device" })
+    @ReferenceTarget({ "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "Device" })
     private final Reference performer;
-    private final List<CodeableConcept> reasonCode;
-    @ReferenceTarget({ "Condition", "Observation", "DiagnosticReport", "DocumentReference" })
-    private final List<Reference> reasonReference;
+    private final List<CodeableReference> reason;
     private final List<Reference> basis;
     private final List<Prediction> prediction;
     private final String mitigation;
@@ -129,8 +128,7 @@ public class RiskAssessment extends DomainResource {
         occurrence = builder.occurrence;
         condition = builder.condition;
         performer = builder.performer;
-        reasonCode = Collections.unmodifiableList(builder.reasonCode);
-        reasonReference = Collections.unmodifiableList(builder.reasonReference);
+        reason = Collections.unmodifiableList(builder.reason);
         basis = Collections.unmodifiableList(builder.basis);
         prediction = Collections.unmodifiableList(builder.prediction);
         mitigation = builder.mitigation;
@@ -223,7 +221,7 @@ public class RiskAssessment extends DomainResource {
      * @return
      *     An immutable object of type {@link DateTime} or {@link Period} that may be null.
      */
-    public Element getOccurrence() {
+    public org.linuxforhealth.fhir.model.type.Element getOccurrence() {
         return occurrence;
     }
 
@@ -238,7 +236,7 @@ public class RiskAssessment extends DomainResource {
     }
 
     /**
-     * The provider or software application that performed the assessment.
+     * The provider, patient, related person, or software application that performed the assessment.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
@@ -251,20 +249,10 @@ public class RiskAssessment extends DomainResource {
      * The reason the risk assessment was performed.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<CodeableConcept> getReasonCode() {
-        return reasonCode;
-    }
-
-    /**
-     * Resources supporting the reason the risk assessment was performed.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-     */
-    public List<Reference> getReasonReference() {
-        return reasonReference;
+    public List<CodeableReference> getReason() {
+        return reason;
     }
 
     /**
@@ -322,8 +310,7 @@ public class RiskAssessment extends DomainResource {
             (occurrence != null) || 
             (condition != null) || 
             (performer != null) || 
-            !reasonCode.isEmpty() || 
-            !reasonReference.isEmpty() || 
+            !reason.isEmpty() || 
             !basis.isEmpty() || 
             !prediction.isEmpty() || 
             (mitigation != null) || 
@@ -355,8 +342,7 @@ public class RiskAssessment extends DomainResource {
                 accept(occurrence, "occurrence", visitor);
                 accept(condition, "condition", visitor);
                 accept(performer, "performer", visitor);
-                accept(reasonCode, "reasonCode", visitor, CodeableConcept.class);
-                accept(reasonReference, "reasonReference", visitor, Reference.class);
+                accept(reason, "reason", visitor, CodeableReference.class);
                 accept(basis, "basis", visitor, Reference.class);
                 accept(prediction, "prediction", visitor, Prediction.class);
                 accept(mitigation, "mitigation", visitor);
@@ -398,8 +384,7 @@ public class RiskAssessment extends DomainResource {
             Objects.equals(occurrence, other.occurrence) && 
             Objects.equals(condition, other.condition) && 
             Objects.equals(performer, other.performer) && 
-            Objects.equals(reasonCode, other.reasonCode) && 
-            Objects.equals(reasonReference, other.reasonReference) && 
+            Objects.equals(reason, other.reason) && 
             Objects.equals(basis, other.basis) && 
             Objects.equals(prediction, other.prediction) && 
             Objects.equals(mitigation, other.mitigation) && 
@@ -429,8 +414,7 @@ public class RiskAssessment extends DomainResource {
                 occurrence, 
                 condition, 
                 performer, 
-                reasonCode, 
-                reasonReference, 
+                reason, 
                 basis, 
                 prediction, 
                 mitigation, 
@@ -458,11 +442,10 @@ public class RiskAssessment extends DomainResource {
         private CodeableConcept code;
         private Reference subject;
         private Reference encounter;
-        private Element occurrence;
+        private org.linuxforhealth.fhir.model.type.Element occurrence;
         private Reference condition;
         private Reference performer;
-        private List<CodeableConcept> reasonCode = new ArrayList<>();
-        private List<Reference> reasonReference = new ArrayList<>();
+        private List<CodeableReference> reason = new ArrayList<>();
         private List<Reference> basis = new ArrayList<>();
         private List<Prediction> prediction = new ArrayList<>();
         private String mitigation;
@@ -550,7 +533,8 @@ public class RiskAssessment extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -568,7 +552,8 @@ public class RiskAssessment extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -589,7 +574,7 @@ public class RiskAssessment extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -609,7 +594,7 @@ public class RiskAssessment extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -634,9 +619,9 @@ public class RiskAssessment extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -659,9 +644,9 @@ public class RiskAssessment extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -850,7 +835,7 @@ public class RiskAssessment extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder occurrence(Element occurrence) {
+        public Builder occurrence(org.linuxforhealth.fhir.model.type.Element occurrence) {
             this.occurrence = occurrence;
             return this;
         }
@@ -875,12 +860,14 @@ public class RiskAssessment extends DomainResource {
         }
 
         /**
-         * The provider or software application that performed the assessment.
+         * The provider, patient, related person, or software application that performed the assessment.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
+         * <li>{@link Patient}</li>
          * <li>{@link Practitioner}</li>
          * <li>{@link PractitionerRole}</li>
+         * <li>{@link RelatedPerson}</li>
          * <li>{@link Device}</li>
          * </ul>
          * 
@@ -901,15 +888,15 @@ public class RiskAssessment extends DomainResource {
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
+         * @param reason
          *     Why the assessment was necessary?
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder reasonCode(CodeableConcept... reasonCode) {
-            for (CodeableConcept value : reasonCode) {
-                this.reasonCode.add(value);
+        public Builder reason(CodeableReference... reason) {
+            for (CodeableReference value : reason) {
+                this.reason.add(value);
             }
             return this;
         }
@@ -920,7 +907,7 @@ public class RiskAssessment extends DomainResource {
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
+         * @param reason
          *     Why the assessment was necessary?
          * 
          * @return
@@ -929,63 +916,8 @@ public class RiskAssessment extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder reasonCode(Collection<CodeableConcept> reasonCode) {
-            this.reasonCode = new ArrayList<>(reasonCode);
-            return this;
-        }
-
-        /**
-         * Resources supporting the reason the risk assessment was performed.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Why the assessment was necessary?
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder reasonReference(Reference... reasonReference) {
-            for (Reference value : reasonReference) {
-                this.reasonReference.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Resources supporting the reason the risk assessment was performed.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Why the assessment was necessary?
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder reasonReference(Collection<Reference> reasonReference) {
-            this.reasonReference = new ArrayList<>(reasonReference);
+        public Builder reason(Collection<CodeableReference> reason) {
+            this.reason = new ArrayList<>(reason);
             return this;
         }
 
@@ -1167,16 +1099,14 @@ public class RiskAssessment extends DomainResource {
             ValidationSupport.requireNonNull(riskAssessment.status, "status");
             ValidationSupport.requireNonNull(riskAssessment.subject, "subject");
             ValidationSupport.choiceElement(riskAssessment.occurrence, "occurrence", DateTime.class, Period.class);
-            ValidationSupport.checkList(riskAssessment.reasonCode, "reasonCode", CodeableConcept.class);
-            ValidationSupport.checkList(riskAssessment.reasonReference, "reasonReference", Reference.class);
+            ValidationSupport.checkList(riskAssessment.reason, "reason", CodeableReference.class);
             ValidationSupport.checkList(riskAssessment.basis, "basis", Reference.class);
             ValidationSupport.checkList(riskAssessment.prediction, "prediction", Prediction.class);
             ValidationSupport.checkList(riskAssessment.note, "note", Annotation.class);
             ValidationSupport.checkReferenceType(riskAssessment.subject, "subject", "Patient", "Group");
             ValidationSupport.checkReferenceType(riskAssessment.encounter, "encounter", "Encounter");
             ValidationSupport.checkReferenceType(riskAssessment.condition, "condition", "Condition");
-            ValidationSupport.checkReferenceType(riskAssessment.performer, "performer", "Practitioner", "PractitionerRole", "Device");
-            ValidationSupport.checkReferenceType(riskAssessment.reasonReference, "reasonReference", "Condition", "Observation", "DiagnosticReport", "DocumentReference");
+            ValidationSupport.checkReferenceType(riskAssessment.performer, "performer", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "Device");
         }
 
         protected Builder from(RiskAssessment riskAssessment) {
@@ -1192,8 +1122,7 @@ public class RiskAssessment extends DomainResource {
             occurrence = riskAssessment.occurrence;
             condition = riskAssessment.condition;
             performer = riskAssessment.performer;
-            reasonCode.addAll(riskAssessment.reasonCode);
-            reasonReference.addAll(riskAssessment.reasonReference);
+            reason.addAll(riskAssessment.reason);
             basis.addAll(riskAssessment.basis);
             prediction.addAll(riskAssessment.prediction);
             mitigation = riskAssessment.mitigation;
@@ -1213,7 +1142,7 @@ public class RiskAssessment extends DomainResource {
         )
         private final CodeableConcept outcome;
         @Choice({ Decimal.class, Range.class })
-        private final Element probability;
+        private final org.linuxforhealth.fhir.model.type.Element probability;
         @Binding(
             bindingName = "RiskAssessmentProbability",
             strength = BindingStrength.Value.EXAMPLE,
@@ -1223,7 +1152,7 @@ public class RiskAssessment extends DomainResource {
         private final CodeableConcept qualitativeRisk;
         private final Decimal relativeRisk;
         @Choice({ Period.class, Range.class })
-        private final Element when;
+        private final org.linuxforhealth.fhir.model.type.Element when;
         private final String rationale;
 
         private Prediction(Builder builder) {
@@ -1252,7 +1181,7 @@ public class RiskAssessment extends DomainResource {
          * @return
          *     An immutable object of type {@link Decimal} or {@link Range} that may be null.
          */
-        public Element getProbability() {
+        public org.linuxforhealth.fhir.model.type.Element getProbability() {
             return probability;
         }
 
@@ -1284,7 +1213,7 @@ public class RiskAssessment extends DomainResource {
          * @return
          *     An immutable object of type {@link Period} or {@link Range} that may be null.
          */
-        public Element getWhen() {
+        public org.linuxforhealth.fhir.model.type.Element getWhen() {
             return when;
         }
 
@@ -1382,10 +1311,10 @@ public class RiskAssessment extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private CodeableConcept outcome;
-            private Element probability;
+            private org.linuxforhealth.fhir.model.type.Element probability;
             private CodeableConcept qualitativeRisk;
             private Decimal relativeRisk;
-            private Element when;
+            private org.linuxforhealth.fhir.model.type.Element when;
             private String rationale;
 
             private Builder() {
@@ -1409,7 +1338,7 @@ public class RiskAssessment extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1429,7 +1358,7 @@ public class RiskAssessment extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1454,7 +1383,7 @@ public class RiskAssessment extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1479,7 +1408,7 @@ public class RiskAssessment extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1532,7 +1461,7 @@ public class RiskAssessment extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder probability(Element probability) {
+            public Builder probability(org.linuxforhealth.fhir.model.type.Element probability) {
                 this.probability = probability;
                 return this;
             }
@@ -1582,7 +1511,7 @@ public class RiskAssessment extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder when(Element when) {
+            public Builder when(org.linuxforhealth.fhir.model.type.Element when) {
                 this.when = when;
                 return this;
             }

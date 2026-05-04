@@ -68,10 +68,9 @@ public class CqlOperationTest extends BaseCqlOperationTest<CqlOperation> {
         Coding reason = coding(codesystem, encounterCode);
 
         Encounter encounter = Encounter.builder()
-                .reasonCode(concept(reason))
-                .status(EncounterStatus.FINISHED)
-                .clazz(reason)
-                .period(Period.builder()
+                .status(EncounterStatus.COMPLETED)
+                .clazz(concept(reason))
+                .actualPeriod(Period.builder()
                     .start(DateTime.now())
                     .end(DateTime.now())
                     .build())
@@ -92,10 +91,9 @@ public class CqlOperationTest extends BaseCqlOperationTest<CqlOperation> {
 
         Endpoint endpoint = Endpoint.builder()
                 .status(EndpointStatus.ACTIVE)
-                .connectionType(Coding.builder()
+                .connectionType(concept(Coding.builder()
                     .code(Code.of("hl7-fhir-rest"))
-                    .build())
-                .payloadType(concept(coding("urn:hl7-org:sdwg:ccda-structuredBody:1.1")))
+                    .build()))
                 .address(Url.of("http://localhost:9443/fhir-server/api/v4"))
                 .build();
         Parameter pDataEndpoint = Parameter.builder().name(fhirstring(CqlOperation.PARAM_IN_DATA_ENDPOINT)).resource(endpoint).build();
@@ -137,10 +135,9 @@ public class CqlOperationTest extends BaseCqlOperationTest<CqlOperation> {
         Coding reason = coding(codesystem, encounterCode);
 
         Encounter encounter = Encounter.builder()
-                .reasonCode(concept(reason))
-                .status(EncounterStatus.FINISHED)
-                .clazz(reason)
-                .period(Period.builder()
+                .status(EncounterStatus.COMPLETED)
+                .clazz(concept(reason))
+                .actualPeriod(Period.builder()
                     .start(DateTime.now())
                     .end(DateTime.now())
                     .build())
@@ -184,10 +181,9 @@ public class CqlOperationTest extends BaseCqlOperationTest<CqlOperation> {
         Coding reason = coding(codesystem, encounterCode);
 
         Encounter encounter = Encounter.builder()
-                .reasonCode(concept(reason))
-                .status(EncounterStatus.FINISHED)
-                .clazz(reason)
-                .period(Period.builder()
+                .status(EncounterStatus.COMPLETED)
+                .clazz(concept(reason))
+                .actualPeriod(Period.builder()
                     .start(DateTime.now())
                     .end(DateTime.now())
                     .build())
@@ -231,10 +227,9 @@ public class CqlOperationTest extends BaseCqlOperationTest<CqlOperation> {
         Coding reason = coding(codesystem, encounterCode);
 
         Encounter encounter = Encounter.builder()
-                .reasonCode(concept(reason))
-                .status(EncounterStatus.FINISHED)
-                .clazz(reason)
-                .period(Period.builder()
+                .status(EncounterStatus.COMPLETED)
+                .clazz(concept(reason))
+                .actualPeriod(Period.builder()
                     .start(DateTime.now())
                     .end(DateTime.now())
                     .build())
@@ -278,7 +273,7 @@ public class CqlOperationTest extends BaseCqlOperationTest<CqlOperation> {
         Coding reason = coding(codesystem, encounterCode);
 
         Encounter encounter =
-                Encounter.builder().reasonCode(concept(reason)).status(EncounterStatus.FINISHED).clazz(reason).period(Period.builder().start(DateTime.now()).end(DateTime.now()).build()).build();
+                Encounter.builder().status(EncounterStatus.COMPLETED).clazz(concept(reason)).actualPeriod(Period.builder().start(DateTime.now()).end(DateTime.now()).build()).build();
 
         Library fhirHelpers = TestHelper.getTestLibraryResource("FHIRHelpers-4.0.1.json");
 

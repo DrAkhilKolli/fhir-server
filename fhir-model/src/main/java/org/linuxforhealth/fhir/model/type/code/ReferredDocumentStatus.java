@@ -20,10 +20,24 @@ import javax.annotation.Generated;
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class ReferredDocumentStatus extends Code {
     /**
+     * Registered
+     * 
+     * <p>The existence of the composition is registered, but there is nothing yet available.
+     */
+    public static final ReferredDocumentStatus REGISTERED = ReferredDocumentStatus.builder().value(Value.REGISTERED).build();
+
+    /**
+     * Partial
+     * 
+     * <p>This is a partial (e.g. initial, interim or preliminary) composition: data in the composition may be incomplete or 
+     * unverified.
+     */
+    public static final ReferredDocumentStatus PARTIAL = ReferredDocumentStatus.builder().value(Value.PARTIAL).build();
+
+    /**
      * Preliminary
      * 
-     * <p>This is a preliminary composition or document (also known as initial or interim). The content may be incomplete or 
-     * unverified.
+     * <p>Verified early results are available, but not all results are final.
      */
     public static final ReferredDocumentStatus PRELIMINARY = ReferredDocumentStatus.builder().value(Value.PRELIMINARY).build();
 
@@ -44,12 +58,52 @@ public class ReferredDocumentStatus extends Code {
     public static final ReferredDocumentStatus AMENDED = ReferredDocumentStatus.builder().value(Value.AMENDED).build();
 
     /**
+     * Corrected
+     * 
+     * <p>Subsequent to being final, the composition content has been modified to correct an error in the composition or 
+     * referenced results.
+     */
+    public static final ReferredDocumentStatus CORRECTED = ReferredDocumentStatus.builder().value(Value.CORRECTED).build();
+
+    /**
+     * Appended
+     * 
+     * <p>Subsequent to being final, the composition content has been modified by adding new content. The existing content is 
+     * unchanged.
+     */
+    public static final ReferredDocumentStatus APPENDED = ReferredDocumentStatus.builder().value(Value.APPENDED).build();
+
+    /**
+     * Cancelled
+     * 
+     * <p>The composition is unavailable because the measurement was not started or not completed (also sometimes called 
+     * "aborted").
+     */
+    public static final ReferredDocumentStatus CANCELLED = ReferredDocumentStatus.builder().value(Value.CANCELLED).build();
+
+    /**
      * Entered in Error
      * 
      * <p>The composition or document was originally created/issued in error, and this is an amendment that marks that the 
      * entire series should not be considered as valid.
      */
     public static final ReferredDocumentStatus ENTERED_IN_ERROR = ReferredDocumentStatus.builder().value(Value.ENTERED_IN_ERROR).build();
+
+    /**
+     * Deprecated
+     * 
+     * <p>This composition has been withdrawn or superseded and should no longer be used.
+     */
+    public static final ReferredDocumentStatus DEPRECATED = ReferredDocumentStatus.builder().value(Value.DEPRECATED).build();
+
+    /**
+     * Unknown
+     * 
+     * <p>The authoring/source system does not know which of the status values currently applies for this observation. Note: 
+     * This concept is not to be used for "other" - one of the listed statuses is presumed to apply, but the authoring/source 
+     * system does not know which.
+     */
+    public static final ReferredDocumentStatus UNKNOWN = ReferredDocumentStatus.builder().value(Value.UNKNOWN).build();
 
     private volatile int hashCode;
 
@@ -69,14 +123,28 @@ public class ReferredDocumentStatus extends Code {
      */
     public static ReferredDocumentStatus of(Value value) {
         switch (value) {
+        case REGISTERED:
+            return REGISTERED;
+        case PARTIAL:
+            return PARTIAL;
         case PRELIMINARY:
             return PRELIMINARY;
         case FINAL:
             return FINAL;
         case AMENDED:
             return AMENDED;
+        case CORRECTED:
+            return CORRECTED;
+        case APPENDED:
+            return APPENDED;
+        case CANCELLED:
+            return CANCELLED;
         case ENTERED_IN_ERROR:
             return ENTERED_IN_ERROR;
+        case DEPRECATED:
+            return DEPRECATED;
+        case UNKNOWN:
+            return UNKNOWN;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -210,10 +278,24 @@ public class ReferredDocumentStatus extends Code {
 
     public enum Value {
         /**
+         * Registered
+         * 
+         * <p>The existence of the composition is registered, but there is nothing yet available.
+         */
+        REGISTERED("registered"),
+
+        /**
+         * Partial
+         * 
+         * <p>This is a partial (e.g. initial, interim or preliminary) composition: data in the composition may be incomplete or 
+         * unverified.
+         */
+        PARTIAL("partial"),
+
+        /**
          * Preliminary
          * 
-         * <p>This is a preliminary composition or document (also known as initial or interim). The content may be incomplete or 
-         * unverified.
+         * <p>Verified early results are available, but not all results are final.
          */
         PRELIMINARY("preliminary"),
 
@@ -234,12 +316,52 @@ public class ReferredDocumentStatus extends Code {
         AMENDED("amended"),
 
         /**
+         * Corrected
+         * 
+         * <p>Subsequent to being final, the composition content has been modified to correct an error in the composition or 
+         * referenced results.
+         */
+        CORRECTED("corrected"),
+
+        /**
+         * Appended
+         * 
+         * <p>Subsequent to being final, the composition content has been modified by adding new content. The existing content is 
+         * unchanged.
+         */
+        APPENDED("appended"),
+
+        /**
+         * Cancelled
+         * 
+         * <p>The composition is unavailable because the measurement was not started or not completed (also sometimes called 
+         * "aborted").
+         */
+        CANCELLED("cancelled"),
+
+        /**
          * Entered in Error
          * 
          * <p>The composition or document was originally created/issued in error, and this is an amendment that marks that the 
          * entire series should not be considered as valid.
          */
-        ENTERED_IN_ERROR("entered-in-error");
+        ENTERED_IN_ERROR("entered-in-error"),
+
+        /**
+         * Deprecated
+         * 
+         * <p>This composition has been withdrawn or superseded and should no longer be used.
+         */
+        DEPRECATED("deprecated"),
+
+        /**
+         * Unknown
+         * 
+         * <p>The authoring/source system does not know which of the status values currently applies for this observation. Note: 
+         * This concept is not to be used for "other" - one of the listed statuses is presumed to apply, but the authoring/source 
+         * system does not know which.
+         */
+        UNKNOWN("unknown");
 
         private final java.lang.String value;
 
@@ -270,14 +392,28 @@ public class ReferredDocumentStatus extends Code {
                 return null;
             }
             switch (value) {
+            case "registered":
+                return REGISTERED;
+            case "partial":
+                return PARTIAL;
             case "preliminary":
                 return PRELIMINARY;
             case "final":
                 return FINAL;
             case "amended":
                 return AMENDED;
+            case "corrected":
+                return CORRECTED;
+            case "appended":
+                return APPENDED;
+            case "cancelled":
+                return CANCELLED;
             case "entered-in-error":
                 return ENTERED_IN_ERROR;
+            case "deprecated":
+                return DEPRECATED;
+            case "unknown":
+                return UNKNOWN;
             default:
                 throw new IllegalArgumentException(value);
             }

@@ -27,15 +27,20 @@ import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
+import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Expression;
 import org.linuxforhealth.fhir.model.type.Extension;
+import org.linuxforhealth.fhir.model.type.Id;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
+import org.linuxforhealth.fhir.model.type.Period;
+import org.linuxforhealth.fhir.model.type.PositiveInt;
 import org.linuxforhealth.fhir.model.type.Quantity;
 import org.linuxforhealth.fhir.model.type.Range;
 import org.linuxforhealth.fhir.model.type.Reference;
@@ -46,7 +51,6 @@ import org.linuxforhealth.fhir.model.type.UsageContext;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.CharacteristicCombination;
 import org.linuxforhealth.fhir.model.type.code.EvidenceVariableHandling;
-import org.linuxforhealth.fhir.model.type.code.GroupMeasure;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
@@ -66,8 +70,33 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
     source = "http://hl7.org/fhir/StructureDefinition/EvidenceVariable"
+)
+@Constraint(
+    id = "cnl-1",
+    level = "Warning",
+    location = "EvidenceVariable.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
+    source = "http://hl7.org/fhir/StructureDefinition/EvidenceVariable"
+)
+@Constraint(
+    id = "evv-1",
+    level = "Rule",
+    location = "EvidenceVariable.characteristic",
+    description = "In a characteristic, at most one of these six elements shall be used: definitionReference or definitionCanonical or definitionCodeableConcept or definitionId or definitionByTypeAndValue or definitionByCombination",
+    expression = "(definitionReference.count() + definitionCanonical.count() + definitionCodeableConcept.count() + definitionId.count() + definitionByTypeAndValue.count() + definitionByCombination.count())  < 2",
+    source = "http://hl7.org/fhir/StructureDefinition/EvidenceVariable"
+)
+@Constraint(
+    id = "evidenceVariable-2",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/EvidenceVariable",
+    generated = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class EvidenceVariable extends DomainResource {
@@ -78,53 +107,57 @@ public class EvidenceVariable extends DomainResource {
     @Summary
     private final String version;
     @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+    @Summary
     private final String name;
     @Summary
     private final String title;
     @Summary
     private final String shortTitle;
-    private final String subtitle;
     @Summary
     @Binding(
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
+    private final Boolean experimental;
     @Summary
     private final DateTime date;
+    @Summary
+    private final String publisher;
+    @Summary
+    private final List<ContactDetail> contact;
     @Summary
     private final Markdown description;
     private final List<Annotation> note;
     @Summary
     private final List<UsageContext> useContext;
-    @Summary
-    private final String publisher;
-    @Summary
-    private final List<ContactDetail> contact;
+    private final Markdown purpose;
+    private final Markdown copyright;
+    private final String copyrightLabel;
+    private final Date approvalDate;
+    private final Date lastReviewDate;
+    private final Period effectivePeriod;
     private final List<ContactDetail> author;
     private final List<ContactDetail> editor;
     private final List<ContactDetail> reviewer;
     private final List<ContactDetail> endorser;
     private final List<RelatedArtifact> relatedArtifact;
     private final Boolean actual;
-    @Binding(
-        bindingName = "CharacteristicCombination",
-        strength = BindingStrength.Value.REQUIRED,
-        description = "Logical grouping of characteristics.",
-        valueSet = "http://hl7.org/fhir/ValueSet/characteristic-combination|4.3.0"
-    )
-    private final CharacteristicCombination characteristicCombination;
     @Summary
     private final List<Characteristic> characteristic;
-    @Summary
     @Binding(
         bindingName = "EvidenceVariableHandling",
         strength = BindingStrength.Value.REQUIRED,
-        description = "The handling of the variable in statistical analysis for exposures or outcomes (E.g. Dichotomous, Continuous, Descriptive).",
-        valueSet = "http://hl7.org/fhir/ValueSet/variable-handling|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/variable-handling|5.0.0"
     )
     private final EvidenceVariableHandling handling;
     private final List<Category> category;
@@ -134,24 +167,30 @@ public class EvidenceVariable extends DomainResource {
         url = builder.url;
         identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
         title = builder.title;
         shortTitle = builder.shortTitle;
-        subtitle = builder.subtitle;
         status = builder.status;
+        experimental = builder.experimental;
         date = builder.date;
+        publisher = builder.publisher;
+        contact = Collections.unmodifiableList(builder.contact);
         description = builder.description;
         note = Collections.unmodifiableList(builder.note);
         useContext = Collections.unmodifiableList(builder.useContext);
-        publisher = builder.publisher;
-        contact = Collections.unmodifiableList(builder.contact);
+        purpose = builder.purpose;
+        copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
+        approvalDate = builder.approvalDate;
+        lastReviewDate = builder.lastReviewDate;
+        effectivePeriod = builder.effectivePeriod;
         author = Collections.unmodifiableList(builder.author);
         editor = Collections.unmodifiableList(builder.editor);
         reviewer = Collections.unmodifiableList(builder.reviewer);
         endorser = Collections.unmodifiableList(builder.endorser);
         relatedArtifact = Collections.unmodifiableList(builder.relatedArtifact);
         actual = builder.actual;
-        characteristicCombination = builder.characteristicCombination;
         characteristic = Collections.unmodifiableList(builder.characteristic);
         handling = builder.handling;
         category = Collections.unmodifiableList(builder.category);
@@ -160,9 +199,8 @@ public class EvidenceVariable extends DomainResource {
     /**
      * An absolute URI that is used to identify this evidence variable when it is referenced in a specification, model, 
      * design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal 
-     * address at which at which an authoritative instance of this evidence variable is (or will be) published. This URL can 
-     * be the target of a canonical reference. It SHALL remain the same when the evidence variable is stored on different 
-     * servers.
+     * address at which an authoritative instance of this evidence variable is (or will be) published. This URL can be the 
+     * target of a canonical reference. It SHALL remain the same when the evidence variable is stored on different servers.
      * 
      * @return
      *     An immutable object of type {@link Uri} that may be null.
@@ -199,6 +237,16 @@ public class EvidenceVariable extends DomainResource {
     }
 
     /**
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
+    }
+
+    /**
      * A natural language name identifying the evidence variable. This name should be usable as an identifier for the module 
      * by machine processing applications such as code generation.
      * 
@@ -231,16 +279,6 @@ public class EvidenceVariable extends DomainResource {
     }
 
     /**
-     * An explanatory or alternate title for the EvidenceVariable giving additional information about its content.
-     * 
-     * @return
-     *     An immutable object of type {@link String} that may be null.
-     */
-    public String getSubtitle() {
-        return subtitle;
-    }
-
-    /**
      * The status of this evidence variable. Enables tracking the life-cycle of the content.
      * 
      * @return
@@ -251,15 +289,47 @@ public class EvidenceVariable extends DomainResource {
     }
 
     /**
-     * The date (and optionally time) when the evidence variable was published. The date must change when the business 
-     * version changes and it must change if the status code changes. In addition, it should change when the substantive 
-     * content of the evidence variable changes.
+     * A Boolean value to indicate that this resource is authored for testing purposes (or education/evaluation/marketing) 
+     * and is not intended to be used for genuine usage.
+     * 
+     * @return
+     *     An immutable object of type {@link Boolean} that may be null.
+     */
+    public Boolean getExperimental() {
+        return experimental;
+    }
+
+    /**
+     * The date (and optionally time) when the evidence variable was last significantly changed. The date must change when 
+     * the business version changes and it must change if the status code changes. In addition, it should change when the 
+     * substantive content of the evidence variable changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
      */
     public DateTime getDate() {
         return date;
+    }
+
+    /**
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the evidence 
+     * variable.
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getPublisher() {
+        return publisher;
+    }
+
+    /**
+     * Contact details to assist a user in finding and communicating with the publisher.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
+     */
+    public List<ContactDetail> getContact() {
+        return contact;
     }
 
     /**
@@ -295,23 +365,69 @@ public class EvidenceVariable extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the evidence variable.
+     * Explanation of why this EvidenceVariable is needed and why it has been designed as it has.
+     * 
+     * @return
+     *     An immutable object of type {@link Markdown} that may be null.
+     */
+    public Markdown getPurpose() {
+        return purpose;
+    }
+
+    /**
+     * A copyright statement relating to the resource and/or its contents. Copyright statements are generally legal 
+     * restrictions on the use and publishing of the resource.
+     * 
+     * @return
+     *     An immutable object of type {@link Markdown} that may be null.
+     */
+    public Markdown getCopyright() {
+        return copyright;
+    }
+
+    /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
      */
-    public String getPublisher() {
-        return publisher;
+    public String getCopyrightLabel() {
+        return copyrightLabel;
     }
 
     /**
-     * Contact details to assist a user in finding and communicating with the publisher.
+     * The date on which the resource content was approved by the publisher. Approval happens once when the content is 
+     * officially approved for usage.
+     * 
+     * <p>See guidance around (not) making local changes to elements [here](canonicalresource.html#localization).
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
+     *     An immutable object of type {@link Date} that may be null.
      */
-    public List<ContactDetail> getContact() {
-        return contact;
+    public Date getApprovalDate() {
+        return approvalDate;
+    }
+
+    /**
+     * The date on which the resource content was last reviewed. Review happens periodically after approval but does not 
+     * change the original approval date.
+     * 
+     * @return
+     *     An immutable object of type {@link Date} that may be null.
+     */
+    public Date getLastReviewDate() {
+        return lastReviewDate;
+    }
+
+    /**
+     * The period during which the resource content was or is planned to be in active use.
+     * 
+     * @return
+     *     An immutable object of type {@link Period} that may be null.
+     */
+    public Period getEffectivePeriod() {
+        return effectivePeriod;
     }
 
     /**
@@ -335,7 +451,8 @@ public class EvidenceVariable extends DomainResource {
     }
 
     /**
-     * An individual or organization primarily responsible for review of some aspect of the content.
+     * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+     * content.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
@@ -345,7 +462,8 @@ public class EvidenceVariable extends DomainResource {
     }
 
     /**
-     * An individual or organization responsible for officially endorsing the content for use in some setting.
+     * An individual or organization asserted by the publisher to be responsible for officially endorsing the content for use 
+     * in some setting.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
@@ -375,18 +493,7 @@ public class EvidenceVariable extends DomainResource {
     }
 
     /**
-     * Used to specify if two or more characteristics are combined with OR or AND.
-     * 
-     * @return
-     *     An immutable object of type {@link CharacteristicCombination} that may be null.
-     */
-    public CharacteristicCombination getCharacteristicCombination() {
-        return characteristicCombination;
-    }
-
-    /**
-     * A characteristic that defines the members of the evidence element. Multiple characteristics are applied with "and" 
-     * semantics.
+     * A defining factor of the EvidenceVariable. Multiple characteristics are applied with "and" semantics.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Characteristic} that may be empty.
@@ -396,7 +503,7 @@ public class EvidenceVariable extends DomainResource {
     }
 
     /**
-     * Used for an outcome to classify.
+     * The method of handling in statistical analysis.
      * 
      * @return
      *     An immutable object of type {@link EvidenceVariableHandling} that may be null.
@@ -406,8 +513,7 @@ public class EvidenceVariable extends DomainResource {
     }
 
     /**
-     * A grouping (or set of values) described along with other groupings to specify the set of groupings allowed for the 
-     * variable.
+     * A grouping for ordinal or polychotomous variables.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Category} that may be empty.
@@ -422,24 +528,30 @@ public class EvidenceVariable extends DomainResource {
             (url != null) || 
             !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
             (title != null) || 
             (shortTitle != null) || 
-            (subtitle != null) || 
             (status != null) || 
+            (experimental != null) || 
             (date != null) || 
+            (publisher != null) || 
+            !contact.isEmpty() || 
             (description != null) || 
             !note.isEmpty() || 
             !useContext.isEmpty() || 
-            (publisher != null) || 
-            !contact.isEmpty() || 
+            (purpose != null) || 
+            (copyright != null) || 
+            (copyrightLabel != null) || 
+            (approvalDate != null) || 
+            (lastReviewDate != null) || 
+            (effectivePeriod != null) || 
             !author.isEmpty() || 
             !editor.isEmpty() || 
             !reviewer.isEmpty() || 
             !endorser.isEmpty() || 
             !relatedArtifact.isEmpty() || 
             (actual != null) || 
-            (characteristicCombination != null) || 
             !characteristic.isEmpty() || 
             (handling != null) || 
             !category.isEmpty();
@@ -462,24 +574,30 @@ public class EvidenceVariable extends DomainResource {
                 accept(url, "url", visitor);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(shortTitle, "shortTitle", visitor);
-                accept(subtitle, "subtitle", visitor);
                 accept(status, "status", visitor);
+                accept(experimental, "experimental", visitor);
                 accept(date, "date", visitor);
+                accept(publisher, "publisher", visitor);
+                accept(contact, "contact", visitor, ContactDetail.class);
                 accept(description, "description", visitor);
                 accept(note, "note", visitor, Annotation.class);
                 accept(useContext, "useContext", visitor, UsageContext.class);
-                accept(publisher, "publisher", visitor);
-                accept(contact, "contact", visitor, ContactDetail.class);
+                accept(purpose, "purpose", visitor);
+                accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
+                accept(approvalDate, "approvalDate", visitor);
+                accept(lastReviewDate, "lastReviewDate", visitor);
+                accept(effectivePeriod, "effectivePeriod", visitor);
                 accept(author, "author", visitor, ContactDetail.class);
                 accept(editor, "editor", visitor, ContactDetail.class);
                 accept(reviewer, "reviewer", visitor, ContactDetail.class);
                 accept(endorser, "endorser", visitor, ContactDetail.class);
                 accept(relatedArtifact, "relatedArtifact", visitor, RelatedArtifact.class);
                 accept(actual, "actual", visitor);
-                accept(characteristicCombination, "characteristicCombination", visitor);
                 accept(characteristic, "characteristic", visitor, Characteristic.class);
                 accept(handling, "handling", visitor);
                 accept(category, "category", visitor, Category.class);
@@ -512,24 +630,30 @@ public class EvidenceVariable extends DomainResource {
             Objects.equals(url, other.url) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(shortTitle, other.shortTitle) && 
-            Objects.equals(subtitle, other.subtitle) && 
             Objects.equals(status, other.status) && 
+            Objects.equals(experimental, other.experimental) && 
             Objects.equals(date, other.date) && 
+            Objects.equals(publisher, other.publisher) && 
+            Objects.equals(contact, other.contact) && 
             Objects.equals(description, other.description) && 
             Objects.equals(note, other.note) && 
             Objects.equals(useContext, other.useContext) && 
-            Objects.equals(publisher, other.publisher) && 
-            Objects.equals(contact, other.contact) && 
+            Objects.equals(purpose, other.purpose) && 
+            Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
+            Objects.equals(approvalDate, other.approvalDate) && 
+            Objects.equals(lastReviewDate, other.lastReviewDate) && 
+            Objects.equals(effectivePeriod, other.effectivePeriod) && 
             Objects.equals(author, other.author) && 
             Objects.equals(editor, other.editor) && 
             Objects.equals(reviewer, other.reviewer) && 
             Objects.equals(endorser, other.endorser) && 
             Objects.equals(relatedArtifact, other.relatedArtifact) && 
             Objects.equals(actual, other.actual) && 
-            Objects.equals(characteristicCombination, other.characteristicCombination) && 
             Objects.equals(characteristic, other.characteristic) && 
             Objects.equals(handling, other.handling) && 
             Objects.equals(category, other.category);
@@ -550,24 +674,30 @@ public class EvidenceVariable extends DomainResource {
                 url, 
                 identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
                 title, 
                 shortTitle, 
-                subtitle, 
                 status, 
+                experimental, 
                 date, 
+                publisher, 
+                contact, 
                 description, 
                 note, 
                 useContext, 
-                publisher, 
-                contact, 
+                purpose, 
+                copyright, 
+                copyrightLabel, 
+                approvalDate, 
+                lastReviewDate, 
+                effectivePeriod, 
                 author, 
                 editor, 
                 reviewer, 
                 endorser, 
                 relatedArtifact, 
                 actual, 
-                characteristicCombination, 
                 characteristic, 
                 handling, 
                 category);
@@ -589,24 +719,30 @@ public class EvidenceVariable extends DomainResource {
         private Uri url;
         private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
         private String title;
         private String shortTitle;
-        private String subtitle;
         private PublicationStatus status;
+        private Boolean experimental;
         private DateTime date;
+        private String publisher;
+        private List<ContactDetail> contact = new ArrayList<>();
         private Markdown description;
         private List<Annotation> note = new ArrayList<>();
         private List<UsageContext> useContext = new ArrayList<>();
-        private String publisher;
-        private List<ContactDetail> contact = new ArrayList<>();
+        private Markdown purpose;
+        private Markdown copyright;
+        private String copyrightLabel;
+        private Date approvalDate;
+        private Date lastReviewDate;
+        private Period effectivePeriod;
         private List<ContactDetail> author = new ArrayList<>();
         private List<ContactDetail> editor = new ArrayList<>();
         private List<ContactDetail> reviewer = new ArrayList<>();
         private List<ContactDetail> endorser = new ArrayList<>();
         private List<RelatedArtifact> relatedArtifact = new ArrayList<>();
         private Boolean actual;
-        private CharacteristicCombination characteristicCombination;
         private List<Characteristic> characteristic = new ArrayList<>();
         private EvidenceVariableHandling handling;
         private List<Category> category = new ArrayList<>();
@@ -693,7 +829,8 @@ public class EvidenceVariable extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -711,7 +848,8 @@ public class EvidenceVariable extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -732,7 +870,7 @@ public class EvidenceVariable extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -752,7 +890,7 @@ public class EvidenceVariable extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -777,9 +915,9 @@ public class EvidenceVariable extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -802,9 +940,9 @@ public class EvidenceVariable extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -829,9 +967,8 @@ public class EvidenceVariable extends DomainResource {
         /**
          * An absolute URI that is used to identify this evidence variable when it is referenced in a specification, model, 
          * design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal 
-         * address at which at which an authoritative instance of this evidence variable is (or will be) published. This URL can 
-         * be the target of a canonical reference. It SHALL remain the same when the evidence variable is stored on different 
-         * servers.
+         * address at which an authoritative instance of this evidence variable is (or will be) published. This URL can be the 
+         * target of a canonical reference. It SHALL remain the same when the evidence variable is stored on different servers.
          * 
          * @param url
          *     Canonical identifier for this evidence variable, represented as a URI (globally unique)
@@ -918,6 +1055,42 @@ public class EvidenceVariable extends DomainResource {
          */
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
             return this;
         }
 
@@ -1014,36 +1187,6 @@ public class EvidenceVariable extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code subtitle}.
-         * 
-         * @param subtitle
-         *     Subordinate title of the EvidenceVariable
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #subtitle(org.linuxforhealth.fhir.model.type.String)
-         */
-        public Builder subtitle(java.lang.String subtitle) {
-            this.subtitle = (subtitle == null) ? null : String.of(subtitle);
-            return this;
-        }
-
-        /**
-         * An explanatory or alternate title for the EvidenceVariable giving additional information about its content.
-         * 
-         * @param subtitle
-         *     Subordinate title of the EvidenceVariable
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder subtitle(String subtitle) {
-            this.subtitle = subtitle;
-            return this;
-        }
-
-        /**
          * The status of this evidence variable. Enables tracking the life-cycle of the content.
          * 
          * <p>This element is required.
@@ -1060,9 +1203,40 @@ public class EvidenceVariable extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the evidence variable was published. The date must change when the business 
-         * version changes and it must change if the status code changes. In addition, it should change when the substantive 
-         * content of the evidence variable changes.
+         * Convenience method for setting {@code experimental}.
+         * 
+         * @param experimental
+         *     For testing purposes, not real usage
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #experimental(org.linuxforhealth.fhir.model.type.Boolean)
+         */
+        public Builder experimental(java.lang.Boolean experimental) {
+            this.experimental = (experimental == null) ? null : Boolean.of(experimental);
+            return this;
+        }
+
+        /**
+         * A Boolean value to indicate that this resource is authored for testing purposes (or education/evaluation/marketing) 
+         * and is not intended to be used for genuine usage.
+         * 
+         * @param experimental
+         *     For testing purposes, not real usage
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder experimental(Boolean experimental) {
+            this.experimental = experimental;
+            return this;
+        }
+
+        /**
+         * The date (and optionally time) when the evidence variable was last significantly changed. The date must change when 
+         * the business version changes and it must change if the status code changes. In addition, it should change when the 
+         * substantive content of the evidence variable changes.
          * 
          * @param date
          *     Date last changed
@@ -1072,6 +1246,76 @@ public class EvidenceVariable extends DomainResource {
          */
         public Builder date(DateTime date) {
             this.date = date;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code publisher}.
+         * 
+         * @param publisher
+         *     Name of the publisher/steward (organization or individual)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #publisher(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder publisher(java.lang.String publisher) {
+            this.publisher = (publisher == null) ? null : String.of(publisher);
+            return this;
+        }
+
+        /**
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the evidence 
+         * variable.
+         * 
+         * @param publisher
+         *     Name of the publisher/steward (organization or individual)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder publisher(String publisher) {
+            this.publisher = publisher;
+            return this;
+        }
+
+        /**
+         * Contact details to assist a user in finding and communicating with the publisher.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param contact
+         *     Contact details for the publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder contact(ContactDetail... contact) {
+            for (ContactDetail value : contact) {
+                this.contact.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Contact details to assist a user in finding and communicating with the publisher.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param contact
+         *     Contact details for the publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder contact(Collection<ContactDetail> contact) {
+            this.contact = new ArrayList<>(contact);
             return this;
         }
 
@@ -1172,71 +1416,140 @@ public class EvidenceVariable extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code publisher}.
+         * Explanation of why this EvidenceVariable is needed and why it has been designed as it has.
          * 
-         * @param publisher
-         *     Name of the publisher (organization or individual)
+         * @param purpose
+         *     Why this EvidenceVariable is defined
          * 
          * @return
          *     A reference to this Builder instance
-         * 
-         * @see #publisher(org.linuxforhealth.fhir.model.type.String)
          */
-        public Builder publisher(java.lang.String publisher) {
-            this.publisher = (publisher == null) ? null : String.of(publisher);
+        public Builder purpose(Markdown purpose) {
+            this.purpose = purpose;
             return this;
         }
 
         /**
-         * The name of the organization or individual that published the evidence variable.
+         * A copyright statement relating to the resource and/or its contents. Copyright statements are generally legal 
+         * restrictions on the use and publishing of the resource.
          * 
-         * @param publisher
-         *     Name of the publisher (organization or individual)
+         * @param copyright
+         *     Use and/or publishing restrictions
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder publisher(String publisher) {
-            this.publisher = publisher;
+        public Builder copyright(Markdown copyright) {
+            this.copyright = copyright;
             return this;
         }
 
         /**
-         * Contact details to assist a user in finding and communicating with the publisher.
+         * Convenience method for setting {@code copyrightLabel}.
          * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param contact
-         *     Contact details for the publisher
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
          * 
          * @return
          *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
          */
-        public Builder contact(ContactDetail... contact) {
-            for (ContactDetail value : contact) {
-                this.contact.add(value);
-            }
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
             return this;
         }
 
         /**
-         * Contact details to assist a user in finding and communicating with the publisher.
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
          * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
          * 
-         * @param contact
-         *     Contact details for the publisher
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code approvalDate}.
+         * 
+         * @param approvalDate
+         *     When the resource was approved by publisher
          * 
          * @return
          *     A reference to this Builder instance
          * 
-         * @throws NullPointerException
-         *     If the passed collection is null
+         * @see #approvalDate(org.linuxforhealth.fhir.model.type.Date)
          */
-        public Builder contact(Collection<ContactDetail> contact) {
-            this.contact = new ArrayList<>(contact);
+        public Builder approvalDate(java.time.LocalDate approvalDate) {
+            this.approvalDate = (approvalDate == null) ? null : Date.of(approvalDate);
+            return this;
+        }
+
+        /**
+         * The date on which the resource content was approved by the publisher. Approval happens once when the content is 
+         * officially approved for usage.
+         * 
+         * <p>See guidance around (not) making local changes to elements [here](canonicalresource.html#localization).
+         * 
+         * @param approvalDate
+         *     When the resource was approved by publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder approvalDate(Date approvalDate) {
+            this.approvalDate = approvalDate;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code lastReviewDate}.
+         * 
+         * @param lastReviewDate
+         *     When the resource was last reviewed by the publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #lastReviewDate(org.linuxforhealth.fhir.model.type.Date)
+         */
+        public Builder lastReviewDate(java.time.LocalDate lastReviewDate) {
+            this.lastReviewDate = (lastReviewDate == null) ? null : Date.of(lastReviewDate);
+            return this;
+        }
+
+        /**
+         * The date on which the resource content was last reviewed. Review happens periodically after approval but does not 
+         * change the original approval date.
+         * 
+         * @param lastReviewDate
+         *     When the resource was last reviewed by the publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder lastReviewDate(Date lastReviewDate) {
+            this.lastReviewDate = lastReviewDate;
+            return this;
+        }
+
+        /**
+         * The period during which the resource content was or is planned to be in active use.
+         * 
+         * @param effectivePeriod
+         *     When the resource is expected to be used
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder effectivePeriod(Period effectivePeriod) {
+            this.effectivePeriod = effectivePeriod;
             return this;
         }
 
@@ -1319,7 +1632,8 @@ public class EvidenceVariable extends DomainResource {
         }
 
         /**
-         * An individual or organization primarily responsible for review of some aspect of the content.
+         * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+         * content.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1338,7 +1652,8 @@ public class EvidenceVariable extends DomainResource {
         }
 
         /**
-         * An individual or organization primarily responsible for review of some aspect of the content.
+         * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+         * content.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1358,7 +1673,8 @@ public class EvidenceVariable extends DomainResource {
         }
 
         /**
-         * An individual or organization responsible for officially endorsing the content for use in some setting.
+         * An individual or organization asserted by the publisher to be responsible for officially endorsing the content for use 
+         * in some setting.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1377,7 +1693,8 @@ public class EvidenceVariable extends DomainResource {
         }
 
         /**
-         * An individual or organization responsible for officially endorsing the content for use in some setting.
+         * An individual or organization asserted by the publisher to be responsible for officially endorsing the content for use 
+         * in some setting.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1403,7 +1720,7 @@ public class EvidenceVariable extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param relatedArtifact
-         *     Additional documentation, citations, etc.
+         *     Additional documentation, citations, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -1422,7 +1739,7 @@ public class EvidenceVariable extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param relatedArtifact
-         *     Additional documentation, citations, etc.
+         *     Additional documentation, citations, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -1466,28 +1783,13 @@ public class EvidenceVariable extends DomainResource {
         }
 
         /**
-         * Used to specify if two or more characteristics are combined with OR or AND.
-         * 
-         * @param characteristicCombination
-         *     intersection | union
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder characteristicCombination(CharacteristicCombination characteristicCombination) {
-            this.characteristicCombination = characteristicCombination;
-            return this;
-        }
-
-        /**
-         * A characteristic that defines the members of the evidence element. Multiple characteristics are applied with "and" 
-         * semantics.
+         * A defining factor of the EvidenceVariable. Multiple characteristics are applied with "and" semantics.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param characteristic
-         *     What defines the members of the evidence element
+         *     A defining factor of the EvidenceVariable
          * 
          * @return
          *     A reference to this Builder instance
@@ -1500,14 +1802,13 @@ public class EvidenceVariable extends DomainResource {
         }
 
         /**
-         * A characteristic that defines the members of the evidence element. Multiple characteristics are applied with "and" 
-         * semantics.
+         * A defining factor of the EvidenceVariable. Multiple characteristics are applied with "and" semantics.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param characteristic
-         *     What defines the members of the evidence element
+         *     A defining factor of the EvidenceVariable
          * 
          * @return
          *     A reference to this Builder instance
@@ -1521,7 +1822,7 @@ public class EvidenceVariable extends DomainResource {
         }
 
         /**
-         * Used for an outcome to classify.
+         * The method of handling in statistical analysis.
          * 
          * @param handling
          *     continuous | dichotomous | ordinal | polychotomous
@@ -1535,8 +1836,7 @@ public class EvidenceVariable extends DomainResource {
         }
 
         /**
-         * A grouping (or set of values) described along with other groupings to specify the set of groupings allowed for the 
-         * variable.
+         * A grouping for ordinal or polychotomous variables.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1555,8 +1855,7 @@ public class EvidenceVariable extends DomainResource {
         }
 
         /**
-         * A grouping (or set of values) described along with other groupings to specify the set of groupings allowed for the 
-         * variable.
+         * A grouping for ordinal or polychotomous variables.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1600,10 +1899,11 @@ public class EvidenceVariable extends DomainResource {
         protected void validate(EvidenceVariable evidenceVariable) {
             super.validate(evidenceVariable);
             ValidationSupport.checkList(evidenceVariable.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(evidenceVariable.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.requireNonNull(evidenceVariable.status, "status");
+            ValidationSupport.checkList(evidenceVariable.contact, "contact", ContactDetail.class);
             ValidationSupport.checkList(evidenceVariable.note, "note", Annotation.class);
             ValidationSupport.checkList(evidenceVariable.useContext, "useContext", UsageContext.class);
-            ValidationSupport.checkList(evidenceVariable.contact, "contact", ContactDetail.class);
             ValidationSupport.checkList(evidenceVariable.author, "author", ContactDetail.class);
             ValidationSupport.checkList(evidenceVariable.editor, "editor", ContactDetail.class);
             ValidationSupport.checkList(evidenceVariable.reviewer, "reviewer", ContactDetail.class);
@@ -1618,24 +1918,30 @@ public class EvidenceVariable extends DomainResource {
             url = evidenceVariable.url;
             identifier.addAll(evidenceVariable.identifier);
             version = evidenceVariable.version;
+            versionAlgorithm = evidenceVariable.versionAlgorithm;
             name = evidenceVariable.name;
             title = evidenceVariable.title;
             shortTitle = evidenceVariable.shortTitle;
-            subtitle = evidenceVariable.subtitle;
             status = evidenceVariable.status;
+            experimental = evidenceVariable.experimental;
             date = evidenceVariable.date;
+            publisher = evidenceVariable.publisher;
+            contact.addAll(evidenceVariable.contact);
             description = evidenceVariable.description;
             note.addAll(evidenceVariable.note);
             useContext.addAll(evidenceVariable.useContext);
-            publisher = evidenceVariable.publisher;
-            contact.addAll(evidenceVariable.contact);
+            purpose = evidenceVariable.purpose;
+            copyright = evidenceVariable.copyright;
+            copyrightLabel = evidenceVariable.copyrightLabel;
+            approvalDate = evidenceVariable.approvalDate;
+            lastReviewDate = evidenceVariable.lastReviewDate;
+            effectivePeriod = evidenceVariable.effectivePeriod;
             author.addAll(evidenceVariable.author);
             editor.addAll(evidenceVariable.editor);
             reviewer.addAll(evidenceVariable.reviewer);
             endorser.addAll(evidenceVariable.endorser);
             relatedArtifact.addAll(evidenceVariable.relatedArtifact);
             actual = evidenceVariable.actual;
-            characteristicCombination = evidenceVariable.characteristicCombination;
             characteristic.addAll(evidenceVariable.characteristic);
             handling = evidenceVariable.handling;
             category.addAll(evidenceVariable.category);
@@ -1644,44 +1950,59 @@ public class EvidenceVariable extends DomainResource {
     }
 
     /**
-     * A characteristic that defines the members of the evidence element. Multiple characteristics are applied with "and" 
-     * semantics.
+     * A defining factor of the EvidenceVariable. Multiple characteristics are applied with "and" semantics.
      */
     public static class Characteristic extends BackboneElement {
-        private final String description;
-        @Summary
-        @ReferenceTarget({ "Group", "EvidenceVariable" })
-        @Choice({ Reference.class, Canonical.class, CodeableConcept.class, Expression.class })
-        @Required
-        private final Element definition;
-        @Binding(
-            bindingName = "CharacteristicMethod",
-            strength = BindingStrength.Value.EXAMPLE,
-            description = "The method used to determine the characteristic(s) of the variable.",
-            valueSet = "http://hl7.org/fhir/ValueSet/characteristic-method"
-        )
-        private final CodeableConcept method;
-        @ReferenceTarget({ "Device", "DeviceMetric" })
-        private final Reference device;
+        private final Id linkId;
+        private final Markdown description;
+        private final List<Annotation> note;
         private final Boolean exclude;
-        private final TimeFromStart timeFromStart;
-        @Binding(
-            bindingName = "GroupMeasure",
-            strength = BindingStrength.Value.REQUIRED,
-            description = "Possible group measure aggregates (E.g. Mean, Median).",
-            valueSet = "http://hl7.org/fhir/ValueSet/group-measure|4.3.0"
-        )
-        private final GroupMeasure groupMeasure;
+        @Summary
+        @ReferenceTarget({ "EvidenceVariable", "Group", "Evidence" })
+        private final Reference definitionReference;
+        @Summary
+        private final Canonical definitionCanonical;
+        @Summary
+        private final CodeableConcept definitionCodeableConcept;
+        @Summary
+        private final Expression definitionExpression;
+        @Summary
+        private final Id definitionId;
+        @Summary
+        private final DefinitionByTypeAndValue definitionByTypeAndValue;
+        private final DefinitionByCombination definitionByCombination;
+        @Choice({ Quantity.class, Range.class })
+        private final org.linuxforhealth.fhir.model.type.Element instances;
+        @Choice({ Quantity.class, Range.class })
+        private final org.linuxforhealth.fhir.model.type.Element duration;
+        private final List<TimeFromEvent> timeFromEvent;
 
         private Characteristic(Builder builder) {
             super(builder);
+            linkId = builder.linkId;
             description = builder.description;
-            definition = builder.definition;
-            method = builder.method;
-            device = builder.device;
+            note = Collections.unmodifiableList(builder.note);
             exclude = builder.exclude;
-            timeFromStart = builder.timeFromStart;
-            groupMeasure = builder.groupMeasure;
+            definitionReference = builder.definitionReference;
+            definitionCanonical = builder.definitionCanonical;
+            definitionCodeableConcept = builder.definitionCodeableConcept;
+            definitionExpression = builder.definitionExpression;
+            definitionId = builder.definitionId;
+            definitionByTypeAndValue = builder.definitionByTypeAndValue;
+            definitionByCombination = builder.definitionByCombination;
+            instances = builder.instances;
+            duration = builder.duration;
+            timeFromEvent = Collections.unmodifiableList(builder.timeFromEvent);
+        }
+
+        /**
+         * Label used for when a characteristic refers to another characteristic.
+         * 
+         * @return
+         *     An immutable object of type {@link Id} that may be null.
+         */
+        public Id getLinkId() {
+            return linkId;
         }
 
         /**
@@ -1689,47 +2010,25 @@ public class EvidenceVariable extends DomainResource {
          * user.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link Markdown} that may be null.
          */
-        public String getDescription() {
+        public Markdown getDescription() {
             return description;
         }
 
         /**
-         * Define members of the evidence element using Codes (such as condition, medication, or observation), Expressions ( 
-         * using an expression language such as FHIRPath or CQL) or DataRequirements (such as Diabetes diagnosis onset in the 
-         * last year).
+         * A human-readable string to clarify or explain concepts about the characteristic.
          * 
          * @return
-         *     An immutable object of type {@link Reference}, {@link Canonical}, {@link CodeableConcept} or {@link Expression} that 
-         *     is non-null.
+         *     An unmodifiable list containing immutable objects of type {@link Annotation} that may be empty.
          */
-        public Element getDefinition() {
-            return definition;
+        public List<Annotation> getNote() {
+            return note;
         }
 
         /**
-         * Method used for describing characteristic.
-         * 
-         * @return
-         *     An immutable object of type {@link CodeableConcept} that may be null.
-         */
-        public CodeableConcept getMethod() {
-            return method;
-        }
-
-        /**
-         * Device used for determining characteristic.
-         * 
-         * @return
-         *     An immutable object of type {@link Reference} that may be null.
-         */
-        public Reference getDevice() {
-            return device;
-        }
-
-        /**
-         * When true, members with this characteristic are excluded from the element.
+         * When true, this characteristic is an exclusion criterion. In other words, not matching this characteristic definition 
+         * is equivalent to meeting this criterion.
          * 
          * @return
          *     An immutable object of type {@link Boolean} that may be null.
@@ -1739,35 +2038,122 @@ public class EvidenceVariable extends DomainResource {
         }
 
         /**
-         * Indicates duration, period, or point of observation from the participant's study entry.
+         * Defines the characteristic using a Reference.
          * 
          * @return
-         *     An immutable object of type {@link TimeFromStart} that may be null.
+         *     An immutable object of type {@link Reference} that may be null.
          */
-        public TimeFromStart getTimeFromStart() {
-            return timeFromStart;
+        public Reference getDefinitionReference() {
+            return definitionReference;
         }
 
         /**
-         * Indicates how elements are aggregated within the study effective period.
+         * Defines the characteristic using Canonical.
          * 
          * @return
-         *     An immutable object of type {@link GroupMeasure} that may be null.
+         *     An immutable object of type {@link Canonical} that may be null.
          */
-        public GroupMeasure getGroupMeasure() {
-            return groupMeasure;
+        public Canonical getDefinitionCanonical() {
+            return definitionCanonical;
+        }
+
+        /**
+         * Defines the characteristic using CodeableConcept.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getDefinitionCodeableConcept() {
+            return definitionCodeableConcept;
+        }
+
+        /**
+         * Defines the characteristic using Expression.
+         * 
+         * @return
+         *     An immutable object of type {@link Expression} that may be null.
+         */
+        public Expression getDefinitionExpression() {
+            return definitionExpression;
+        }
+
+        /**
+         * Defines the characteristic using id.
+         * 
+         * @return
+         *     An immutable object of type {@link Id} that may be null.
+         */
+        public Id getDefinitionId() {
+            return definitionId;
+        }
+
+        /**
+         * Defines the characteristic using both a type and value[x] elements.
+         * 
+         * @return
+         *     An immutable object of type {@link DefinitionByTypeAndValue} that may be null.
+         */
+        public DefinitionByTypeAndValue getDefinitionByTypeAndValue() {
+            return definitionByTypeAndValue;
+        }
+
+        /**
+         * Defines the characteristic as a combination of two or more characteristics.
+         * 
+         * @return
+         *     An immutable object of type {@link DefinitionByCombination} that may be null.
+         */
+        public DefinitionByCombination getDefinitionByCombination() {
+            return definitionByCombination;
+        }
+
+        /**
+         * Number of occurrences meeting the characteristic.
+         * 
+         * @return
+         *     An immutable object of type {@link Quantity} or {@link Range} that may be null.
+         */
+        public org.linuxforhealth.fhir.model.type.Element getInstances() {
+            return instances;
+        }
+
+        /**
+         * Length of time in which the characteristic is met.
+         * 
+         * @return
+         *     An immutable object of type {@link Quantity} or {@link Range} that may be null.
+         */
+        public org.linuxforhealth.fhir.model.type.Element getDuration() {
+            return duration;
+        }
+
+        /**
+         * Timing in which the characteristic is determined.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link TimeFromEvent} that may be empty.
+         */
+        public List<TimeFromEvent> getTimeFromEvent() {
+            return timeFromEvent;
         }
 
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
+                (linkId != null) || 
                 (description != null) || 
-                (definition != null) || 
-                (method != null) || 
-                (device != null) || 
+                !note.isEmpty() || 
                 (exclude != null) || 
-                (timeFromStart != null) || 
-                (groupMeasure != null);
+                (definitionReference != null) || 
+                (definitionCanonical != null) || 
+                (definitionCodeableConcept != null) || 
+                (definitionExpression != null) || 
+                (definitionId != null) || 
+                (definitionByTypeAndValue != null) || 
+                (definitionByCombination != null) || 
+                (instances != null) || 
+                (duration != null) || 
+                !timeFromEvent.isEmpty();
         }
 
         @Override
@@ -1779,13 +2165,20 @@ public class EvidenceVariable extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(linkId, "linkId", visitor);
                     accept(description, "description", visitor);
-                    accept(definition, "definition", visitor);
-                    accept(method, "method", visitor);
-                    accept(device, "device", visitor);
+                    accept(note, "note", visitor, Annotation.class);
                     accept(exclude, "exclude", visitor);
-                    accept(timeFromStart, "timeFromStart", visitor);
-                    accept(groupMeasure, "groupMeasure", visitor);
+                    accept(definitionReference, "definitionReference", visitor);
+                    accept(definitionCanonical, "definitionCanonical", visitor);
+                    accept(definitionCodeableConcept, "definitionCodeableConcept", visitor);
+                    accept(definitionExpression, "definitionExpression", visitor);
+                    accept(definitionId, "definitionId", visitor);
+                    accept(definitionByTypeAndValue, "definitionByTypeAndValue", visitor);
+                    accept(definitionByCombination, "definitionByCombination", visitor);
+                    accept(instances, "instances", visitor);
+                    accept(duration, "duration", visitor);
+                    accept(timeFromEvent, "timeFromEvent", visitor, TimeFromEvent.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -1807,13 +2200,20 @@ public class EvidenceVariable extends DomainResource {
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(linkId, other.linkId) && 
                 Objects.equals(description, other.description) && 
-                Objects.equals(definition, other.definition) && 
-                Objects.equals(method, other.method) && 
-                Objects.equals(device, other.device) && 
+                Objects.equals(note, other.note) && 
                 Objects.equals(exclude, other.exclude) && 
-                Objects.equals(timeFromStart, other.timeFromStart) && 
-                Objects.equals(groupMeasure, other.groupMeasure);
+                Objects.equals(definitionReference, other.definitionReference) && 
+                Objects.equals(definitionCanonical, other.definitionCanonical) && 
+                Objects.equals(definitionCodeableConcept, other.definitionCodeableConcept) && 
+                Objects.equals(definitionExpression, other.definitionExpression) && 
+                Objects.equals(definitionId, other.definitionId) && 
+                Objects.equals(definitionByTypeAndValue, other.definitionByTypeAndValue) && 
+                Objects.equals(definitionByCombination, other.definitionByCombination) && 
+                Objects.equals(instances, other.instances) && 
+                Objects.equals(duration, other.duration) && 
+                Objects.equals(timeFromEvent, other.timeFromEvent);
         }
 
         @Override
@@ -1823,13 +2223,20 @@ public class EvidenceVariable extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
+                    linkId, 
                     description, 
-                    definition, 
-                    method, 
-                    device, 
+                    note, 
                     exclude, 
-                    timeFromStart, 
-                    groupMeasure);
+                    definitionReference, 
+                    definitionCanonical, 
+                    definitionCodeableConcept, 
+                    definitionExpression, 
+                    definitionId, 
+                    definitionByTypeAndValue, 
+                    definitionByCombination, 
+                    instances, 
+                    duration, 
+                    timeFromEvent);
                 hashCode = result;
             }
             return result;
@@ -1845,13 +2252,20 @@ public class EvidenceVariable extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private String description;
-            private Element definition;
-            private CodeableConcept method;
-            private Reference device;
+            private Id linkId;
+            private Markdown description;
+            private List<Annotation> note = new ArrayList<>();
             private Boolean exclude;
-            private TimeFromStart timeFromStart;
-            private GroupMeasure groupMeasure;
+            private Reference definitionReference;
+            private Canonical definitionCanonical;
+            private CodeableConcept definitionCodeableConcept;
+            private Expression definitionExpression;
+            private Id definitionId;
+            private DefinitionByTypeAndValue definitionByTypeAndValue;
+            private DefinitionByCombination definitionByCombination;
+            private org.linuxforhealth.fhir.model.type.Element instances;
+            private org.linuxforhealth.fhir.model.type.Element duration;
+            private List<TimeFromEvent> timeFromEvent = new ArrayList<>();
 
             private Builder() {
                 super();
@@ -1874,7 +2288,7 @@ public class EvidenceVariable extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1894,7 +2308,7 @@ public class EvidenceVariable extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1919,7 +2333,7 @@ public class EvidenceVariable extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1944,7 +2358,7 @@ public class EvidenceVariable extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1969,18 +2383,16 @@ public class EvidenceVariable extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code description}.
+             * Label used for when a characteristic refers to another characteristic.
              * 
-             * @param description
-             *     Natural language description of the characteristic
+             * @param linkId
+             *     Label for internal linking
              * 
              * @return
              *     A reference to this Builder instance
-             * 
-             * @see #description(org.linuxforhealth.fhir.model.type.String)
              */
-            public Builder description(java.lang.String description) {
-                this.description = (description == null) ? null : String.of(description);
+            public Builder linkId(Id linkId) {
+                this.linkId = linkId;
                 return this;
             }
 
@@ -1994,74 +2406,47 @@ public class EvidenceVariable extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder description(String description) {
+            public Builder description(Markdown description) {
                 this.description = description;
                 return this;
             }
 
             /**
-             * Define members of the evidence element using Codes (such as condition, medication, or observation), Expressions ( 
-             * using an expression language such as FHIRPath or CQL) or DataRequirements (such as Diabetes diagnosis onset in the 
-             * last year).
+             * A human-readable string to clarify or explain concepts about the characteristic.
              * 
-             * <p>This element is required.
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * <p>This is a choice element with the following allowed types:
-             * <ul>
-             * <li>{@link Reference}</li>
-             * <li>{@link Canonical}</li>
-             * <li>{@link CodeableConcept}</li>
-             * <li>{@link Expression}</li>
-             * </ul>
-             * 
-             * When of type {@link Reference}, the allowed resource types for this reference are:
-             * <ul>
-             * <li>{@link Group}</li>
-             * <li>{@link EvidenceVariable}</li>
-             * </ul>
-             * 
-             * @param definition
-             *     What code or expression defines members?
+             * @param note
+             *     Used for footnotes or explanatory notes
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder definition(Element definition) {
-                this.definition = definition;
+            public Builder note(Annotation... note) {
+                for (Annotation value : note) {
+                    this.note.add(value);
+                }
                 return this;
             }
 
             /**
-             * Method used for describing characteristic.
+             * A human-readable string to clarify or explain concepts about the characteristic.
              * 
-             * @param method
-             *     Method used for describing characteristic
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder method(CodeableConcept method) {
-                this.method = method;
-                return this;
-            }
-
-            /**
-             * Device used for determining characteristic.
-             * 
-             * <p>Allowed resource types for this reference:
-             * <ul>
-             * <li>{@link Device}</li>
-             * <li>{@link DeviceMetric}</li>
-             * </ul>
-             * 
-             * @param device
-             *     Device used for determining characteristic
+             * @param note
+             *     Used for footnotes or explanatory notes
              * 
              * @return
              *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
              */
-            public Builder device(Reference device) {
-                this.device = device;
+            public Builder note(Collection<Annotation> note) {
+                this.note = new ArrayList<>(note);
                 return this;
             }
 
@@ -2069,7 +2454,7 @@ public class EvidenceVariable extends DomainResource {
              * Convenience method for setting {@code exclude}.
              * 
              * @param exclude
-             *     Whether the characteristic includes or excludes members
+             *     Whether the characteristic is an inclusion criterion or exclusion criterion
              * 
              * @return
              *     A reference to this Builder instance
@@ -2082,10 +2467,11 @@ public class EvidenceVariable extends DomainResource {
             }
 
             /**
-             * When true, members with this characteristic are excluded from the element.
+             * When true, this characteristic is an exclusion criterion. In other words, not matching this characteristic definition 
+             * is equivalent to meeting this criterion.
              * 
              * @param exclude
-             *     Whether the characteristic includes or excludes members
+             *     Whether the characteristic is an inclusion criterion or exclusion criterion
              * 
              * @return
              *     A reference to this Builder instance
@@ -2096,40 +2482,191 @@ public class EvidenceVariable extends DomainResource {
             }
 
             /**
-             * Indicates duration, period, or point of observation from the participant's study entry.
+             * Defines the characteristic using a Reference.
              * 
-             * @param timeFromStart
-             *     Observation time from study start
+             * <p>Allowed resource types for this reference:
+             * <ul>
+             * <li>{@link EvidenceVariable}</li>
+             * <li>{@link Group}</li>
+             * <li>{@link Evidence}</li>
+             * </ul>
+             * 
+             * @param definitionReference
+             *     Defines the characteristic (without using type and value) by a Reference
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder timeFromStart(TimeFromStart timeFromStart) {
-                this.timeFromStart = timeFromStart;
+            public Builder definitionReference(Reference definitionReference) {
+                this.definitionReference = definitionReference;
                 return this;
             }
 
             /**
-             * Indicates how elements are aggregated within the study effective period.
+             * Defines the characteristic using Canonical.
              * 
-             * @param groupMeasure
-             *     mean | median | mean-of-mean | mean-of-median | median-of-mean | median-of-median
+             * @param definitionCanonical
+             *     Defines the characteristic (without using type and value) by a Canonical
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder groupMeasure(GroupMeasure groupMeasure) {
-                this.groupMeasure = groupMeasure;
+            public Builder definitionCanonical(Canonical definitionCanonical) {
+                this.definitionCanonical = definitionCanonical;
+                return this;
+            }
+
+            /**
+             * Defines the characteristic using CodeableConcept.
+             * 
+             * @param definitionCodeableConcept
+             *     Defines the characteristic (without using type and value) by a CodeableConcept
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder definitionCodeableConcept(CodeableConcept definitionCodeableConcept) {
+                this.definitionCodeableConcept = definitionCodeableConcept;
+                return this;
+            }
+
+            /**
+             * Defines the characteristic using Expression.
+             * 
+             * @param definitionExpression
+             *     Defines the characteristic (without using type and value) by an expression
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder definitionExpression(Expression definitionExpression) {
+                this.definitionExpression = definitionExpression;
+                return this;
+            }
+
+            /**
+             * Defines the characteristic using id.
+             * 
+             * @param definitionId
+             *     Defines the characteristic (without using type and value) by an id
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder definitionId(Id definitionId) {
+                this.definitionId = definitionId;
+                return this;
+            }
+
+            /**
+             * Defines the characteristic using both a type and value[x] elements.
+             * 
+             * @param definitionByTypeAndValue
+             *     Defines the characteristic using type and value
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder definitionByTypeAndValue(DefinitionByTypeAndValue definitionByTypeAndValue) {
+                this.definitionByTypeAndValue = definitionByTypeAndValue;
+                return this;
+            }
+
+            /**
+             * Defines the characteristic as a combination of two or more characteristics.
+             * 
+             * @param definitionByCombination
+             *     Used to specify how two or more characteristics are combined
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder definitionByCombination(DefinitionByCombination definitionByCombination) {
+                this.definitionByCombination = definitionByCombination;
+                return this;
+            }
+
+            /**
+             * Number of occurrences meeting the characteristic.
+             * 
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link Quantity}</li>
+             * <li>{@link Range}</li>
+             * </ul>
+             * 
+             * @param instances
+             *     Number of occurrences meeting the characteristic
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder instances(org.linuxforhealth.fhir.model.type.Element instances) {
+                this.instances = instances;
+                return this;
+            }
+
+            /**
+             * Length of time in which the characteristic is met.
+             * 
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link Quantity}</li>
+             * <li>{@link Range}</li>
+             * </ul>
+             * 
+             * @param duration
+             *     Length of time in which the characteristic is met
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder duration(org.linuxforhealth.fhir.model.type.Element duration) {
+                this.duration = duration;
+                return this;
+            }
+
+            /**
+             * Timing in which the characteristic is determined.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param timeFromEvent
+             *     Timing in which the characteristic is determined
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder timeFromEvent(TimeFromEvent... timeFromEvent) {
+                for (TimeFromEvent value : timeFromEvent) {
+                    this.timeFromEvent.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * Timing in which the characteristic is determined.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param timeFromEvent
+             *     Timing in which the characteristic is determined
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder timeFromEvent(Collection<TimeFromEvent> timeFromEvent) {
+                this.timeFromEvent = new ArrayList<>(timeFromEvent);
                 return this;
             }
 
             /**
              * Build the {@link Characteristic}
-             * 
-             * <p>Required elements:
-             * <ul>
-             * <li>definition</li>
-             * </ul>
              * 
              * @return
              *     An immutable object of type {@link Characteristic}
@@ -2147,89 +2684,133 @@ public class EvidenceVariable extends DomainResource {
 
             protected void validate(Characteristic characteristic) {
                 super.validate(characteristic);
-                ValidationSupport.requireChoiceElement(characteristic.definition, "definition", Reference.class, Canonical.class, CodeableConcept.class, Expression.class);
-                ValidationSupport.checkReferenceType(characteristic.definition, "definition", "Group", "EvidenceVariable");
-                ValidationSupport.checkReferenceType(characteristic.device, "device", "Device", "DeviceMetric");
+                ValidationSupport.checkList(characteristic.note, "note", Annotation.class);
+                ValidationSupport.choiceElement(characteristic.instances, "instances", Quantity.class, Range.class);
+                ValidationSupport.choiceElement(characteristic.duration, "duration", Quantity.class, Range.class);
+                ValidationSupport.checkList(characteristic.timeFromEvent, "timeFromEvent", TimeFromEvent.class);
+                ValidationSupport.checkReferenceType(characteristic.definitionReference, "definitionReference", "EvidenceVariable", "Group", "Evidence");
                 ValidationSupport.requireValueOrChildren(characteristic);
             }
 
             protected Builder from(Characteristic characteristic) {
                 super.from(characteristic);
+                linkId = characteristic.linkId;
                 description = characteristic.description;
-                definition = characteristic.definition;
-                method = characteristic.method;
-                device = characteristic.device;
+                note.addAll(characteristic.note);
                 exclude = characteristic.exclude;
-                timeFromStart = characteristic.timeFromStart;
-                groupMeasure = characteristic.groupMeasure;
+                definitionReference = characteristic.definitionReference;
+                definitionCanonical = characteristic.definitionCanonical;
+                definitionCodeableConcept = characteristic.definitionCodeableConcept;
+                definitionExpression = characteristic.definitionExpression;
+                definitionId = characteristic.definitionId;
+                definitionByTypeAndValue = characteristic.definitionByTypeAndValue;
+                definitionByCombination = characteristic.definitionByCombination;
+                instances = characteristic.instances;
+                duration = characteristic.duration;
+                timeFromEvent.addAll(characteristic.timeFromEvent);
                 return this;
             }
         }
 
         /**
-         * Indicates duration, period, or point of observation from the participant's study entry.
+         * Defines the characteristic using both a type and value[x] elements.
          */
-        public static class TimeFromStart extends BackboneElement {
-            private final String description;
-            private final Quantity quantity;
-            private final Range range;
-            private final List<Annotation> note;
+        public static class DefinitionByTypeAndValue extends BackboneElement {
+            @Summary
+            @Binding(
+                bindingName = "UsageContextType",
+                strength = BindingStrength.Value.EXAMPLE,
+                valueSet = "http://terminology.hl7.org/ValueSet/usage-context-type"
+            )
+            @Required
+            private final CodeableConcept type;
+            @Binding(
+                bindingName = "DefinitionMethod",
+                strength = BindingStrength.Value.EXAMPLE,
+                valueSet = "http://hl7.org/fhir/ValueSet/definition-method"
+            )
+            private final List<CodeableConcept> method;
+            @ReferenceTarget({ "Device", "DeviceMetric" })
+            private final Reference device;
+            @Summary
+            @Choice({ CodeableConcept.class, Boolean.class, Quantity.class, Range.class, Reference.class, Id.class })
+            @Required
+            private final org.linuxforhealth.fhir.model.type.Element value;
+            @Binding(
+                bindingName = "CharacteristicOffset",
+                strength = BindingStrength.Value.EXAMPLE,
+                valueSet = "http://hl7.org/fhir/ValueSet/characteristic-offset"
+            )
+            private final CodeableConcept offset;
 
-            private TimeFromStart(Builder builder) {
+            private DefinitionByTypeAndValue(Builder builder) {
                 super(builder);
-                description = builder.description;
-                quantity = builder.quantity;
-                range = builder.range;
-                note = Collections.unmodifiableList(builder.note);
+                type = builder.type;
+                method = Collections.unmodifiableList(builder.method);
+                device = builder.device;
+                value = builder.value;
+                offset = builder.offset;
             }
 
             /**
-             * A short, natural language description.
+             * Used to express the type of characteristic.
              * 
              * @return
-             *     An immutable object of type {@link String} that may be null.
+             *     An immutable object of type {@link CodeableConcept} that is non-null.
              */
-            public String getDescription() {
-                return description;
+            public CodeableConcept getType() {
+                return type;
             }
 
             /**
-             * Used to express the observation at a defined amount of time after the study start.
+             * Method for how the characteristic value was determined.
              * 
              * @return
-             *     An immutable object of type {@link Quantity} that may be null.
+             *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
              */
-            public Quantity getQuantity() {
-                return quantity;
+            public List<CodeableConcept> getMethod() {
+                return method;
             }
 
             /**
-             * Used to express the observation within a period after the study start.
+             * Device used for determining characteristic.
              * 
              * @return
-             *     An immutable object of type {@link Range} that may be null.
+             *     An immutable object of type {@link Reference} that may be null.
              */
-            public Range getRange() {
-                return range;
+            public Reference getDevice() {
+                return device;
             }
 
             /**
-             * A human-readable string to clarify or explain concepts about the resource.
+             * Defines the characteristic when paired with characteristic.type.
              * 
              * @return
-             *     An unmodifiable list containing immutable objects of type {@link Annotation} that may be empty.
+             *     An immutable object of type {@link CodeableConcept}, {@link Boolean}, {@link Quantity}, {@link Range}, {@link 
+             *     Reference} or {@link Id} that is non-null.
              */
-            public List<Annotation> getNote() {
-                return note;
+            public org.linuxforhealth.fhir.model.type.Element getValue() {
+                return value;
+            }
+
+            /**
+             * Defines the reference point for comparison when valueQuantity or valueRange is not compared to zero.
+             * 
+             * @return
+             *     An immutable object of type {@link CodeableConcept} that may be null.
+             */
+            public CodeableConcept getOffset() {
+                return offset;
             }
 
             @Override
             public boolean hasChildren() {
                 return super.hasChildren() || 
-                    (description != null) || 
-                    (quantity != null) || 
-                    (range != null) || 
-                    !note.isEmpty();
+                    (type != null) || 
+                    !method.isEmpty() || 
+                    (device != null) || 
+                    (value != null) || 
+                    (offset != null);
             }
 
             @Override
@@ -2241,10 +2822,11 @@ public class EvidenceVariable extends DomainResource {
                         accept(id, "id", visitor);
                         accept(extension, "extension", visitor, Extension.class);
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                        accept(description, "description", visitor);
-                        accept(quantity, "quantity", visitor);
-                        accept(range, "range", visitor);
-                        accept(note, "note", visitor, Annotation.class);
+                        accept(type, "type", visitor);
+                        accept(method, "method", visitor, CodeableConcept.class);
+                        accept(device, "device", visitor);
+                        accept(value, "value", visitor);
+                        accept(offset, "offset", visitor);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
                     visitor.postVisit(this);
@@ -2262,14 +2844,15 @@ public class EvidenceVariable extends DomainResource {
                 if (getClass() != obj.getClass()) {
                     return false;
                 }
-                TimeFromStart other = (TimeFromStart) obj;
+                DefinitionByTypeAndValue other = (DefinitionByTypeAndValue) obj;
                 return Objects.equals(id, other.id) && 
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
-                    Objects.equals(description, other.description) && 
-                    Objects.equals(quantity, other.quantity) && 
-                    Objects.equals(range, other.range) && 
-                    Objects.equals(note, other.note);
+                    Objects.equals(type, other.type) && 
+                    Objects.equals(method, other.method) && 
+                    Objects.equals(device, other.device) && 
+                    Objects.equals(value, other.value) && 
+                    Objects.equals(offset, other.offset);
             }
 
             @Override
@@ -2279,10 +2862,11 @@ public class EvidenceVariable extends DomainResource {
                     result = Objects.hash(id, 
                         extension, 
                         modifierExtension, 
-                        description, 
-                        quantity, 
-                        range, 
-                        note);
+                        type, 
+                        method, 
+                        device, 
+                        value, 
+                        offset);
                     hashCode = result;
                 }
                 return result;
@@ -2298,10 +2882,11 @@ public class EvidenceVariable extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private String description;
-                private Quantity quantity;
-                private Range range;
-                private List<Annotation> note = new ArrayList<>();
+                private CodeableConcept type;
+                private List<CodeableConcept> method = new ArrayList<>();
+                private Reference device;
+                private org.linuxforhealth.fhir.model.type.Element value;
+                private CodeableConcept offset;
 
                 private Builder() {
                     super();
@@ -2324,7 +2909,7 @@ public class EvidenceVariable extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2344,7 +2929,7 @@ public class EvidenceVariable extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2369,7 +2954,7 @@ public class EvidenceVariable extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2394,7 +2979,7 @@ public class EvidenceVariable extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2419,23 +3004,815 @@ public class EvidenceVariable extends DomainResource {
                 }
 
                 /**
-                 * Convenience method for setting {@code description}.
+                 * Used to express the type of characteristic.
                  * 
-                 * @param description
-                 *     Human readable description
+                 * <p>This element is required.
+                 * 
+                 * @param type
+                 *     Expresses the type of characteristic
                  * 
                  * @return
                  *     A reference to this Builder instance
-                 * 
-                 * @see #description(org.linuxforhealth.fhir.model.type.String)
                  */
-                public Builder description(java.lang.String description) {
-                    this.description = (description == null) ? null : String.of(description);
+                public Builder type(CodeableConcept type) {
+                    this.type = type;
                     return this;
                 }
 
                 /**
-                 * A short, natural language description.
+                 * Method for how the characteristic value was determined.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param method
+                 *     Method for how the characteristic value was determined
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder method(CodeableConcept... method) {
+                    for (CodeableConcept value : method) {
+                        this.method.add(value);
+                    }
+                    return this;
+                }
+
+                /**
+                 * Method for how the characteristic value was determined.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param method
+                 *     Method for how the characteristic value was determined
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                public Builder method(Collection<CodeableConcept> method) {
+                    this.method = new ArrayList<>(method);
+                    return this;
+                }
+
+                /**
+                 * Device used for determining characteristic.
+                 * 
+                 * <p>Allowed resource types for this reference:
+                 * <ul>
+                 * <li>{@link Device}</li>
+                 * <li>{@link DeviceMetric}</li>
+                 * </ul>
+                 * 
+                 * @param device
+                 *     Device used for determining characteristic
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder device(Reference device) {
+                    this.device = device;
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code value} with choice type Boolean.
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * @param value
+                 *     Defines the characteristic when coupled with characteristic.type
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #value(Element)
+                 */
+                public Builder value(java.lang.Boolean value) {
+                    this.value = (value == null) ? null : Boolean.of(value);
+                    return this;
+                }
+
+                /**
+                 * Defines the characteristic when paired with characteristic.type.
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * <p>This is a choice element with the following allowed types:
+                 * <ul>
+                 * <li>{@link CodeableConcept}</li>
+                 * <li>{@link Boolean}</li>
+                 * <li>{@link Quantity}</li>
+                 * <li>{@link Range}</li>
+                 * <li>{@link Reference}</li>
+                 * <li>{@link Id}</li>
+                 * </ul>
+                 * 
+                 * @param value
+                 *     Defines the characteristic when coupled with characteristic.type
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
+                    this.value = value;
+                    return this;
+                }
+
+                /**
+                 * Defines the reference point for comparison when valueQuantity or valueRange is not compared to zero.
+                 * 
+                 * @param offset
+                 *     Reference point for valueQuantity or valueRange
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder offset(CodeableConcept offset) {
+                    this.offset = offset;
+                    return this;
+                }
+
+                /**
+                 * Build the {@link DefinitionByTypeAndValue}
+                 * 
+                 * <p>Required elements:
+                 * <ul>
+                 * <li>type</li>
+                 * <li>value</li>
+                 * </ul>
+                 * 
+                 * @return
+                 *     An immutable object of type {@link DefinitionByTypeAndValue}
+                 * @throws IllegalStateException
+                 *     if the current state cannot be built into a valid DefinitionByTypeAndValue per the base specification
+                 */
+                @Override
+                public DefinitionByTypeAndValue build() {
+                    DefinitionByTypeAndValue definitionByTypeAndValue = new DefinitionByTypeAndValue(this);
+                    if (validating) {
+                        validate(definitionByTypeAndValue);
+                    }
+                    return definitionByTypeAndValue;
+                }
+
+                protected void validate(DefinitionByTypeAndValue definitionByTypeAndValue) {
+                    super.validate(definitionByTypeAndValue);
+                    ValidationSupport.requireNonNull(definitionByTypeAndValue.type, "type");
+                    ValidationSupport.checkList(definitionByTypeAndValue.method, "method", CodeableConcept.class);
+                    ValidationSupport.requireChoiceElement(definitionByTypeAndValue.value, "value", CodeableConcept.class, Boolean.class, Quantity.class, Range.class, Reference.class, Id.class);
+                    ValidationSupport.checkReferenceType(definitionByTypeAndValue.device, "device", "Device", "DeviceMetric");
+                    ValidationSupport.requireValueOrChildren(definitionByTypeAndValue);
+                }
+
+                protected Builder from(DefinitionByTypeAndValue definitionByTypeAndValue) {
+                    super.from(definitionByTypeAndValue);
+                    type = definitionByTypeAndValue.type;
+                    method.addAll(definitionByTypeAndValue.method);
+                    device = definitionByTypeAndValue.device;
+                    value = definitionByTypeAndValue.value;
+                    offset = definitionByTypeAndValue.offset;
+                    return this;
+                }
+            }
+        }
+
+        /**
+         * Defines the characteristic as a combination of two or more characteristics.
+         */
+        public static class DefinitionByCombination extends BackboneElement {
+            @Binding(
+                bindingName = "CharacteristicCombination",
+                strength = BindingStrength.Value.REQUIRED,
+                valueSet = "http://hl7.org/fhir/ValueSet/characteristic-combination|5.0.0"
+            )
+            @Required
+            private final CharacteristicCombination code;
+            private final PositiveInt threshold;
+            @Required
+            private final List<EvidenceVariable.Characteristic> characteristic;
+
+            private DefinitionByCombination(Builder builder) {
+                super(builder);
+                code = builder.code;
+                threshold = builder.threshold;
+                characteristic = Collections.unmodifiableList(builder.characteristic);
+            }
+
+            /**
+             * Used to specify if two or more characteristics are combined with OR or AND.
+             * 
+             * @return
+             *     An immutable object of type {@link CharacteristicCombination} that is non-null.
+             */
+            public CharacteristicCombination getCode() {
+                return code;
+            }
+
+            /**
+             * Provides the value of "n" when "at-least" or "at-most" codes are used.
+             * 
+             * @return
+             *     An immutable object of type {@link PositiveInt} that may be null.
+             */
+            public PositiveInt getThreshold() {
+                return threshold;
+            }
+
+            /**
+             * A defining factor of the characteristic.
+             * 
+             * @return
+             *     An unmodifiable list containing immutable objects of type {@link Characteristic} that is non-empty.
+             */
+            public List<EvidenceVariable.Characteristic> getCharacteristic() {
+                return characteristic;
+            }
+
+            @Override
+            public boolean hasChildren() {
+                return super.hasChildren() || 
+                    (code != null) || 
+                    (threshold != null) || 
+                    !characteristic.isEmpty();
+            }
+
+            @Override
+            public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                if (visitor.preVisit(this)) {
+                    visitor.visitStart(elementName, elementIndex, this);
+                    if (visitor.visit(elementName, elementIndex, this)) {
+                        // visit children
+                        accept(id, "id", visitor);
+                        accept(extension, "extension", visitor, Extension.class);
+                        accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                        accept(code, "code", visitor);
+                        accept(threshold, "threshold", visitor);
+                        accept(characteristic, "characteristic", visitor, EvidenceVariable.Characteristic.class);
+                    }
+                    visitor.visitEnd(elementName, elementIndex, this);
+                    visitor.postVisit(this);
+                }
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj) {
+                    return true;
+                }
+                if (obj == null) {
+                    return false;
+                }
+                if (getClass() != obj.getClass()) {
+                    return false;
+                }
+                DefinitionByCombination other = (DefinitionByCombination) obj;
+                return Objects.equals(id, other.id) && 
+                    Objects.equals(extension, other.extension) && 
+                    Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(code, other.code) && 
+                    Objects.equals(threshold, other.threshold) && 
+                    Objects.equals(characteristic, other.characteristic);
+            }
+
+            @Override
+            public int hashCode() {
+                int result = hashCode;
+                if (result == 0) {
+                    result = Objects.hash(id, 
+                        extension, 
+                        modifierExtension, 
+                        code, 
+                        threshold, 
+                        characteristic);
+                    hashCode = result;
+                }
+                return result;
+            }
+
+            @Override
+            public Builder toBuilder() {
+                return new Builder().from(this);
+            }
+
+            public static Builder builder() {
+                return new Builder();
+            }
+
+            public static class Builder extends BackboneElement.Builder {
+                private CharacteristicCombination code;
+                private PositiveInt threshold;
+                private List<EvidenceVariable.Characteristic> characteristic = new ArrayList<>();
+
+                private Builder() {
+                    super();
+                }
+
+                /**
+                 * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                 * contain spaces.
+                 * 
+                 * @param id
+                 *     Unique id for inter-element referencing
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder id(java.lang.String id) {
+                    return (Builder) super.id(id);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder extension(Extension... extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder extension(Collection<Extension> extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder modifierExtension(Extension... modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * Used to specify if two or more characteristics are combined with OR or AND.
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * @param code
+                 *     all-of | any-of | at-least | at-most | statistical | net-effect | dataset
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder code(CharacteristicCombination code) {
+                    this.code = code;
+                    return this;
+                }
+
+                /**
+                 * Provides the value of "n" when "at-least" or "at-most" codes are used.
+                 * 
+                 * @param threshold
+                 *     Provides the value of "n" when "at-least" or "at-most" codes are used
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder threshold(PositiveInt threshold) {
+                    this.threshold = threshold;
+                    return this;
+                }
+
+                /**
+                 * A defining factor of the characteristic.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * @param characteristic
+                 *     A defining factor of the characteristic
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder characteristic(EvidenceVariable.Characteristic... characteristic) {
+                    for (EvidenceVariable.Characteristic value : characteristic) {
+                        this.characteristic.add(value);
+                    }
+                    return this;
+                }
+
+                /**
+                 * A defining factor of the characteristic.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * @param characteristic
+                 *     A defining factor of the characteristic
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                public Builder characteristic(Collection<EvidenceVariable.Characteristic> characteristic) {
+                    this.characteristic = new ArrayList<>(characteristic);
+                    return this;
+                }
+
+                /**
+                 * Build the {@link DefinitionByCombination}
+                 * 
+                 * <p>Required elements:
+                 * <ul>
+                 * <li>code</li>
+                 * <li>characteristic</li>
+                 * </ul>
+                 * 
+                 * @return
+                 *     An immutable object of type {@link DefinitionByCombination}
+                 * @throws IllegalStateException
+                 *     if the current state cannot be built into a valid DefinitionByCombination per the base specification
+                 */
+                @Override
+                public DefinitionByCombination build() {
+                    DefinitionByCombination definitionByCombination = new DefinitionByCombination(this);
+                    if (validating) {
+                        validate(definitionByCombination);
+                    }
+                    return definitionByCombination;
+                }
+
+                protected void validate(DefinitionByCombination definitionByCombination) {
+                    super.validate(definitionByCombination);
+                    ValidationSupport.requireNonNull(definitionByCombination.code, "code");
+                    ValidationSupport.checkNonEmptyList(definitionByCombination.characteristic, "characteristic", EvidenceVariable.Characteristic.class);
+                    ValidationSupport.requireValueOrChildren(definitionByCombination);
+                }
+
+                protected Builder from(DefinitionByCombination definitionByCombination) {
+                    super.from(definitionByCombination);
+                    code = definitionByCombination.code;
+                    threshold = definitionByCombination.threshold;
+                    characteristic.addAll(definitionByCombination.characteristic);
+                    return this;
+                }
+            }
+        }
+
+        /**
+         * Timing in which the characteristic is determined.
+         */
+        public static class TimeFromEvent extends BackboneElement {
+            private final Markdown description;
+            private final List<Annotation> note;
+            @Choice({ CodeableConcept.class, Reference.class, DateTime.class, Id.class })
+            @Binding(
+                bindingName = "EvidenceVariableEvent",
+                strength = BindingStrength.Value.EXAMPLE,
+                valueSet = "http://hl7.org/fhir/ValueSet/evidence-variable-event"
+            )
+            private final org.linuxforhealth.fhir.model.type.Element event;
+            private final Quantity quantity;
+            private final Range range;
+
+            private TimeFromEvent(Builder builder) {
+                super(builder);
+                description = builder.description;
+                note = Collections.unmodifiableList(builder.note);
+                event = builder.event;
+                quantity = builder.quantity;
+                range = builder.range;
+            }
+
+            /**
+             * Human readable description.
+             * 
+             * @return
+             *     An immutable object of type {@link Markdown} that may be null.
+             */
+            public Markdown getDescription() {
+                return description;
+            }
+
+            /**
+             * A human-readable string to clarify or explain concepts about the timeFromEvent.
+             * 
+             * @return
+             *     An unmodifiable list containing immutable objects of type {@link Annotation} that may be empty.
+             */
+            public List<Annotation> getNote() {
+                return note;
+            }
+
+            /**
+             * The event used as a base point (reference point) in time.
+             * 
+             * @return
+             *     An immutable object of type {@link CodeableConcept}, {@link Reference}, {@link DateTime} or {@link Id} that may be 
+             *     null.
+             */
+            public org.linuxforhealth.fhir.model.type.Element getEvent() {
+                return event;
+            }
+
+            /**
+             * Used to express the observation at a defined amount of time before or after the event.
+             * 
+             * @return
+             *     An immutable object of type {@link Quantity} that may be null.
+             */
+            public Quantity getQuantity() {
+                return quantity;
+            }
+
+            /**
+             * Used to express the observation within a period before and/or after the event.
+             * 
+             * @return
+             *     An immutable object of type {@link Range} that may be null.
+             */
+            public Range getRange() {
+                return range;
+            }
+
+            @Override
+            public boolean hasChildren() {
+                return super.hasChildren() || 
+                    (description != null) || 
+                    !note.isEmpty() || 
+                    (event != null) || 
+                    (quantity != null) || 
+                    (range != null);
+            }
+
+            @Override
+            public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                if (visitor.preVisit(this)) {
+                    visitor.visitStart(elementName, elementIndex, this);
+                    if (visitor.visit(elementName, elementIndex, this)) {
+                        // visit children
+                        accept(id, "id", visitor);
+                        accept(extension, "extension", visitor, Extension.class);
+                        accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                        accept(description, "description", visitor);
+                        accept(note, "note", visitor, Annotation.class);
+                        accept(event, "event", visitor);
+                        accept(quantity, "quantity", visitor);
+                        accept(range, "range", visitor);
+                    }
+                    visitor.visitEnd(elementName, elementIndex, this);
+                    visitor.postVisit(this);
+                }
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj) {
+                    return true;
+                }
+                if (obj == null) {
+                    return false;
+                }
+                if (getClass() != obj.getClass()) {
+                    return false;
+                }
+                TimeFromEvent other = (TimeFromEvent) obj;
+                return Objects.equals(id, other.id) && 
+                    Objects.equals(extension, other.extension) && 
+                    Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(description, other.description) && 
+                    Objects.equals(note, other.note) && 
+                    Objects.equals(event, other.event) && 
+                    Objects.equals(quantity, other.quantity) && 
+                    Objects.equals(range, other.range);
+            }
+
+            @Override
+            public int hashCode() {
+                int result = hashCode;
+                if (result == 0) {
+                    result = Objects.hash(id, 
+                        extension, 
+                        modifierExtension, 
+                        description, 
+                        note, 
+                        event, 
+                        quantity, 
+                        range);
+                    hashCode = result;
+                }
+                return result;
+            }
+
+            @Override
+            public Builder toBuilder() {
+                return new Builder().from(this);
+            }
+
+            public static Builder builder() {
+                return new Builder();
+            }
+
+            public static class Builder extends BackboneElement.Builder {
+                private Markdown description;
+                private List<Annotation> note = new ArrayList<>();
+                private org.linuxforhealth.fhir.model.type.Element event;
+                private Quantity quantity;
+                private Range range;
+
+                private Builder() {
+                    super();
+                }
+
+                /**
+                 * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                 * contain spaces.
+                 * 
+                 * @param id
+                 *     Unique id for inter-element referencing
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder id(java.lang.String id) {
+                    return (Builder) super.id(id);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder extension(Extension... extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder extension(Collection<Extension> extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder modifierExtension(Extension... modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * Human readable description.
                  * 
                  * @param description
                  *     Human readable description
@@ -2443,41 +3820,13 @@ public class EvidenceVariable extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder description(String description) {
+                public Builder description(Markdown description) {
                     this.description = description;
                     return this;
                 }
 
                 /**
-                 * Used to express the observation at a defined amount of time after the study start.
-                 * 
-                 * @param quantity
-                 *     Used to express the observation at a defined amount of time after the study start
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder quantity(Quantity quantity) {
-                    this.quantity = quantity;
-                    return this;
-                }
-
-                /**
-                 * Used to express the observation within a period after the study start.
-                 * 
-                 * @param range
-                 *     Used to express the observation within a period after the study start
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder range(Range range) {
-                    this.range = range;
-                    return this;
-                }
-
-                /**
-                 * A human-readable string to clarify or explain concepts about the resource.
+                 * A human-readable string to clarify or explain concepts about the timeFromEvent.
                  * 
                  * <p>Adds new element(s) to the existing list.
                  * If any of the elements are null, calling {@link #build()} will fail.
@@ -2496,7 +3845,7 @@ public class EvidenceVariable extends DomainResource {
                 }
 
                 /**
-                 * A human-readable string to clarify or explain concepts about the resource.
+                 * A human-readable string to clarify or explain concepts about the timeFromEvent.
                  * 
                  * <p>Replaces the existing list with a new one containing elements from the Collection.
                  * If any of the elements are null, calling {@link #build()} will fail.
@@ -2516,34 +3865,86 @@ public class EvidenceVariable extends DomainResource {
                 }
 
                 /**
-                 * Build the {@link TimeFromStart}
+                 * The event used as a base point (reference point) in time.
+                 * 
+                 * <p>This is a choice element with the following allowed types:
+                 * <ul>
+                 * <li>{@link CodeableConcept}</li>
+                 * <li>{@link Reference}</li>
+                 * <li>{@link DateTime}</li>
+                 * <li>{@link Id}</li>
+                 * </ul>
+                 * 
+                 * @param event
+                 *     The event used as a base point (reference point) in time
                  * 
                  * @return
-                 *     An immutable object of type {@link TimeFromStart}
+                 *     A reference to this Builder instance
+                 */
+                public Builder event(org.linuxforhealth.fhir.model.type.Element event) {
+                    this.event = event;
+                    return this;
+                }
+
+                /**
+                 * Used to express the observation at a defined amount of time before or after the event.
+                 * 
+                 * @param quantity
+                 *     Used to express the observation at a defined amount of time before or after the event
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder quantity(Quantity quantity) {
+                    this.quantity = quantity;
+                    return this;
+                }
+
+                /**
+                 * Used to express the observation within a period before and/or after the event.
+                 * 
+                 * @param range
+                 *     Used to express the observation within a period before and/or after the event
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder range(Range range) {
+                    this.range = range;
+                    return this;
+                }
+
+                /**
+                 * Build the {@link TimeFromEvent}
+                 * 
+                 * @return
+                 *     An immutable object of type {@link TimeFromEvent}
                  * @throws IllegalStateException
-                 *     if the current state cannot be built into a valid TimeFromStart per the base specification
+                 *     if the current state cannot be built into a valid TimeFromEvent per the base specification
                  */
                 @Override
-                public TimeFromStart build() {
-                    TimeFromStart timeFromStart = new TimeFromStart(this);
+                public TimeFromEvent build() {
+                    TimeFromEvent timeFromEvent = new TimeFromEvent(this);
                     if (validating) {
-                        validate(timeFromStart);
+                        validate(timeFromEvent);
                     }
-                    return timeFromStart;
+                    return timeFromEvent;
                 }
 
-                protected void validate(TimeFromStart timeFromStart) {
-                    super.validate(timeFromStart);
-                    ValidationSupport.checkList(timeFromStart.note, "note", Annotation.class);
-                    ValidationSupport.requireValueOrChildren(timeFromStart);
+                protected void validate(TimeFromEvent timeFromEvent) {
+                    super.validate(timeFromEvent);
+                    ValidationSupport.checkList(timeFromEvent.note, "note", Annotation.class);
+                    ValidationSupport.choiceElement(timeFromEvent.event, "event", CodeableConcept.class, Reference.class, DateTime.class, Id.class);
+                    ValidationSupport.requireValueOrChildren(timeFromEvent);
                 }
 
-                protected Builder from(TimeFromStart timeFromStart) {
-                    super.from(timeFromStart);
-                    description = timeFromStart.description;
-                    quantity = timeFromStart.quantity;
-                    range = timeFromStart.range;
-                    note.addAll(timeFromStart.note);
+                protected Builder from(TimeFromEvent timeFromEvent) {
+                    super.from(timeFromEvent);
+                    description = timeFromEvent.description;
+                    note.addAll(timeFromEvent.note);
+                    event = timeFromEvent.event;
+                    quantity = timeFromEvent.quantity;
+                    range = timeFromEvent.range;
                     return this;
                 }
             }
@@ -2551,13 +3952,12 @@ public class EvidenceVariable extends DomainResource {
     }
 
     /**
-     * A grouping (or set of values) described along with other groupings to specify the set of groupings allowed for the 
-     * variable.
+     * A grouping for ordinal or polychotomous variables.
      */
     public static class Category extends BackboneElement {
         private final String name;
         @Choice({ CodeableConcept.class, Quantity.class, Range.class })
-        private final Element value;
+        private final org.linuxforhealth.fhir.model.type.Element value;
 
         private Category(Builder builder) {
             super(builder);
@@ -2566,7 +3966,7 @@ public class EvidenceVariable extends DomainResource {
         }
 
         /**
-         * A human-readable title or representation of the grouping.
+         * Description of the grouping.
          * 
          * @return
          *     An immutable object of type {@link String} that may be null.
@@ -2576,12 +3976,12 @@ public class EvidenceVariable extends DomainResource {
         }
 
         /**
-         * Value or set of values that define the grouping.
+         * Definition of the grouping.
          * 
          * @return
          *     An immutable object of type {@link CodeableConcept}, {@link Quantity} or {@link Range} that may be null.
          */
-        public Element getValue() {
+        public org.linuxforhealth.fhir.model.type.Element getValue() {
             return value;
         }
 
@@ -2653,7 +4053,7 @@ public class EvidenceVariable extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private String name;
-            private Element value;
+            private org.linuxforhealth.fhir.model.type.Element value;
 
             private Builder() {
                 super();
@@ -2676,7 +4076,7 @@ public class EvidenceVariable extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2696,7 +4096,7 @@ public class EvidenceVariable extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2721,7 +4121,7 @@ public class EvidenceVariable extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2746,7 +4146,7 @@ public class EvidenceVariable extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2787,7 +4187,7 @@ public class EvidenceVariable extends DomainResource {
             }
 
             /**
-             * A human-readable title or representation of the grouping.
+             * Description of the grouping.
              * 
              * @param name
              *     Description of the grouping
@@ -2801,7 +4201,7 @@ public class EvidenceVariable extends DomainResource {
             }
 
             /**
-             * Value or set of values that define the grouping.
+             * Definition of the grouping.
              * 
              * <p>This is a choice element with the following allowed types:
              * <ul>
@@ -2816,7 +4216,7 @@ public class EvidenceVariable extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder value(Element value) {
+            public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                 this.value = value;
                 return this;
             }

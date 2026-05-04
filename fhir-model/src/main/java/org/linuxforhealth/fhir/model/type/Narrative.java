@@ -39,13 +39,14 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     source = "http://hl7.org/fhir/StructureDefinition/Narrative"
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Narrative extends Element {
+public class Narrative extends DataType {
     public static final Narrative EMPTY = builder().status(NarrativeStatus.EMPTY).div(Xhtml.from("Narrative text intentionally left empty")).build();
 
     @Binding(
         bindingName = "NarrativeStatus",
         strength = BindingStrength.Value.REQUIRED,
-        valueSet = "http://hl7.org/fhir/ValueSet/narrative-status|4.3.0"
+        description = "The status of a resource narrative.",
+        valueSet = "http://hl7.org/fhir/ValueSet/narrative-status|5.0.0"
     )
     @Required
     private final NarrativeStatus status;
@@ -142,7 +143,7 @@ public class Narrative extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private NarrativeStatus status;
         private Xhtml div;
 
@@ -167,7 +168,7 @@ public class Narrative extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -187,7 +188,7 @@ public class Narrative extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 

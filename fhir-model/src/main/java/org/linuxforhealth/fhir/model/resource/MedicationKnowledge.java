@@ -20,18 +20,25 @@ import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
+import org.linuxforhealth.fhir.model.type.Annotation;
+import org.linuxforhealth.fhir.model.type.Attachment;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Base64Binary;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.Duration;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
+import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Money;
 import org.linuxforhealth.fhir.model.type.Narrative;
+import org.linuxforhealth.fhir.model.type.Period;
+import org.linuxforhealth.fhir.model.type.Quantity;
+import org.linuxforhealth.fhir.model.type.Range;
 import org.linuxforhealth.fhir.model.type.Ratio;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.SimpleQuantity;
@@ -46,14 +53,16 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 /**
  * Information about a medication that is used to support knowledge.
  * 
- * <p>Maturity level: FMM0 (Trial Use)
+ * <p>Maturity level: FMM1 (Trial Use)
  */
 @Maturity(
-    level = 0,
+    level = 1,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class MedicationKnowledge extends DomainResource {
+    @Summary
+    private final List<Identifier> identifier;
     @Summary
     @Binding(
         bindingName = "MedicationFormalRepresentation",
@@ -67,72 +76,64 @@ public class MedicationKnowledge extends DomainResource {
         bindingName = "MedicationKnowledgeStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "A coded concept defining if the medication is in active use.",
-        valueSet = "http://hl7.org/fhir/ValueSet/medicationknowledge-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/medicationknowledge-status|5.0.0"
     )
     private final MedicationKnowledgeStatus status;
-    @Summary
     @ReferenceTarget({ "Organization" })
-    private final Reference manufacturer;
-    @Binding(
-        bindingName = "MedicationForm",
-        strength = BindingStrength.Value.EXAMPLE,
-        description = "A coded concept defining the form of a medication.",
-        valueSet = "http://hl7.org/fhir/ValueSet/medication-form-codes"
-    )
-    private final CodeableConcept doseForm;
+    private final Reference author;
+    private final List<CodeableConcept> intendedJurisdiction;
     @Summary
-    private final SimpleQuantity amount;
-    @Summary
-    private final List<String> synonym;
+    private final List<String> name;
     private final List<RelatedMedicationKnowledge> relatedMedicationKnowledge;
     @ReferenceTarget({ "Medication" })
     private final List<Reference> associatedMedication;
     private final List<CodeableConcept> productType;
     private final List<Monograph> monograph;
-    private final List<Ingredient> ingredient;
     private final Markdown preparationInstruction;
-    @Binding(
-        bindingName = "MedicationRoute",
-        strength = BindingStrength.Value.EXAMPLE,
-        description = "A coded concept defining the intended route of administration.",
-        valueSet = "http://hl7.org/fhir/ValueSet/route-codes"
-    )
-    private final List<CodeableConcept> intendedRoute;
     private final List<Cost> cost;
+    @Summary
     private final List<MonitoringProgram> monitoringProgram;
-    private final List<AdministrationGuidelines> administrationGuidelines;
+    private final List<IndicationGuideline> indicationGuideline;
     private final List<MedicineClassification> medicineClassification;
-    private final Packaging packaging;
-    private final List<DrugCharacteristic> drugCharacteristic;
-    @ReferenceTarget({ "DetectedIssue" })
-    private final List<Reference> contraindication;
+    private final List<Packaging> packaging;
+    @ReferenceTarget({ "ClinicalUseDefinition" })
+    private final List<Reference> clinicalUseIssue;
+    private final List<StorageGuideline> storageGuideline;
     private final List<Regulatory> regulatory;
-    private final List<Kinetics> kinetics;
+    private final Definitional definitional;
 
     private MedicationKnowledge(Builder builder) {
         super(builder);
+        identifier = Collections.unmodifiableList(builder.identifier);
         code = builder.code;
         status = builder.status;
-        manufacturer = builder.manufacturer;
-        doseForm = builder.doseForm;
-        amount = builder.amount;
-        synonym = Collections.unmodifiableList(builder.synonym);
+        author = builder.author;
+        intendedJurisdiction = Collections.unmodifiableList(builder.intendedJurisdiction);
+        name = Collections.unmodifiableList(builder.name);
         relatedMedicationKnowledge = Collections.unmodifiableList(builder.relatedMedicationKnowledge);
         associatedMedication = Collections.unmodifiableList(builder.associatedMedication);
         productType = Collections.unmodifiableList(builder.productType);
         monograph = Collections.unmodifiableList(builder.monograph);
-        ingredient = Collections.unmodifiableList(builder.ingredient);
         preparationInstruction = builder.preparationInstruction;
-        intendedRoute = Collections.unmodifiableList(builder.intendedRoute);
         cost = Collections.unmodifiableList(builder.cost);
         monitoringProgram = Collections.unmodifiableList(builder.monitoringProgram);
-        administrationGuidelines = Collections.unmodifiableList(builder.administrationGuidelines);
+        indicationGuideline = Collections.unmodifiableList(builder.indicationGuideline);
         medicineClassification = Collections.unmodifiableList(builder.medicineClassification);
-        packaging = builder.packaging;
-        drugCharacteristic = Collections.unmodifiableList(builder.drugCharacteristic);
-        contraindication = Collections.unmodifiableList(builder.contraindication);
+        packaging = Collections.unmodifiableList(builder.packaging);
+        clinicalUseIssue = Collections.unmodifiableList(builder.clinicalUseIssue);
+        storageGuideline = Collections.unmodifiableList(builder.storageGuideline);
         regulatory = Collections.unmodifiableList(builder.regulatory);
-        kinetics = Collections.unmodifiableList(builder.kinetics);
+        definitional = builder.definitional;
+    }
+
+    /**
+     * Business identifier for this medication.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
+     */
+    public List<Identifier> getIdentifier() {
+        return identifier;
     }
 
     /**
@@ -148,8 +149,9 @@ public class MedicationKnowledge extends DomainResource {
     }
 
     /**
-     * A code to indicate if the medication is in active use. The status refers to the validity about the information of the 
-     * medication and not to its medicinal properties.
+     * A code to indicate if the medication referred to by this MedicationKnowledge is in active use within the drug database 
+     * or inventory system. The status refers to the validity about the information of the medication and not to its 
+     * medicinal properties.
      * 
      * @return
      *     An immutable object of type {@link MedicationKnowledgeStatus} that may be null.
@@ -159,51 +161,40 @@ public class MedicationKnowledge extends DomainResource {
     }
 
     /**
-     * Describes the details of the manufacturer of the medication product. This is not intended to represent the distributor 
-     * of a medication product.
+     * The creator or owner of the knowledge or information about the medication.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
      */
-    public Reference getManufacturer() {
-        return manufacturer;
+    public Reference getAuthor() {
+        return author;
     }
 
     /**
-     * Describes the form of the item. Powder; tablets; capsule.
+     * Lists the jurisdictions that this medication knowledge was written for.
      * 
      * @return
-     *     An immutable object of type {@link CodeableConcept} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
      */
-    public CodeableConcept getDoseForm() {
-        return doseForm;
+    public List<CodeableConcept> getIntendedJurisdiction() {
+        return intendedJurisdiction;
     }
 
     /**
-     * Specific amount of the drug in the packaged product. For example, when specifying a product that has the same strength 
-     * (For example, Insulin glargine 100 unit per mL solution for injection), this attribute provides additional 
-     * clarification of the package amount (For example, 3 mL, 10mL, etc.).
-     * 
-     * @return
-     *     An immutable object of type {@link SimpleQuantity} that may be null.
-     */
-    public SimpleQuantity getAmount() {
-        return amount;
-    }
-
-    /**
-     * Additional names for a medication, for example, the name(s) given to a medication in different countries. For example, 
+     * All of the names for a medication, for example, the name(s) given to a medication in different countries. For example, 
      * acetaminophen and paracetamol or salbutamol and albuterol.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link String} that may be empty.
      */
-    public List<String> getSynonym() {
-        return synonym;
+    public List<String> getName() {
+        return name;
     }
 
     /**
-     * Associated or related knowledge about a medication.
+     * Associated or related medications. For example, if the medication is a branded product (e.g. Crestor), this is the 
+     * Therapeutic Moeity (e.g. Rosuvastatin) or if this is a generic medication (e.g. Rosuvastatin), this would link to a 
+     * branded product (e.g. Crestor.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link RelatedMedicationKnowledge} that may be empty.
@@ -213,9 +204,7 @@ public class MedicationKnowledge extends DomainResource {
     }
 
     /**
-     * Associated or related medications. For example, if the medication is a branded product (e.g. Crestor), this is the 
-     * Therapeutic Moeity (e.g. Rosuvastatin) or if this is a generic medication (e.g. Rosuvastatin), this would link to a 
-     * branded product (e.g. Crestor).
+     * Links to associated medications that could be prescribed, dispensed or administered.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
@@ -246,16 +235,6 @@ public class MedicationKnowledge extends DomainResource {
     }
 
     /**
-     * Identifies a particular constituent of interest in the product.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Ingredient} that may be empty.
-     */
-    public List<Ingredient> getIngredient() {
-        return ingredient;
-    }
-
-    /**
      * The instructions for preparing the medication.
      * 
      * @return
@@ -263,16 +242,6 @@ public class MedicationKnowledge extends DomainResource {
      */
     public Markdown getPreparationInstruction() {
         return preparationInstruction;
-    }
-
-    /**
-     * The intended or approved route of administration.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
-     */
-    public List<CodeableConcept> getIntendedRoute() {
-        return intendedRoute;
     }
 
     /**
@@ -296,13 +265,13 @@ public class MedicationKnowledge extends DomainResource {
     }
 
     /**
-     * Guidelines for the administration of the medication.
+     * Guidelines or protocols that are applicable for the administration of the medication based on indication.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link AdministrationGuidelines} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link IndicationGuideline} that may be empty.
      */
-    public List<AdministrationGuidelines> getAdministrationGuidelines() {
-        return administrationGuidelines;
+    public List<IndicationGuideline> getIndicationGuideline() {
+        return indicationGuideline;
     }
 
     /**
@@ -319,20 +288,10 @@ public class MedicationKnowledge extends DomainResource {
      * Information that only applies to packages (not products).
      * 
      * @return
-     *     An immutable object of type {@link Packaging} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Packaging} that may be empty.
      */
-    public Packaging getPackaging() {
+    public List<Packaging> getPackaging() {
         return packaging;
-    }
-
-    /**
-     * Specifies descriptive properties of the medicine, such as color, shape, imprints, etc.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link DrugCharacteristic} that may be empty.
-     */
-    public List<DrugCharacteristic> getDrugCharacteristic() {
-        return drugCharacteristic;
     }
 
     /**
@@ -342,8 +301,19 @@ public class MedicationKnowledge extends DomainResource {
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
      */
-    public List<Reference> getContraindication() {
-        return contraindication;
+    public List<Reference> getClinicalUseIssue() {
+        return clinicalUseIssue;
+    }
+
+    /**
+     * Information on how the medication should be stored, for example, refrigeration temperatures and length of stability at 
+     * a given temperature.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link StorageGuideline} that may be empty.
+     */
+    public List<StorageGuideline> getStorageGuideline() {
+        return storageGuideline;
     }
 
     /**
@@ -357,40 +327,39 @@ public class MedicationKnowledge extends DomainResource {
     }
 
     /**
-     * The time course of drug absorption, distribution, metabolism and excretion of a medication from the body.
+     * Along with the link to a Medicinal Product Definition resource, this information provides common definitional elements 
+     * that are needed to understand the specific medication that is being described.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Kinetics} that may be empty.
+     *     An immutable object of type {@link Definitional} that may be null.
      */
-    public List<Kinetics> getKinetics() {
-        return kinetics;
+    public Definitional getDefinitional() {
+        return definitional;
     }
 
     @Override
     public boolean hasChildren() {
         return super.hasChildren() || 
+            !identifier.isEmpty() || 
             (code != null) || 
             (status != null) || 
-            (manufacturer != null) || 
-            (doseForm != null) || 
-            (amount != null) || 
-            !synonym.isEmpty() || 
+            (author != null) || 
+            !intendedJurisdiction.isEmpty() || 
+            !name.isEmpty() || 
             !relatedMedicationKnowledge.isEmpty() || 
             !associatedMedication.isEmpty() || 
             !productType.isEmpty() || 
             !monograph.isEmpty() || 
-            !ingredient.isEmpty() || 
             (preparationInstruction != null) || 
-            !intendedRoute.isEmpty() || 
             !cost.isEmpty() || 
             !monitoringProgram.isEmpty() || 
-            !administrationGuidelines.isEmpty() || 
+            !indicationGuideline.isEmpty() || 
             !medicineClassification.isEmpty() || 
-            (packaging != null) || 
-            !drugCharacteristic.isEmpty() || 
-            !contraindication.isEmpty() || 
+            !packaging.isEmpty() || 
+            !clinicalUseIssue.isEmpty() || 
+            !storageGuideline.isEmpty() || 
             !regulatory.isEmpty() || 
-            !kinetics.isEmpty();
+            (definitional != null);
     }
 
     @Override
@@ -407,28 +376,26 @@ public class MedicationKnowledge extends DomainResource {
                 accept(contained, "contained", visitor, Resource.class);
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                accept(identifier, "identifier", visitor, Identifier.class);
                 accept(code, "code", visitor);
                 accept(status, "status", visitor);
-                accept(manufacturer, "manufacturer", visitor);
-                accept(doseForm, "doseForm", visitor);
-                accept(amount, "amount", visitor);
-                accept(synonym, "synonym", visitor, String.class);
+                accept(author, "author", visitor);
+                accept(intendedJurisdiction, "intendedJurisdiction", visitor, CodeableConcept.class);
+                accept(name, "name", visitor, String.class);
                 accept(relatedMedicationKnowledge, "relatedMedicationKnowledge", visitor, RelatedMedicationKnowledge.class);
                 accept(associatedMedication, "associatedMedication", visitor, Reference.class);
                 accept(productType, "productType", visitor, CodeableConcept.class);
                 accept(monograph, "monograph", visitor, Monograph.class);
-                accept(ingredient, "ingredient", visitor, Ingredient.class);
                 accept(preparationInstruction, "preparationInstruction", visitor);
-                accept(intendedRoute, "intendedRoute", visitor, CodeableConcept.class);
                 accept(cost, "cost", visitor, Cost.class);
                 accept(monitoringProgram, "monitoringProgram", visitor, MonitoringProgram.class);
-                accept(administrationGuidelines, "administrationGuidelines", visitor, AdministrationGuidelines.class);
+                accept(indicationGuideline, "indicationGuideline", visitor, IndicationGuideline.class);
                 accept(medicineClassification, "medicineClassification", visitor, MedicineClassification.class);
-                accept(packaging, "packaging", visitor);
-                accept(drugCharacteristic, "drugCharacteristic", visitor, DrugCharacteristic.class);
-                accept(contraindication, "contraindication", visitor, Reference.class);
+                accept(packaging, "packaging", visitor, Packaging.class);
+                accept(clinicalUseIssue, "clinicalUseIssue", visitor, Reference.class);
+                accept(storageGuideline, "storageGuideline", visitor, StorageGuideline.class);
                 accept(regulatory, "regulatory", visitor, Regulatory.class);
-                accept(kinetics, "kinetics", visitor, Kinetics.class);
+                accept(definitional, "definitional", visitor);
             }
             visitor.visitEnd(elementName, elementIndex, this);
             visitor.postVisit(this);
@@ -455,28 +422,26 @@ public class MedicationKnowledge extends DomainResource {
             Objects.equals(contained, other.contained) && 
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
+            Objects.equals(identifier, other.identifier) && 
             Objects.equals(code, other.code) && 
             Objects.equals(status, other.status) && 
-            Objects.equals(manufacturer, other.manufacturer) && 
-            Objects.equals(doseForm, other.doseForm) && 
-            Objects.equals(amount, other.amount) && 
-            Objects.equals(synonym, other.synonym) && 
+            Objects.equals(author, other.author) && 
+            Objects.equals(intendedJurisdiction, other.intendedJurisdiction) && 
+            Objects.equals(name, other.name) && 
             Objects.equals(relatedMedicationKnowledge, other.relatedMedicationKnowledge) && 
             Objects.equals(associatedMedication, other.associatedMedication) && 
             Objects.equals(productType, other.productType) && 
             Objects.equals(monograph, other.monograph) && 
-            Objects.equals(ingredient, other.ingredient) && 
             Objects.equals(preparationInstruction, other.preparationInstruction) && 
-            Objects.equals(intendedRoute, other.intendedRoute) && 
             Objects.equals(cost, other.cost) && 
             Objects.equals(monitoringProgram, other.monitoringProgram) && 
-            Objects.equals(administrationGuidelines, other.administrationGuidelines) && 
+            Objects.equals(indicationGuideline, other.indicationGuideline) && 
             Objects.equals(medicineClassification, other.medicineClassification) && 
             Objects.equals(packaging, other.packaging) && 
-            Objects.equals(drugCharacteristic, other.drugCharacteristic) && 
-            Objects.equals(contraindication, other.contraindication) && 
+            Objects.equals(clinicalUseIssue, other.clinicalUseIssue) && 
+            Objects.equals(storageGuideline, other.storageGuideline) && 
             Objects.equals(regulatory, other.regulatory) && 
-            Objects.equals(kinetics, other.kinetics);
+            Objects.equals(definitional, other.definitional);
     }
 
     @Override
@@ -491,28 +456,26 @@ public class MedicationKnowledge extends DomainResource {
                 contained, 
                 extension, 
                 modifierExtension, 
+                identifier, 
                 code, 
                 status, 
-                manufacturer, 
-                doseForm, 
-                amount, 
-                synonym, 
+                author, 
+                intendedJurisdiction, 
+                name, 
                 relatedMedicationKnowledge, 
                 associatedMedication, 
                 productType, 
                 monograph, 
-                ingredient, 
                 preparationInstruction, 
-                intendedRoute, 
                 cost, 
                 monitoringProgram, 
-                administrationGuidelines, 
+                indicationGuideline, 
                 medicineClassification, 
                 packaging, 
-                drugCharacteristic, 
-                contraindication, 
+                clinicalUseIssue, 
+                storageGuideline, 
                 regulatory, 
-                kinetics);
+                definitional);
             hashCode = result;
         }
         return result;
@@ -528,28 +491,26 @@ public class MedicationKnowledge extends DomainResource {
     }
 
     public static class Builder extends DomainResource.Builder {
+        private List<Identifier> identifier = new ArrayList<>();
         private CodeableConcept code;
         private MedicationKnowledgeStatus status;
-        private Reference manufacturer;
-        private CodeableConcept doseForm;
-        private SimpleQuantity amount;
-        private List<String> synonym = new ArrayList<>();
+        private Reference author;
+        private List<CodeableConcept> intendedJurisdiction = new ArrayList<>();
+        private List<String> name = new ArrayList<>();
         private List<RelatedMedicationKnowledge> relatedMedicationKnowledge = new ArrayList<>();
         private List<Reference> associatedMedication = new ArrayList<>();
         private List<CodeableConcept> productType = new ArrayList<>();
         private List<Monograph> monograph = new ArrayList<>();
-        private List<Ingredient> ingredient = new ArrayList<>();
         private Markdown preparationInstruction;
-        private List<CodeableConcept> intendedRoute = new ArrayList<>();
         private List<Cost> cost = new ArrayList<>();
         private List<MonitoringProgram> monitoringProgram = new ArrayList<>();
-        private List<AdministrationGuidelines> administrationGuidelines = new ArrayList<>();
+        private List<IndicationGuideline> indicationGuideline = new ArrayList<>();
         private List<MedicineClassification> medicineClassification = new ArrayList<>();
-        private Packaging packaging;
-        private List<DrugCharacteristic> drugCharacteristic = new ArrayList<>();
-        private List<Reference> contraindication = new ArrayList<>();
+        private List<Packaging> packaging = new ArrayList<>();
+        private List<Reference> clinicalUseIssue = new ArrayList<>();
+        private List<StorageGuideline> storageGuideline = new ArrayList<>();
         private List<Regulatory> regulatory = new ArrayList<>();
-        private List<Kinetics> kinetics = new ArrayList<>();
+        private Definitional definitional;
 
         private Builder() {
             super();
@@ -633,7 +594,8 @@ public class MedicationKnowledge extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -651,7 +613,8 @@ public class MedicationKnowledge extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -672,7 +635,7 @@ public class MedicationKnowledge extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -692,7 +655,7 @@ public class MedicationKnowledge extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -717,9 +680,9 @@ public class MedicationKnowledge extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -742,9 +705,9 @@ public class MedicationKnowledge extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -767,6 +730,45 @@ public class MedicationKnowledge extends DomainResource {
         }
 
         /**
+         * Business identifier for this medication.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param identifier
+         *     Business identifier for this medication
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder identifier(Identifier... identifier) {
+            for (Identifier value : identifier) {
+                this.identifier.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Business identifier for this medication.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param identifier
+         *     Business identifier for this medication
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder identifier(Collection<Identifier> identifier) {
+            this.identifier = new ArrayList<>(identifier);
+            return this;
+        }
+
+        /**
          * A code that specifies this medication, or a textual description if no code is available. Usage note: This could be a 
          * standard medication code such as a code from RxNorm, SNOMED CT, IDMP etc. It could also be a national or local 
          * formulary code, optionally with translations to other code systems.
@@ -783,11 +785,12 @@ public class MedicationKnowledge extends DomainResource {
         }
 
         /**
-         * A code to indicate if the medication is in active use. The status refers to the validity about the information of the 
-         * medication and not to its medicinal properties.
+         * A code to indicate if the medication referred to by this MedicationKnowledge is in active use within the drug database 
+         * or inventory system. The status refers to the validity about the information of the medication and not to its 
+         * medicinal properties.
          * 
          * @param status
-         *     active | inactive | entered-in-error
+         *     active | entered-in-error | inactive
          * 
          * @return
          *     A reference to this Builder instance
@@ -798,105 +801,51 @@ public class MedicationKnowledge extends DomainResource {
         }
 
         /**
-         * Describes the details of the manufacturer of the medication product. This is not intended to represent the distributor 
-         * of a medication product.
+         * The creator or owner of the knowledge or information about the medication.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
          * <li>{@link Organization}</li>
          * </ul>
          * 
-         * @param manufacturer
-         *     Manufacturer of the item
+         * @param author
+         *     Creator or owner of the knowledge or information about the medication
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder manufacturer(Reference manufacturer) {
-            this.manufacturer = manufacturer;
+        public Builder author(Reference author) {
+            this.author = author;
             return this;
         }
 
         /**
-         * Describes the form of the item. Powder; tablets; capsule.
-         * 
-         * @param doseForm
-         *     powder | tablets | capsule +
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder doseForm(CodeableConcept doseForm) {
-            this.doseForm = doseForm;
-            return this;
-        }
-
-        /**
-         * Specific amount of the drug in the packaged product. For example, when specifying a product that has the same strength 
-         * (For example, Insulin glargine 100 unit per mL solution for injection), this attribute provides additional 
-         * clarification of the package amount (For example, 3 mL, 10mL, etc.).
-         * 
-         * @param amount
-         *     Amount of drug in package
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder amount(SimpleQuantity amount) {
-            this.amount = amount;
-            return this;
-        }
-
-        /**
-         * Convenience method for setting {@code synonym}.
+         * Lists the jurisdictions that this medication knowledge was written for.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param synonym
-         *     Additional names for a medication
+         * @param intendedJurisdiction
+         *     Codes that identify the different jurisdictions for which the information of this resource was created
          * 
          * @return
          *     A reference to this Builder instance
-         * 
-         * @see #synonym(org.linuxforhealth.fhir.model.type.String)
          */
-        public Builder synonym(java.lang.String... synonym) {
-            for (java.lang.String value : synonym) {
-                this.synonym.add((value == null) ? null : String.of(value));
+        public Builder intendedJurisdiction(CodeableConcept... intendedJurisdiction) {
+            for (CodeableConcept value : intendedJurisdiction) {
+                this.intendedJurisdiction.add(value);
             }
             return this;
         }
 
         /**
-         * Additional names for a medication, for example, the name(s) given to a medication in different countries. For example, 
-         * acetaminophen and paracetamol or salbutamol and albuterol.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param synonym
-         *     Additional names for a medication
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder synonym(String... synonym) {
-            for (String value : synonym) {
-                this.synonym.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Additional names for a medication, for example, the name(s) given to a medication in different countries. For example, 
-         * acetaminophen and paracetamol or salbutamol and albuterol.
+         * Lists the jurisdictions that this medication knowledge was written for.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param synonym
-         *     Additional names for a medication
+         * @param intendedJurisdiction
+         *     Codes that identify the different jurisdictions for which the information of this resource was created
          * 
          * @return
          *     A reference to this Builder instance
@@ -904,13 +853,77 @@ public class MedicationKnowledge extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder synonym(Collection<String> synonym) {
-            this.synonym = new ArrayList<>(synonym);
+        public Builder intendedJurisdiction(Collection<CodeableConcept> intendedJurisdiction) {
+            this.intendedJurisdiction = new ArrayList<>(intendedJurisdiction);
             return this;
         }
 
         /**
-         * Associated or related knowledge about a medication.
+         * Convenience method for setting {@code name}.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param name
+         *     A name associated with the medication being described
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #name(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder name(java.lang.String... name) {
+            for (java.lang.String value : name) {
+                this.name.add((value == null) ? null : String.of(value));
+            }
+            return this;
+        }
+
+        /**
+         * All of the names for a medication, for example, the name(s) given to a medication in different countries. For example, 
+         * acetaminophen and paracetamol or salbutamol and albuterol.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param name
+         *     A name associated with the medication being described
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder name(String... name) {
+            for (String value : name) {
+                this.name.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * All of the names for a medication, for example, the name(s) given to a medication in different countries. For example, 
+         * acetaminophen and paracetamol or salbutamol and albuterol.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param name
+         *     A name associated with the medication being described
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder name(Collection<String> name) {
+            this.name = new ArrayList<>(name);
+            return this;
+        }
+
+        /**
+         * Associated or related medications. For example, if the medication is a branded product (e.g. Crestor), this is the 
+         * Therapeutic Moeity (e.g. Rosuvastatin) or if this is a generic medication (e.g. Rosuvastatin), this would link to a 
+         * branded product (e.g. Crestor.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -929,7 +942,9 @@ public class MedicationKnowledge extends DomainResource {
         }
 
         /**
-         * Associated or related knowledge about a medication.
+         * Associated or related medications. For example, if the medication is a branded product (e.g. Crestor), this is the 
+         * Therapeutic Moeity (e.g. Rosuvastatin) or if this is a generic medication (e.g. Rosuvastatin), this would link to a 
+         * branded product (e.g. Crestor.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -949,9 +964,7 @@ public class MedicationKnowledge extends DomainResource {
         }
 
         /**
-         * Associated or related medications. For example, if the medication is a branded product (e.g. Crestor), this is the 
-         * Therapeutic Moeity (e.g. Rosuvastatin) or if this is a generic medication (e.g. Rosuvastatin), this would link to a 
-         * branded product (e.g. Crestor).
+         * Links to associated medications that could be prescribed, dispensed or administered.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -962,7 +975,7 @@ public class MedicationKnowledge extends DomainResource {
          * </ul>
          * 
          * @param associatedMedication
-         *     A medication resource that is associated with this medication
+         *     The set of medication resources that are associated with this medication
          * 
          * @return
          *     A reference to this Builder instance
@@ -975,9 +988,7 @@ public class MedicationKnowledge extends DomainResource {
         }
 
         /**
-         * Associated or related medications. For example, if the medication is a branded product (e.g. Crestor), this is the 
-         * Therapeutic Moeity (e.g. Rosuvastatin) or if this is a generic medication (e.g. Rosuvastatin), this would link to a 
-         * branded product (e.g. Crestor).
+         * Links to associated medications that could be prescribed, dispensed or administered.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -988,7 +999,7 @@ public class MedicationKnowledge extends DomainResource {
          * </ul>
          * 
          * @param associatedMedication
-         *     A medication resource that is associated with this medication
+         *     The set of medication resources that are associated with this medication
          * 
          * @return
          *     A reference to this Builder instance
@@ -1082,45 +1093,6 @@ public class MedicationKnowledge extends DomainResource {
         }
 
         /**
-         * Identifies a particular constituent of interest in the product.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param ingredient
-         *     Active or inactive ingredient
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder ingredient(Ingredient... ingredient) {
-            for (Ingredient value : ingredient) {
-                this.ingredient.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Identifies a particular constituent of interest in the product.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param ingredient
-         *     Active or inactive ingredient
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder ingredient(Collection<Ingredient> ingredient) {
-            this.ingredient = new ArrayList<>(ingredient);
-            return this;
-        }
-
-        /**
          * The instructions for preparing the medication.
          * 
          * @param preparationInstruction
@@ -1131,45 +1103,6 @@ public class MedicationKnowledge extends DomainResource {
          */
         public Builder preparationInstruction(Markdown preparationInstruction) {
             this.preparationInstruction = preparationInstruction;
-            return this;
-        }
-
-        /**
-         * The intended or approved route of administration.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param intendedRoute
-         *     The intended or approved route of administration
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder intendedRoute(CodeableConcept... intendedRoute) {
-            for (CodeableConcept value : intendedRoute) {
-                this.intendedRoute.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * The intended or approved route of administration.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param intendedRoute
-         *     The intended or approved route of administration
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder intendedRoute(Collection<CodeableConcept> intendedRoute) {
-            this.intendedRoute = new ArrayList<>(intendedRoute);
             return this;
         }
 
@@ -1252,32 +1185,32 @@ public class MedicationKnowledge extends DomainResource {
         }
 
         /**
-         * Guidelines for the administration of the medication.
+         * Guidelines or protocols that are applicable for the administration of the medication based on indication.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param administrationGuidelines
-         *     Guidelines for administration of the medication
+         * @param indicationGuideline
+         *     Guidelines or protocols for administration of the medication for an indication
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder administrationGuidelines(AdministrationGuidelines... administrationGuidelines) {
-            for (AdministrationGuidelines value : administrationGuidelines) {
-                this.administrationGuidelines.add(value);
+        public Builder indicationGuideline(IndicationGuideline... indicationGuideline) {
+            for (IndicationGuideline value : indicationGuideline) {
+                this.indicationGuideline.add(value);
             }
             return this;
         }
 
         /**
-         * Guidelines for the administration of the medication.
+         * Guidelines or protocols that are applicable for the administration of the medication based on indication.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param administrationGuidelines
-         *     Guidelines for administration of the medication
+         * @param indicationGuideline
+         *     Guidelines or protocols for administration of the medication for an indication
          * 
          * @return
          *     A reference to this Builder instance
@@ -1285,8 +1218,8 @@ public class MedicationKnowledge extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder administrationGuidelines(Collection<AdministrationGuidelines> administrationGuidelines) {
-            this.administrationGuidelines = new ArrayList<>(administrationGuidelines);
+        public Builder indicationGuideline(Collection<IndicationGuideline> indicationGuideline) {
+            this.indicationGuideline = new ArrayList<>(indicationGuideline);
             return this;
         }
 
@@ -1332,44 +1265,30 @@ public class MedicationKnowledge extends DomainResource {
         /**
          * Information that only applies to packages (not products).
          * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
          * @param packaging
          *     Details about packaged medications
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder packaging(Packaging packaging) {
-            this.packaging = packaging;
-            return this;
-        }
-
-        /**
-         * Specifies descriptive properties of the medicine, such as color, shape, imprints, etc.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param drugCharacteristic
-         *     Specifies descriptive properties of the medicine
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder drugCharacteristic(DrugCharacteristic... drugCharacteristic) {
-            for (DrugCharacteristic value : drugCharacteristic) {
-                this.drugCharacteristic.add(value);
+        public Builder packaging(Packaging... packaging) {
+            for (Packaging value : packaging) {
+                this.packaging.add(value);
             }
             return this;
         }
 
         /**
-         * Specifies descriptive properties of the medicine, such as color, shape, imprints, etc.
+         * Information that only applies to packages (not products).
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param drugCharacteristic
-         *     Specifies descriptive properties of the medicine
+         * @param packaging
+         *     Details about packaged medications
          * 
          * @return
          *     A reference to this Builder instance
@@ -1377,8 +1296,8 @@ public class MedicationKnowledge extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder drugCharacteristic(Collection<DrugCharacteristic> drugCharacteristic) {
-            this.drugCharacteristic = new ArrayList<>(drugCharacteristic);
+        public Builder packaging(Collection<Packaging> packaging) {
+            this.packaging = new ArrayList<>(packaging);
             return this;
         }
 
@@ -1391,18 +1310,18 @@ public class MedicationKnowledge extends DomainResource {
          * 
          * <p>Allowed resource types for the references:
          * <ul>
-         * <li>{@link DetectedIssue}</li>
+         * <li>{@link ClinicalUseDefinition}</li>
          * </ul>
          * 
-         * @param contraindication
+         * @param clinicalUseIssue
          *     Potential clinical issue with or between medication(s)
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder contraindication(Reference... contraindication) {
-            for (Reference value : contraindication) {
-                this.contraindication.add(value);
+        public Builder clinicalUseIssue(Reference... clinicalUseIssue) {
+            for (Reference value : clinicalUseIssue) {
+                this.clinicalUseIssue.add(value);
             }
             return this;
         }
@@ -1416,10 +1335,10 @@ public class MedicationKnowledge extends DomainResource {
          * 
          * <p>Allowed resource types for the references:
          * <ul>
-         * <li>{@link DetectedIssue}</li>
+         * <li>{@link ClinicalUseDefinition}</li>
          * </ul>
          * 
-         * @param contraindication
+         * @param clinicalUseIssue
          *     Potential clinical issue with or between medication(s)
          * 
          * @return
@@ -1428,8 +1347,49 @@ public class MedicationKnowledge extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder contraindication(Collection<Reference> contraindication) {
-            this.contraindication = new ArrayList<>(contraindication);
+        public Builder clinicalUseIssue(Collection<Reference> clinicalUseIssue) {
+            this.clinicalUseIssue = new ArrayList<>(clinicalUseIssue);
+            return this;
+        }
+
+        /**
+         * Information on how the medication should be stored, for example, refrigeration temperatures and length of stability at 
+         * a given temperature.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param storageGuideline
+         *     How the medication should be stored
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder storageGuideline(StorageGuideline... storageGuideline) {
+            for (StorageGuideline value : storageGuideline) {
+                this.storageGuideline.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Information on how the medication should be stored, for example, refrigeration temperatures and length of stability at 
+         * a given temperature.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param storageGuideline
+         *     How the medication should be stored
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder storageGuideline(Collection<StorageGuideline> storageGuideline) {
+            this.storageGuideline = new ArrayList<>(storageGuideline);
             return this;
         }
 
@@ -1473,41 +1433,17 @@ public class MedicationKnowledge extends DomainResource {
         }
 
         /**
-         * The time course of drug absorption, distribution, metabolism and excretion of a medication from the body.
+         * Along with the link to a Medicinal Product Definition resource, this information provides common definitional elements 
+         * that are needed to understand the specific medication that is being described.
          * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param kinetics
-         *     The time course of drug absorption, distribution, metabolism and excretion of a medication from the body
+         * @param definitional
+         *     Minimal definition information about the medication
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder kinetics(Kinetics... kinetics) {
-            for (Kinetics value : kinetics) {
-                this.kinetics.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * The time course of drug absorption, distribution, metabolism and excretion of a medication from the body.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param kinetics
-         *     The time course of drug absorption, distribution, metabolism and excretion of a medication from the body
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder kinetics(Collection<Kinetics> kinetics) {
-            this.kinetics = new ArrayList<>(kinetics);
+        public Builder definitional(Definitional definitional) {
+            this.definitional = definitional;
             return this;
         }
 
@@ -1530,56 +1466,56 @@ public class MedicationKnowledge extends DomainResource {
 
         protected void validate(MedicationKnowledge medicationKnowledge) {
             super.validate(medicationKnowledge);
-            ValidationSupport.checkList(medicationKnowledge.synonym, "synonym", String.class);
+            ValidationSupport.checkList(medicationKnowledge.identifier, "identifier", Identifier.class);
+            ValidationSupport.checkList(medicationKnowledge.intendedJurisdiction, "intendedJurisdiction", CodeableConcept.class);
+            ValidationSupport.checkList(medicationKnowledge.name, "name", String.class);
             ValidationSupport.checkList(medicationKnowledge.relatedMedicationKnowledge, "relatedMedicationKnowledge", RelatedMedicationKnowledge.class);
             ValidationSupport.checkList(medicationKnowledge.associatedMedication, "associatedMedication", Reference.class);
             ValidationSupport.checkList(medicationKnowledge.productType, "productType", CodeableConcept.class);
             ValidationSupport.checkList(medicationKnowledge.monograph, "monograph", Monograph.class);
-            ValidationSupport.checkList(medicationKnowledge.ingredient, "ingredient", Ingredient.class);
-            ValidationSupport.checkList(medicationKnowledge.intendedRoute, "intendedRoute", CodeableConcept.class);
             ValidationSupport.checkList(medicationKnowledge.cost, "cost", Cost.class);
             ValidationSupport.checkList(medicationKnowledge.monitoringProgram, "monitoringProgram", MonitoringProgram.class);
-            ValidationSupport.checkList(medicationKnowledge.administrationGuidelines, "administrationGuidelines", AdministrationGuidelines.class);
+            ValidationSupport.checkList(medicationKnowledge.indicationGuideline, "indicationGuideline", IndicationGuideline.class);
             ValidationSupport.checkList(medicationKnowledge.medicineClassification, "medicineClassification", MedicineClassification.class);
-            ValidationSupport.checkList(medicationKnowledge.drugCharacteristic, "drugCharacteristic", DrugCharacteristic.class);
-            ValidationSupport.checkList(medicationKnowledge.contraindication, "contraindication", Reference.class);
+            ValidationSupport.checkList(medicationKnowledge.packaging, "packaging", Packaging.class);
+            ValidationSupport.checkList(medicationKnowledge.clinicalUseIssue, "clinicalUseIssue", Reference.class);
+            ValidationSupport.checkList(medicationKnowledge.storageGuideline, "storageGuideline", StorageGuideline.class);
             ValidationSupport.checkList(medicationKnowledge.regulatory, "regulatory", Regulatory.class);
-            ValidationSupport.checkList(medicationKnowledge.kinetics, "kinetics", Kinetics.class);
-            ValidationSupport.checkReferenceType(medicationKnowledge.manufacturer, "manufacturer", "Organization");
+            ValidationSupport.checkReferenceType(medicationKnowledge.author, "author", "Organization");
             ValidationSupport.checkReferenceType(medicationKnowledge.associatedMedication, "associatedMedication", "Medication");
-            ValidationSupport.checkReferenceType(medicationKnowledge.contraindication, "contraindication", "DetectedIssue");
+            ValidationSupport.checkReferenceType(medicationKnowledge.clinicalUseIssue, "clinicalUseIssue", "ClinicalUseDefinition");
         }
 
         protected Builder from(MedicationKnowledge medicationKnowledge) {
             super.from(medicationKnowledge);
+            identifier.addAll(medicationKnowledge.identifier);
             code = medicationKnowledge.code;
             status = medicationKnowledge.status;
-            manufacturer = medicationKnowledge.manufacturer;
-            doseForm = medicationKnowledge.doseForm;
-            amount = medicationKnowledge.amount;
-            synonym.addAll(medicationKnowledge.synonym);
+            author = medicationKnowledge.author;
+            intendedJurisdiction.addAll(medicationKnowledge.intendedJurisdiction);
+            name.addAll(medicationKnowledge.name);
             relatedMedicationKnowledge.addAll(medicationKnowledge.relatedMedicationKnowledge);
             associatedMedication.addAll(medicationKnowledge.associatedMedication);
             productType.addAll(medicationKnowledge.productType);
             monograph.addAll(medicationKnowledge.monograph);
-            ingredient.addAll(medicationKnowledge.ingredient);
             preparationInstruction = medicationKnowledge.preparationInstruction;
-            intendedRoute.addAll(medicationKnowledge.intendedRoute);
             cost.addAll(medicationKnowledge.cost);
             monitoringProgram.addAll(medicationKnowledge.monitoringProgram);
-            administrationGuidelines.addAll(medicationKnowledge.administrationGuidelines);
+            indicationGuideline.addAll(medicationKnowledge.indicationGuideline);
             medicineClassification.addAll(medicationKnowledge.medicineClassification);
-            packaging = medicationKnowledge.packaging;
-            drugCharacteristic.addAll(medicationKnowledge.drugCharacteristic);
-            contraindication.addAll(medicationKnowledge.contraindication);
+            packaging.addAll(medicationKnowledge.packaging);
+            clinicalUseIssue.addAll(medicationKnowledge.clinicalUseIssue);
+            storageGuideline.addAll(medicationKnowledge.storageGuideline);
             regulatory.addAll(medicationKnowledge.regulatory);
-            kinetics.addAll(medicationKnowledge.kinetics);
+            definitional = medicationKnowledge.definitional;
             return this;
         }
     }
 
     /**
-     * Associated or related knowledge about a medication.
+     * Associated or related medications. For example, if the medication is a branded product (e.g. Crestor), this is the 
+     * Therapeutic Moeity (e.g. Rosuvastatin) or if this is a generic medication (e.g. Rosuvastatin), this would link to a 
+     * branded product (e.g. Crestor.
      */
     public static class RelatedMedicationKnowledge extends BackboneElement {
         @Required
@@ -1705,7 +1641,7 @@ public class MedicationKnowledge extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1725,7 +1661,7 @@ public class MedicationKnowledge extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1750,7 +1686,7 @@ public class MedicationKnowledge extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1775,7 +1711,7 @@ public class MedicationKnowledge extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1913,7 +1849,7 @@ public class MedicationKnowledge extends DomainResource {
      */
     public static class Monograph extends BackboneElement {
         private final CodeableConcept type;
-        @ReferenceTarget({ "DocumentReference", "Media" })
+        @ReferenceTarget({ "DocumentReference" })
         private final Reference source;
 
         private Monograph(Builder builder) {
@@ -2033,7 +1969,7 @@ public class MedicationKnowledge extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2053,7 +1989,7 @@ public class MedicationKnowledge extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2078,7 +2014,7 @@ public class MedicationKnowledge extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2103,7 +2039,7 @@ public class MedicationKnowledge extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2147,7 +2083,6 @@ public class MedicationKnowledge extends DomainResource {
              * <p>Allowed resource types for this reference:
              * <ul>
              * <li>{@link DocumentReference}</li>
-             * <li>{@link Media}</li>
              * </ul>
              * 
              * @param source
@@ -2180,7 +2115,7 @@ public class MedicationKnowledge extends DomainResource {
 
             protected void validate(Monograph monograph) {
                 super.validate(monograph);
-                ValidationSupport.checkReferenceType(monograph.source, "source", "DocumentReference", "Media");
+                ValidationSupport.checkReferenceType(monograph.source, "source", "DocumentReference");
                 ValidationSupport.requireValueOrChildren(monograph);
             }
 
@@ -2194,370 +2129,39 @@ public class MedicationKnowledge extends DomainResource {
     }
 
     /**
-     * Identifies a particular constituent of interest in the product.
-     */
-    public static class Ingredient extends BackboneElement {
-        @ReferenceTarget({ "Substance" })
-        @Choice({ CodeableConcept.class, Reference.class })
-        @Required
-        private final Element item;
-        private final Boolean isActive;
-        private final Ratio strength;
-
-        private Ingredient(Builder builder) {
-            super(builder);
-            item = builder.item;
-            isActive = builder.isActive;
-            strength = builder.strength;
-        }
-
-        /**
-         * The actual ingredient - either a substance (simple ingredient) or another medication.
-         * 
-         * @return
-         *     An immutable object of type {@link CodeableConcept} or {@link Reference} that is non-null.
-         */
-        public Element getItem() {
-            return item;
-        }
-
-        /**
-         * Indication of whether this ingredient affects the therapeutic action of the drug.
-         * 
-         * @return
-         *     An immutable object of type {@link Boolean} that may be null.
-         */
-        public Boolean getIsActive() {
-            return isActive;
-        }
-
-        /**
-         * Specifies how many (or how much) of the items there are in this Medication. For example, 250 mg per tablet. This is 
-         * expressed as a ratio where the numerator is 250mg and the denominator is 1 tablet.
-         * 
-         * @return
-         *     An immutable object of type {@link Ratio} that may be null.
-         */
-        public Ratio getStrength() {
-            return strength;
-        }
-
-        @Override
-        public boolean hasChildren() {
-            return super.hasChildren() || 
-                (item != null) || 
-                (isActive != null) || 
-                (strength != null);
-        }
-
-        @Override
-        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-            if (visitor.preVisit(this)) {
-                visitor.visitStart(elementName, elementIndex, this);
-                if (visitor.visit(elementName, elementIndex, this)) {
-                    // visit children
-                    accept(id, "id", visitor);
-                    accept(extension, "extension", visitor, Extension.class);
-                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(item, "item", visitor);
-                    accept(isActive, "isActive", visitor);
-                    accept(strength, "strength", visitor);
-                }
-                visitor.visitEnd(elementName, elementIndex, this);
-                visitor.postVisit(this);
-            }
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            Ingredient other = (Ingredient) obj;
-            return Objects.equals(id, other.id) && 
-                Objects.equals(extension, other.extension) && 
-                Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(item, other.item) && 
-                Objects.equals(isActive, other.isActive) && 
-                Objects.equals(strength, other.strength);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = hashCode;
-            if (result == 0) {
-                result = Objects.hash(id, 
-                    extension, 
-                    modifierExtension, 
-                    item, 
-                    isActive, 
-                    strength);
-                hashCode = result;
-            }
-            return result;
-        }
-
-        @Override
-        public Builder toBuilder() {
-            return new Builder().from(this);
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public static class Builder extends BackboneElement.Builder {
-            private Element item;
-            private Boolean isActive;
-            private Ratio strength;
-
-            private Builder() {
-                super();
-            }
-
-            /**
-             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-             * contain spaces.
-             * 
-             * @param id
-             *     Unique id for inter-element referencing
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder id(java.lang.String id) {
-                return (Builder) super.id(id);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder extension(Extension... extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder extension(Collection<Extension> extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder modifierExtension(Extension... modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * The actual ingredient - either a substance (simple ingredient) or another medication.
-             * 
-             * <p>This element is required.
-             * 
-             * <p>This is a choice element with the following allowed types:
-             * <ul>
-             * <li>{@link CodeableConcept}</li>
-             * <li>{@link Reference}</li>
-             * </ul>
-             * 
-             * When of type {@link Reference}, the allowed resource types for this reference are:
-             * <ul>
-             * <li>{@link Substance}</li>
-             * </ul>
-             * 
-             * @param item
-             *     Medication(s) or substance(s) contained in the medication
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder item(Element item) {
-                this.item = item;
-                return this;
-            }
-
-            /**
-             * Convenience method for setting {@code isActive}.
-             * 
-             * @param isActive
-             *     Active ingredient indicator
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #isActive(org.linuxforhealth.fhir.model.type.Boolean)
-             */
-            public Builder isActive(java.lang.Boolean isActive) {
-                this.isActive = (isActive == null) ? null : Boolean.of(isActive);
-                return this;
-            }
-
-            /**
-             * Indication of whether this ingredient affects the therapeutic action of the drug.
-             * 
-             * @param isActive
-             *     Active ingredient indicator
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder isActive(Boolean isActive) {
-                this.isActive = isActive;
-                return this;
-            }
-
-            /**
-             * Specifies how many (or how much) of the items there are in this Medication. For example, 250 mg per tablet. This is 
-             * expressed as a ratio where the numerator is 250mg and the denominator is 1 tablet.
-             * 
-             * @param strength
-             *     Quantity of ingredient present
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder strength(Ratio strength) {
-                this.strength = strength;
-                return this;
-            }
-
-            /**
-             * Build the {@link Ingredient}
-             * 
-             * <p>Required elements:
-             * <ul>
-             * <li>item</li>
-             * </ul>
-             * 
-             * @return
-             *     An immutable object of type {@link Ingredient}
-             * @throws IllegalStateException
-             *     if the current state cannot be built into a valid Ingredient per the base specification
-             */
-            @Override
-            public Ingredient build() {
-                Ingredient ingredient = new Ingredient(this);
-                if (validating) {
-                    validate(ingredient);
-                }
-                return ingredient;
-            }
-
-            protected void validate(Ingredient ingredient) {
-                super.validate(ingredient);
-                ValidationSupport.requireChoiceElement(ingredient.item, "item", CodeableConcept.class, Reference.class);
-                ValidationSupport.checkReferenceType(ingredient.item, "item", "Substance");
-                ValidationSupport.requireValueOrChildren(ingredient);
-            }
-
-            protected Builder from(Ingredient ingredient) {
-                super.from(ingredient);
-                item = ingredient.item;
-                isActive = ingredient.isActive;
-                strength = ingredient.strength;
-                return this;
-            }
-        }
-    }
-
-    /**
      * The price of the medication.
      */
     public static class Cost extends BackboneElement {
+        private final List<Period> effectiveDate;
         @Required
         private final CodeableConcept type;
         private final String source;
+        @Choice({ Money.class, CodeableConcept.class })
+        @Binding(
+            bindingName = "MedicationCostCategory",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "A coded concept defining the category of a medication.",
+            valueSet = "http://hl7.org/fhir/ValueSet/medication-cost-category"
+        )
         @Required
-        private final Money cost;
+        private final org.linuxforhealth.fhir.model.type.Element cost;
 
         private Cost(Builder builder) {
             super(builder);
+            effectiveDate = Collections.unmodifiableList(builder.effectiveDate);
             type = builder.type;
             source = builder.source;
             cost = builder.cost;
+        }
+
+        /**
+         * The date range for which the cost information of the medication is effective.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link Period} that may be empty.
+         */
+        public List<Period> getEffectiveDate() {
+            return effectiveDate;
         }
 
         /**
@@ -2582,18 +2186,19 @@ public class MedicationKnowledge extends DomainResource {
         }
 
         /**
-         * The price of the medication.
+         * The price or representation of the cost (for example, Band A, Band B or $, $$) of the medication.
          * 
          * @return
-         *     An immutable object of type {@link Money} that is non-null.
+         *     An immutable object of type {@link Money} or {@link CodeableConcept} that is non-null.
          */
-        public Money getCost() {
+        public org.linuxforhealth.fhir.model.type.Element getCost() {
             return cost;
         }
 
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
+                !effectiveDate.isEmpty() || 
                 (type != null) || 
                 (source != null) || 
                 (cost != null);
@@ -2608,6 +2213,7 @@ public class MedicationKnowledge extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(effectiveDate, "effectiveDate", visitor, Period.class);
                     accept(type, "type", visitor);
                     accept(source, "source", visitor);
                     accept(cost, "cost", visitor);
@@ -2632,6 +2238,7 @@ public class MedicationKnowledge extends DomainResource {
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(effectiveDate, other.effectiveDate) && 
                 Objects.equals(type, other.type) && 
                 Objects.equals(source, other.source) && 
                 Objects.equals(cost, other.cost);
@@ -2644,6 +2251,7 @@ public class MedicationKnowledge extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
+                    effectiveDate, 
                     type, 
                     source, 
                     cost);
@@ -2662,9 +2270,10 @@ public class MedicationKnowledge extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
+            private List<Period> effectiveDate = new ArrayList<>();
             private CodeableConcept type;
             private String source;
-            private Money cost;
+            private org.linuxforhealth.fhir.model.type.Element cost;
 
             private Builder() {
                 super();
@@ -2687,7 +2296,7 @@ public class MedicationKnowledge extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2707,7 +2316,7 @@ public class MedicationKnowledge extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2732,7 +2341,7 @@ public class MedicationKnowledge extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2757,7 +2366,7 @@ public class MedicationKnowledge extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2779,6 +2388,45 @@ public class MedicationKnowledge extends DomainResource {
             @Override
             public Builder modifierExtension(Collection<Extension> modifierExtension) {
                 return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * The date range for which the cost information of the medication is effective.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param effectiveDate
+             *     The date range for which the cost is effective
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder effectiveDate(Period... effectiveDate) {
+                for (Period value : effectiveDate) {
+                    this.effectiveDate.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * The date range for which the cost information of the medication is effective.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param effectiveDate
+             *     The date range for which the cost is effective
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder effectiveDate(Collection<Period> effectiveDate) {
+                this.effectiveDate = new ArrayList<>(effectiveDate);
+                return this;
             }
 
             /**
@@ -2829,17 +2477,23 @@ public class MedicationKnowledge extends DomainResource {
             }
 
             /**
-             * The price of the medication.
+             * The price or representation of the cost (for example, Band A, Band B or $, $$) of the medication.
              * 
              * <p>This element is required.
              * 
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link Money}</li>
+             * <li>{@link CodeableConcept}</li>
+             * </ul>
+             * 
              * @param cost
-             *     The price of the medication
+             *     The price or category of the cost of the medication
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder cost(Money cost) {
+            public Builder cost(org.linuxforhealth.fhir.model.type.Element cost) {
                 this.cost = cost;
                 return this;
             }
@@ -2869,13 +2523,15 @@ public class MedicationKnowledge extends DomainResource {
 
             protected void validate(Cost cost) {
                 super.validate(cost);
+                ValidationSupport.checkList(cost.effectiveDate, "effectiveDate", Period.class);
                 ValidationSupport.requireNonNull(cost.type, "type");
-                ValidationSupport.requireNonNull(cost.cost, "cost");
+                ValidationSupport.requireChoiceElement(cost.cost, "cost", Money.class, CodeableConcept.class);
                 ValidationSupport.requireValueOrChildren(cost);
             }
 
             protected Builder from(Cost cost) {
                 super.from(cost);
+                effectiveDate.addAll(cost.effectiveDate);
                 type = cost.type;
                 source = cost.source;
                 this.cost = cost.cost;
@@ -3008,7 +2664,7 @@ public class MedicationKnowledge extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3028,7 +2684,7 @@ public class MedicationKnowledge extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3053,7 +2709,7 @@ public class MedicationKnowledge extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3078,7 +2734,7 @@ public class MedicationKnowledge extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3178,59 +2834,43 @@ public class MedicationKnowledge extends DomainResource {
     }
 
     /**
-     * Guidelines for the administration of the medication.
+     * Guidelines or protocols that are applicable for the administration of the medication based on indication.
      */
-    public static class AdministrationGuidelines extends BackboneElement {
-        private final List<Dosage> dosage;
-        @ReferenceTarget({ "ObservationDefinition" })
-        @Choice({ CodeableConcept.class, Reference.class })
-        private final Element indication;
-        private final List<PatientCharacteristics> patientCharacteristics;
+    public static class IndicationGuideline extends BackboneElement {
+        private final List<CodeableReference> indication;
+        private final List<DosingGuideline> dosingGuideline;
 
-        private AdministrationGuidelines(Builder builder) {
+        private IndicationGuideline(Builder builder) {
             super(builder);
-            dosage = Collections.unmodifiableList(builder.dosage);
-            indication = builder.indication;
-            patientCharacteristics = Collections.unmodifiableList(builder.patientCharacteristics);
+            indication = Collections.unmodifiableList(builder.indication);
+            dosingGuideline = Collections.unmodifiableList(builder.dosingGuideline);
         }
 
         /**
-         * Dosage for the medication for the specific guidelines.
+         * Indication or reason for use of the medication that applies to the specific administration guideline.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link Dosage} that may be empty.
+         *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
          */
-        public List<Dosage> getDosage() {
-            return dosage;
-        }
-
-        /**
-         * Indication for use that apply to the specific administration guidelines.
-         * 
-         * @return
-         *     An immutable object of type {@link CodeableConcept} or {@link Reference} that may be null.
-         */
-        public Element getIndication() {
+        public List<CodeableReference> getIndication() {
             return indication;
         }
 
         /**
-         * Characteristics of the patient that are relevant to the administration guidelines (for example, height, weight, 
-         * gender, etc.).
+         * The guidelines for the dosage of the medication for the indication.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link PatientCharacteristics} that may be empty.
+         *     An unmodifiable list containing immutable objects of type {@link DosingGuideline} that may be empty.
          */
-        public List<PatientCharacteristics> getPatientCharacteristics() {
-            return patientCharacteristics;
+        public List<DosingGuideline> getDosingGuideline() {
+            return dosingGuideline;
         }
 
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                !dosage.isEmpty() || 
-                (indication != null) || 
-                !patientCharacteristics.isEmpty();
+                !indication.isEmpty() || 
+                !dosingGuideline.isEmpty();
         }
 
         @Override
@@ -3242,9 +2882,8 @@ public class MedicationKnowledge extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(dosage, "dosage", visitor, Dosage.class);
-                    accept(indication, "indication", visitor);
-                    accept(patientCharacteristics, "patientCharacteristics", visitor, PatientCharacteristics.class);
+                    accept(indication, "indication", visitor, CodeableReference.class);
+                    accept(dosingGuideline, "dosingGuideline", visitor, DosingGuideline.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -3262,13 +2901,12 @@ public class MedicationKnowledge extends DomainResource {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            AdministrationGuidelines other = (AdministrationGuidelines) obj;
+            IndicationGuideline other = (IndicationGuideline) obj;
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(dosage, other.dosage) && 
                 Objects.equals(indication, other.indication) && 
-                Objects.equals(patientCharacteristics, other.patientCharacteristics);
+                Objects.equals(dosingGuideline, other.dosingGuideline);
         }
 
         @Override
@@ -3278,9 +2916,8 @@ public class MedicationKnowledge extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    dosage, 
                     indication, 
-                    patientCharacteristics);
+                    dosingGuideline);
                 hashCode = result;
             }
             return result;
@@ -3296,9 +2933,8 @@ public class MedicationKnowledge extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private List<Dosage> dosage = new ArrayList<>();
-            private Element indication;
-            private List<PatientCharacteristics> patientCharacteristics = new ArrayList<>();
+            private List<CodeableReference> indication = new ArrayList<>();
+            private List<DosingGuideline> dosingGuideline = new ArrayList<>();
 
             private Builder() {
                 super();
@@ -3321,7 +2957,7 @@ public class MedicationKnowledge extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3341,7 +2977,7 @@ public class MedicationKnowledge extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3366,7 +3002,7 @@ public class MedicationKnowledge extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3391,7 +3027,7 @@ public class MedicationKnowledge extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3416,98 +3052,32 @@ public class MedicationKnowledge extends DomainResource {
             }
 
             /**
-             * Dosage for the medication for the specific guidelines.
+             * Indication or reason for use of the medication that applies to the specific administration guideline.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param dosage
-             *     Dosage for the medication for the specific guidelines
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder dosage(Dosage... dosage) {
-                for (Dosage value : dosage) {
-                    this.dosage.add(value);
-                }
-                return this;
-            }
-
-            /**
-             * Dosage for the medication for the specific guidelines.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param dosage
-             *     Dosage for the medication for the specific guidelines
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            public Builder dosage(Collection<Dosage> dosage) {
-                this.dosage = new ArrayList<>(dosage);
-                return this;
-            }
-
-            /**
-             * Indication for use that apply to the specific administration guidelines.
-             * 
-             * <p>This is a choice element with the following allowed types:
-             * <ul>
-             * <li>{@link CodeableConcept}</li>
-             * <li>{@link Reference}</li>
-             * </ul>
-             * 
-             * When of type {@link Reference}, the allowed resource types for this reference are:
-             * <ul>
-             * <li>{@link ObservationDefinition}</li>
-             * </ul>
              * 
              * @param indication
-             *     Indication for use that apply to the specific administration guidelines
+             *     Indication for use that applies to the specific administration guideline
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder indication(Element indication) {
-                this.indication = indication;
-                return this;
-            }
-
-            /**
-             * Characteristics of the patient that are relevant to the administration guidelines (for example, height, weight, 
-             * gender, etc.).
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param patientCharacteristics
-             *     Characteristics of the patient that are relevant to the administration guidelines
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder patientCharacteristics(PatientCharacteristics... patientCharacteristics) {
-                for (PatientCharacteristics value : patientCharacteristics) {
-                    this.patientCharacteristics.add(value);
+            public Builder indication(CodeableReference... indication) {
+                for (CodeableReference value : indication) {
+                    this.indication.add(value);
                 }
                 return this;
             }
 
             /**
-             * Characteristics of the patient that are relevant to the administration guidelines (for example, height, weight, 
-             * gender, etc.).
+             * Indication or reason for use of the medication that applies to the specific administration guideline.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * @param patientCharacteristics
-             *     Characteristics of the patient that are relevant to the administration guidelines
+             * @param indication
+             *     Indication for use that applies to the specific administration guideline
              * 
              * @return
              *     A reference to this Builder instance
@@ -3515,86 +3085,147 @@ public class MedicationKnowledge extends DomainResource {
              * @throws NullPointerException
              *     If the passed collection is null
              */
-            public Builder patientCharacteristics(Collection<PatientCharacteristics> patientCharacteristics) {
-                this.patientCharacteristics = new ArrayList<>(patientCharacteristics);
+            public Builder indication(Collection<CodeableReference> indication) {
+                this.indication = new ArrayList<>(indication);
                 return this;
             }
 
             /**
-             * Build the {@link AdministrationGuidelines}
+             * The guidelines for the dosage of the medication for the indication.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param dosingGuideline
+             *     Guidelines for dosage of the medication
              * 
              * @return
-             *     An immutable object of type {@link AdministrationGuidelines}
+             *     A reference to this Builder instance
+             */
+            public Builder dosingGuideline(DosingGuideline... dosingGuideline) {
+                for (DosingGuideline value : dosingGuideline) {
+                    this.dosingGuideline.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * The guidelines for the dosage of the medication for the indication.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param dosingGuideline
+             *     Guidelines for dosage of the medication
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder dosingGuideline(Collection<DosingGuideline> dosingGuideline) {
+                this.dosingGuideline = new ArrayList<>(dosingGuideline);
+                return this;
+            }
+
+            /**
+             * Build the {@link IndicationGuideline}
+             * 
+             * @return
+             *     An immutable object of type {@link IndicationGuideline}
              * @throws IllegalStateException
-             *     if the current state cannot be built into a valid AdministrationGuidelines per the base specification
+             *     if the current state cannot be built into a valid IndicationGuideline per the base specification
              */
             @Override
-            public AdministrationGuidelines build() {
-                AdministrationGuidelines administrationGuidelines = new AdministrationGuidelines(this);
+            public IndicationGuideline build() {
+                IndicationGuideline indicationGuideline = new IndicationGuideline(this);
                 if (validating) {
-                    validate(administrationGuidelines);
+                    validate(indicationGuideline);
                 }
-                return administrationGuidelines;
+                return indicationGuideline;
             }
 
-            protected void validate(AdministrationGuidelines administrationGuidelines) {
-                super.validate(administrationGuidelines);
-                ValidationSupport.checkList(administrationGuidelines.dosage, "dosage", Dosage.class);
-                ValidationSupport.choiceElement(administrationGuidelines.indication, "indication", CodeableConcept.class, Reference.class);
-                ValidationSupport.checkList(administrationGuidelines.patientCharacteristics, "patientCharacteristics", PatientCharacteristics.class);
-                ValidationSupport.checkReferenceType(administrationGuidelines.indication, "indication", "ObservationDefinition");
-                ValidationSupport.requireValueOrChildren(administrationGuidelines);
+            protected void validate(IndicationGuideline indicationGuideline) {
+                super.validate(indicationGuideline);
+                ValidationSupport.checkList(indicationGuideline.indication, "indication", CodeableReference.class);
+                ValidationSupport.checkList(indicationGuideline.dosingGuideline, "dosingGuideline", DosingGuideline.class);
+                ValidationSupport.requireValueOrChildren(indicationGuideline);
             }
 
-            protected Builder from(AdministrationGuidelines administrationGuidelines) {
-                super.from(administrationGuidelines);
-                dosage.addAll(administrationGuidelines.dosage);
-                indication = administrationGuidelines.indication;
-                patientCharacteristics.addAll(administrationGuidelines.patientCharacteristics);
+            protected Builder from(IndicationGuideline indicationGuideline) {
+                super.from(indicationGuideline);
+                indication.addAll(indicationGuideline.indication);
+                dosingGuideline.addAll(indicationGuideline.dosingGuideline);
                 return this;
             }
         }
 
         /**
-         * Dosage for the medication for the specific guidelines.
+         * The guidelines for the dosage of the medication for the indication.
          */
-        public static class Dosage extends BackboneElement {
-            @Required
-            private final CodeableConcept type;
-            @Required
-            private final List<org.linuxforhealth.fhir.model.type.Dosage> dosage;
+        public static class DosingGuideline extends BackboneElement {
+            private final CodeableConcept treatmentIntent;
+            private final List<Dosage> dosage;
+            private final CodeableConcept administrationTreatment;
+            private final List<PatientCharacteristic> patientCharacteristic;
 
-            private Dosage(Builder builder) {
+            private DosingGuideline(Builder builder) {
                 super(builder);
-                type = builder.type;
+                treatmentIntent = builder.treatmentIntent;
                 dosage = Collections.unmodifiableList(builder.dosage);
+                administrationTreatment = builder.administrationTreatment;
+                patientCharacteristic = Collections.unmodifiableList(builder.patientCharacteristic);
             }
 
             /**
-             * The type of dosage (for example, prophylaxis, maintenance, therapeutic, etc.).
+             * The overall intention of the treatment, for example, prophylactic, supporative, curative, etc.
              * 
              * @return
-             *     An immutable object of type {@link CodeableConcept} that is non-null.
+             *     An immutable object of type {@link CodeableConcept} that may be null.
              */
-            public CodeableConcept getType() {
-                return type;
+            public CodeableConcept getTreatmentIntent() {
+                return treatmentIntent;
             }
 
             /**
              * Dosage for the medication for the specific guidelines.
              * 
              * @return
-             *     An unmodifiable list containing immutable objects of type {@link Dosage} that is non-empty.
+             *     An unmodifiable list containing immutable objects of type {@link Dosage} that may be empty.
              */
-            public List<org.linuxforhealth.fhir.model.type.Dosage> getDosage() {
+            public List<Dosage> getDosage() {
                 return dosage;
+            }
+
+            /**
+             * The type of the treatment that the guideline applies to, for example, long term therapy, first line treatment, etc.
+             * 
+             * @return
+             *     An immutable object of type {@link CodeableConcept} that may be null.
+             */
+            public CodeableConcept getAdministrationTreatment() {
+                return administrationTreatment;
+            }
+
+            /**
+             * Characteristics of the patient that are relevant to the administration guidelines (for example, height, weight, 
+             * gender, etc.).
+             * 
+             * @return
+             *     An unmodifiable list containing immutable objects of type {@link PatientCharacteristic} that may be empty.
+             */
+            public List<PatientCharacteristic> getPatientCharacteristic() {
+                return patientCharacteristic;
             }
 
             @Override
             public boolean hasChildren() {
                 return super.hasChildren() || 
-                    (type != null) || 
-                    !dosage.isEmpty();
+                    (treatmentIntent != null) || 
+                    !dosage.isEmpty() || 
+                    (administrationTreatment != null) || 
+                    !patientCharacteristic.isEmpty();
             }
 
             @Override
@@ -3606,8 +3237,10 @@ public class MedicationKnowledge extends DomainResource {
                         accept(id, "id", visitor);
                         accept(extension, "extension", visitor, Extension.class);
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                        accept(type, "type", visitor);
-                        accept(dosage, "dosage", visitor, org.linuxforhealth.fhir.model.type.Dosage.class);
+                        accept(treatmentIntent, "treatmentIntent", visitor);
+                        accept(dosage, "dosage", visitor, Dosage.class);
+                        accept(administrationTreatment, "administrationTreatment", visitor);
+                        accept(patientCharacteristic, "patientCharacteristic", visitor, PatientCharacteristic.class);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
                     visitor.postVisit(this);
@@ -3625,12 +3258,14 @@ public class MedicationKnowledge extends DomainResource {
                 if (getClass() != obj.getClass()) {
                     return false;
                 }
-                Dosage other = (Dosage) obj;
+                DosingGuideline other = (DosingGuideline) obj;
                 return Objects.equals(id, other.id) && 
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
-                    Objects.equals(type, other.type) && 
-                    Objects.equals(dosage, other.dosage);
+                    Objects.equals(treatmentIntent, other.treatmentIntent) && 
+                    Objects.equals(dosage, other.dosage) && 
+                    Objects.equals(administrationTreatment, other.administrationTreatment) && 
+                    Objects.equals(patientCharacteristic, other.patientCharacteristic);
             }
 
             @Override
@@ -3640,8 +3275,10 @@ public class MedicationKnowledge extends DomainResource {
                     result = Objects.hash(id, 
                         extension, 
                         modifierExtension, 
-                        type, 
-                        dosage);
+                        treatmentIntent, 
+                        dosage, 
+                        administrationTreatment, 
+                        patientCharacteristic);
                     hashCode = result;
                 }
                 return result;
@@ -3657,8 +3294,10 @@ public class MedicationKnowledge extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private CodeableConcept type;
-                private List<org.linuxforhealth.fhir.model.type.Dosage> dosage = new ArrayList<>();
+                private CodeableConcept treatmentIntent;
+                private List<Dosage> dosage = new ArrayList<>();
+                private CodeableConcept administrationTreatment;
+                private List<PatientCharacteristic> patientCharacteristic = new ArrayList<>();
 
                 private Builder() {
                     super();
@@ -3681,7 +3320,7 @@ public class MedicationKnowledge extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3701,7 +3340,7 @@ public class MedicationKnowledge extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3726,7 +3365,7 @@ public class MedicationKnowledge extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3751,7 +3390,7 @@ public class MedicationKnowledge extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3776,18 +3415,16 @@ public class MedicationKnowledge extends DomainResource {
                 }
 
                 /**
-                 * The type of dosage (for example, prophylaxis, maintenance, therapeutic, etc.).
+                 * The overall intention of the treatment, for example, prophylactic, supporative, curative, etc.
                  * 
-                 * <p>This element is required.
-                 * 
-                 * @param type
-                 *     Type of dosage
+                 * @param treatmentIntent
+                 *     Intention of the treatment
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder type(CodeableConcept type) {
-                    this.type = type;
+                public Builder treatmentIntent(CodeableConcept treatmentIntent) {
+                    this.treatmentIntent = treatmentIntent;
                     return this;
                 }
 
@@ -3797,16 +3434,14 @@ public class MedicationKnowledge extends DomainResource {
                  * <p>Adds new element(s) to the existing list.
                  * If any of the elements are null, calling {@link #build()} will fail.
                  * 
-                 * <p>This element is required.
-                 * 
                  * @param dosage
                  *     Dosage for the medication for the specific guidelines
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder dosage(org.linuxforhealth.fhir.model.type.Dosage... dosage) {
-                    for (org.linuxforhealth.fhir.model.type.Dosage value : dosage) {
+                public Builder dosage(Dosage... dosage) {
+                    for (Dosage value : dosage) {
                         this.dosage.add(value);
                     }
                     return this;
@@ -3818,8 +3453,6 @@ public class MedicationKnowledge extends DomainResource {
                  * <p>Replaces the existing list with a new one containing elements from the Collection.
                  * If any of the elements are null, calling {@link #build()} will fail.
                  * 
-                 * <p>This element is required.
-                 * 
                  * @param dosage
                  *     Dosage for the medication for the specific guidelines
                  * 
@@ -3829,387 +3462,713 @@ public class MedicationKnowledge extends DomainResource {
                  * @throws NullPointerException
                  *     If the passed collection is null
                  */
-                public Builder dosage(Collection<org.linuxforhealth.fhir.model.type.Dosage> dosage) {
+                public Builder dosage(Collection<Dosage> dosage) {
                     this.dosage = new ArrayList<>(dosage);
                     return this;
                 }
 
                 /**
-                 * Build the {@link Dosage}
+                 * The type of the treatment that the guideline applies to, for example, long term therapy, first line treatment, etc.
                  * 
-                 * <p>Required elements:
-                 * <ul>
-                 * <li>type</li>
-                 * <li>dosage</li>
-                 * </ul>
+                 * @param administrationTreatment
+                 *     Type of treatment the guideline applies to
                  * 
                  * @return
-                 *     An immutable object of type {@link Dosage}
+                 *     A reference to this Builder instance
+                 */
+                public Builder administrationTreatment(CodeableConcept administrationTreatment) {
+                    this.administrationTreatment = administrationTreatment;
+                    return this;
+                }
+
+                /**
+                 * Characteristics of the patient that are relevant to the administration guidelines (for example, height, weight, 
+                 * gender, etc.).
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param patientCharacteristic
+                 *     Characteristics of the patient that are relevant to the administration guidelines
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder patientCharacteristic(PatientCharacteristic... patientCharacteristic) {
+                    for (PatientCharacteristic value : patientCharacteristic) {
+                        this.patientCharacteristic.add(value);
+                    }
+                    return this;
+                }
+
+                /**
+                 * Characteristics of the patient that are relevant to the administration guidelines (for example, height, weight, 
+                 * gender, etc.).
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param patientCharacteristic
+                 *     Characteristics of the patient that are relevant to the administration guidelines
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                public Builder patientCharacteristic(Collection<PatientCharacteristic> patientCharacteristic) {
+                    this.patientCharacteristic = new ArrayList<>(patientCharacteristic);
+                    return this;
+                }
+
+                /**
+                 * Build the {@link DosingGuideline}
+                 * 
+                 * @return
+                 *     An immutable object of type {@link DosingGuideline}
                  * @throws IllegalStateException
-                 *     if the current state cannot be built into a valid Dosage per the base specification
+                 *     if the current state cannot be built into a valid DosingGuideline per the base specification
                  */
                 @Override
-                public Dosage build() {
-                    Dosage dosage = new Dosage(this);
+                public DosingGuideline build() {
+                    DosingGuideline dosingGuideline = new DosingGuideline(this);
                     if (validating) {
-                        validate(dosage);
+                        validate(dosingGuideline);
                     }
+                    return dosingGuideline;
+                }
+
+                protected void validate(DosingGuideline dosingGuideline) {
+                    super.validate(dosingGuideline);
+                    ValidationSupport.checkList(dosingGuideline.dosage, "dosage", Dosage.class);
+                    ValidationSupport.checkList(dosingGuideline.patientCharacteristic, "patientCharacteristic", PatientCharacteristic.class);
+                    ValidationSupport.requireValueOrChildren(dosingGuideline);
+                }
+
+                protected Builder from(DosingGuideline dosingGuideline) {
+                    super.from(dosingGuideline);
+                    treatmentIntent = dosingGuideline.treatmentIntent;
+                    dosage.addAll(dosingGuideline.dosage);
+                    administrationTreatment = dosingGuideline.administrationTreatment;
+                    patientCharacteristic.addAll(dosingGuideline.patientCharacteristic);
+                    return this;
+                }
+            }
+
+            /**
+             * Dosage for the medication for the specific guidelines.
+             */
+            public static class Dosage extends BackboneElement {
+                @Required
+                private final CodeableConcept type;
+                @Required
+                private final List<org.linuxforhealth.fhir.model.type.Dosage> dosage;
+
+                private Dosage(Builder builder) {
+                    super(builder);
+                    type = builder.type;
+                    dosage = Collections.unmodifiableList(builder.dosage);
+                }
+
+                /**
+                 * The type or category of dosage for a given medication (for example, prophylaxis, maintenance, therapeutic, etc.).
+                 * 
+                 * @return
+                 *     An immutable object of type {@link CodeableConcept} that is non-null.
+                 */
+                public CodeableConcept getType() {
+                    return type;
+                }
+
+                /**
+                 * Dosage for the medication for the specific guidelines.
+                 * 
+                 * @return
+                 *     An unmodifiable list containing immutable objects of type {@link Dosage} that is non-empty.
+                 */
+                public List<org.linuxforhealth.fhir.model.type.Dosage> getDosage() {
                     return dosage;
                 }
 
-                protected void validate(Dosage dosage) {
-                    super.validate(dosage);
-                    ValidationSupport.requireNonNull(dosage.type, "type");
-                    ValidationSupport.checkNonEmptyList(dosage.dosage, "dosage", org.linuxforhealth.fhir.model.type.Dosage.class);
-                    ValidationSupport.requireValueOrChildren(dosage);
+                @Override
+                public boolean hasChildren() {
+                    return super.hasChildren() || 
+                        (type != null) || 
+                        !dosage.isEmpty();
                 }
 
-                protected Builder from(Dosage dosage) {
-                    super.from(dosage);
-                    type = dosage.type;
-                    this.dosage.addAll(dosage.dosage);
-                    return this;
+                @Override
+                public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                    if (visitor.preVisit(this)) {
+                        visitor.visitStart(elementName, elementIndex, this);
+                        if (visitor.visit(elementName, elementIndex, this)) {
+                            // visit children
+                            accept(id, "id", visitor);
+                            accept(extension, "extension", visitor, Extension.class);
+                            accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                            accept(type, "type", visitor);
+                            accept(dosage, "dosage", visitor, org.linuxforhealth.fhir.model.type.Dosage.class);
+                        }
+                        visitor.visitEnd(elementName, elementIndex, this);
+                        visitor.postVisit(this);
+                    }
                 }
-            }
-        }
 
-        /**
-         * Characteristics of the patient that are relevant to the administration guidelines (for example, height, weight, 
-         * gender, etc.).
-         */
-        public static class PatientCharacteristics extends BackboneElement {
-            @Choice({ CodeableConcept.class, SimpleQuantity.class })
-            @Required
-            private final Element characteristic;
-            private final List<String> value;
+                @Override
+                public boolean equals(Object obj) {
+                    if (this == obj) {
+                        return true;
+                    }
+                    if (obj == null) {
+                        return false;
+                    }
+                    if (getClass() != obj.getClass()) {
+                        return false;
+                    }
+                    Dosage other = (Dosage) obj;
+                    return Objects.equals(id, other.id) && 
+                        Objects.equals(extension, other.extension) && 
+                        Objects.equals(modifierExtension, other.modifierExtension) && 
+                        Objects.equals(type, other.type) && 
+                        Objects.equals(dosage, other.dosage);
+                }
 
-            private PatientCharacteristics(Builder builder) {
-                super(builder);
-                characteristic = builder.characteristic;
-                value = Collections.unmodifiableList(builder.value);
+                @Override
+                public int hashCode() {
+                    int result = hashCode;
+                    if (result == 0) {
+                        result = Objects.hash(id, 
+                            extension, 
+                            modifierExtension, 
+                            type, 
+                            dosage);
+                        hashCode = result;
+                    }
+                    return result;
+                }
+
+                @Override
+                public Builder toBuilder() {
+                    return new Builder().from(this);
+                }
+
+                public static Builder builder() {
+                    return new Builder();
+                }
+
+                public static class Builder extends BackboneElement.Builder {
+                    private CodeableConcept type;
+                    private List<org.linuxforhealth.fhir.model.type.Dosage> dosage = new ArrayList<>();
+
+                    private Builder() {
+                        super();
+                    }
+
+                    /**
+                     * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                     * contain spaces.
+                     * 
+                     * @param id
+                     *     Unique id for inter-element referencing
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    @Override
+                    public Builder id(java.lang.String id) {
+                        return (Builder) super.id(id);
+                    }
+
+                    /**
+                     * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                     * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                     * of the definition of the extension.
+                     * 
+                     * <p>Adds new element(s) to the existing list.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param extension
+                     *     Additional content defined by implementations
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    @Override
+                    public Builder extension(Extension... extension) {
+                        return (Builder) super.extension(extension);
+                    }
+
+                    /**
+                     * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                     * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                     * of the definition of the extension.
+                     * 
+                     * <p>Replaces the existing list with a new one containing elements from the Collection.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param extension
+                     *     Additional content defined by implementations
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @throws NullPointerException
+                     *     If the passed collection is null
+                     */
+                    @Override
+                    public Builder extension(Collection<Extension> extension) {
+                        return (Builder) super.extension(extension);
+                    }
+
+                    /**
+                     * May be used to represent additional information that is not part of the basic definition of the element and that 
+                     * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                     * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                     * extension. Applications processing a resource are required to check for modifier extensions.
+                     * 
+                     * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                     * change the meaning of modifierExtension itself).
+                     * 
+                     * <p>Adds new element(s) to the existing list.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param modifierExtension
+                     *     Extensions that cannot be ignored even if unrecognized
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    @Override
+                    public Builder modifierExtension(Extension... modifierExtension) {
+                        return (Builder) super.modifierExtension(modifierExtension);
+                    }
+
+                    /**
+                     * May be used to represent additional information that is not part of the basic definition of the element and that 
+                     * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                     * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                     * extension. Applications processing a resource are required to check for modifier extensions.
+                     * 
+                     * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                     * change the meaning of modifierExtension itself).
+                     * 
+                     * <p>Replaces the existing list with a new one containing elements from the Collection.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param modifierExtension
+                     *     Extensions that cannot be ignored even if unrecognized
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @throws NullPointerException
+                     *     If the passed collection is null
+                     */
+                    @Override
+                    public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                        return (Builder) super.modifierExtension(modifierExtension);
+                    }
+
+                    /**
+                     * The type or category of dosage for a given medication (for example, prophylaxis, maintenance, therapeutic, etc.).
+                     * 
+                     * <p>This element is required.
+                     * 
+                     * @param type
+                     *     Category of dosage for a medication
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder type(CodeableConcept type) {
+                        this.type = type;
+                        return this;
+                    }
+
+                    /**
+                     * Dosage for the medication for the specific guidelines.
+                     * 
+                     * <p>Adds new element(s) to the existing list.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * <p>This element is required.
+                     * 
+                     * @param dosage
+                     *     Dosage for the medication for the specific guidelines
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder dosage(org.linuxforhealth.fhir.model.type.Dosage... dosage) {
+                        for (org.linuxforhealth.fhir.model.type.Dosage value : dosage) {
+                            this.dosage.add(value);
+                        }
+                        return this;
+                    }
+
+                    /**
+                     * Dosage for the medication for the specific guidelines.
+                     * 
+                     * <p>Replaces the existing list with a new one containing elements from the Collection.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * <p>This element is required.
+                     * 
+                     * @param dosage
+                     *     Dosage for the medication for the specific guidelines
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @throws NullPointerException
+                     *     If the passed collection is null
+                     */
+                    public Builder dosage(Collection<org.linuxforhealth.fhir.model.type.Dosage> dosage) {
+                        this.dosage = new ArrayList<>(dosage);
+                        return this;
+                    }
+
+                    /**
+                     * Build the {@link Dosage}
+                     * 
+                     * <p>Required elements:
+                     * <ul>
+                     * <li>type</li>
+                     * <li>dosage</li>
+                     * </ul>
+                     * 
+                     * @return
+                     *     An immutable object of type {@link Dosage}
+                     * @throws IllegalStateException
+                     *     if the current state cannot be built into a valid Dosage per the base specification
+                     */
+                    @Override
+                    public Dosage build() {
+                        Dosage dosage = new Dosage(this);
+                        if (validating) {
+                            validate(dosage);
+                        }
+                        return dosage;
+                    }
+
+                    protected void validate(Dosage dosage) {
+                        super.validate(dosage);
+                        ValidationSupport.requireNonNull(dosage.type, "type");
+                        ValidationSupport.checkNonEmptyList(dosage.dosage, "dosage", org.linuxforhealth.fhir.model.type.Dosage.class);
+                        ValidationSupport.requireValueOrChildren(dosage);
+                    }
+
+                    protected Builder from(Dosage dosage) {
+                        super.from(dosage);
+                        type = dosage.type;
+                        this.dosage.addAll(dosage.dosage);
+                        return this;
+                    }
+                }
             }
 
             /**
-             * Specific characteristic that is relevant to the administration guideline (e.g. height, weight, gender).
-             * 
-             * @return
-             *     An immutable object of type {@link CodeableConcept} or {@link SimpleQuantity} that is non-null.
+             * Characteristics of the patient that are relevant to the administration guidelines (for example, height, weight, 
+             * gender, etc.).
              */
-            public Element getCharacteristic() {
-                return characteristic;
-            }
+            public static class PatientCharacteristic extends BackboneElement {
+                @Required
+                private final CodeableConcept type;
+                @Choice({ CodeableConcept.class, Quantity.class, Range.class })
+                private final org.linuxforhealth.fhir.model.type.Element value;
 
-            /**
-             * The specific characteristic (e.g. height, weight, gender, etc.).
-             * 
-             * @return
-             *     An unmodifiable list containing immutable objects of type {@link String} that may be empty.
-             */
-            public List<String> getValue() {
-                return value;
-            }
-
-            @Override
-            public boolean hasChildren() {
-                return super.hasChildren() || 
-                    (characteristic != null) || 
-                    !value.isEmpty();
-            }
-
-            @Override
-            public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-                if (visitor.preVisit(this)) {
-                    visitor.visitStart(elementName, elementIndex, this);
-                    if (visitor.visit(elementName, elementIndex, this)) {
-                        // visit children
-                        accept(id, "id", visitor);
-                        accept(extension, "extension", visitor, Extension.class);
-                        accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                        accept(characteristic, "characteristic", visitor);
-                        accept(value, "value", visitor, String.class);
-                    }
-                    visitor.visitEnd(elementName, elementIndex, this);
-                    visitor.postVisit(this);
-                }
-            }
-
-            @Override
-            public boolean equals(Object obj) {
-                if (this == obj) {
-                    return true;
-                }
-                if (obj == null) {
-                    return false;
-                }
-                if (getClass() != obj.getClass()) {
-                    return false;
-                }
-                PatientCharacteristics other = (PatientCharacteristics) obj;
-                return Objects.equals(id, other.id) && 
-                    Objects.equals(extension, other.extension) && 
-                    Objects.equals(modifierExtension, other.modifierExtension) && 
-                    Objects.equals(characteristic, other.characteristic) && 
-                    Objects.equals(value, other.value);
-            }
-
-            @Override
-            public int hashCode() {
-                int result = hashCode;
-                if (result == 0) {
-                    result = Objects.hash(id, 
-                        extension, 
-                        modifierExtension, 
-                        characteristic, 
-                        value);
-                    hashCode = result;
-                }
-                return result;
-            }
-
-            @Override
-            public Builder toBuilder() {
-                return new Builder().from(this);
-            }
-
-            public static Builder builder() {
-                return new Builder();
-            }
-
-            public static class Builder extends BackboneElement.Builder {
-                private Element characteristic;
-                private List<String> value = new ArrayList<>();
-
-                private Builder() {
-                    super();
+                private PatientCharacteristic(Builder builder) {
+                    super(builder);
+                    type = builder.type;
+                    value = builder.value;
                 }
 
                 /**
-                 * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-                 * contain spaces.
-                 * 
-                 * @param id
-                 *     Unique id for inter-element referencing
+                 * The categorization of the specific characteristic that is relevant to the administration guideline (e.g. height, 
+                 * weight, gender).
                  * 
                  * @return
-                 *     A reference to this Builder instance
+                 *     An immutable object of type {@link CodeableConcept} that is non-null.
                  */
-                @Override
-                public Builder id(java.lang.String id) {
-                    return (Builder) super.id(id);
-                }
-
-                /**
-                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-                 * of the definition of the extension.
-                 * 
-                 * <p>Adds new element(s) to the existing list.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param extension
-                 *     Additional content defined by implementations
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                @Override
-                public Builder extension(Extension... extension) {
-                    return (Builder) super.extension(extension);
-                }
-
-                /**
-                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-                 * of the definition of the extension.
-                 * 
-                 * <p>Replaces the existing list with a new one containing elements from the Collection.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param extension
-                 *     Additional content defined by implementations
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @throws NullPointerException
-                 *     If the passed collection is null
-                 */
-                @Override
-                public Builder extension(Collection<Extension> extension) {
-                    return (Builder) super.extension(extension);
-                }
-
-                /**
-                 * May be used to represent additional information that is not part of the basic definition of the element and that 
-                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-                 * extension. Applications processing a resource are required to check for modifier extensions.
-                 * 
-                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-                 * change the meaning of modifierExtension itself).
-                 * 
-                 * <p>Adds new element(s) to the existing list.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param modifierExtension
-                 *     Extensions that cannot be ignored even if unrecognized
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                @Override
-                public Builder modifierExtension(Extension... modifierExtension) {
-                    return (Builder) super.modifierExtension(modifierExtension);
-                }
-
-                /**
-                 * May be used to represent additional information that is not part of the basic definition of the element and that 
-                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-                 * extension. Applications processing a resource are required to check for modifier extensions.
-                 * 
-                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-                 * change the meaning of modifierExtension itself).
-                 * 
-                 * <p>Replaces the existing list with a new one containing elements from the Collection.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param modifierExtension
-                 *     Extensions that cannot be ignored even if unrecognized
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @throws NullPointerException
-                 *     If the passed collection is null
-                 */
-                @Override
-                public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                    return (Builder) super.modifierExtension(modifierExtension);
-                }
-
-                /**
-                 * Specific characteristic that is relevant to the administration guideline (e.g. height, weight, gender).
-                 * 
-                 * <p>This element is required.
-                 * 
-                 * <p>This is a choice element with the following allowed types:
-                 * <ul>
-                 * <li>{@link CodeableConcept}</li>
-                 * <li>{@link SimpleQuantity}</li>
-                 * </ul>
-                 * 
-                 * @param characteristic
-                 *     Specific characteristic that is relevant to the administration guideline
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder characteristic(Element characteristic) {
-                    this.characteristic = characteristic;
-                    return this;
-                }
-
-                /**
-                 * Convenience method for setting {@code value}.
-                 * 
-                 * <p>Adds new element(s) to the existing list.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param value
-                 *     The specific characteristic
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @see #value(org.linuxforhealth.fhir.model.type.String)
-                 */
-                public Builder value(java.lang.String... value) {
-                    for (java.lang.String _value : value) {
-                        this.value.add((_value == null) ? null : String.of(_value));
-                    }
-                    return this;
+                public CodeableConcept getType() {
+                    return type;
                 }
 
                 /**
                  * The specific characteristic (e.g. height, weight, gender, etc.).
                  * 
-                 * <p>Adds new element(s) to the existing list.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param value
-                 *     The specific characteristic
-                 * 
                  * @return
-                 *     A reference to this Builder instance
+                 *     An immutable object of type {@link CodeableConcept}, {@link Quantity} or {@link Range} that may be null.
                  */
-                public Builder value(String... value) {
-                    for (String _value : value) {
-                        this.value.add(_value);
-                    }
-                    return this;
+                public org.linuxforhealth.fhir.model.type.Element getValue() {
+                    return value;
                 }
 
-                /**
-                 * The specific characteristic (e.g. height, weight, gender, etc.).
-                 * 
-                 * <p>Replaces the existing list with a new one containing elements from the Collection.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param value
-                 *     The specific characteristic
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @throws NullPointerException
-                 *     If the passed collection is null
-                 */
-                public Builder value(Collection<String> value) {
-                    this.value = new ArrayList<>(value);
-                    return this;
-                }
-
-                /**
-                 * Build the {@link PatientCharacteristics}
-                 * 
-                 * <p>Required elements:
-                 * <ul>
-                 * <li>characteristic</li>
-                 * </ul>
-                 * 
-                 * @return
-                 *     An immutable object of type {@link PatientCharacteristics}
-                 * @throws IllegalStateException
-                 *     if the current state cannot be built into a valid PatientCharacteristics per the base specification
-                 */
                 @Override
-                public PatientCharacteristics build() {
-                    PatientCharacteristics patientCharacteristics = new PatientCharacteristics(this);
-                    if (validating) {
-                        validate(patientCharacteristics);
+                public boolean hasChildren() {
+                    return super.hasChildren() || 
+                        (type != null) || 
+                        (value != null);
+                }
+
+                @Override
+                public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                    if (visitor.preVisit(this)) {
+                        visitor.visitStart(elementName, elementIndex, this);
+                        if (visitor.visit(elementName, elementIndex, this)) {
+                            // visit children
+                            accept(id, "id", visitor);
+                            accept(extension, "extension", visitor, Extension.class);
+                            accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                            accept(type, "type", visitor);
+                            accept(value, "value", visitor);
+                        }
+                        visitor.visitEnd(elementName, elementIndex, this);
+                        visitor.postVisit(this);
                     }
-                    return patientCharacteristics;
                 }
 
-                protected void validate(PatientCharacteristics patientCharacteristics) {
-                    super.validate(patientCharacteristics);
-                    ValidationSupport.requireChoiceElement(patientCharacteristics.characteristic, "characteristic", CodeableConcept.class, SimpleQuantity.class);
-                    ValidationSupport.checkList(patientCharacteristics.value, "value", String.class);
-                    ValidationSupport.requireValueOrChildren(patientCharacteristics);
+                @Override
+                public boolean equals(Object obj) {
+                    if (this == obj) {
+                        return true;
+                    }
+                    if (obj == null) {
+                        return false;
+                    }
+                    if (getClass() != obj.getClass()) {
+                        return false;
+                    }
+                    PatientCharacteristic other = (PatientCharacteristic) obj;
+                    return Objects.equals(id, other.id) && 
+                        Objects.equals(extension, other.extension) && 
+                        Objects.equals(modifierExtension, other.modifierExtension) && 
+                        Objects.equals(type, other.type) && 
+                        Objects.equals(value, other.value);
                 }
 
-                protected Builder from(PatientCharacteristics patientCharacteristics) {
-                    super.from(patientCharacteristics);
-                    characteristic = patientCharacteristics.characteristic;
-                    value.addAll(patientCharacteristics.value);
-                    return this;
+                @Override
+                public int hashCode() {
+                    int result = hashCode;
+                    if (result == 0) {
+                        result = Objects.hash(id, 
+                            extension, 
+                            modifierExtension, 
+                            type, 
+                            value);
+                        hashCode = result;
+                    }
+                    return result;
+                }
+
+                @Override
+                public Builder toBuilder() {
+                    return new Builder().from(this);
+                }
+
+                public static Builder builder() {
+                    return new Builder();
+                }
+
+                public static class Builder extends BackboneElement.Builder {
+                    private CodeableConcept type;
+                    private org.linuxforhealth.fhir.model.type.Element value;
+
+                    private Builder() {
+                        super();
+                    }
+
+                    /**
+                     * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                     * contain spaces.
+                     * 
+                     * @param id
+                     *     Unique id for inter-element referencing
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    @Override
+                    public Builder id(java.lang.String id) {
+                        return (Builder) super.id(id);
+                    }
+
+                    /**
+                     * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                     * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                     * of the definition of the extension.
+                     * 
+                     * <p>Adds new element(s) to the existing list.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param extension
+                     *     Additional content defined by implementations
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    @Override
+                    public Builder extension(Extension... extension) {
+                        return (Builder) super.extension(extension);
+                    }
+
+                    /**
+                     * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                     * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                     * of the definition of the extension.
+                     * 
+                     * <p>Replaces the existing list with a new one containing elements from the Collection.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param extension
+                     *     Additional content defined by implementations
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @throws NullPointerException
+                     *     If the passed collection is null
+                     */
+                    @Override
+                    public Builder extension(Collection<Extension> extension) {
+                        return (Builder) super.extension(extension);
+                    }
+
+                    /**
+                     * May be used to represent additional information that is not part of the basic definition of the element and that 
+                     * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                     * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                     * extension. Applications processing a resource are required to check for modifier extensions.
+                     * 
+                     * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                     * change the meaning of modifierExtension itself).
+                     * 
+                     * <p>Adds new element(s) to the existing list.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param modifierExtension
+                     *     Extensions that cannot be ignored even if unrecognized
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    @Override
+                    public Builder modifierExtension(Extension... modifierExtension) {
+                        return (Builder) super.modifierExtension(modifierExtension);
+                    }
+
+                    /**
+                     * May be used to represent additional information that is not part of the basic definition of the element and that 
+                     * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                     * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                     * extension. Applications processing a resource are required to check for modifier extensions.
+                     * 
+                     * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                     * change the meaning of modifierExtension itself).
+                     * 
+                     * <p>Replaces the existing list with a new one containing elements from the Collection.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param modifierExtension
+                     *     Extensions that cannot be ignored even if unrecognized
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @throws NullPointerException
+                     *     If the passed collection is null
+                     */
+                    @Override
+                    public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                        return (Builder) super.modifierExtension(modifierExtension);
+                    }
+
+                    /**
+                     * The categorization of the specific characteristic that is relevant to the administration guideline (e.g. height, 
+                     * weight, gender).
+                     * 
+                     * <p>This element is required.
+                     * 
+                     * @param type
+                     *     Categorization of specific characteristic that is relevant to the administration guideline
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder type(CodeableConcept type) {
+                        this.type = type;
+                        return this;
+                    }
+
+                    /**
+                     * The specific characteristic (e.g. height, weight, gender, etc.).
+                     * 
+                     * <p>This is a choice element with the following allowed types:
+                     * <ul>
+                     * <li>{@link CodeableConcept}</li>
+                     * <li>{@link Quantity}</li>
+                     * <li>{@link Range}</li>
+                     * </ul>
+                     * 
+                     * @param value
+                     *     The specific characteristic
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
+                        this.value = value;
+                        return this;
+                    }
+
+                    /**
+                     * Build the {@link PatientCharacteristic}
+                     * 
+                     * <p>Required elements:
+                     * <ul>
+                     * <li>type</li>
+                     * </ul>
+                     * 
+                     * @return
+                     *     An immutable object of type {@link PatientCharacteristic}
+                     * @throws IllegalStateException
+                     *     if the current state cannot be built into a valid PatientCharacteristic per the base specification
+                     */
+                    @Override
+                    public PatientCharacteristic build() {
+                        PatientCharacteristic patientCharacteristic = new PatientCharacteristic(this);
+                        if (validating) {
+                            validate(patientCharacteristic);
+                        }
+                        return patientCharacteristic;
+                    }
+
+                    protected void validate(PatientCharacteristic patientCharacteristic) {
+                        super.validate(patientCharacteristic);
+                        ValidationSupport.requireNonNull(patientCharacteristic.type, "type");
+                        ValidationSupport.choiceElement(patientCharacteristic.value, "value", CodeableConcept.class, Quantity.class, Range.class);
+                        ValidationSupport.requireValueOrChildren(patientCharacteristic);
+                    }
+
+                    protected Builder from(PatientCharacteristic patientCharacteristic) {
+                        super.from(patientCharacteristic);
+                        type = patientCharacteristic.type;
+                        value = patientCharacteristic.value;
+                        return this;
+                    }
                 }
             }
         }
@@ -4221,11 +4180,14 @@ public class MedicationKnowledge extends DomainResource {
     public static class MedicineClassification extends BackboneElement {
         @Required
         private final CodeableConcept type;
+        @Choice({ String.class, Uri.class })
+        private final org.linuxforhealth.fhir.model.type.Element source;
         private final List<CodeableConcept> classification;
 
         private MedicineClassification(Builder builder) {
             super(builder);
             type = builder.type;
+            source = builder.source;
             classification = Collections.unmodifiableList(builder.classification);
         }
 
@@ -4237,6 +4199,16 @@ public class MedicationKnowledge extends DomainResource {
          */
         public CodeableConcept getType() {
             return type;
+        }
+
+        /**
+         * Either a textual source of the classification or a reference to an online source.
+         * 
+         * @return
+         *     An immutable object of type {@link String} or {@link Uri} that may be null.
+         */
+        public org.linuxforhealth.fhir.model.type.Element getSource() {
+            return source;
         }
 
         /**
@@ -4253,6 +4225,7 @@ public class MedicationKnowledge extends DomainResource {
         public boolean hasChildren() {
             return super.hasChildren() || 
                 (type != null) || 
+                (source != null) || 
                 !classification.isEmpty();
         }
 
@@ -4266,6 +4239,7 @@ public class MedicationKnowledge extends DomainResource {
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(type, "type", visitor);
+                    accept(source, "source", visitor);
                     accept(classification, "classification", visitor, CodeableConcept.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
@@ -4289,6 +4263,7 @@ public class MedicationKnowledge extends DomainResource {
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(type, other.type) && 
+                Objects.equals(source, other.source) && 
                 Objects.equals(classification, other.classification);
         }
 
@@ -4300,6 +4275,7 @@ public class MedicationKnowledge extends DomainResource {
                     extension, 
                     modifierExtension, 
                     type, 
+                    source, 
                     classification);
                 hashCode = result;
             }
@@ -4317,6 +4293,7 @@ public class MedicationKnowledge extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private CodeableConcept type;
+            private org.linuxforhealth.fhir.model.type.Element source;
             private List<CodeableConcept> classification = new ArrayList<>();
 
             private Builder() {
@@ -4340,7 +4317,7 @@ public class MedicationKnowledge extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4360,7 +4337,7 @@ public class MedicationKnowledge extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4385,7 +4362,7 @@ public class MedicationKnowledge extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4410,7 +4387,7 @@ public class MedicationKnowledge extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4447,6 +4424,42 @@ public class MedicationKnowledge extends DomainResource {
              */
             public Builder type(CodeableConcept type) {
                 this.type = type;
+                return this;
+            }
+
+            /**
+             * Convenience method for setting {@code source} with choice type String.
+             * 
+             * @param source
+             *     The source of the classification
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #source(Element)
+             */
+            public Builder source(java.lang.String source) {
+                this.source = (source == null) ? null : String.of(source);
+                return this;
+            }
+
+            /**
+             * Either a textual source of the classification or a reference to an online source.
+             * 
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link String}</li>
+             * <li>{@link Uri}</li>
+             * </ul>
+             * 
+             * @param source
+             *     The source of the classification
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder source(org.linuxforhealth.fhir.model.type.Element source) {
+                this.source = source;
                 return this;
             }
 
@@ -4514,6 +4527,7 @@ public class MedicationKnowledge extends DomainResource {
             protected void validate(MedicineClassification medicineClassification) {
                 super.validate(medicineClassification);
                 ValidationSupport.requireNonNull(medicineClassification.type, "type");
+                ValidationSupport.choiceElement(medicineClassification.source, "source", String.class, Uri.class);
                 ValidationSupport.checkList(medicineClassification.classification, "classification", CodeableConcept.class);
                 ValidationSupport.requireValueOrChildren(medicineClassification);
             }
@@ -4521,6 +4535,7 @@ public class MedicationKnowledge extends DomainResource {
             protected Builder from(MedicineClassification medicineClassification) {
                 super.from(medicineClassification);
                 type = medicineClassification.type;
+                source = medicineClassification.source;
                 classification.addAll(medicineClassification.classification);
                 return this;
             }
@@ -4531,47 +4546,42 @@ public class MedicationKnowledge extends DomainResource {
      * Information that only applies to packages (not products).
      */
     public static class Packaging extends BackboneElement {
-        @Binding(
-            bindingName = "MedicationPackageType",
-            strength = BindingStrength.Value.EXAMPLE,
-            description = "A coded concept defining the type of packaging of a medication.",
-            valueSet = "http://hl7.org/fhir/ValueSet/medicationknowledge-package-type"
-        )
-        private final CodeableConcept type;
-        private final SimpleQuantity quantity;
+        private final List<MedicationKnowledge.Cost> cost;
+        @ReferenceTarget({ "PackagedProductDefinition" })
+        private final Reference packagedProduct;
 
         private Packaging(Builder builder) {
             super(builder);
-            type = builder.type;
-            quantity = builder.quantity;
+            cost = Collections.unmodifiableList(builder.cost);
+            packagedProduct = builder.packagedProduct;
         }
 
         /**
-         * A code that defines the specific type of packaging that the medication can be found in (e.g. blister sleeve, tube, 
-         * bottle).
+         * The cost of the packaged medication.
          * 
          * @return
-         *     An immutable object of type {@link CodeableConcept} that may be null.
+         *     An unmodifiable list containing immutable objects of type {@link Cost} that may be empty.
          */
-        public CodeableConcept getType() {
-            return type;
+        public List<MedicationKnowledge.Cost> getCost() {
+            return cost;
         }
 
         /**
-         * The number of product units the package would contain if fully loaded.
+         * A reference to a PackagedProductDefinition that provides the details of the product that is in the packaging and is 
+         * being priced.
          * 
          * @return
-         *     An immutable object of type {@link SimpleQuantity} that may be null.
+         *     An immutable object of type {@link Reference} that may be null.
          */
-        public SimpleQuantity getQuantity() {
-            return quantity;
+        public Reference getPackagedProduct() {
+            return packagedProduct;
         }
 
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                (type != null) || 
-                (quantity != null);
+                !cost.isEmpty() || 
+                (packagedProduct != null);
         }
 
         @Override
@@ -4583,8 +4593,8 @@ public class MedicationKnowledge extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(type, "type", visitor);
-                    accept(quantity, "quantity", visitor);
+                    accept(cost, "cost", visitor, MedicationKnowledge.Cost.class);
+                    accept(packagedProduct, "packagedProduct", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -4606,8 +4616,8 @@ public class MedicationKnowledge extends DomainResource {
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(type, other.type) && 
-                Objects.equals(quantity, other.quantity);
+                Objects.equals(cost, other.cost) && 
+                Objects.equals(packagedProduct, other.packagedProduct);
         }
 
         @Override
@@ -4617,8 +4627,8 @@ public class MedicationKnowledge extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    type, 
-                    quantity);
+                    cost, 
+                    packagedProduct);
                 hashCode = result;
             }
             return result;
@@ -4634,8 +4644,8 @@ public class MedicationKnowledge extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private CodeableConcept type;
-            private SimpleQuantity quantity;
+            private List<MedicationKnowledge.Cost> cost = new ArrayList<>();
+            private Reference packagedProduct;
 
             private Builder() {
                 super();
@@ -4658,7 +4668,7 @@ public class MedicationKnowledge extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4678,7 +4688,7 @@ public class MedicationKnowledge extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4703,7 +4713,7 @@ public class MedicationKnowledge extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4728,7 +4738,7 @@ public class MedicationKnowledge extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4753,31 +4763,61 @@ public class MedicationKnowledge extends DomainResource {
             }
 
             /**
-             * A code that defines the specific type of packaging that the medication can be found in (e.g. blister sleeve, tube, 
-             * bottle).
+             * The cost of the packaged medication.
              * 
-             * @param type
-             *     A code that defines the specific type of packaging that the medication can be found in
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param cost
+             *     Cost of the packaged medication
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder type(CodeableConcept type) {
-                this.type = type;
+            public Builder cost(MedicationKnowledge.Cost... cost) {
+                for (MedicationKnowledge.Cost value : cost) {
+                    this.cost.add(value);
+                }
                 return this;
             }
 
             /**
-             * The number of product units the package would contain if fully loaded.
+             * The cost of the packaged medication.
              * 
-             * @param quantity
-             *     The number of product units the package would contain if fully loaded
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param cost
+             *     Cost of the packaged medication
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder cost(Collection<MedicationKnowledge.Cost> cost) {
+                this.cost = new ArrayList<>(cost);
+                return this;
+            }
+
+            /**
+             * A reference to a PackagedProductDefinition that provides the details of the product that is in the packaging and is 
+             * being priced.
+             * 
+             * <p>Allowed resource types for this reference:
+             * <ul>
+             * <li>{@link PackagedProductDefinition}</li>
+             * </ul>
+             * 
+             * @param packagedProduct
+             *     The packaged medication that is being priced
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder quantity(SimpleQuantity quantity) {
-                this.quantity = quantity;
+            public Builder packagedProduct(Reference packagedProduct) {
+                this.packagedProduct = packagedProduct;
                 return this;
             }
 
@@ -4800,64 +4840,86 @@ public class MedicationKnowledge extends DomainResource {
 
             protected void validate(Packaging packaging) {
                 super.validate(packaging);
+                ValidationSupport.checkList(packaging.cost, "cost", MedicationKnowledge.Cost.class);
+                ValidationSupport.checkReferenceType(packaging.packagedProduct, "packagedProduct", "PackagedProductDefinition");
                 ValidationSupport.requireValueOrChildren(packaging);
             }
 
             protected Builder from(Packaging packaging) {
                 super.from(packaging);
-                type = packaging.type;
-                quantity = packaging.quantity;
+                cost.addAll(packaging.cost);
+                packagedProduct = packaging.packagedProduct;
                 return this;
             }
         }
     }
 
     /**
-     * Specifies descriptive properties of the medicine, such as color, shape, imprints, etc.
+     * Information on how the medication should be stored, for example, refrigeration temperatures and length of stability at 
+     * a given temperature.
      */
-    public static class DrugCharacteristic extends BackboneElement {
-        @Binding(
-            bindingName = "MedicationCharacteristic",
-            strength = BindingStrength.Value.EXAMPLE,
-            description = "A coded concept defining the characteristic types of a medication.",
-            valueSet = "http://hl7.org/fhir/ValueSet/medicationknowledge-characteristic"
-        )
-        private final CodeableConcept type;
-        @Choice({ CodeableConcept.class, String.class, SimpleQuantity.class, Base64Binary.class })
-        private final Element value;
+    public static class StorageGuideline extends BackboneElement {
+        private final Uri reference;
+        private final List<Annotation> note;
+        private final Duration stabilityDuration;
+        private final List<EnvironmentalSetting> environmentalSetting;
 
-        private DrugCharacteristic(Builder builder) {
+        private StorageGuideline(Builder builder) {
             super(builder);
-            type = builder.type;
-            value = builder.value;
+            reference = builder.reference;
+            note = Collections.unmodifiableList(builder.note);
+            stabilityDuration = builder.stabilityDuration;
+            environmentalSetting = Collections.unmodifiableList(builder.environmentalSetting);
         }
 
         /**
-         * A code specifying which characteristic of the medicine is being described (for example, colour, shape, imprint).
+         * Reference to additional information about the storage guidelines.
          * 
          * @return
-         *     An immutable object of type {@link CodeableConcept} that may be null.
+         *     An immutable object of type {@link Uri} that may be null.
          */
-        public CodeableConcept getType() {
-            return type;
+        public Uri getReference() {
+            return reference;
         }
 
         /**
-         * Description of the characteristic.
+         * Additional notes about the storage.
          * 
          * @return
-         *     An immutable object of type {@link CodeableConcept}, {@link String}, {@link SimpleQuantity} or {@link Base64Binary} 
-         *     that may be null.
+         *     An unmodifiable list containing immutable objects of type {@link Annotation} that may be empty.
          */
-        public Element getValue() {
-            return value;
+        public List<Annotation> getNote() {
+            return note;
+        }
+
+        /**
+         * Duration that the medication remains stable if the environmentalSetting is respected.
+         * 
+         * @return
+         *     An immutable object of type {@link Duration} that may be null.
+         */
+        public Duration getStabilityDuration() {
+            return stabilityDuration;
+        }
+
+        /**
+         * Describes a setting/value on the environment for the adequate storage of the medication and other substances. 
+         * Environment settings may involve temperature, humidity, or exposure to light.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link EnvironmentalSetting} that may be empty.
+         */
+        public List<EnvironmentalSetting> getEnvironmentalSetting() {
+            return environmentalSetting;
         }
 
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                (type != null) || 
-                (value != null);
+                (reference != null) || 
+                !note.isEmpty() || 
+                (stabilityDuration != null) || 
+                !environmentalSetting.isEmpty();
         }
 
         @Override
@@ -4869,8 +4931,10 @@ public class MedicationKnowledge extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(type, "type", visitor);
-                    accept(value, "value", visitor);
+                    accept(reference, "reference", visitor);
+                    accept(note, "note", visitor, Annotation.class);
+                    accept(stabilityDuration, "stabilityDuration", visitor);
+                    accept(environmentalSetting, "environmentalSetting", visitor, EnvironmentalSetting.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -4888,12 +4952,14 @@ public class MedicationKnowledge extends DomainResource {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            DrugCharacteristic other = (DrugCharacteristic) obj;
+            StorageGuideline other = (StorageGuideline) obj;
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(type, other.type) && 
-                Objects.equals(value, other.value);
+                Objects.equals(reference, other.reference) && 
+                Objects.equals(note, other.note) && 
+                Objects.equals(stabilityDuration, other.stabilityDuration) && 
+                Objects.equals(environmentalSetting, other.environmentalSetting);
         }
 
         @Override
@@ -4903,8 +4969,10 @@ public class MedicationKnowledge extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    type, 
-                    value);
+                    reference, 
+                    note, 
+                    stabilityDuration, 
+                    environmentalSetting);
                 hashCode = result;
             }
             return result;
@@ -4920,8 +4988,10 @@ public class MedicationKnowledge extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private CodeableConcept type;
-            private Element value;
+            private Uri reference;
+            private List<Annotation> note = new ArrayList<>();
+            private Duration stabilityDuration;
+            private List<EnvironmentalSetting> environmentalSetting = new ArrayList<>();
 
             private Builder() {
                 super();
@@ -4944,7 +5014,7 @@ public class MedicationKnowledge extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4964,7 +5034,7 @@ public class MedicationKnowledge extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4989,7 +5059,7 @@ public class MedicationKnowledge extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -5014,7 +5084,7 @@ public class MedicationKnowledge extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -5039,85 +5109,444 @@ public class MedicationKnowledge extends DomainResource {
             }
 
             /**
-             * A code specifying which characteristic of the medicine is being described (for example, colour, shape, imprint).
+             * Reference to additional information about the storage guidelines.
              * 
-             * @param type
-             *     Code specifying the type of characteristic of medication
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder type(CodeableConcept type) {
-                this.type = type;
-                return this;
-            }
-
-            /**
-             * Convenience method for setting {@code value} with choice type String.
-             * 
-             * @param value
-             *     Description of the characteristic
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #value(Element)
-             */
-            public Builder value(java.lang.String value) {
-                this.value = (value == null) ? null : String.of(value);
-                return this;
-            }
-
-            /**
-             * Description of the characteristic.
-             * 
-             * <p>This is a choice element with the following allowed types:
-             * <ul>
-             * <li>{@link CodeableConcept}</li>
-             * <li>{@link String}</li>
-             * <li>{@link SimpleQuantity}</li>
-             * <li>{@link Base64Binary}</li>
-             * </ul>
-             * 
-             * @param value
-             *     Description of the characteristic
+             * @param reference
+             *     Reference to additional information
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder value(Element value) {
-                this.value = value;
+            public Builder reference(Uri reference) {
+                this.reference = reference;
                 return this;
             }
 
             /**
-             * Build the {@link DrugCharacteristic}
+             * Additional notes about the storage.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param note
+             *     Additional storage notes
              * 
              * @return
-             *     An immutable object of type {@link DrugCharacteristic}
+             *     A reference to this Builder instance
+             */
+            public Builder note(Annotation... note) {
+                for (Annotation value : note) {
+                    this.note.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * Additional notes about the storage.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param note
+             *     Additional storage notes
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder note(Collection<Annotation> note) {
+                this.note = new ArrayList<>(note);
+                return this;
+            }
+
+            /**
+             * Duration that the medication remains stable if the environmentalSetting is respected.
+             * 
+             * @param stabilityDuration
+             *     Duration remains stable
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder stabilityDuration(Duration stabilityDuration) {
+                this.stabilityDuration = stabilityDuration;
+                return this;
+            }
+
+            /**
+             * Describes a setting/value on the environment for the adequate storage of the medication and other substances. 
+             * Environment settings may involve temperature, humidity, or exposure to light.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param environmentalSetting
+             *     Setting or value of environment for adequate storage
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder environmentalSetting(EnvironmentalSetting... environmentalSetting) {
+                for (EnvironmentalSetting value : environmentalSetting) {
+                    this.environmentalSetting.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * Describes a setting/value on the environment for the adequate storage of the medication and other substances. 
+             * Environment settings may involve temperature, humidity, or exposure to light.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param environmentalSetting
+             *     Setting or value of environment for adequate storage
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder environmentalSetting(Collection<EnvironmentalSetting> environmentalSetting) {
+                this.environmentalSetting = new ArrayList<>(environmentalSetting);
+                return this;
+            }
+
+            /**
+             * Build the {@link StorageGuideline}
+             * 
+             * @return
+             *     An immutable object of type {@link StorageGuideline}
              * @throws IllegalStateException
-             *     if the current state cannot be built into a valid DrugCharacteristic per the base specification
+             *     if the current state cannot be built into a valid StorageGuideline per the base specification
              */
             @Override
-            public DrugCharacteristic build() {
-                DrugCharacteristic drugCharacteristic = new DrugCharacteristic(this);
+            public StorageGuideline build() {
+                StorageGuideline storageGuideline = new StorageGuideline(this);
                 if (validating) {
-                    validate(drugCharacteristic);
+                    validate(storageGuideline);
                 }
-                return drugCharacteristic;
+                return storageGuideline;
             }
 
-            protected void validate(DrugCharacteristic drugCharacteristic) {
-                super.validate(drugCharacteristic);
-                ValidationSupport.choiceElement(drugCharacteristic.value, "value", CodeableConcept.class, String.class, SimpleQuantity.class, Base64Binary.class);
-                ValidationSupport.requireValueOrChildren(drugCharacteristic);
+            protected void validate(StorageGuideline storageGuideline) {
+                super.validate(storageGuideline);
+                ValidationSupport.checkList(storageGuideline.note, "note", Annotation.class);
+                ValidationSupport.checkList(storageGuideline.environmentalSetting, "environmentalSetting", EnvironmentalSetting.class);
+                ValidationSupport.requireValueOrChildren(storageGuideline);
             }
 
-            protected Builder from(DrugCharacteristic drugCharacteristic) {
-                super.from(drugCharacteristic);
-                type = drugCharacteristic.type;
-                value = drugCharacteristic.value;
+            protected Builder from(StorageGuideline storageGuideline) {
+                super.from(storageGuideline);
+                reference = storageGuideline.reference;
+                note.addAll(storageGuideline.note);
+                stabilityDuration = storageGuideline.stabilityDuration;
+                environmentalSetting.addAll(storageGuideline.environmentalSetting);
                 return this;
+            }
+        }
+
+        /**
+         * Describes a setting/value on the environment for the adequate storage of the medication and other substances. 
+         * Environment settings may involve temperature, humidity, or exposure to light.
+         */
+        public static class EnvironmentalSetting extends BackboneElement {
+            @Required
+            private final CodeableConcept type;
+            @Choice({ Quantity.class, Range.class, CodeableConcept.class })
+            @Required
+            private final org.linuxforhealth.fhir.model.type.Element value;
+
+            private EnvironmentalSetting(Builder builder) {
+                super(builder);
+                type = builder.type;
+                value = builder.value;
+            }
+
+            /**
+             * Identifies the category or type of setting (e.g., type of location, temperature, humidity).
+             * 
+             * @return
+             *     An immutable object of type {@link CodeableConcept} that is non-null.
+             */
+            public CodeableConcept getType() {
+                return type;
+            }
+
+            /**
+             * Value associated to the setting. E.g., 40° – 50°F for temperature.
+             * 
+             * @return
+             *     An immutable object of type {@link Quantity}, {@link Range} or {@link CodeableConcept} that is non-null.
+             */
+            public org.linuxforhealth.fhir.model.type.Element getValue() {
+                return value;
+            }
+
+            @Override
+            public boolean hasChildren() {
+                return super.hasChildren() || 
+                    (type != null) || 
+                    (value != null);
+            }
+
+            @Override
+            public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                if (visitor.preVisit(this)) {
+                    visitor.visitStart(elementName, elementIndex, this);
+                    if (visitor.visit(elementName, elementIndex, this)) {
+                        // visit children
+                        accept(id, "id", visitor);
+                        accept(extension, "extension", visitor, Extension.class);
+                        accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                        accept(type, "type", visitor);
+                        accept(value, "value", visitor);
+                    }
+                    visitor.visitEnd(elementName, elementIndex, this);
+                    visitor.postVisit(this);
+                }
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj) {
+                    return true;
+                }
+                if (obj == null) {
+                    return false;
+                }
+                if (getClass() != obj.getClass()) {
+                    return false;
+                }
+                EnvironmentalSetting other = (EnvironmentalSetting) obj;
+                return Objects.equals(id, other.id) && 
+                    Objects.equals(extension, other.extension) && 
+                    Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(type, other.type) && 
+                    Objects.equals(value, other.value);
+            }
+
+            @Override
+            public int hashCode() {
+                int result = hashCode;
+                if (result == 0) {
+                    result = Objects.hash(id, 
+                        extension, 
+                        modifierExtension, 
+                        type, 
+                        value);
+                    hashCode = result;
+                }
+                return result;
+            }
+
+            @Override
+            public Builder toBuilder() {
+                return new Builder().from(this);
+            }
+
+            public static Builder builder() {
+                return new Builder();
+            }
+
+            public static class Builder extends BackboneElement.Builder {
+                private CodeableConcept type;
+                private org.linuxforhealth.fhir.model.type.Element value;
+
+                private Builder() {
+                    super();
+                }
+
+                /**
+                 * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                 * contain spaces.
+                 * 
+                 * @param id
+                 *     Unique id for inter-element referencing
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder id(java.lang.String id) {
+                    return (Builder) super.id(id);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder extension(Extension... extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder extension(Collection<Extension> extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder modifierExtension(Extension... modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * Identifies the category or type of setting (e.g., type of location, temperature, humidity).
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * @param type
+                 *     Categorization of the setting
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder type(CodeableConcept type) {
+                    this.type = type;
+                    return this;
+                }
+
+                /**
+                 * Value associated to the setting. E.g., 40° – 50°F for temperature.
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * <p>This is a choice element with the following allowed types:
+                 * <ul>
+                 * <li>{@link Quantity}</li>
+                 * <li>{@link Range}</li>
+                 * <li>{@link CodeableConcept}</li>
+                 * </ul>
+                 * 
+                 * @param value
+                 *     Value of the setting
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
+                    this.value = value;
+                    return this;
+                }
+
+                /**
+                 * Build the {@link EnvironmentalSetting}
+                 * 
+                 * <p>Required elements:
+                 * <ul>
+                 * <li>type</li>
+                 * <li>value</li>
+                 * </ul>
+                 * 
+                 * @return
+                 *     An immutable object of type {@link EnvironmentalSetting}
+                 * @throws IllegalStateException
+                 *     if the current state cannot be built into a valid EnvironmentalSetting per the base specification
+                 */
+                @Override
+                public EnvironmentalSetting build() {
+                    EnvironmentalSetting environmentalSetting = new EnvironmentalSetting(this);
+                    if (validating) {
+                        validate(environmentalSetting);
+                    }
+                    return environmentalSetting;
+                }
+
+                protected void validate(EnvironmentalSetting environmentalSetting) {
+                    super.validate(environmentalSetting);
+                    ValidationSupport.requireNonNull(environmentalSetting.type, "type");
+                    ValidationSupport.requireChoiceElement(environmentalSetting.value, "value", Quantity.class, Range.class, CodeableConcept.class);
+                    ValidationSupport.requireValueOrChildren(environmentalSetting);
+                }
+
+                protected Builder from(EnvironmentalSetting environmentalSetting) {
+                    super.from(environmentalSetting);
+                    type = environmentalSetting.type;
+                    value = environmentalSetting.value;
+                    return this;
+                }
             }
         }
     }
@@ -5130,7 +5559,7 @@ public class MedicationKnowledge extends DomainResource {
         @Required
         private final Reference regulatoryAuthority;
         private final List<Substitution> substitution;
-        private final List<Schedule> schedule;
+        private final List<CodeableConcept> schedule;
         private final MaxDispense maxDispense;
 
         private Regulatory(Builder builder) {
@@ -5165,9 +5594,9 @@ public class MedicationKnowledge extends DomainResource {
          * Specifies the schedule of a medication in jurisdiction.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link Schedule} that may be empty.
+         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
          */
-        public List<Schedule> getSchedule() {
+        public List<CodeableConcept> getSchedule() {
             return schedule;
         }
 
@@ -5201,7 +5630,7 @@ public class MedicationKnowledge extends DomainResource {
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(regulatoryAuthority, "regulatoryAuthority", visitor);
                     accept(substitution, "substitution", visitor, Substitution.class);
-                    accept(schedule, "schedule", visitor, Schedule.class);
+                    accept(schedule, "schedule", visitor, CodeableConcept.class);
                     accept(maxDispense, "maxDispense", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
@@ -5258,7 +5687,7 @@ public class MedicationKnowledge extends DomainResource {
         public static class Builder extends BackboneElement.Builder {
             private Reference regulatoryAuthority;
             private List<Substitution> substitution = new ArrayList<>();
-            private List<Schedule> schedule = new ArrayList<>();
+            private List<CodeableConcept> schedule = new ArrayList<>();
             private MaxDispense maxDispense;
 
             private Builder() {
@@ -5282,7 +5711,7 @@ public class MedicationKnowledge extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -5302,7 +5731,7 @@ public class MedicationKnowledge extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -5327,7 +5756,7 @@ public class MedicationKnowledge extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -5352,7 +5781,7 @@ public class MedicationKnowledge extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -5448,8 +5877,8 @@ public class MedicationKnowledge extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder schedule(Schedule... schedule) {
-                for (Schedule value : schedule) {
+            public Builder schedule(CodeableConcept... schedule) {
+                for (CodeableConcept value : schedule) {
                     this.schedule.add(value);
                 }
                 return this;
@@ -5470,7 +5899,7 @@ public class MedicationKnowledge extends DomainResource {
              * @throws NullPointerException
              *     If the passed collection is null
              */
-            public Builder schedule(Collection<Schedule> schedule) {
+            public Builder schedule(Collection<CodeableConcept> schedule) {
                 this.schedule = new ArrayList<>(schedule);
                 return this;
             }
@@ -5515,7 +5944,7 @@ public class MedicationKnowledge extends DomainResource {
                 super.validate(regulatory);
                 ValidationSupport.requireNonNull(regulatory.regulatoryAuthority, "regulatoryAuthority");
                 ValidationSupport.checkList(regulatory.substitution, "substitution", Substitution.class);
-                ValidationSupport.checkList(regulatory.schedule, "schedule", Schedule.class);
+                ValidationSupport.checkList(regulatory.schedule, "schedule", CodeableConcept.class);
                 ValidationSupport.checkReferenceType(regulatory.regulatoryAuthority, "regulatoryAuthority", "Organization");
                 ValidationSupport.requireValueOrChildren(regulatory);
             }
@@ -5656,7 +6085,7 @@ public class MedicationKnowledge extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5676,7 +6105,7 @@ public class MedicationKnowledge extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5701,7 +6130,7 @@ public class MedicationKnowledge extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5726,7 +6155,7 @@ public class MedicationKnowledge extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5834,260 +6263,6 @@ public class MedicationKnowledge extends DomainResource {
                     super.from(substitution);
                     type = substitution.type;
                     allowed = substitution.allowed;
-                    return this;
-                }
-            }
-        }
-
-        /**
-         * Specifies the schedule of a medication in jurisdiction.
-         */
-        public static class Schedule extends BackboneElement {
-            @Required
-            private final CodeableConcept schedule;
-
-            private Schedule(Builder builder) {
-                super(builder);
-                schedule = builder.schedule;
-            }
-
-            /**
-             * Specifies the specific drug schedule.
-             * 
-             * @return
-             *     An immutable object of type {@link CodeableConcept} that is non-null.
-             */
-            public CodeableConcept getSchedule() {
-                return schedule;
-            }
-
-            @Override
-            public boolean hasChildren() {
-                return super.hasChildren() || 
-                    (schedule != null);
-            }
-
-            @Override
-            public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-                if (visitor.preVisit(this)) {
-                    visitor.visitStart(elementName, elementIndex, this);
-                    if (visitor.visit(elementName, elementIndex, this)) {
-                        // visit children
-                        accept(id, "id", visitor);
-                        accept(extension, "extension", visitor, Extension.class);
-                        accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                        accept(schedule, "schedule", visitor);
-                    }
-                    visitor.visitEnd(elementName, elementIndex, this);
-                    visitor.postVisit(this);
-                }
-            }
-
-            @Override
-            public boolean equals(Object obj) {
-                if (this == obj) {
-                    return true;
-                }
-                if (obj == null) {
-                    return false;
-                }
-                if (getClass() != obj.getClass()) {
-                    return false;
-                }
-                Schedule other = (Schedule) obj;
-                return Objects.equals(id, other.id) && 
-                    Objects.equals(extension, other.extension) && 
-                    Objects.equals(modifierExtension, other.modifierExtension) && 
-                    Objects.equals(schedule, other.schedule);
-            }
-
-            @Override
-            public int hashCode() {
-                int result = hashCode;
-                if (result == 0) {
-                    result = Objects.hash(id, 
-                        extension, 
-                        modifierExtension, 
-                        schedule);
-                    hashCode = result;
-                }
-                return result;
-            }
-
-            @Override
-            public Builder toBuilder() {
-                return new Builder().from(this);
-            }
-
-            public static Builder builder() {
-                return new Builder();
-            }
-
-            public static class Builder extends BackboneElement.Builder {
-                private CodeableConcept schedule;
-
-                private Builder() {
-                    super();
-                }
-
-                /**
-                 * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-                 * contain spaces.
-                 * 
-                 * @param id
-                 *     Unique id for inter-element referencing
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                @Override
-                public Builder id(java.lang.String id) {
-                    return (Builder) super.id(id);
-                }
-
-                /**
-                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-                 * of the definition of the extension.
-                 * 
-                 * <p>Adds new element(s) to the existing list.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param extension
-                 *     Additional content defined by implementations
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                @Override
-                public Builder extension(Extension... extension) {
-                    return (Builder) super.extension(extension);
-                }
-
-                /**
-                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-                 * of the definition of the extension.
-                 * 
-                 * <p>Replaces the existing list with a new one containing elements from the Collection.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param extension
-                 *     Additional content defined by implementations
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @throws NullPointerException
-                 *     If the passed collection is null
-                 */
-                @Override
-                public Builder extension(Collection<Extension> extension) {
-                    return (Builder) super.extension(extension);
-                }
-
-                /**
-                 * May be used to represent additional information that is not part of the basic definition of the element and that 
-                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-                 * extension. Applications processing a resource are required to check for modifier extensions.
-                 * 
-                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-                 * change the meaning of modifierExtension itself).
-                 * 
-                 * <p>Adds new element(s) to the existing list.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param modifierExtension
-                 *     Extensions that cannot be ignored even if unrecognized
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                @Override
-                public Builder modifierExtension(Extension... modifierExtension) {
-                    return (Builder) super.modifierExtension(modifierExtension);
-                }
-
-                /**
-                 * May be used to represent additional information that is not part of the basic definition of the element and that 
-                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-                 * extension. Applications processing a resource are required to check for modifier extensions.
-                 * 
-                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-                 * change the meaning of modifierExtension itself).
-                 * 
-                 * <p>Replaces the existing list with a new one containing elements from the Collection.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param modifierExtension
-                 *     Extensions that cannot be ignored even if unrecognized
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @throws NullPointerException
-                 *     If the passed collection is null
-                 */
-                @Override
-                public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                    return (Builder) super.modifierExtension(modifierExtension);
-                }
-
-                /**
-                 * Specifies the specific drug schedule.
-                 * 
-                 * <p>This element is required.
-                 * 
-                 * @param schedule
-                 *     Specifies the specific drug schedule
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder schedule(CodeableConcept schedule) {
-                    this.schedule = schedule;
-                    return this;
-                }
-
-                /**
-                 * Build the {@link Schedule}
-                 * 
-                 * <p>Required elements:
-                 * <ul>
-                 * <li>schedule</li>
-                 * </ul>
-                 * 
-                 * @return
-                 *     An immutable object of type {@link Schedule}
-                 * @throws IllegalStateException
-                 *     if the current state cannot be built into a valid Schedule per the base specification
-                 */
-                @Override
-                public Schedule build() {
-                    Schedule schedule = new Schedule(this);
-                    if (validating) {
-                        validate(schedule);
-                    }
-                    return schedule;
-                }
-
-                protected void validate(Schedule schedule) {
-                    super.validate(schedule);
-                    ValidationSupport.requireNonNull(schedule.schedule, "schedule");
-                    ValidationSupport.requireValueOrChildren(schedule);
-                }
-
-                protected Builder from(Schedule schedule) {
-                    super.from(schedule);
-                    this.schedule = schedule.schedule;
                     return this;
                 }
             }
@@ -6218,7 +6393,7 @@ public class MedicationKnowledge extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -6238,7 +6413,7 @@ public class MedicationKnowledge extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -6263,7 +6438,7 @@ public class MedicationKnowledge extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -6288,7 +6463,7 @@ public class MedicationKnowledge extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -6381,56 +6556,95 @@ public class MedicationKnowledge extends DomainResource {
     }
 
     /**
-     * The time course of drug absorption, distribution, metabolism and excretion of a medication from the body.
+     * Along with the link to a Medicinal Product Definition resource, this information provides common definitional elements 
+     * that are needed to understand the specific medication that is being described.
      */
-    public static class Kinetics extends BackboneElement {
-        private final List<SimpleQuantity> areaUnderCurve;
-        private final List<SimpleQuantity> lethalDose50;
-        private final Duration halfLifePeriod;
+    public static class Definitional extends BackboneElement {
+        @ReferenceTarget({ "MedicinalProductDefinition" })
+        private final List<Reference> definition;
+        @Binding(
+            bindingName = "MedicationForm",
+            strength = BindingStrength.Value.EXAMPLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/medication-form-codes"
+        )
+        private final CodeableConcept doseForm;
+        @Binding(
+            bindingName = "MedicationRoute",
+            strength = BindingStrength.Value.EXAMPLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/route-codes"
+        )
+        private final List<CodeableConcept> intendedRoute;
+        @Summary
+        private final List<Ingredient> ingredient;
+        private final List<DrugCharacteristic> drugCharacteristic;
 
-        private Kinetics(Builder builder) {
+        private Definitional(Builder builder) {
             super(builder);
-            areaUnderCurve = Collections.unmodifiableList(builder.areaUnderCurve);
-            lethalDose50 = Collections.unmodifiableList(builder.lethalDose50);
-            halfLifePeriod = builder.halfLifePeriod;
+            definition = Collections.unmodifiableList(builder.definition);
+            doseForm = builder.doseForm;
+            intendedRoute = Collections.unmodifiableList(builder.intendedRoute);
+            ingredient = Collections.unmodifiableList(builder.ingredient);
+            drugCharacteristic = Collections.unmodifiableList(builder.drugCharacteristic);
         }
 
         /**
-         * The drug concentration measured at certain discrete points in time.
+         * Associated definitions for this medication.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link SimpleQuantity} that may be empty.
+         *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
          */
-        public List<SimpleQuantity> getAreaUnderCurve() {
-            return areaUnderCurve;
+        public List<Reference> getDefinition() {
+            return definition;
         }
 
         /**
-         * The median lethal dose of a drug.
+         * Describes the form of the item. Powder; tablets; capsule.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link SimpleQuantity} that may be empty.
+         *     An immutable object of type {@link CodeableConcept} that may be null.
          */
-        public List<SimpleQuantity> getLethalDose50() {
-            return lethalDose50;
+        public CodeableConcept getDoseForm() {
+            return doseForm;
         }
 
         /**
-         * The time required for any specified property (e.g., the concentration of a substance in the body) to decrease by half.
+         * The intended or approved route of administration.
          * 
          * @return
-         *     An immutable object of type {@link Duration} that may be null.
+         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
          */
-        public Duration getHalfLifePeriod() {
-            return halfLifePeriod;
+        public List<CodeableConcept> getIntendedRoute() {
+            return intendedRoute;
+        }
+
+        /**
+         * Identifies a particular constituent of interest in the product.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link Ingredient} that may be empty.
+         */
+        public List<Ingredient> getIngredient() {
+            return ingredient;
+        }
+
+        /**
+         * Specifies descriptive properties of the medicine, such as color, shape, imprints, etc.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link DrugCharacteristic} that may be empty.
+         */
+        public List<DrugCharacteristic> getDrugCharacteristic() {
+            return drugCharacteristic;
         }
 
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                !areaUnderCurve.isEmpty() || 
-                !lethalDose50.isEmpty() || 
-                (halfLifePeriod != null);
+                !definition.isEmpty() || 
+                (doseForm != null) || 
+                !intendedRoute.isEmpty() || 
+                !ingredient.isEmpty() || 
+                !drugCharacteristic.isEmpty();
         }
 
         @Override
@@ -6442,9 +6656,11 @@ public class MedicationKnowledge extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(areaUnderCurve, "areaUnderCurve", visitor, SimpleQuantity.class);
-                    accept(lethalDose50, "lethalDose50", visitor, SimpleQuantity.class);
-                    accept(halfLifePeriod, "halfLifePeriod", visitor);
+                    accept(definition, "definition", visitor, Reference.class);
+                    accept(doseForm, "doseForm", visitor);
+                    accept(intendedRoute, "intendedRoute", visitor, CodeableConcept.class);
+                    accept(ingredient, "ingredient", visitor, Ingredient.class);
+                    accept(drugCharacteristic, "drugCharacteristic", visitor, DrugCharacteristic.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -6462,13 +6678,15 @@ public class MedicationKnowledge extends DomainResource {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            Kinetics other = (Kinetics) obj;
+            Definitional other = (Definitional) obj;
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(areaUnderCurve, other.areaUnderCurve) && 
-                Objects.equals(lethalDose50, other.lethalDose50) && 
-                Objects.equals(halfLifePeriod, other.halfLifePeriod);
+                Objects.equals(definition, other.definition) && 
+                Objects.equals(doseForm, other.doseForm) && 
+                Objects.equals(intendedRoute, other.intendedRoute) && 
+                Objects.equals(ingredient, other.ingredient) && 
+                Objects.equals(drugCharacteristic, other.drugCharacteristic);
         }
 
         @Override
@@ -6478,9 +6696,11 @@ public class MedicationKnowledge extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    areaUnderCurve, 
-                    lethalDose50, 
-                    halfLifePeriod);
+                    definition, 
+                    doseForm, 
+                    intendedRoute, 
+                    ingredient, 
+                    drugCharacteristic);
                 hashCode = result;
             }
             return result;
@@ -6496,9 +6716,11 @@ public class MedicationKnowledge extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private List<SimpleQuantity> areaUnderCurve = new ArrayList<>();
-            private List<SimpleQuantity> lethalDose50 = new ArrayList<>();
-            private Duration halfLifePeriod;
+            private List<Reference> definition = new ArrayList<>();
+            private CodeableConcept doseForm;
+            private List<CodeableConcept> intendedRoute = new ArrayList<>();
+            private List<Ingredient> ingredient = new ArrayList<>();
+            private List<DrugCharacteristic> drugCharacteristic = new ArrayList<>();
 
             private Builder() {
                 super();
@@ -6521,7 +6743,7 @@ public class MedicationKnowledge extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -6541,7 +6763,7 @@ public class MedicationKnowledge extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -6566,7 +6788,7 @@ public class MedicationKnowledge extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -6591,7 +6813,7 @@ public class MedicationKnowledge extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -6616,32 +6838,42 @@ public class MedicationKnowledge extends DomainResource {
             }
 
             /**
-             * The drug concentration measured at certain discrete points in time.
+             * Associated definitions for this medication.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * @param areaUnderCurve
-             *     The drug concentration measured at certain discrete points in time
+             * <p>Allowed resource types for the references:
+             * <ul>
+             * <li>{@link MedicinalProductDefinition}</li>
+             * </ul>
+             * 
+             * @param definition
+             *     Definitional resources that provide more information about this medication
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder areaUnderCurve(SimpleQuantity... areaUnderCurve) {
-                for (SimpleQuantity value : areaUnderCurve) {
-                    this.areaUnderCurve.add(value);
+            public Builder definition(Reference... definition) {
+                for (Reference value : definition) {
+                    this.definition.add(value);
                 }
                 return this;
             }
 
             /**
-             * The drug concentration measured at certain discrete points in time.
+             * Associated definitions for this medication.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * @param areaUnderCurve
-             *     The drug concentration measured at certain discrete points in time
+             * <p>Allowed resource types for the references:
+             * <ul>
+             * <li>{@link MedicinalProductDefinition}</li>
+             * </ul>
+             * 
+             * @param definition
+             *     Definitional resources that provide more information about this medication
              * 
              * @return
              *     A reference to this Builder instance
@@ -6649,38 +6881,52 @@ public class MedicationKnowledge extends DomainResource {
              * @throws NullPointerException
              *     If the passed collection is null
              */
-            public Builder areaUnderCurve(Collection<SimpleQuantity> areaUnderCurve) {
-                this.areaUnderCurve = new ArrayList<>(areaUnderCurve);
+            public Builder definition(Collection<Reference> definition) {
+                this.definition = new ArrayList<>(definition);
                 return this;
             }
 
             /**
-             * The median lethal dose of a drug.
+             * Describes the form of the item. Powder; tablets; capsule.
              * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param lethalDose50
-             *     The median lethal dose of a drug
+             * @param doseForm
+             *     powder | tablets | capsule +
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder lethalDose50(SimpleQuantity... lethalDose50) {
-                for (SimpleQuantity value : lethalDose50) {
-                    this.lethalDose50.add(value);
+            public Builder doseForm(CodeableConcept doseForm) {
+                this.doseForm = doseForm;
+                return this;
+            }
+
+            /**
+             * The intended or approved route of administration.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param intendedRoute
+             *     The intended or approved route of administration
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder intendedRoute(CodeableConcept... intendedRoute) {
+                for (CodeableConcept value : intendedRoute) {
+                    this.intendedRoute.add(value);
                 }
                 return this;
             }
 
             /**
-             * The median lethal dose of a drug.
+             * The intended or approved route of administration.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * @param lethalDose50
-             *     The median lethal dose of a drug
+             * @param intendedRoute
+             *     The intended or approved route of administration
              * 
              * @return
              *     A reference to this Builder instance
@@ -6688,55 +6934,776 @@ public class MedicationKnowledge extends DomainResource {
              * @throws NullPointerException
              *     If the passed collection is null
              */
-            public Builder lethalDose50(Collection<SimpleQuantity> lethalDose50) {
-                this.lethalDose50 = new ArrayList<>(lethalDose50);
+            public Builder intendedRoute(Collection<CodeableConcept> intendedRoute) {
+                this.intendedRoute = new ArrayList<>(intendedRoute);
                 return this;
             }
 
             /**
-             * The time required for any specified property (e.g., the concentration of a substance in the body) to decrease by half.
+             * Identifies a particular constituent of interest in the product.
              * 
-             * @param halfLifePeriod
-             *     Time required for concentration in the body to decrease by half
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param ingredient
+             *     Active or inactive ingredient
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder halfLifePeriod(Duration halfLifePeriod) {
-                this.halfLifePeriod = halfLifePeriod;
+            public Builder ingredient(Ingredient... ingredient) {
+                for (Ingredient value : ingredient) {
+                    this.ingredient.add(value);
+                }
                 return this;
             }
 
             /**
-             * Build the {@link Kinetics}
+             * Identifies a particular constituent of interest in the product.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param ingredient
+             *     Active or inactive ingredient
              * 
              * @return
-             *     An immutable object of type {@link Kinetics}
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder ingredient(Collection<Ingredient> ingredient) {
+                this.ingredient = new ArrayList<>(ingredient);
+                return this;
+            }
+
+            /**
+             * Specifies descriptive properties of the medicine, such as color, shape, imprints, etc.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param drugCharacteristic
+             *     Specifies descriptive properties of the medicine
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder drugCharacteristic(DrugCharacteristic... drugCharacteristic) {
+                for (DrugCharacteristic value : drugCharacteristic) {
+                    this.drugCharacteristic.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * Specifies descriptive properties of the medicine, such as color, shape, imprints, etc.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param drugCharacteristic
+             *     Specifies descriptive properties of the medicine
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder drugCharacteristic(Collection<DrugCharacteristic> drugCharacteristic) {
+                this.drugCharacteristic = new ArrayList<>(drugCharacteristic);
+                return this;
+            }
+
+            /**
+             * Build the {@link Definitional}
+             * 
+             * @return
+             *     An immutable object of type {@link Definitional}
              * @throws IllegalStateException
-             *     if the current state cannot be built into a valid Kinetics per the base specification
+             *     if the current state cannot be built into a valid Definitional per the base specification
              */
             @Override
-            public Kinetics build() {
-                Kinetics kinetics = new Kinetics(this);
+            public Definitional build() {
+                Definitional definitional = new Definitional(this);
                 if (validating) {
-                    validate(kinetics);
+                    validate(definitional);
                 }
-                return kinetics;
+                return definitional;
             }
 
-            protected void validate(Kinetics kinetics) {
-                super.validate(kinetics);
-                ValidationSupport.checkList(kinetics.areaUnderCurve, "areaUnderCurve", SimpleQuantity.class);
-                ValidationSupport.checkList(kinetics.lethalDose50, "lethalDose50", SimpleQuantity.class);
-                ValidationSupport.requireValueOrChildren(kinetics);
+            protected void validate(Definitional definitional) {
+                super.validate(definitional);
+                ValidationSupport.checkList(definitional.definition, "definition", Reference.class);
+                ValidationSupport.checkList(definitional.intendedRoute, "intendedRoute", CodeableConcept.class);
+                ValidationSupport.checkList(definitional.ingredient, "ingredient", Ingredient.class);
+                ValidationSupport.checkList(definitional.drugCharacteristic, "drugCharacteristic", DrugCharacteristic.class);
+                ValidationSupport.checkReferenceType(definitional.definition, "definition", "MedicinalProductDefinition");
+                ValidationSupport.requireValueOrChildren(definitional);
             }
 
-            protected Builder from(Kinetics kinetics) {
-                super.from(kinetics);
-                areaUnderCurve.addAll(kinetics.areaUnderCurve);
-                lethalDose50.addAll(kinetics.lethalDose50);
-                halfLifePeriod = kinetics.halfLifePeriod;
+            protected Builder from(Definitional definitional) {
+                super.from(definitional);
+                definition.addAll(definitional.definition);
+                doseForm = definitional.doseForm;
+                intendedRoute.addAll(definitional.intendedRoute);
+                ingredient.addAll(definitional.ingredient);
+                drugCharacteristic.addAll(definitional.drugCharacteristic);
                 return this;
+            }
+        }
+
+        /**
+         * Identifies a particular constituent of interest in the product.
+         */
+        public static class Ingredient extends BackboneElement {
+            @Summary
+            @Required
+            private final CodeableReference item;
+            @Binding(
+                bindingName = "MedicationIngredientIsActive",
+                strength = BindingStrength.Value.EXAMPLE,
+                valueSet = "http://terminology.hl7.org/ValueSet/v3-RoleClassIngredientEntity"
+            )
+            private final CodeableConcept type;
+            @Choice({ Ratio.class, CodeableConcept.class, Quantity.class })
+            @Binding(
+                bindingName = "MedicationIngredientStrength",
+                strength = BindingStrength.Value.EXAMPLE,
+                valueSet = "http://hl7.org/fhir/ValueSet/medication-ingredientstrength"
+            )
+            private final org.linuxforhealth.fhir.model.type.Element strength;
+
+            private Ingredient(Builder builder) {
+                super(builder);
+                item = builder.item;
+                type = builder.type;
+                strength = builder.strength;
+            }
+
+            /**
+             * A reference to the resource that provides information about the ingredient.
+             * 
+             * @return
+             *     An immutable object of type {@link CodeableReference} that is non-null.
+             */
+            public CodeableReference getItem() {
+                return item;
+            }
+
+            /**
+             * Indication of whether this ingredient affects the therapeutic action of the drug.
+             * 
+             * @return
+             *     An immutable object of type {@link CodeableConcept} that may be null.
+             */
+            public CodeableConcept getType() {
+                return type;
+            }
+
+            /**
+             * Specifies how many (or how much) of the items there are in this Medication. For example, 250 mg per tablet. This is 
+             * expressed as a ratio where the numerator is 250mg and the denominator is 1 tablet but can also be expressed a quantity 
+             * when the denominator is assumed to be 1 tablet.
+             * 
+             * @return
+             *     An immutable object of type {@link Ratio}, {@link CodeableConcept} or {@link Quantity} that may be null.
+             */
+            public org.linuxforhealth.fhir.model.type.Element getStrength() {
+                return strength;
+            }
+
+            @Override
+            public boolean hasChildren() {
+                return super.hasChildren() || 
+                    (item != null) || 
+                    (type != null) || 
+                    (strength != null);
+            }
+
+            @Override
+            public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                if (visitor.preVisit(this)) {
+                    visitor.visitStart(elementName, elementIndex, this);
+                    if (visitor.visit(elementName, elementIndex, this)) {
+                        // visit children
+                        accept(id, "id", visitor);
+                        accept(extension, "extension", visitor, Extension.class);
+                        accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                        accept(item, "item", visitor);
+                        accept(type, "type", visitor);
+                        accept(strength, "strength", visitor);
+                    }
+                    visitor.visitEnd(elementName, elementIndex, this);
+                    visitor.postVisit(this);
+                }
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj) {
+                    return true;
+                }
+                if (obj == null) {
+                    return false;
+                }
+                if (getClass() != obj.getClass()) {
+                    return false;
+                }
+                Ingredient other = (Ingredient) obj;
+                return Objects.equals(id, other.id) && 
+                    Objects.equals(extension, other.extension) && 
+                    Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(item, other.item) && 
+                    Objects.equals(type, other.type) && 
+                    Objects.equals(strength, other.strength);
+            }
+
+            @Override
+            public int hashCode() {
+                int result = hashCode;
+                if (result == 0) {
+                    result = Objects.hash(id, 
+                        extension, 
+                        modifierExtension, 
+                        item, 
+                        type, 
+                        strength);
+                    hashCode = result;
+                }
+                return result;
+            }
+
+            @Override
+            public Builder toBuilder() {
+                return new Builder().from(this);
+            }
+
+            public static Builder builder() {
+                return new Builder();
+            }
+
+            public static class Builder extends BackboneElement.Builder {
+                private CodeableReference item;
+                private CodeableConcept type;
+                private org.linuxforhealth.fhir.model.type.Element strength;
+
+                private Builder() {
+                    super();
+                }
+
+                /**
+                 * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                 * contain spaces.
+                 * 
+                 * @param id
+                 *     Unique id for inter-element referencing
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder id(java.lang.String id) {
+                    return (Builder) super.id(id);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder extension(Extension... extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder extension(Collection<Extension> extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder modifierExtension(Extension... modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * A reference to the resource that provides information about the ingredient.
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * @param item
+                 *     Substances contained in the medication
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder item(CodeableReference item) {
+                    this.item = item;
+                    return this;
+                }
+
+                /**
+                 * Indication of whether this ingredient affects the therapeutic action of the drug.
+                 * 
+                 * @param type
+                 *     A code that defines the type of ingredient, active, base, etc
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder type(CodeableConcept type) {
+                    this.type = type;
+                    return this;
+                }
+
+                /**
+                 * Specifies how many (or how much) of the items there are in this Medication. For example, 250 mg per tablet. This is 
+                 * expressed as a ratio where the numerator is 250mg and the denominator is 1 tablet but can also be expressed a quantity 
+                 * when the denominator is assumed to be 1 tablet.
+                 * 
+                 * <p>This is a choice element with the following allowed types:
+                 * <ul>
+                 * <li>{@link Ratio}</li>
+                 * <li>{@link CodeableConcept}</li>
+                 * <li>{@link Quantity}</li>
+                 * </ul>
+                 * 
+                 * @param strength
+                 *     Quantity of ingredient present
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder strength(org.linuxforhealth.fhir.model.type.Element strength) {
+                    this.strength = strength;
+                    return this;
+                }
+
+                /**
+                 * Build the {@link Ingredient}
+                 * 
+                 * <p>Required elements:
+                 * <ul>
+                 * <li>item</li>
+                 * </ul>
+                 * 
+                 * @return
+                 *     An immutable object of type {@link Ingredient}
+                 * @throws IllegalStateException
+                 *     if the current state cannot be built into a valid Ingredient per the base specification
+                 */
+                @Override
+                public Ingredient build() {
+                    Ingredient ingredient = new Ingredient(this);
+                    if (validating) {
+                        validate(ingredient);
+                    }
+                    return ingredient;
+                }
+
+                protected void validate(Ingredient ingredient) {
+                    super.validate(ingredient);
+                    ValidationSupport.requireNonNull(ingredient.item, "item");
+                    ValidationSupport.choiceElement(ingredient.strength, "strength", Ratio.class, CodeableConcept.class, Quantity.class);
+                    ValidationSupport.requireValueOrChildren(ingredient);
+                }
+
+                protected Builder from(Ingredient ingredient) {
+                    super.from(ingredient);
+                    item = ingredient.item;
+                    type = ingredient.type;
+                    strength = ingredient.strength;
+                    return this;
+                }
+            }
+        }
+
+        /**
+         * Specifies descriptive properties of the medicine, such as color, shape, imprints, etc.
+         */
+        public static class DrugCharacteristic extends BackboneElement {
+            @Binding(
+                bindingName = "MedicationCharacteristic",
+                strength = BindingStrength.Value.EXAMPLE,
+                valueSet = "http://hl7.org/fhir/ValueSet/medicationknowledge-characteristic"
+            )
+            private final CodeableConcept type;
+            @Choice({ CodeableConcept.class, String.class, SimpleQuantity.class, Base64Binary.class, Attachment.class })
+            private final org.linuxforhealth.fhir.model.type.Element value;
+
+            private DrugCharacteristic(Builder builder) {
+                super(builder);
+                type = builder.type;
+                value = builder.value;
+            }
+
+            /**
+             * A code specifying which characteristic of the medicine is being described (for example, colour, shape, imprint).
+             * 
+             * @return
+             *     An immutable object of type {@link CodeableConcept} that may be null.
+             */
+            public CodeableConcept getType() {
+                return type;
+            }
+
+            /**
+             * Description of the characteristic.
+             * 
+             * @return
+             *     An immutable object of type {@link CodeableConcept}, {@link String}, {@link SimpleQuantity}, {@link Base64Binary} or 
+             *     {@link Attachment} that may be null.
+             */
+            public org.linuxforhealth.fhir.model.type.Element getValue() {
+                return value;
+            }
+
+            @Override
+            public boolean hasChildren() {
+                return super.hasChildren() || 
+                    (type != null) || 
+                    (value != null);
+            }
+
+            @Override
+            public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                if (visitor.preVisit(this)) {
+                    visitor.visitStart(elementName, elementIndex, this);
+                    if (visitor.visit(elementName, elementIndex, this)) {
+                        // visit children
+                        accept(id, "id", visitor);
+                        accept(extension, "extension", visitor, Extension.class);
+                        accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                        accept(type, "type", visitor);
+                        accept(value, "value", visitor);
+                    }
+                    visitor.visitEnd(elementName, elementIndex, this);
+                    visitor.postVisit(this);
+                }
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj) {
+                    return true;
+                }
+                if (obj == null) {
+                    return false;
+                }
+                if (getClass() != obj.getClass()) {
+                    return false;
+                }
+                DrugCharacteristic other = (DrugCharacteristic) obj;
+                return Objects.equals(id, other.id) && 
+                    Objects.equals(extension, other.extension) && 
+                    Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(type, other.type) && 
+                    Objects.equals(value, other.value);
+            }
+
+            @Override
+            public int hashCode() {
+                int result = hashCode;
+                if (result == 0) {
+                    result = Objects.hash(id, 
+                        extension, 
+                        modifierExtension, 
+                        type, 
+                        value);
+                    hashCode = result;
+                }
+                return result;
+            }
+
+            @Override
+            public Builder toBuilder() {
+                return new Builder().from(this);
+            }
+
+            public static Builder builder() {
+                return new Builder();
+            }
+
+            public static class Builder extends BackboneElement.Builder {
+                private CodeableConcept type;
+                private org.linuxforhealth.fhir.model.type.Element value;
+
+                private Builder() {
+                    super();
+                }
+
+                /**
+                 * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                 * contain spaces.
+                 * 
+                 * @param id
+                 *     Unique id for inter-element referencing
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder id(java.lang.String id) {
+                    return (Builder) super.id(id);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder extension(Extension... extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder extension(Collection<Extension> extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder modifierExtension(Extension... modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * A code specifying which characteristic of the medicine is being described (for example, colour, shape, imprint).
+                 * 
+                 * @param type
+                 *     Code specifying the type of characteristic of medication
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder type(CodeableConcept type) {
+                    this.type = type;
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code value} with choice type String.
+                 * 
+                 * @param value
+                 *     Description of the characteristic
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #value(Element)
+                 */
+                public Builder value(java.lang.String value) {
+                    this.value = (value == null) ? null : String.of(value);
+                    return this;
+                }
+
+                /**
+                 * Description of the characteristic.
+                 * 
+                 * <p>This is a choice element with the following allowed types:
+                 * <ul>
+                 * <li>{@link CodeableConcept}</li>
+                 * <li>{@link String}</li>
+                 * <li>{@link SimpleQuantity}</li>
+                 * <li>{@link Base64Binary}</li>
+                 * <li>{@link Attachment}</li>
+                 * </ul>
+                 * 
+                 * @param value
+                 *     Description of the characteristic
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
+                    this.value = value;
+                    return this;
+                }
+
+                /**
+                 * Build the {@link DrugCharacteristic}
+                 * 
+                 * @return
+                 *     An immutable object of type {@link DrugCharacteristic}
+                 * @throws IllegalStateException
+                 *     if the current state cannot be built into a valid DrugCharacteristic per the base specification
+                 */
+                @Override
+                public DrugCharacteristic build() {
+                    DrugCharacteristic drugCharacteristic = new DrugCharacteristic(this);
+                    if (validating) {
+                        validate(drugCharacteristic);
+                    }
+                    return drugCharacteristic;
+                }
+
+                protected void validate(DrugCharacteristic drugCharacteristic) {
+                    super.validate(drugCharacteristic);
+                    ValidationSupport.choiceElement(drugCharacteristic.value, "value", CodeableConcept.class, String.class, SimpleQuantity.class, Base64Binary.class, Attachment.class);
+                    ValidationSupport.requireValueOrChildren(drugCharacteristic);
+                }
+
+                protected Builder from(DrugCharacteristic drugCharacteristic) {
+                    super.from(drugCharacteristic);
+                    type = drugCharacteristic.type;
+                    value = drugCharacteristic.value;
+                    return this;
+                }
             }
         }
     }

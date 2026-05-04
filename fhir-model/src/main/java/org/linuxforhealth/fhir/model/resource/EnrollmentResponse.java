@@ -28,8 +28,8 @@ import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
+import org.linuxforhealth.fhir.model.type.code.EnrollmentOutcome;
 import org.linuxforhealth.fhir.model.type.code.EnrollmentResponseStatus;
-import org.linuxforhealth.fhir.model.type.code.RemittanceOutcome;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
@@ -51,18 +51,18 @@ public class EnrollmentResponse extends DomainResource {
         bindingName = "EnrollmentResponseStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "A code specifying the state of the resource instance.",
-        valueSet = "http://hl7.org/fhir/ValueSet/fm-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/fm-status|5.0.0"
     )
     private final EnrollmentResponseStatus status;
     @ReferenceTarget({ "EnrollmentRequest" })
     private final Reference request;
     @Binding(
-        bindingName = "RemittanceOutcome",
+        bindingName = "EnrollmentOutcome",
         strength = BindingStrength.Value.REQUIRED,
         description = "The outcome of the processing.",
-        valueSet = "http://hl7.org/fhir/ValueSet/remittance-outcome|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/enrollment-outcome|5.0.0"
     )
-    private final RemittanceOutcome outcome;
+    private final EnrollmentOutcome outcome;
     private final String disposition;
     private final DateTime created;
     @ReferenceTarget({ "Organization" })
@@ -116,9 +116,9 @@ public class EnrollmentResponse extends DomainResource {
      * Processing status: error, complete.
      * 
      * @return
-     *     An immutable object of type {@link RemittanceOutcome} that may be null.
+     *     An immutable object of type {@link EnrollmentOutcome} that may be null.
      */
-    public RemittanceOutcome getOutcome() {
+    public EnrollmentOutcome getOutcome() {
         return outcome;
     }
 
@@ -271,7 +271,7 @@ public class EnrollmentResponse extends DomainResource {
         private List<Identifier> identifier = new ArrayList<>();
         private EnrollmentResponseStatus status;
         private Reference request;
-        private RemittanceOutcome outcome;
+        private EnrollmentOutcome outcome;
         private String disposition;
         private DateTime created;
         private Reference organization;
@@ -359,7 +359,8 @@ public class EnrollmentResponse extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -377,7 +378,8 @@ public class EnrollmentResponse extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -398,7 +400,7 @@ public class EnrollmentResponse extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -418,7 +420,7 @@ public class EnrollmentResponse extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -443,9 +445,9 @@ public class EnrollmentResponse extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -468,9 +470,9 @@ public class EnrollmentResponse extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -573,7 +575,7 @@ public class EnrollmentResponse extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder outcome(RemittanceOutcome outcome) {
+        public Builder outcome(EnrollmentOutcome outcome) {
             this.outcome = outcome;
             return this;
         }

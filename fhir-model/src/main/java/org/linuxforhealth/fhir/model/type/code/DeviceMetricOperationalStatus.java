@@ -22,7 +22,7 @@ public class DeviceMetricOperationalStatus extends Code {
     /**
      * On
      * 
-     * <p>The DeviceMetric is operating and will generate DeviceObservations.
+     * <p>The DeviceMetric is operating and will generate Observations.
      */
     public static final DeviceMetricOperationalStatus ON = DeviceMetricOperationalStatus.builder().value(Value.ON).build();
 
@@ -36,7 +36,7 @@ public class DeviceMetricOperationalStatus extends Code {
     /**
      * Standby
      * 
-     * <p>The DeviceMetric is operating, but will not generate any DeviceObservations.
+     * <p>The DeviceMetric is operating, but will not generate any Observations.
      */
     public static final DeviceMetricOperationalStatus STANDBY = DeviceMetricOperationalStatus.builder().value(Value.STANDBY).build();
 
@@ -208,7 +208,7 @@ public class DeviceMetricOperationalStatus extends Code {
         /**
          * On
          * 
-         * <p>The DeviceMetric is operating and will generate DeviceObservations.
+         * <p>The DeviceMetric is operating and will generate Observations.
          */
         ON("on"),
 
@@ -222,7 +222,7 @@ public class DeviceMetricOperationalStatus extends Code {
         /**
          * Standby
          * 
-         * <p>The DeviceMetric is operating, but will not generate any DeviceObservations.
+         * <p>The DeviceMetric is operating, but will not generate any Observations.
          */
         STANDBY("standby"),
 

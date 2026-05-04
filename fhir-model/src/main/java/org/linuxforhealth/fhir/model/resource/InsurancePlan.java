@@ -20,13 +20,11 @@ import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
-import org.linuxforhealth.fhir.model.type.Address;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
-import org.linuxforhealth.fhir.model.type.ContactPoint;
+import org.linuxforhealth.fhir.model.type.ExtendedContactDetail;
 import org.linuxforhealth.fhir.model.type.Extension;
-import org.linuxforhealth.fhir.model.type.HumanName;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Money;
@@ -60,15 +58,6 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     expression = "(identifier.count() + name.count()) > 0",
     source = "http://hl7.org/fhir/StructureDefinition/InsurancePlan"
 )
-@Constraint(
-    id = "insurancePlan-2",
-    level = "Warning",
-    location = "contact.purpose",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/contactentity-type",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/contactentity-type', 'extensible')",
-    source = "http://hl7.org/fhir/StructureDefinition/InsurancePlan",
-    generated = true
-)
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class InsurancePlan extends DomainResource {
     @Summary
@@ -78,7 +67,7 @@ public class InsurancePlan extends DomainResource {
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     private final PublicationStatus status;
     @Summary
@@ -102,7 +91,7 @@ public class InsurancePlan extends DomainResource {
     @Summary
     @ReferenceTarget({ "Location" })
     private final List<Reference> coverageArea;
-    private final List<Contact> contact;
+    private final List<ExtendedContactDetail> contact;
     @ReferenceTarget({ "Endpoint" })
     private final List<Reference> endpoint;
     @ReferenceTarget({ "Organization" })
@@ -222,12 +211,13 @@ public class InsurancePlan extends DomainResource {
     }
 
     /**
-     * The contact for the health insurance product for a certain purpose.
+     * The contact details of communication devices available relevant to the specific Insurance Plan/Product. This can 
+     * include addresses, phone numbers, fax numbers, mobile numbers, email addresses and web sites.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Contact} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link ExtendedContactDetail} that may be empty.
      */
-    public List<Contact> getContact() {
+    public List<ExtendedContactDetail> getContact() {
         return contact;
     }
 
@@ -313,7 +303,7 @@ public class InsurancePlan extends DomainResource {
                 accept(ownedBy, "ownedBy", visitor);
                 accept(administeredBy, "administeredBy", visitor);
                 accept(coverageArea, "coverageArea", visitor, Reference.class);
-                accept(contact, "contact", visitor, Contact.class);
+                accept(contact, "contact", visitor, ExtendedContactDetail.class);
                 accept(endpoint, "endpoint", visitor, Reference.class);
                 accept(network, "network", visitor, Reference.class);
                 accept(coverage, "coverage", visitor, Coverage.class);
@@ -410,7 +400,7 @@ public class InsurancePlan extends DomainResource {
         private Reference ownedBy;
         private Reference administeredBy;
         private List<Reference> coverageArea = new ArrayList<>();
-        private List<Contact> contact = new ArrayList<>();
+        private List<ExtendedContactDetail> contact = new ArrayList<>();
         private List<Reference> endpoint = new ArrayList<>();
         private List<Reference> network = new ArrayList<>();
         private List<Coverage> coverage = new ArrayList<>();
@@ -498,7 +488,8 @@ public class InsurancePlan extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -516,7 +507,8 @@ public class InsurancePlan extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -537,7 +529,7 @@ public class InsurancePlan extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -557,7 +549,7 @@ public class InsurancePlan extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -582,9 +574,9 @@ public class InsurancePlan extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -607,9 +599,9 @@ public class InsurancePlan extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -839,7 +831,7 @@ public class InsurancePlan extends DomainResource {
          * </ul>
          * 
          * @param ownedBy
-         *     Plan issuer
+         *     Product issuer
          * 
          * @return
          *     A reference to this Builder instance
@@ -919,32 +911,34 @@ public class InsurancePlan extends DomainResource {
         }
 
         /**
-         * The contact for the health insurance product for a certain purpose.
+         * The contact details of communication devices available relevant to the specific Insurance Plan/Product. This can 
+         * include addresses, phone numbers, fax numbers, mobile numbers, email addresses and web sites.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param contact
-         *     Contact for the product
+         *     Official contact details relevant to the health insurance plan/product
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder contact(Contact... contact) {
-            for (Contact value : contact) {
+        public Builder contact(ExtendedContactDetail... contact) {
+            for (ExtendedContactDetail value : contact) {
                 this.contact.add(value);
             }
             return this;
         }
 
         /**
-         * The contact for the health insurance product for a certain purpose.
+         * The contact details of communication devices available relevant to the specific Insurance Plan/Product. This can 
+         * include addresses, phone numbers, fax numbers, mobile numbers, email addresses and web sites.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param contact
-         *     Contact for the product
+         *     Official contact details relevant to the health insurance plan/product
          * 
          * @return
          *     A reference to this Builder instance
@@ -952,7 +946,7 @@ public class InsurancePlan extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder contact(Collection<Contact> contact) {
+        public Builder contact(Collection<ExtendedContactDetail> contact) {
             this.contact = new ArrayList<>(contact);
             return this;
         }
@@ -1156,7 +1150,7 @@ public class InsurancePlan extends DomainResource {
             ValidationSupport.checkList(insurancePlan.type, "type", CodeableConcept.class);
             ValidationSupport.checkList(insurancePlan.alias, "alias", String.class);
             ValidationSupport.checkList(insurancePlan.coverageArea, "coverageArea", Reference.class);
-            ValidationSupport.checkList(insurancePlan.contact, "contact", Contact.class);
+            ValidationSupport.checkList(insurancePlan.contact, "contact", ExtendedContactDetail.class);
             ValidationSupport.checkList(insurancePlan.endpoint, "endpoint", Reference.class);
             ValidationSupport.checkList(insurancePlan.network, "network", Reference.class);
             ValidationSupport.checkList(insurancePlan.coverage, "coverage", Coverage.class);
@@ -1185,379 +1179,6 @@ public class InsurancePlan extends DomainResource {
             coverage.addAll(insurancePlan.coverage);
             plan.addAll(insurancePlan.plan);
             return this;
-        }
-    }
-
-    /**
-     * The contact for the health insurance product for a certain purpose.
-     */
-    public static class Contact extends BackboneElement {
-        @Binding(
-            bindingName = "ContactPartyType",
-            strength = BindingStrength.Value.EXTENSIBLE,
-            description = "The purpose for which you would contact a contact party.",
-            valueSet = "http://hl7.org/fhir/ValueSet/contactentity-type"
-        )
-        private final CodeableConcept purpose;
-        private final HumanName name;
-        private final List<ContactPoint> telecom;
-        private final Address address;
-
-        private Contact(Builder builder) {
-            super(builder);
-            purpose = builder.purpose;
-            name = builder.name;
-            telecom = Collections.unmodifiableList(builder.telecom);
-            address = builder.address;
-        }
-
-        /**
-         * Indicates a purpose for which the contact can be reached.
-         * 
-         * @return
-         *     An immutable object of type {@link CodeableConcept} that may be null.
-         */
-        public CodeableConcept getPurpose() {
-            return purpose;
-        }
-
-        /**
-         * A name associated with the contact.
-         * 
-         * @return
-         *     An immutable object of type {@link HumanName} that may be null.
-         */
-        public HumanName getName() {
-            return name;
-        }
-
-        /**
-         * A contact detail (e.g. a telephone number or an email address) by which the party may be contacted.
-         * 
-         * @return
-         *     An unmodifiable list containing immutable objects of type {@link ContactPoint} that may be empty.
-         */
-        public List<ContactPoint> getTelecom() {
-            return telecom;
-        }
-
-        /**
-         * Visiting or postal addresses for the contact.
-         * 
-         * @return
-         *     An immutable object of type {@link Address} that may be null.
-         */
-        public Address getAddress() {
-            return address;
-        }
-
-        @Override
-        public boolean hasChildren() {
-            return super.hasChildren() || 
-                (purpose != null) || 
-                (name != null) || 
-                !telecom.isEmpty() || 
-                (address != null);
-        }
-
-        @Override
-        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-            if (visitor.preVisit(this)) {
-                visitor.visitStart(elementName, elementIndex, this);
-                if (visitor.visit(elementName, elementIndex, this)) {
-                    // visit children
-                    accept(id, "id", visitor);
-                    accept(extension, "extension", visitor, Extension.class);
-                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(purpose, "purpose", visitor);
-                    accept(name, "name", visitor);
-                    accept(telecom, "telecom", visitor, ContactPoint.class);
-                    accept(address, "address", visitor);
-                }
-                visitor.visitEnd(elementName, elementIndex, this);
-                visitor.postVisit(this);
-            }
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            Contact other = (Contact) obj;
-            return Objects.equals(id, other.id) && 
-                Objects.equals(extension, other.extension) && 
-                Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(purpose, other.purpose) && 
-                Objects.equals(name, other.name) && 
-                Objects.equals(telecom, other.telecom) && 
-                Objects.equals(address, other.address);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = hashCode;
-            if (result == 0) {
-                result = Objects.hash(id, 
-                    extension, 
-                    modifierExtension, 
-                    purpose, 
-                    name, 
-                    telecom, 
-                    address);
-                hashCode = result;
-            }
-            return result;
-        }
-
-        @Override
-        public Builder toBuilder() {
-            return new Builder().from(this);
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public static class Builder extends BackboneElement.Builder {
-            private CodeableConcept purpose;
-            private HumanName name;
-            private List<ContactPoint> telecom = new ArrayList<>();
-            private Address address;
-
-            private Builder() {
-                super();
-            }
-
-            /**
-             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-             * contain spaces.
-             * 
-             * @param id
-             *     Unique id for inter-element referencing
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder id(java.lang.String id) {
-                return (Builder) super.id(id);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder extension(Extension... extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder extension(Collection<Extension> extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder modifierExtension(Extension... modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * Indicates a purpose for which the contact can be reached.
-             * 
-             * @param purpose
-             *     The type of contact
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder purpose(CodeableConcept purpose) {
-                this.purpose = purpose;
-                return this;
-            }
-
-            /**
-             * A name associated with the contact.
-             * 
-             * @param name
-             *     A name associated with the contact
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder name(HumanName name) {
-                this.name = name;
-                return this;
-            }
-
-            /**
-             * A contact detail (e.g. a telephone number or an email address) by which the party may be contacted.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param telecom
-             *     Contact details (telephone, email, etc.) for a contact
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder telecom(ContactPoint... telecom) {
-                for (ContactPoint value : telecom) {
-                    this.telecom.add(value);
-                }
-                return this;
-            }
-
-            /**
-             * A contact detail (e.g. a telephone number or an email address) by which the party may be contacted.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param telecom
-             *     Contact details (telephone, email, etc.) for a contact
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            public Builder telecom(Collection<ContactPoint> telecom) {
-                this.telecom = new ArrayList<>(telecom);
-                return this;
-            }
-
-            /**
-             * Visiting or postal addresses for the contact.
-             * 
-             * @param address
-             *     Visiting or postal addresses for the contact
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder address(Address address) {
-                this.address = address;
-                return this;
-            }
-
-            /**
-             * Build the {@link Contact}
-             * 
-             * @return
-             *     An immutable object of type {@link Contact}
-             * @throws IllegalStateException
-             *     if the current state cannot be built into a valid Contact per the base specification
-             */
-            @Override
-            public Contact build() {
-                Contact contact = new Contact(this);
-                if (validating) {
-                    validate(contact);
-                }
-                return contact;
-            }
-
-            protected void validate(Contact contact) {
-                super.validate(contact);
-                ValidationSupport.checkList(contact.telecom, "telecom", ContactPoint.class);
-                ValidationSupport.requireValueOrChildren(contact);
-            }
-
-            protected Builder from(Contact contact) {
-                super.from(contact);
-                purpose = contact.purpose;
-                name = contact.name;
-                telecom.addAll(contact.telecom);
-                address = contact.address;
-                return this;
-            }
         }
     }
 
@@ -1706,7 +1327,7 @@ public class InsurancePlan extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1726,7 +1347,7 @@ public class InsurancePlan extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1751,7 +1372,7 @@ public class InsurancePlan extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1776,7 +1397,7 @@ public class InsurancePlan extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2092,7 +1713,7 @@ public class InsurancePlan extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2112,7 +1733,7 @@ public class InsurancePlan extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2137,7 +1758,7 @@ public class InsurancePlan extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2162,7 +1783,7 @@ public class InsurancePlan extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2434,7 +2055,7 @@ public class InsurancePlan extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -2454,7 +2075,7 @@ public class InsurancePlan extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -2479,7 +2100,7 @@ public class InsurancePlan extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -2504,7 +2125,7 @@ public class InsurancePlan extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -2787,7 +2408,7 @@ public class InsurancePlan extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2807,7 +2428,7 @@ public class InsurancePlan extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2832,7 +2453,7 @@ public class InsurancePlan extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2857,7 +2478,7 @@ public class InsurancePlan extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3311,7 +2932,7 @@ public class InsurancePlan extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3331,7 +2952,7 @@ public class InsurancePlan extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3356,7 +2977,7 @@ public class InsurancePlan extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3381,7 +3002,7 @@ public class InsurancePlan extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3635,7 +3256,7 @@ public class InsurancePlan extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3655,7 +3276,7 @@ public class InsurancePlan extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3680,7 +3301,7 @@ public class InsurancePlan extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3705,7 +3326,7 @@ public class InsurancePlan extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3947,7 +3568,7 @@ public class InsurancePlan extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -3967,7 +3588,7 @@ public class InsurancePlan extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -3992,7 +3613,7 @@ public class InsurancePlan extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -4017,7 +3638,7 @@ public class InsurancePlan extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -4144,7 +3765,7 @@ public class InsurancePlan extends DomainResource {
                         bindingName = "BenefitCostApplicability",
                         strength = BindingStrength.Value.REQUIRED,
                         description = "Whether the cost applies to in-network or out-of-network providers.",
-                        valueSet = "http://hl7.org/fhir/ValueSet/insuranceplan-applicability|4.3.0"
+                        valueSet = "http://hl7.org/fhir/ValueSet/insuranceplan-applicability|5.0.0"
                     )
                     private final CodeableConcept applicability;
                     private final List<CodeableConcept> qualifiers;
@@ -4300,7 +3921,7 @@ public class InsurancePlan extends DomainResource {
 
                         /**
                          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                          * of the definition of the extension.
                          * 
@@ -4320,7 +3941,7 @@ public class InsurancePlan extends DomainResource {
 
                         /**
                          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                          * of the definition of the extension.
                          * 
@@ -4345,7 +3966,7 @@ public class InsurancePlan extends DomainResource {
                          * May be used to represent additional information that is not part of the basic definition of the element and that 
                          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                          * extension. Applications processing a resource are required to check for modifier extensions.
                          * 
@@ -4370,7 +3991,7 @@ public class InsurancePlan extends DomainResource {
                          * May be used to represent additional information that is not part of the basic definition of the element and that 
                          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                          * extension. Applications processing a resource are required to check for modifier extensions.
                          * 

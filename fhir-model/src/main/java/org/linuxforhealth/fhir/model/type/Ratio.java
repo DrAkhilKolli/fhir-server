@@ -28,11 +28,11 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     source = "http://hl7.org/fhir/StructureDefinition/Ratio"
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Ratio extends Element {
+public class Ratio extends DataType {
     @Summary
     private final Quantity numerator;
     @Summary
-    private final Quantity denominator;
+    private final SimpleQuantity denominator;
 
     private Ratio(Builder builder) {
         super(builder);
@@ -54,9 +54,9 @@ public class Ratio extends Element {
      * The value of the denominator.
      * 
      * @return
-     *     An immutable object of type {@link Quantity} that may be null.
+     *     An immutable object of type {@link SimpleQuantity} that may be null.
      */
-    public Quantity getDenominator() {
+    public SimpleQuantity getDenominator() {
         return denominator;
     }
 
@@ -123,9 +123,9 @@ public class Ratio extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private Quantity numerator;
-        private Quantity denominator;
+        private SimpleQuantity denominator;
 
         private Builder() {
             super();
@@ -148,7 +148,7 @@ public class Ratio extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -168,7 +168,7 @@ public class Ratio extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -212,7 +212,7 @@ public class Ratio extends Element {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder denominator(Quantity denominator) {
+        public Builder denominator(SimpleQuantity denominator) {
             this.denominator = denominator;
             return this;
         }

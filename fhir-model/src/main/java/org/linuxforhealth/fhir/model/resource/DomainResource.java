@@ -15,6 +15,7 @@ import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
+import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Meta;
@@ -45,7 +46,7 @@ import org.linuxforhealth.fhir.model.util.ValidationSupport;
     level = "Rule",
     location = "(base)",
     description = "If the resource is contained in another resource, it SHALL be referred to from elsewhere in the resource or SHALL refer to the containing resource",
-    expression = "contained.where(((id.exists() and ('#'+id in (%resource.descendants().reference | %resource.descendants().as(canonical) | %resource.descendants().as(uri) | %resource.descendants().as(url)))) or descendants().where(reference = '#').exists() or descendants().where(as(canonical) = '#').exists() or descendants().where(as(uri) = '#').exists()).not()).trace('unmatched', id).empty()",
+    expression = "contained.where((('#'+id in (%resource.descendants().reference | %resource.descendants().ofType(canonical) | %resource.descendants().ofType(uri) | %resource.descendants().ofType(url))) or descendants().where(reference = '#').exists() or descendants().where(ofType(canonical) = '#').exists() or descendants().where(ofType(canonical) = '#').exists()).not()).trace('unmatched', id).empty()",
     source = "http://hl7.org/fhir/StructureDefinition/DomainResource"
 )
 @Constraint(
@@ -72,19 +73,12 @@ import org.linuxforhealth.fhir.model.util.ValidationSupport;
     expression = "text.`div`.exists()",
     source = "http://hl7.org/fhir/StructureDefinition/DomainResource"
 )
-@Constraint(
-    id = "dom-r4b",
-    level = "Warning",
-    location = "DomainResource.contained",
-    description = "Containing new R4B resources within R4 resources may cause interoperability issues if instances are shared with R4 systems",
-    expression = "($this is Citation or $this is Evidence or $this is EvidenceReport or $this is EvidenceVariable or $this is MedicinalProductDefinition or $this is PackagedProductDefinition or $this is AdministrableProductDefinition or $this is Ingredient or $this is ClinicalUseDefinition or $this is RegulatedAuthorization or $this is SubstanceDefinition or $this is SubscriptionStatus or $this is SubscriptionTopic) implies (%resource is Citation or %resource is Evidence or %resource is EvidenceReport or %resource is EvidenceVariable or %resource is MedicinalProductDefinition or %resource is PackagedProductDefinition or %resource is AdministrableProductDefinition or %resource is Ingredient or %resource is ClinicalUseDefinition or %resource is RegulatedAuthorization or %resource is SubstanceDefinition or %resource is SubscriptionStatus or %resource is SubscriptionTopic)",
-    source = "http://hl7.org/fhir/StructureDefinition/DomainResource"
-)
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public abstract class DomainResource extends Resource {
     protected final Narrative text;
     protected final List<Resource> contained;
     protected final List<Extension> extension;
+    @Summary
     protected final List<Extension> modifierExtension;
 
     protected DomainResource(Builder builder) {
@@ -110,7 +104,8 @@ public abstract class DomainResource extends Resource {
 
     /**
      * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-     * identified independently, and nor can they have their own independent transaction scope.
+     * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+     * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Resource} that may be empty.
@@ -121,7 +116,7 @@ public abstract class DomainResource extends Resource {
 
     /**
      * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
      * of the definition of the extension.
      * 
@@ -136,9 +131,9 @@ public abstract class DomainResource extends Resource {
      * May be used to represent additional information that is not part of the basic definition of the resource and that 
      * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
      * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-     * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-     * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-     * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+     * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+     * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+     * extension. Applications processing a resource are required to check for modifier extensions.
      * 
      * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
      * change the meaning of modifierExtension itself).
@@ -250,7 +245,8 @@ public abstract class DomainResource extends Resource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -270,7 +266,8 @@ public abstract class DomainResource extends Resource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -291,7 +288,7 @@ public abstract class DomainResource extends Resource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -313,7 +310,7 @@ public abstract class DomainResource extends Resource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -338,9 +335,9 @@ public abstract class DomainResource extends Resource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -365,9 +362,9 @@ public abstract class DomainResource extends Resource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).

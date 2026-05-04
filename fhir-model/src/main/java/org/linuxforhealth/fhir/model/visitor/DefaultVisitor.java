@@ -120,13 +120,23 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, ActorDefinition actorDefinition) {
+        return visit(elementName, elementIndex, (DomainResource) actorDefinition);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Address address) {
-        return visit(elementName, elementIndex, (Element) address);
+        return visit(elementName, elementIndex, (DataType) address);
     }
 
     /**
@@ -170,13 +180,13 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Annotation annotation) {
-        return visit(elementName, elementIndex, (Element) annotation);
+        return visit(elementName, elementIndex, (DataType) annotation);
     }
 
     /**
@@ -200,13 +210,23 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, ArtifactAssessment artifactAssessment) {
+        return visit(elementName, elementIndex, (DomainResource) artifactAssessment);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Attachment attachment) {
-        return visit(elementName, elementIndex, (Element) attachment);
+        return visit(elementName, elementIndex, (DataType) attachment);
     }
 
     /**
@@ -220,6 +240,16 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, Availability availability) {
+        return visit(elementName, elementIndex, (DataType) availability);
+    }
+
+    /**
      * Delegates to {@link #visit(elementName, elementIndex, Element)}
      * @return
      *     {@inheritDoc}
@@ -230,13 +260,33 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, BackboneType backboneType) {
+        return visit(elementName, elementIndex, (DataType) backboneType);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, Visitable)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, Base base) {
+        return visit(elementName, elementIndex, (Visitable) base);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, PrimitiveType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Base64Binary base64Binary) {
-        return visit(elementName, elementIndex, (Element) base64Binary);
+        return visit(elementName, elementIndex, (PrimitiveType) base64Binary);
     }
 
     /**
@@ -275,18 +325,28 @@ public class DefaultVisitor implements Visitor {
      *     {@inheritDoc}
      */
     @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, BiologicallyDerivedProductDispense biologicallyDerivedProductDispense) {
+        return visit(elementName, elementIndex, (DomainResource) biologicallyDerivedProductDispense);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
     public boolean visit(java.lang.String elementName, int elementIndex, BodyStructure bodyStructure) {
         return visit(elementName, elementIndex, (DomainResource) bodyStructure);
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, PrimitiveType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Boolean _boolean) {
-        return visit(elementName, elementIndex, (Element) _boolean);
+        return visit(elementName, elementIndex, (PrimitiveType) _boolean);
     }
 
     /**
@@ -307,6 +367,16 @@ public class DefaultVisitor implements Visitor {
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Canonical canonical) {
         return visit(elementName, elementIndex, (Uri) canonical);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, CanonicalResource canonicalResource) {
+        return visit(elementName, elementIndex, (DomainResource) canonicalResource);
     }
 
     /**
@@ -337,16 +407,6 @@ public class DefaultVisitor implements Visitor {
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, CareTeam careTeam) {
         return visit(elementName, elementIndex, (DomainResource) careTeam);
-    }
-
-    /**
-     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
-     * @return
-     *     {@inheritDoc}
-     */
-    @Override
-    public boolean visit(java.lang.String elementName, int elementIndex, CatalogEntry catalogEntry) {
-        return visit(elementName, elementIndex, (DomainResource) catalogEntry);
     }
 
     /**
@@ -440,33 +500,33 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, CodeableConcept codeableConcept) {
-        return visit(elementName, elementIndex, (Element) codeableConcept);
+        return visit(elementName, elementIndex, (DataType) codeableConcept);
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, CodeableReference codeableReference) {
-        return visit(elementName, elementIndex, (Element) codeableReference);
+        return visit(elementName, elementIndex, (DataType) codeableReference);
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Coding coding) {
-        return visit(elementName, elementIndex, (Element) coding);
+        return visit(elementName, elementIndex, (DataType) coding);
     }
 
     /**
@@ -535,28 +595,38 @@ public class DefaultVisitor implements Visitor {
      *     {@inheritDoc}
      */
     @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, ConditionDefinition conditionDefinition) {
+        return visit(elementName, elementIndex, (DomainResource) conditionDefinition);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Consent consent) {
         return visit(elementName, elementIndex, (DomainResource) consent);
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, ContactDetail contactDetail) {
-        return visit(elementName, elementIndex, (Element) contactDetail);
+        return visit(elementName, elementIndex, (DataType) contactDetail);
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, ContactPoint contactPoint) {
-        return visit(elementName, elementIndex, (Element) contactPoint);
+        return visit(elementName, elementIndex, (DataType) contactPoint);
     }
 
     /**
@@ -570,13 +640,13 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Contributor contributor) {
-        return visit(elementName, elementIndex, (Element) contributor);
+        return visit(elementName, elementIndex, (DataType) contributor);
     }
 
     /**
@@ -620,43 +690,53 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, DataRequirement dataRequirement) {
-        return visit(elementName, elementIndex, (Element) dataRequirement);
+        return visit(elementName, elementIndex, (DataType) dataRequirement);
     }
 
     /**
      * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, DataType dataType) {
+        return visit(elementName, elementIndex, (Element) dataType);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, PrimitiveType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Date date) {
-        return visit(elementName, elementIndex, (Element) date);
+        return visit(elementName, elementIndex, (PrimitiveType) date);
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, PrimitiveType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, DateTime dateTime) {
-        return visit(elementName, elementIndex, (Element) dateTime);
+        return visit(elementName, elementIndex, (PrimitiveType) dateTime);
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, PrimitiveType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Decimal decimal) {
-        return visit(elementName, elementIndex, (Element) decimal);
+        return visit(elementName, elementIndex, (PrimitiveType) decimal);
     }
 
     /**
@@ -685,8 +765,28 @@ public class DefaultVisitor implements Visitor {
      *     {@inheritDoc}
      */
     @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, DeviceAssociation deviceAssociation) {
+        return visit(elementName, elementIndex, (DomainResource) deviceAssociation);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
     public boolean visit(java.lang.String elementName, int elementIndex, DeviceDefinition deviceDefinition) {
         return visit(elementName, elementIndex, (DomainResource) deviceDefinition);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, DeviceDispense deviceDispense) {
+        return visit(elementName, elementIndex, (DomainResource) deviceDispense);
     }
 
     /**
@@ -715,8 +815,8 @@ public class DefaultVisitor implements Visitor {
      *     {@inheritDoc}
      */
     @Override
-    public boolean visit(java.lang.String elementName, int elementIndex, DeviceUseStatement deviceUseStatement) {
-        return visit(elementName, elementIndex, (DomainResource) deviceUseStatement);
+    public boolean visit(java.lang.String elementName, int elementIndex, DeviceUsage deviceUsage) {
+        return visit(elementName, elementIndex, (DomainResource) deviceUsage);
     }
 
     /**
@@ -745,16 +845,6 @@ public class DefaultVisitor implements Visitor {
      *     {@inheritDoc}
      */
     @Override
-    public boolean visit(java.lang.String elementName, int elementIndex, DocumentManifest documentManifest) {
-        return visit(elementName, elementIndex, (DomainResource) documentManifest);
-    }
-
-    /**
-     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
-     * @return
-     *     {@inheritDoc}
-     */
-    @Override
     public boolean visit(java.lang.String elementName, int elementIndex, DocumentReference documentReference) {
         return visit(elementName, elementIndex, (DomainResource) documentReference);
     }
@@ -770,13 +860,13 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, BackboneElement)}
+     * Delegates to {@link #visit(elementName, elementIndex, BackboneType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Dosage dosage) {
-        return visit(elementName, elementIndex, (BackboneElement) dosage);
+        return visit(elementName, elementIndex, (BackboneType) dosage);
     }
 
     /**
@@ -790,23 +880,23 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Visitable)}
+     * Delegates to {@link #visit(elementName, elementIndex, Base)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Element element) {
-        return visit(elementName, elementIndex, (Visitable) element);
+        return visit(elementName, elementIndex, (Base) element);
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, BackboneElement)}
+     * Delegates to {@link #visit(elementName, elementIndex, BackboneType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, ElementDefinition elementDefinition) {
-        return visit(elementName, elementIndex, (BackboneElement) elementDefinition);
+        return visit(elementName, elementIndex, (BackboneType) elementDefinition);
     }
 
     /**
@@ -817,6 +907,16 @@ public class DefaultVisitor implements Visitor {
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Encounter encounter) {
         return visit(elementName, elementIndex, (DomainResource) encounter);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, EncounterHistory encounterHistory) {
+        return visit(elementName, elementIndex, (DomainResource) encounterHistory);
     }
 
     /**
@@ -920,23 +1020,33 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Expression expression) {
-        return visit(elementName, elementIndex, (Element) expression);
+        return visit(elementName, elementIndex, (DataType) expression);
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, ExtendedContactDetail extendedContactDetail) {
+        return visit(elementName, elementIndex, (DataType) extendedContactDetail);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Extension extension) {
-        return visit(elementName, elementIndex, (Element) extension);
+        return visit(elementName, elementIndex, (DataType) extension);
     }
 
     /**
@@ -957,6 +1067,26 @@ public class DefaultVisitor implements Visitor {
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Flag flag) {
         return visit(elementName, elementIndex, (DomainResource) flag);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, FormularyItem formularyItem) {
+        return visit(elementName, elementIndex, (DomainResource) formularyItem);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, GenomicStudy genomicStudy) {
+        return visit(elementName, elementIndex, (DomainResource) genomicStudy);
     }
 
     /**
@@ -1010,13 +1140,13 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, HumanName humanName) {
-        return visit(elementName, elementIndex, (Element) humanName);
+        return visit(elementName, elementIndex, (DataType) humanName);
     }
 
     /**
@@ -1030,13 +1160,23 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Identifier identifier) {
-        return visit(elementName, elementIndex, (Element) identifier);
+        return visit(elementName, elementIndex, (DataType) identifier);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, ImagingSelection imagingSelection) {
+        return visit(elementName, elementIndex, (DomainResource) imagingSelection);
     }
 
     /**
@@ -1100,13 +1240,13 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, PrimitiveType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Instant instant) {
-        return visit(elementName, elementIndex, (Element) instant);
+        return visit(elementName, elementIndex, (PrimitiveType) instant);
     }
 
     /**
@@ -1120,13 +1260,43 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, PrimitiveType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Integer integer) {
-        return visit(elementName, elementIndex, (Element) integer);
+        return visit(elementName, elementIndex, (PrimitiveType) integer);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, PrimitiveType)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, Integer64 integer64) {
+        return visit(elementName, elementIndex, (PrimitiveType) integer64);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, InventoryItem inventoryItem) {
+        return visit(elementName, elementIndex, (DomainResource) inventoryItem);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, InventoryReport inventoryReport) {
+        return visit(elementName, elementIndex, (DomainResource) inventoryReport);
     }
 
     /**
@@ -1200,13 +1370,13 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, BackboneElement)}
+     * Delegates to {@link #visit(elementName, elementIndex, BackboneType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, MarketingStatus marketingStatus) {
-        return visit(elementName, elementIndex, (BackboneElement) marketingStatus);
+        return visit(elementName, elementIndex, (BackboneType) marketingStatus);
     }
 
     /**
@@ -1227,16 +1397,6 @@ public class DefaultVisitor implements Visitor {
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, MeasureReport measureReport) {
         return visit(elementName, elementIndex, (DomainResource) measureReport);
-    }
-
-    /**
-     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
-     * @return
-     *     {@inheritDoc}
-     */
-    @Override
-    public boolean visit(java.lang.String elementName, int elementIndex, Media media) {
-        return visit(elementName, elementIndex, (DomainResource) media);
     }
 
     /**
@@ -1330,13 +1490,23 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Meta meta) {
-        return visit(elementName, elementIndex, (Element) meta);
+        return visit(elementName, elementIndex, (DataType) meta);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, CanonicalResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, MetadataResource metadataResource) {
+        return visit(elementName, elementIndex, (CanonicalResource) metadataResource);
     }
 
     /**
@@ -1350,13 +1520,23 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, MonetaryComponent monetaryComponent) {
+        return visit(elementName, elementIndex, (DataType) monetaryComponent);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Money money) {
-        return visit(elementName, elementIndex, (Element) money);
+        return visit(elementName, elementIndex, (DataType) money);
     }
 
     /**
@@ -1380,13 +1560,23 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Narrative narrative) {
-        return visit(elementName, elementIndex, (Element) narrative);
+        return visit(elementName, elementIndex, (DataType) narrative);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, NutritionIntake nutritionIntake) {
+        return visit(elementName, elementIndex, (DomainResource) nutritionIntake);
     }
 
     /**
@@ -1490,13 +1680,13 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, ParameterDefinition parameterDefinition) {
-        return visit(elementName, elementIndex, (Element) parameterDefinition);
+        return visit(elementName, elementIndex, (DataType) parameterDefinition);
     }
 
     /**
@@ -1540,13 +1730,23 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Period period) {
-        return visit(elementName, elementIndex, (Element) period);
+        return visit(elementName, elementIndex, (DataType) period);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, Permission permission) {
+        return visit(elementName, elementIndex, (DomainResource) permission);
     }
 
     /**
@@ -1567,16 +1767,6 @@ public class DefaultVisitor implements Visitor {
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, PlanDefinition planDefinition) {
         return visit(elementName, elementIndex, (DomainResource) planDefinition);
-    }
-
-    /**
-     * Delegates to {@link #visit(elementName, elementIndex, BackboneElement)}
-     * @return
-     *     {@inheritDoc}
-     */
-    @Override
-    public boolean visit(java.lang.String elementName, int elementIndex, Population population) {
-        return visit(elementName, elementIndex, (BackboneElement) population);
     }
 
     /**
@@ -1610,6 +1800,16 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, PrimitiveType primitiveType) {
+        return visit(elementName, elementIndex, (DataType) primitiveType);
+    }
+
+    /**
      * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
      * @return
      *     {@inheritDoc}
@@ -1620,23 +1820,13 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, BackboneElement)}
-     * @return
-     *     {@inheritDoc}
-     */
-    @Override
-    public boolean visit(java.lang.String elementName, int elementIndex, ProdCharacteristic prodCharacteristic) {
-        return visit(elementName, elementIndex, (BackboneElement) prodCharacteristic);
-    }
-
-    /**
-     * Delegates to {@link #visit(elementName, elementIndex, BackboneElement)}
+     * Delegates to {@link #visit(elementName, elementIndex, BackboneType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, ProductShelfLife productShelfLife) {
-        return visit(elementName, elementIndex, (BackboneElement) productShelfLife);
+        return visit(elementName, elementIndex, (BackboneType) productShelfLife);
     }
 
     /**
@@ -1650,13 +1840,13 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Quantity quantity) {
-        return visit(elementName, elementIndex, (Element) quantity);
+        return visit(elementName, elementIndex, (DataType) quantity);
     }
 
     /**
@@ -1680,43 +1870,43 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Range range) {
-        return visit(elementName, elementIndex, (Element) range);
+        return visit(elementName, elementIndex, (DataType) range);
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Ratio ratio) {
-        return visit(elementName, elementIndex, (Element) ratio);
+        return visit(elementName, elementIndex, (DataType) ratio);
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, RatioRange ratioRange) {
-        return visit(elementName, elementIndex, (Element) ratioRange);
+        return visit(elementName, elementIndex, (DataType) ratioRange);
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Reference reference) {
-        return visit(elementName, elementIndex, (Element) reference);
+        return visit(elementName, elementIndex, (DataType) reference);
     }
 
     /**
@@ -1730,13 +1920,13 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, RelatedArtifact relatedArtifact) {
-        return visit(elementName, elementIndex, (Element) relatedArtifact);
+        return visit(elementName, elementIndex, (DataType) relatedArtifact);
     }
 
     /**
@@ -1755,8 +1945,8 @@ public class DefaultVisitor implements Visitor {
      *     {@inheritDoc}
      */
     @Override
-    public boolean visit(java.lang.String elementName, int elementIndex, RequestGroup requestGroup) {
-        return visit(elementName, elementIndex, (DomainResource) requestGroup);
+    public boolean visit(java.lang.String elementName, int elementIndex, RequestOrchestration requestOrchestration) {
+        return visit(elementName, elementIndex, (DomainResource) requestOrchestration);
     }
 
     /**
@@ -1765,18 +1955,8 @@ public class DefaultVisitor implements Visitor {
      *     {@inheritDoc}
      */
     @Override
-    public boolean visit(java.lang.String elementName, int elementIndex, ResearchDefinition researchDefinition) {
-        return visit(elementName, elementIndex, (DomainResource) researchDefinition);
-    }
-
-    /**
-     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
-     * @return
-     *     {@inheritDoc}
-     */
-    @Override
-    public boolean visit(java.lang.String elementName, int elementIndex, ResearchElementDefinition researchElementDefinition) {
-        return visit(elementName, elementIndex, (DomainResource) researchElementDefinition);
+    public boolean visit(java.lang.String elementName, int elementIndex, Requirements requirements) {
+        return visit(elementName, elementIndex, (DomainResource) requirements);
     }
 
     /**
@@ -1800,13 +1980,13 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Visitable)}
+     * Delegates to {@link #visit(elementName, elementIndex, Base)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Resource resource) {
-        return visit(elementName, elementIndex, (Visitable) resource);
+        return visit(elementName, elementIndex, (Base) resource);
     }
 
     /**
@@ -1820,13 +2000,13 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, SampledData sampledData) {
-        return visit(elementName, elementIndex, (Element) sampledData);
+        return visit(elementName, elementIndex, (DataType) sampledData);
     }
 
     /**
@@ -1860,13 +2040,13 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Signature signature) {
-        return visit(elementName, elementIndex, (Element) signature);
+        return visit(elementName, elementIndex, (DataType) signature);
     }
 
     /**
@@ -1910,13 +2090,13 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, PrimitiveType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, String string) {
-        return visit(elementName, elementIndex, (Element) string);
+        return visit(elementName, elementIndex, (PrimitiveType) string);
     }
 
     /**
@@ -1995,6 +2175,56 @@ public class DefaultVisitor implements Visitor {
      *     {@inheritDoc}
      */
     @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, SubstanceNucleicAcid substanceNucleicAcid) {
+        return visit(elementName, elementIndex, (DomainResource) substanceNucleicAcid);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, SubstancePolymer substancePolymer) {
+        return visit(elementName, elementIndex, (DomainResource) substancePolymer);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, SubstanceProtein substanceProtein) {
+        return visit(elementName, elementIndex, (DomainResource) substanceProtein);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, SubstanceReferenceInformation substanceReferenceInformation) {
+        return visit(elementName, elementIndex, (DomainResource) substanceReferenceInformation);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, SubstanceSourceMaterial substanceSourceMaterial) {
+        return visit(elementName, elementIndex, (DomainResource) substanceSourceMaterial);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
     public boolean visit(java.lang.String elementName, int elementIndex, SupplyDelivery supplyDelivery) {
         return visit(elementName, elementIndex, (DomainResource) supplyDelivery);
     }
@@ -2035,6 +2265,16 @@ public class DefaultVisitor implements Visitor {
      *     {@inheritDoc}
      */
     @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, TestPlan testPlan) {
+        return visit(elementName, elementIndex, (DomainResource) testPlan);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
     public boolean visit(java.lang.String elementName, int elementIndex, TestReport testReport) {
         return visit(elementName, elementIndex, (DomainResource) testReport);
     }
@@ -2050,33 +2290,43 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, PrimitiveType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Time time) {
-        return visit(elementName, elementIndex, (Element) time);
+        return visit(elementName, elementIndex, (PrimitiveType) time);
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, BackboneElement)}
+     * Delegates to {@link #visit(elementName, elementIndex, BackboneType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Timing timing) {
-        return visit(elementName, elementIndex, (BackboneElement) timing);
+        return visit(elementName, elementIndex, (BackboneType) timing);
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DomainResource)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, Transport transport) {
+        return visit(elementName, elementIndex, (DomainResource) transport);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, TriggerDefinition triggerDefinition) {
-        return visit(elementName, elementIndex, (Element) triggerDefinition);
+        return visit(elementName, elementIndex, (DataType) triggerDefinition);
     }
 
     /**
@@ -2090,13 +2340,13 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, PrimitiveType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, Uri uri) {
-        return visit(elementName, elementIndex, (Element) uri);
+        return visit(elementName, elementIndex, (PrimitiveType) uri);
     }
 
     /**
@@ -2110,13 +2360,13 @@ public class DefaultVisitor implements Visitor {
     }
 
     /**
-     * Delegates to {@link #visit(elementName, elementIndex, Element)}
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
      * @return
      *     {@inheritDoc}
      */
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, UsageContext usageContext) {
-        return visit(elementName, elementIndex, (Element) usageContext);
+        return visit(elementName, elementIndex, (DataType) usageContext);
     }
 
     /**
@@ -2147,6 +2397,16 @@ public class DefaultVisitor implements Visitor {
     @Override
     public boolean visit(java.lang.String elementName, int elementIndex, VerificationResult verificationResult) {
         return visit(elementName, elementIndex, (DomainResource) verificationResult);
+    }
+
+    /**
+     * Delegates to {@link #visit(elementName, elementIndex, DataType)}
+     * @return
+     *     {@inheritDoc}
+     */
+    @Override
+    public boolean visit(java.lang.String elementName, int elementIndex, VirtualServiceDetail virtualServiceDetail) {
+        return visit(elementName, elementIndex, (DataType) virtualServiceDetail);
     }
 
     /**

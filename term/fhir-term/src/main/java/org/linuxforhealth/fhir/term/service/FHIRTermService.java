@@ -42,6 +42,8 @@ import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.CodeSystemHierarchyMeaning;
+import org.linuxforhealth.fhir.model.type.code.ConceptMapEquivalence;
+import org.linuxforhealth.fhir.model.type.code.ConceptMapRelationship;
 import org.linuxforhealth.fhir.model.type.code.ConceptSubsumptionOutcome;
 import org.linuxforhealth.fhir.term.config.FHIRTermConfig;
 import org.linuxforhealth.fhir.term.service.LookupOutcome.Designation;
@@ -670,9 +672,6 @@ public class FHIRTermService {
             if (group.getSource() == null || !group.getSource().equals(coding.getSystem())) {
                 continue;
             }
-            if (group.getSourceVersion() != null && coding.getVersion() != null && !group.getSourceVersion().equals(coding.getVersion())) {
-                continue;
-            }
             for (Element element : group.getElement()) {
                 if (element.getCode() == null || !element.getCode().equals(coding.getCode())) {
                     // TODO: handle unmatched codes here
@@ -680,10 +679,9 @@ public class FHIRTermService {
                 }
                 for (Target target : element.getTarget()) {
                     match.add(Match.builder()
-                        .equivalence(target.getEquivalence())
+                        .equivalence(relationshipToEquivalence(target.getRelationship()))
                         .concept(Coding.builder()
                             .system(group.getTarget())
-                            .version(group.getTargetVersion())
                             .code(target.getCode())
                             .display(target.getDisplay())
                             .build())
@@ -713,6 +711,17 @@ public class FHIRTermService {
      * @return
      *     the outcome of translation
      */
+    private static ConceptMapEquivalence relationshipToEquivalence(ConceptMapRelationship relationship) {
+        if (relationship == null) return null;
+        switch (relationship.getValueAsEnum()) {
+            case EQUIVALENT: return ConceptMapEquivalence.EQUIVALENT;
+            case SOURCE_IS_NARROWER_THAN_TARGET: return ConceptMapEquivalence.NARROWER;
+            case SOURCE_IS_BROADER_THAN_TARGET: return ConceptMapEquivalence.WIDER;
+            case NOT_RELATED_TO: return ConceptMapEquivalence.DISJOINT;
+            default: return ConceptMapEquivalence.RELATEDTO;
+        }
+    }
+
     public TranslationOutcome translate(ConceptMap conceptMap, Uri system, String version, Code code) {
         return translate(conceptMap, system, version, code, TranslationParameters.EMPTY);
     }

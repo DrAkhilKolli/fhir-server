@@ -21,7 +21,7 @@ import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
-import org.linuxforhealth.fhir.model.type.Date;
+import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Meta;
@@ -37,10 +37,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * Basic is used for handling concepts not yet defined in FHIR, narrative-only resources that don't map to an existing 
  * resource, and custom resources not appropriate for inclusion in the FHIR specification.
  * 
- * <p>Maturity level: FMM1 (Trial Use)
+ * <p>Maturity level: FMM3 (Trial Use)
  */
 @Maturity(
-    level = 1,
+    level = 3,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
@@ -59,9 +59,9 @@ public class Basic extends DomainResource {
     @Summary
     private final Reference subject;
     @Summary
-    private final Date created;
+    private final DateTime created;
     @Summary
-    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Patient", "RelatedPerson", "Organization" })
+    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Patient", "RelatedPerson", "Organization", "Device", "CareTeam" })
     private final Reference author;
 
     private Basic(Builder builder) {
@@ -107,9 +107,9 @@ public class Basic extends DomainResource {
      * Identifies when the resource was first created.
      * 
      * @return
-     *     An immutable object of type {@link Date} that may be null.
+     *     An immutable object of type {@link DateTime} that may be null.
      */
-    public Date getCreated() {
+    public DateTime getCreated() {
         return created;
     }
 
@@ -220,7 +220,7 @@ public class Basic extends DomainResource {
         private List<Identifier> identifier = new ArrayList<>();
         private CodeableConcept code;
         private Reference subject;
-        private Date created;
+        private DateTime created;
         private Reference author;
 
         private Builder() {
@@ -305,7 +305,8 @@ public class Basic extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -323,7 +324,8 @@ public class Basic extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -344,7 +346,7 @@ public class Basic extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -364,7 +366,7 @@ public class Basic extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -389,9 +391,9 @@ public class Basic extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -414,9 +416,9 @@ public class Basic extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -508,22 +510,6 @@ public class Basic extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code created}.
-         * 
-         * @param created
-         *     When created
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #created(org.linuxforhealth.fhir.model.type.Date)
-         */
-        public Builder created(java.time.LocalDate created) {
-            this.created = (created == null) ? null : Date.of(created);
-            return this;
-        }
-
-        /**
          * Identifies when the resource was first created.
          * 
          * @param created
@@ -532,7 +518,7 @@ public class Basic extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder created(Date created) {
+        public Builder created(DateTime created) {
             this.created = created;
             return this;
         }
@@ -547,6 +533,8 @@ public class Basic extends DomainResource {
          * <li>{@link Patient}</li>
          * <li>{@link RelatedPerson}</li>
          * <li>{@link Organization}</li>
+         * <li>{@link Device}</li>
+         * <li>{@link CareTeam}</li>
          * </ul>
          * 
          * @param author
@@ -586,7 +574,7 @@ public class Basic extends DomainResource {
             super.validate(basic);
             ValidationSupport.checkList(basic.identifier, "identifier", Identifier.class);
             ValidationSupport.requireNonNull(basic.code, "code");
-            ValidationSupport.checkReferenceType(basic.author, "author", "Practitioner", "PractitionerRole", "Patient", "RelatedPerson", "Organization");
+            ValidationSupport.checkReferenceType(basic.author, "author", "Practitioner", "PractitionerRole", "Patient", "RelatedPerson", "Organization", "Device", "CareTeam");
         }
 
         protected Builder from(Basic basic) {

@@ -23,12 +23,12 @@ import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
-import org.linuxforhealth.fhir.model.type.PositiveInt;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
@@ -50,9 +50,9 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 @Constraint(
     id = "episodeOfCare-0",
     level = "Warning",
-    location = "diagnosis.role",
-    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/diagnosis-role",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/diagnosis-role', 'preferred')",
+    location = "diagnosis.use",
+    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/encounter-diagnosis-use",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/encounter-diagnosis-use', 'preferred')",
     source = "http://hl7.org/fhir/StructureDefinition/EpisodeOfCare",
     generated = true
 )
@@ -64,7 +64,7 @@ public class EpisodeOfCare extends DomainResource {
         bindingName = "EpisodeOfCareStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The status of the episode of care.",
-        valueSet = "http://hl7.org/fhir/ValueSet/episode-of-care-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/episode-of-care-status|5.0.0"
     )
     @Required
     private final EpisodeOfCareStatus status;
@@ -77,6 +77,8 @@ public class EpisodeOfCare extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/episodeofcare-type"
     )
     private final List<CodeableConcept> type;
+    @Summary
+    private final List<Reason> reason;
     @Summary
     private final List<Diagnosis> diagnosis;
     @Summary
@@ -93,7 +95,7 @@ public class EpisodeOfCare extends DomainResource {
     @ReferenceTarget({ "Practitioner", "PractitionerRole" })
     private final Reference careManager;
     @ReferenceTarget({ "CareTeam" })
-    private final List<Reference> team;
+    private final List<Reference> careTeam;
     @ReferenceTarget({ "Account" })
     private final List<Reference> account;
 
@@ -103,13 +105,14 @@ public class EpisodeOfCare extends DomainResource {
         status = builder.status;
         statusHistory = Collections.unmodifiableList(builder.statusHistory);
         type = Collections.unmodifiableList(builder.type);
+        reason = Collections.unmodifiableList(builder.reason);
         diagnosis = Collections.unmodifiableList(builder.diagnosis);
         patient = builder.patient;
         managingOrganization = builder.managingOrganization;
         period = builder.period;
         referralRequest = Collections.unmodifiableList(builder.referralRequest);
         careManager = builder.careManager;
-        team = Collections.unmodifiableList(builder.team);
+        careTeam = Collections.unmodifiableList(builder.careTeam);
         account = Collections.unmodifiableList(builder.account);
     }
 
@@ -156,7 +159,17 @@ public class EpisodeOfCare extends DomainResource {
     }
 
     /**
-     * The list of diagnosis relevant to this episode of care.
+     * The list of medical reasons that are expected to be addressed during the episode of care.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reason} that may be empty.
+     */
+    public List<Reason> getReason() {
+        return reason;
+    }
+
+    /**
+     * The list of medical conditions that were addressed during the episode of care.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Diagnosis} that may be empty.
@@ -176,7 +189,8 @@ public class EpisodeOfCare extends DomainResource {
     }
 
     /**
-     * The organization that has assumed the specific responsibilities for the specified duration.
+     * The organization that has assumed the specific responsibilities for care coordination, care delivery, or other 
+     * services for the specified duration.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
@@ -221,8 +235,8 @@ public class EpisodeOfCare extends DomainResource {
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
      */
-    public List<Reference> getTeam() {
-        return team;
+    public List<Reference> getCareTeam() {
+        return careTeam;
     }
 
     /**
@@ -242,13 +256,14 @@ public class EpisodeOfCare extends DomainResource {
             (status != null) || 
             !statusHistory.isEmpty() || 
             !type.isEmpty() || 
+            !reason.isEmpty() || 
             !diagnosis.isEmpty() || 
             (patient != null) || 
             (managingOrganization != null) || 
             (period != null) || 
             !referralRequest.isEmpty() || 
             (careManager != null) || 
-            !team.isEmpty() || 
+            !careTeam.isEmpty() || 
             !account.isEmpty();
     }
 
@@ -270,13 +285,14 @@ public class EpisodeOfCare extends DomainResource {
                 accept(status, "status", visitor);
                 accept(statusHistory, "statusHistory", visitor, StatusHistory.class);
                 accept(type, "type", visitor, CodeableConcept.class);
+                accept(reason, "reason", visitor, Reason.class);
                 accept(diagnosis, "diagnosis", visitor, Diagnosis.class);
                 accept(patient, "patient", visitor);
                 accept(managingOrganization, "managingOrganization", visitor);
                 accept(period, "period", visitor);
                 accept(referralRequest, "referralRequest", visitor, Reference.class);
                 accept(careManager, "careManager", visitor);
-                accept(team, "team", visitor, Reference.class);
+                accept(careTeam, "careTeam", visitor, Reference.class);
                 accept(account, "account", visitor, Reference.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
@@ -308,13 +324,14 @@ public class EpisodeOfCare extends DomainResource {
             Objects.equals(status, other.status) && 
             Objects.equals(statusHistory, other.statusHistory) && 
             Objects.equals(type, other.type) && 
+            Objects.equals(reason, other.reason) && 
             Objects.equals(diagnosis, other.diagnosis) && 
             Objects.equals(patient, other.patient) && 
             Objects.equals(managingOrganization, other.managingOrganization) && 
             Objects.equals(period, other.period) && 
             Objects.equals(referralRequest, other.referralRequest) && 
             Objects.equals(careManager, other.careManager) && 
-            Objects.equals(team, other.team) && 
+            Objects.equals(careTeam, other.careTeam) && 
             Objects.equals(account, other.account);
     }
 
@@ -334,13 +351,14 @@ public class EpisodeOfCare extends DomainResource {
                 status, 
                 statusHistory, 
                 type, 
+                reason, 
                 diagnosis, 
                 patient, 
                 managingOrganization, 
                 period, 
                 referralRequest, 
                 careManager, 
-                team, 
+                careTeam, 
                 account);
             hashCode = result;
         }
@@ -361,13 +379,14 @@ public class EpisodeOfCare extends DomainResource {
         private EpisodeOfCareStatus status;
         private List<StatusHistory> statusHistory = new ArrayList<>();
         private List<CodeableConcept> type = new ArrayList<>();
+        private List<Reason> reason = new ArrayList<>();
         private List<Diagnosis> diagnosis = new ArrayList<>();
         private Reference patient;
         private Reference managingOrganization;
         private Period period;
         private List<Reference> referralRequest = new ArrayList<>();
         private Reference careManager;
-        private List<Reference> team = new ArrayList<>();
+        private List<Reference> careTeam = new ArrayList<>();
         private List<Reference> account = new ArrayList<>();
 
         private Builder() {
@@ -452,7 +471,8 @@ public class EpisodeOfCare extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -470,7 +490,8 @@ public class EpisodeOfCare extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -491,7 +512,7 @@ public class EpisodeOfCare extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -511,7 +532,7 @@ public class EpisodeOfCare extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -536,9 +557,9 @@ public class EpisodeOfCare extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -561,9 +582,9 @@ public class EpisodeOfCare extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -723,13 +744,52 @@ public class EpisodeOfCare extends DomainResource {
         }
 
         /**
-         * The list of diagnosis relevant to this episode of care.
+         * The list of medical reasons that are expected to be addressed during the episode of care.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param reason
+         *     The list of medical reasons that are expected to be addressed during the episode of care
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder reason(Reason... reason) {
+            for (Reason value : reason) {
+                this.reason.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The list of medical reasons that are expected to be addressed during the episode of care.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param reason
+         *     The list of medical reasons that are expected to be addressed during the episode of care
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder reason(Collection<Reason> reason) {
+            this.reason = new ArrayList<>(reason);
+            return this;
+        }
+
+        /**
+         * The list of medical conditions that were addressed during the episode of care.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param diagnosis
-         *     The list of diagnosis relevant to this episode of care
+         *     The list of medical conditions that were addressed during the episode of care
          * 
          * @return
          *     A reference to this Builder instance
@@ -742,13 +802,13 @@ public class EpisodeOfCare extends DomainResource {
         }
 
         /**
-         * The list of diagnosis relevant to this episode of care.
+         * The list of medical conditions that were addressed during the episode of care.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param diagnosis
-         *     The list of diagnosis relevant to this episode of care
+         *     The list of medical conditions that were addressed during the episode of care
          * 
          * @return
          *     A reference to this Builder instance
@@ -783,7 +843,8 @@ public class EpisodeOfCare extends DomainResource {
         }
 
         /**
-         * The organization that has assumed the specific responsibilities for the specified duration.
+         * The organization that has assumed the specific responsibilities for care coordination, care delivery, or other 
+         * services for the specified duration.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
@@ -791,7 +852,7 @@ public class EpisodeOfCare extends DomainResource {
          * </ul>
          * 
          * @param managingOrganization
-         *     Organization that assumes care
+         *     Organization that assumes responsibility for care coordination
          * 
          * @return
          *     A reference to this Builder instance
@@ -895,15 +956,15 @@ public class EpisodeOfCare extends DomainResource {
          * <li>{@link CareTeam}</li>
          * </ul>
          * 
-         * @param team
+         * @param careTeam
          *     Other practitioners facilitating this episode of care
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder team(Reference... team) {
-            for (Reference value : team) {
-                this.team.add(value);
+        public Builder careTeam(Reference... careTeam) {
+            for (Reference value : careTeam) {
+                this.careTeam.add(value);
             }
             return this;
         }
@@ -919,7 +980,7 @@ public class EpisodeOfCare extends DomainResource {
          * <li>{@link CareTeam}</li>
          * </ul>
          * 
-         * @param team
+         * @param careTeam
          *     Other practitioners facilitating this episode of care
          * 
          * @return
@@ -928,8 +989,8 @@ public class EpisodeOfCare extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder team(Collection<Reference> team) {
-            this.team = new ArrayList<>(team);
+        public Builder careTeam(Collection<Reference> careTeam) {
+            this.careTeam = new ArrayList<>(careTeam);
             return this;
         }
 
@@ -1011,16 +1072,17 @@ public class EpisodeOfCare extends DomainResource {
             ValidationSupport.requireNonNull(episodeOfCare.status, "status");
             ValidationSupport.checkList(episodeOfCare.statusHistory, "statusHistory", StatusHistory.class);
             ValidationSupport.checkList(episodeOfCare.type, "type", CodeableConcept.class);
+            ValidationSupport.checkList(episodeOfCare.reason, "reason", Reason.class);
             ValidationSupport.checkList(episodeOfCare.diagnosis, "diagnosis", Diagnosis.class);
             ValidationSupport.requireNonNull(episodeOfCare.patient, "patient");
             ValidationSupport.checkList(episodeOfCare.referralRequest, "referralRequest", Reference.class);
-            ValidationSupport.checkList(episodeOfCare.team, "team", Reference.class);
+            ValidationSupport.checkList(episodeOfCare.careTeam, "careTeam", Reference.class);
             ValidationSupport.checkList(episodeOfCare.account, "account", Reference.class);
             ValidationSupport.checkReferenceType(episodeOfCare.patient, "patient", "Patient");
             ValidationSupport.checkReferenceType(episodeOfCare.managingOrganization, "managingOrganization", "Organization");
             ValidationSupport.checkReferenceType(episodeOfCare.referralRequest, "referralRequest", "ServiceRequest");
             ValidationSupport.checkReferenceType(episodeOfCare.careManager, "careManager", "Practitioner", "PractitionerRole");
-            ValidationSupport.checkReferenceType(episodeOfCare.team, "team", "CareTeam");
+            ValidationSupport.checkReferenceType(episodeOfCare.careTeam, "careTeam", "CareTeam");
             ValidationSupport.checkReferenceType(episodeOfCare.account, "account", "Account");
         }
 
@@ -1030,13 +1092,14 @@ public class EpisodeOfCare extends DomainResource {
             status = episodeOfCare.status;
             statusHistory.addAll(episodeOfCare.statusHistory);
             type.addAll(episodeOfCare.type);
+            reason.addAll(episodeOfCare.reason);
             diagnosis.addAll(episodeOfCare.diagnosis);
             patient = episodeOfCare.patient;
             managingOrganization = episodeOfCare.managingOrganization;
             period = episodeOfCare.period;
             referralRequest.addAll(episodeOfCare.referralRequest);
             careManager = episodeOfCare.careManager;
-            team.addAll(episodeOfCare.team);
+            careTeam.addAll(episodeOfCare.careTeam);
             account.addAll(episodeOfCare.account);
             return this;
         }
@@ -1051,7 +1114,7 @@ public class EpisodeOfCare extends DomainResource {
             bindingName = "EpisodeOfCareStatus",
             strength = BindingStrength.Value.REQUIRED,
             description = "The status of the episode of care.",
-            valueSet = "http://hl7.org/fhir/ValueSet/episode-of-care-status|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/episode-of-care-status|5.0.0"
         )
         @Required
         private final EpisodeOfCareStatus status;
@@ -1175,7 +1238,7 @@ public class EpisodeOfCare extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1195,7 +1258,7 @@ public class EpisodeOfCare extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1220,7 +1283,7 @@ public class EpisodeOfCare extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1245,7 +1308,7 @@ public class EpisodeOfCare extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1341,67 +1404,56 @@ public class EpisodeOfCare extends DomainResource {
     }
 
     /**
-     * The list of diagnosis relevant to this episode of care.
+     * The list of medical reasons that are expected to be addressed during the episode of care.
      */
-    public static class Diagnosis extends BackboneElement {
-        @Summary
-        @ReferenceTarget({ "Condition" })
-        @Required
-        private final Reference condition;
+    public static class Reason extends BackboneElement {
         @Summary
         @Binding(
-            bindingName = "DiagnosisRole",
-            strength = BindingStrength.Value.PREFERRED,
-            description = "The type of diagnosis this condition represents.",
-            valueSet = "http://hl7.org/fhir/ValueSet/diagnosis-role"
+            bindingName = "reason-use",
+            strength = BindingStrength.Value.EXAMPLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/encounter-reason-use"
         )
-        private final CodeableConcept role;
+        private final CodeableConcept use;
         @Summary
-        private final PositiveInt rank;
+        @Binding(
+            bindingName = "reason-code",
+            strength = BindingStrength.Value.EXAMPLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/encounter-reason"
+        )
+        private final List<CodeableReference> value;
 
-        private Diagnosis(Builder builder) {
+        private Reason(Builder builder) {
             super(builder);
-            condition = builder.condition;
-            role = builder.role;
-            rank = builder.rank;
+            use = builder.use;
+            value = Collections.unmodifiableList(builder.value);
         }
 
         /**
-         * A list of conditions/problems/diagnoses that this episode of care is intended to be providing care for.
-         * 
-         * @return
-         *     An immutable object of type {@link Reference} that is non-null.
-         */
-        public Reference getCondition() {
-            return condition;
-        }
-
-        /**
-         * Role that this diagnosis has within the episode of care (e.g. admission, billing, discharge …).
+         * What the reason value should be used as e.g. Chief Complaint, Health Concern, Health Maintenance (including screening).
          * 
          * @return
          *     An immutable object of type {@link CodeableConcept} that may be null.
          */
-        public CodeableConcept getRole() {
-            return role;
+        public CodeableConcept getUse() {
+            return use;
         }
 
         /**
-         * Ranking of the diagnosis (for each role type).
+         * The medical reason that is expected to be addressed during the episode of care, expressed as a text, code or a 
+         * reference to another resource.
          * 
          * @return
-         *     An immutable object of type {@link PositiveInt} that may be null.
+         *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
          */
-        public PositiveInt getRank() {
-            return rank;
+        public List<CodeableReference> getValue() {
+            return value;
         }
 
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                (condition != null) || 
-                (role != null) || 
-                (rank != null);
+                (use != null) || 
+                !value.isEmpty();
         }
 
         @Override
@@ -1413,9 +1465,8 @@ public class EpisodeOfCare extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(condition, "condition", visitor);
-                    accept(role, "role", visitor);
-                    accept(rank, "rank", visitor);
+                    accept(use, "use", visitor);
+                    accept(value, "value", visitor, CodeableReference.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -1433,13 +1484,12 @@ public class EpisodeOfCare extends DomainResource {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            Diagnosis other = (Diagnosis) obj;
+            Reason other = (Reason) obj;
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(condition, other.condition) && 
-                Objects.equals(role, other.role) && 
-                Objects.equals(rank, other.rank);
+                Objects.equals(use, other.use) && 
+                Objects.equals(value, other.value);
         }
 
         @Override
@@ -1449,9 +1499,8 @@ public class EpisodeOfCare extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    condition, 
-                    role, 
-                    rank);
+                    use, 
+                    value);
                 hashCode = result;
             }
             return result;
@@ -1467,9 +1516,8 @@ public class EpisodeOfCare extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private Reference condition;
-            private CodeableConcept role;
-            private PositiveInt rank;
+            private CodeableConcept use;
+            private List<CodeableReference> value = new ArrayList<>();
 
             private Builder() {
                 super();
@@ -1492,7 +1540,7 @@ public class EpisodeOfCare extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1512,7 +1560,7 @@ public class EpisodeOfCare extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1537,7 +1585,7 @@ public class EpisodeOfCare extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1562,7 +1610,7 @@ public class EpisodeOfCare extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1587,61 +1635,381 @@ public class EpisodeOfCare extends DomainResource {
             }
 
             /**
-             * A list of conditions/problems/diagnoses that this episode of care is intended to be providing care for.
+             * What the reason value should be used as e.g. Chief Complaint, Health Concern, Health Maintenance (including screening).
              * 
-             * <p>This element is required.
-             * 
-             * <p>Allowed resource types for this reference:
-             * <ul>
-             * <li>{@link Condition}</li>
-             * </ul>
-             * 
-             * @param condition
-             *     Conditions/problems/diagnoses this episode of care is for
+             * @param use
+             *     What the reason value should be used for/as
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder condition(Reference condition) {
-                this.condition = condition;
+            public Builder use(CodeableConcept use) {
+                this.use = use;
+                return this;
+            }
+
+            /**
+             * The medical reason that is expected to be addressed during the episode of care, expressed as a text, code or a 
+             * reference to another resource.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param value
+             *     Medical reason to be addressed
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder value(CodeableReference... value) {
+                for (CodeableReference _value : value) {
+                    this.value.add(_value);
+                }
+                return this;
+            }
+
+            /**
+             * The medical reason that is expected to be addressed during the episode of care, expressed as a text, code or a 
+             * reference to another resource.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param value
+             *     Medical reason to be addressed
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder value(Collection<CodeableReference> value) {
+                this.value = new ArrayList<>(value);
+                return this;
+            }
+
+            /**
+             * Build the {@link Reason}
+             * 
+             * @return
+             *     An immutable object of type {@link Reason}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Reason per the base specification
+             */
+            @Override
+            public Reason build() {
+                Reason reason = new Reason(this);
+                if (validating) {
+                    validate(reason);
+                }
+                return reason;
+            }
+
+            protected void validate(Reason reason) {
+                super.validate(reason);
+                ValidationSupport.checkList(reason.value, "value", CodeableReference.class);
+                ValidationSupport.requireValueOrChildren(reason);
+            }
+
+            protected Builder from(Reason reason) {
+                super.from(reason);
+                use = reason.use;
+                value.addAll(reason.value);
+                return this;
+            }
+        }
+    }
+
+    /**
+     * The list of medical conditions that were addressed during the episode of care.
+     */
+    public static class Diagnosis extends BackboneElement {
+        @Summary
+        @Binding(
+            bindingName = "condition-code",
+            strength = BindingStrength.Value.EXAMPLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/condition-code"
+        )
+        private final List<CodeableReference> condition;
+        @Summary
+        @Binding(
+            bindingName = "DiagnosisUse",
+            strength = BindingStrength.Value.PREFERRED,
+            description = "The type of diagnosis this condition represents.",
+            valueSet = "http://hl7.org/fhir/ValueSet/encounter-diagnosis-use"
+        )
+        private final CodeableConcept use;
+
+        private Diagnosis(Builder builder) {
+            super(builder);
+            condition = Collections.unmodifiableList(builder.condition);
+            use = builder.use;
+        }
+
+        /**
+         * The medical condition that was addressed during the episode of care, expressed as a text, code or a reference to 
+         * another resource.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
+         */
+        public List<CodeableReference> getCondition() {
+            return condition;
+        }
+
+        /**
+         * Role that this diagnosis has within the episode of care (e.g. admission, billing, discharge …).
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getUse() {
+            return use;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                !condition.isEmpty() || 
+                (use != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(condition, "condition", visitor, CodeableReference.class);
+                    accept(use, "use", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Diagnosis other = (Diagnosis) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(condition, other.condition) && 
+                Objects.equals(use, other.use);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    condition, 
+                    use);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private List<CodeableReference> condition = new ArrayList<>();
+            private CodeableConcept use;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * The medical condition that was addressed during the episode of care, expressed as a text, code or a reference to 
+             * another resource.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param condition
+             *     The medical condition that was addressed during the episode of care
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder condition(CodeableReference... condition) {
+                for (CodeableReference value : condition) {
+                    this.condition.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * The medical condition that was addressed during the episode of care, expressed as a text, code or a reference to 
+             * another resource.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param condition
+             *     The medical condition that was addressed during the episode of care
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder condition(Collection<CodeableReference> condition) {
+                this.condition = new ArrayList<>(condition);
                 return this;
             }
 
             /**
              * Role that this diagnosis has within the episode of care (e.g. admission, billing, discharge …).
              * 
-             * @param role
+             * @param use
              *     Role that this diagnosis has within the episode of care (e.g. admission, billing, discharge …)
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder role(CodeableConcept role) {
-                this.role = role;
-                return this;
-            }
-
-            /**
-             * Ranking of the diagnosis (for each role type).
-             * 
-             * @param rank
-             *     Ranking of the diagnosis (for each role type)
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder rank(PositiveInt rank) {
-                this.rank = rank;
+            public Builder use(CodeableConcept use) {
+                this.use = use;
                 return this;
             }
 
             /**
              * Build the {@link Diagnosis}
-             * 
-             * <p>Required elements:
-             * <ul>
-             * <li>condition</li>
-             * </ul>
              * 
              * @return
              *     An immutable object of type {@link Diagnosis}
@@ -1659,16 +2027,14 @@ public class EpisodeOfCare extends DomainResource {
 
             protected void validate(Diagnosis diagnosis) {
                 super.validate(diagnosis);
-                ValidationSupport.requireNonNull(diagnosis.condition, "condition");
-                ValidationSupport.checkReferenceType(diagnosis.condition, "condition", "Condition");
+                ValidationSupport.checkList(diagnosis.condition, "condition", CodeableReference.class);
                 ValidationSupport.requireValueOrChildren(diagnosis);
             }
 
             protected Builder from(Diagnosis diagnosis) {
                 super.from(diagnosis);
-                condition = diagnosis.condition;
-                role = diagnosis.role;
-                rank = diagnosis.rank;
+                condition.addAll(diagnosis.condition);
+                use = diagnosis.use;
                 return this;
             }
         }

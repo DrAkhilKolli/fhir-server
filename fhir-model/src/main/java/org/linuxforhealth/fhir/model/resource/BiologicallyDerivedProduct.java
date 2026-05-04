@@ -17,12 +17,15 @@ import org.linuxforhealth.fhir.model.annotation.Binding;
 import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
+import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
+import org.linuxforhealth.fhir.model.type.Attachment;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
+import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.DateTime;
-import org.linuxforhealth.fhir.model.type.Decimal;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
@@ -30,100 +33,97 @@ import org.linuxforhealth.fhir.model.type.Integer;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
+import org.linuxforhealth.fhir.model.type.Quantity;
+import org.linuxforhealth.fhir.model.type.Range;
+import org.linuxforhealth.fhir.model.type.Ratio;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
-import org.linuxforhealth.fhir.model.type.code.BiologicallyDerivedProductCategory;
-import org.linuxforhealth.fhir.model.type.code.BiologicallyDerivedProductStatus;
-import org.linuxforhealth.fhir.model.type.code.BiologicallyDerivedProductStorageScale;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
- * A material substance originating from a biological entity intended to be transplanted or infused
+ * This resource reflects an instance of a biologically derived product. A material substance originating from a 
+ * biological entity intended to be transplanted or infused
  * into another (possibly the same) biological entity.
  * 
- * <p>Maturity level: FMM0 (Trial Use)
+ * <p>Maturity level: FMM2 (Trial Use)
  */
 @Maturity(
-    level = 0,
+    level = 2,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class BiologicallyDerivedProduct extends DomainResource {
-    @Summary
-    private final List<Identifier> identifier;
     @Binding(
         bindingName = "BiologicallyDerivedProductCategory",
-        strength = BindingStrength.Value.REQUIRED,
-        description = "Biologically Derived Product Category.",
-        valueSet = "http://hl7.org/fhir/ValueSet/product-category|4.3.0"
-    )
-    private final BiologicallyDerivedProductCategory productCategory;
-    @Binding(
-        bindingName = "BiologicallyDerivedProductCode",
         strength = BindingStrength.Value.EXAMPLE,
-        description = "Biologically Derived Product Code."
+        description = "Biologically Derived Product Category.",
+        valueSet = "http://hl7.org/fhir/ValueSet/product-category"
+    )
+    private final Coding productCategory;
+    @Binding(
+        bindingName = "BiologicallyDerivedProductCodes",
+        strength = BindingStrength.Value.EXAMPLE,
+        description = "Biologically-derived Product Codes",
+        valueSet = "http://hl7.org/fhir/ValueSet/biologicallyderived-productcodes"
     )
     private final CodeableConcept productCode;
-    @Binding(
-        bindingName = "BiologicallyDerivedProductStatus",
-        strength = BindingStrength.Value.REQUIRED,
-        description = "Biologically Derived Product Status.",
-        valueSet = "http://hl7.org/fhir/ValueSet/product-status|4.3.0"
-    )
-    private final BiologicallyDerivedProductStatus status;
-    @ReferenceTarget({ "ServiceRequest" })
-    private final List<Reference> request;
-    private final Integer quantity;
     @ReferenceTarget({ "BiologicallyDerivedProduct" })
     private final List<Reference> parent;
+    @ReferenceTarget({ "ServiceRequest" })
+    private final List<Reference> request;
+    @Summary
+    private final List<Identifier> identifier;
+    @Summary
+    private final Identifier biologicalSourceEvent;
+    @ReferenceTarget({ "Organization" })
+    private final List<Reference> processingFacility;
+    private final String division;
+    @Binding(
+        bindingName = "BiologicallyDerivedProductStatus",
+        strength = BindingStrength.Value.EXAMPLE,
+        description = "Biologically Derived Product Status.",
+        valueSet = "http://hl7.org/fhir/ValueSet/biologicallyderived-product-status"
+    )
+    private final Coding productStatus;
+    private final DateTime expirationDate;
     private final Collection collection;
-    private final List<Processing> processing;
-    private final Manipulation manipulation;
-    private final List<Storage> storage;
+    private final Range storageTempRequirements;
+    private final List<Property> property;
 
     private BiologicallyDerivedProduct(Builder builder) {
         super(builder);
-        identifier = Collections.unmodifiableList(builder.identifier);
         productCategory = builder.productCategory;
         productCode = builder.productCode;
-        status = builder.status;
-        request = Collections.unmodifiableList(builder.request);
-        quantity = builder.quantity;
         parent = Collections.unmodifiableList(builder.parent);
+        request = Collections.unmodifiableList(builder.request);
+        identifier = Collections.unmodifiableList(builder.identifier);
+        biologicalSourceEvent = builder.biologicalSourceEvent;
+        processingFacility = Collections.unmodifiableList(builder.processingFacility);
+        division = builder.division;
+        productStatus = builder.productStatus;
+        expirationDate = builder.expirationDate;
         collection = builder.collection;
-        processing = Collections.unmodifiableList(builder.processing);
-        manipulation = builder.manipulation;
-        storage = Collections.unmodifiableList(builder.storage);
-    }
-
-    /**
-     * This records identifiers associated with this biologically derived product instance that are defined by business 
-     * processes and/or used to refer to it when a direct URL reference to the resource itself is not appropriate (e.g. in 
-     * CDA documents, or in written / printed documentation).
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
-     */
-    public List<Identifier> getIdentifier() {
-        return identifier;
+        storageTempRequirements = builder.storageTempRequirements;
+        property = Collections.unmodifiableList(builder.property);
     }
 
     /**
      * Broad category of this product.
      * 
      * @return
-     *     An immutable object of type {@link BiologicallyDerivedProductCategory} that may be null.
+     *     An immutable object of type {@link Coding} that may be null.
      */
-    public BiologicallyDerivedProductCategory getProductCategory() {
+    public Coding getProductCategory() {
         return productCategory;
     }
 
     /**
-     * A code that identifies the kind of this biologically derived product (SNOMED Ctcode).
+     * A codified value that systematically supports characterization and classification of medical products of human origin 
+     * inclusive of processing conditions such as additives, volumes and handling conditions.
      * 
      * @return
      *     An immutable object of type {@link CodeableConcept} that may be null.
@@ -133,17 +133,17 @@ public class BiologicallyDerivedProduct extends DomainResource {
     }
 
     /**
-     * Whether the product is currently available.
+     * Parent product (if any) for this biologically-derived product.
      * 
      * @return
-     *     An immutable object of type {@link BiologicallyDerivedProductStatus} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
      */
-    public BiologicallyDerivedProductStatus getStatus() {
-        return status;
+    public List<Reference> getParent() {
+        return parent;
     }
 
     /**
-     * Procedure request to obtain this biologically derived product.
+     * Request to obtain and/or infuse this biologically derived product.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
@@ -153,23 +153,66 @@ public class BiologicallyDerivedProduct extends DomainResource {
     }
 
     /**
-     * Number of discrete units within this product.
+     * Unique instance identifiers assigned to a biologically derived product. Note: This is a business identifier, not a 
+     * resource identifier.
      * 
      * @return
-     *     An immutable object of type {@link Integer} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
      */
-    public Integer getQuantity() {
-        return quantity;
+    public List<Identifier> getIdentifier() {
+        return identifier;
     }
 
     /**
-     * Parent product (if any).
+     * An identifier that supports traceability to the event during which material in this product from one or more 
+     * biological entities was obtained or pooled.
+     * 
+     * @return
+     *     An immutable object of type {@link Identifier} that may be null.
+     */
+    public Identifier getBiologicalSourceEvent() {
+        return biologicalSourceEvent;
+    }
+
+    /**
+     * Processing facilities responsible for the labeling and distribution of this biologically derived product.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
      */
-    public List<Reference> getParent() {
-        return parent;
+    public List<Reference> getProcessingFacility() {
+        return processingFacility;
+    }
+
+    /**
+     * A unique identifier for an aliquot of a product. Used to distinguish individual aliquots of a product carrying the 
+     * same biologicalSource and productCode identifiers.
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getDivision() {
+        return division;
+    }
+
+    /**
+     * Whether the product is currently available.
+     * 
+     * @return
+     *     An immutable object of type {@link Coding} that may be null.
+     */
+    public Coding getProductStatus() {
+        return productStatus;
+    }
+
+    /**
+     * Date, and where relevant time, of expiration.
+     * 
+     * @return
+     *     An immutable object of type {@link DateTime} that may be null.
+     */
+    public DateTime getExpirationDate() {
+        return expirationDate;
     }
 
     /**
@@ -183,51 +226,41 @@ public class BiologicallyDerivedProduct extends DomainResource {
     }
 
     /**
-     * Any processing of the product during collection that does not change the fundamental nature of the product. For 
-     * example adding anti-coagulants during the collection of Peripheral Blood Stem Cells.
+     * The temperature requirements for storage of the biologically-derived product.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Processing} that may be empty.
+     *     An immutable object of type {@link Range} that may be null.
      */
-    public List<Processing> getProcessing() {
-        return processing;
+    public Range getStorageTempRequirements() {
+        return storageTempRequirements;
     }
 
     /**
-     * Any manipulation of product post-collection that is intended to alter the product. For example a buffy-coat enrichment 
-     * or CD8 reduction of Peripheral Blood Stem Cells to make it more suitable for infusion.
+     * A property that is specific to this BiologicallyDerviedProduct instance.
      * 
      * @return
-     *     An immutable object of type {@link Manipulation} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Property} that may be empty.
      */
-    public Manipulation getManipulation() {
-        return manipulation;
-    }
-
-    /**
-     * Product storage.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Storage} that may be empty.
-     */
-    public List<Storage> getStorage() {
-        return storage;
+    public List<Property> getProperty() {
+        return property;
     }
 
     @Override
     public boolean hasChildren() {
         return super.hasChildren() || 
-            !identifier.isEmpty() || 
             (productCategory != null) || 
             (productCode != null) || 
-            (status != null) || 
-            !request.isEmpty() || 
-            (quantity != null) || 
             !parent.isEmpty() || 
+            !request.isEmpty() || 
+            !identifier.isEmpty() || 
+            (biologicalSourceEvent != null) || 
+            !processingFacility.isEmpty() || 
+            (division != null) || 
+            (productStatus != null) || 
+            (expirationDate != null) || 
             (collection != null) || 
-            !processing.isEmpty() || 
-            (manipulation != null) || 
-            !storage.isEmpty();
+            (storageTempRequirements != null) || 
+            !property.isEmpty();
     }
 
     @Override
@@ -244,17 +277,19 @@ public class BiologicallyDerivedProduct extends DomainResource {
                 accept(contained, "contained", visitor, Resource.class);
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                accept(identifier, "identifier", visitor, Identifier.class);
                 accept(productCategory, "productCategory", visitor);
                 accept(productCode, "productCode", visitor);
-                accept(status, "status", visitor);
-                accept(request, "request", visitor, Reference.class);
-                accept(quantity, "quantity", visitor);
                 accept(parent, "parent", visitor, Reference.class);
+                accept(request, "request", visitor, Reference.class);
+                accept(identifier, "identifier", visitor, Identifier.class);
+                accept(biologicalSourceEvent, "biologicalSourceEvent", visitor);
+                accept(processingFacility, "processingFacility", visitor, Reference.class);
+                accept(division, "division", visitor);
+                accept(productStatus, "productStatus", visitor);
+                accept(expirationDate, "expirationDate", visitor);
                 accept(collection, "collection", visitor);
-                accept(processing, "processing", visitor, Processing.class);
-                accept(manipulation, "manipulation", visitor);
-                accept(storage, "storage", visitor, Storage.class);
+                accept(storageTempRequirements, "storageTempRequirements", visitor);
+                accept(property, "property", visitor, Property.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
             visitor.postVisit(this);
@@ -281,17 +316,19 @@ public class BiologicallyDerivedProduct extends DomainResource {
             Objects.equals(contained, other.contained) && 
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
-            Objects.equals(identifier, other.identifier) && 
             Objects.equals(productCategory, other.productCategory) && 
             Objects.equals(productCode, other.productCode) && 
-            Objects.equals(status, other.status) && 
-            Objects.equals(request, other.request) && 
-            Objects.equals(quantity, other.quantity) && 
             Objects.equals(parent, other.parent) && 
+            Objects.equals(request, other.request) && 
+            Objects.equals(identifier, other.identifier) && 
+            Objects.equals(biologicalSourceEvent, other.biologicalSourceEvent) && 
+            Objects.equals(processingFacility, other.processingFacility) && 
+            Objects.equals(division, other.division) && 
+            Objects.equals(productStatus, other.productStatus) && 
+            Objects.equals(expirationDate, other.expirationDate) && 
             Objects.equals(collection, other.collection) && 
-            Objects.equals(processing, other.processing) && 
-            Objects.equals(manipulation, other.manipulation) && 
-            Objects.equals(storage, other.storage);
+            Objects.equals(storageTempRequirements, other.storageTempRequirements) && 
+            Objects.equals(property, other.property);
     }
 
     @Override
@@ -306,17 +343,19 @@ public class BiologicallyDerivedProduct extends DomainResource {
                 contained, 
                 extension, 
                 modifierExtension, 
-                identifier, 
                 productCategory, 
                 productCode, 
-                status, 
-                request, 
-                quantity, 
                 parent, 
+                request, 
+                identifier, 
+                biologicalSourceEvent, 
+                processingFacility, 
+                division, 
+                productStatus, 
+                expirationDate, 
                 collection, 
-                processing, 
-                manipulation, 
-                storage);
+                storageTempRequirements, 
+                property);
             hashCode = result;
         }
         return result;
@@ -332,17 +371,19 @@ public class BiologicallyDerivedProduct extends DomainResource {
     }
 
     public static class Builder extends DomainResource.Builder {
-        private List<Identifier> identifier = new ArrayList<>();
-        private BiologicallyDerivedProductCategory productCategory;
+        private Coding productCategory;
         private CodeableConcept productCode;
-        private BiologicallyDerivedProductStatus status;
-        private List<Reference> request = new ArrayList<>();
-        private Integer quantity;
         private List<Reference> parent = new ArrayList<>();
+        private List<Reference> request = new ArrayList<>();
+        private List<Identifier> identifier = new ArrayList<>();
+        private Identifier biologicalSourceEvent;
+        private List<Reference> processingFacility = new ArrayList<>();
+        private String division;
+        private Coding productStatus;
+        private DateTime expirationDate;
         private Collection collection;
-        private List<Processing> processing = new ArrayList<>();
-        private Manipulation manipulation;
-        private List<Storage> storage = new ArrayList<>();
+        private Range storageTempRequirements;
+        private List<Property> property = new ArrayList<>();
 
         private Builder() {
             super();
@@ -426,7 +467,8 @@ public class BiologicallyDerivedProduct extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -444,7 +486,8 @@ public class BiologicallyDerivedProduct extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -465,7 +508,7 @@ public class BiologicallyDerivedProduct extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -485,7 +528,7 @@ public class BiologicallyDerivedProduct extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -510,9 +553,9 @@ public class BiologicallyDerivedProduct extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -535,9 +578,9 @@ public class BiologicallyDerivedProduct extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -560,49 +603,6 @@ public class BiologicallyDerivedProduct extends DomainResource {
         }
 
         /**
-         * This records identifiers associated with this biologically derived product instance that are defined by business 
-         * processes and/or used to refer to it when a direct URL reference to the resource itself is not appropriate (e.g. in 
-         * CDA documents, or in written / printed documentation).
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param identifier
-         *     External ids for this item
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder identifier(Identifier... identifier) {
-            for (Identifier value : identifier) {
-                this.identifier.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * This records identifiers associated with this biologically derived product instance that are defined by business 
-         * processes and/or used to refer to it when a direct URL reference to the resource itself is not appropriate (e.g. in 
-         * CDA documents, or in written / printed documentation).
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param identifier
-         *     External ids for this item
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder identifier(java.util.Collection<Identifier> identifier) {
-            this.identifier = new ArrayList<>(identifier);
-            return this;
-        }
-
-        /**
          * Broad category of this product.
          * 
          * @param productCategory
@@ -611,16 +611,17 @@ public class BiologicallyDerivedProduct extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder productCategory(BiologicallyDerivedProductCategory productCategory) {
+        public Builder productCategory(Coding productCategory) {
             this.productCategory = productCategory;
             return this;
         }
 
         /**
-         * A code that identifies the kind of this biologically derived product (SNOMED Ctcode).
+         * A codified value that systematically supports characterization and classification of medical products of human origin 
+         * inclusive of processing conditions such as additives, volumes and handling conditions.
          * 
          * @param productCode
-         *     What this biologically derived product is
+         *     A code that identifies the kind of this biologically derived product
          * 
          * @return
          *     A reference to this Builder instance
@@ -631,21 +632,56 @@ public class BiologicallyDerivedProduct extends DomainResource {
         }
 
         /**
-         * Whether the product is currently available.
+         * Parent product (if any) for this biologically-derived product.
          * 
-         * @param status
-         *     available | unavailable
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link BiologicallyDerivedProduct}</li>
+         * </ul>
+         * 
+         * @param parent
+         *     The parent biologically-derived product
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder status(BiologicallyDerivedProductStatus status) {
-            this.status = status;
+        public Builder parent(Reference... parent) {
+            for (Reference value : parent) {
+                this.parent.add(value);
+            }
             return this;
         }
 
         /**
-         * Procedure request to obtain this biologically derived product.
+         * Parent product (if any) for this biologically-derived product.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link BiologicallyDerivedProduct}</li>
+         * </ul>
+         * 
+         * @param parent
+         *     The parent biologically-derived product
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder parent(java.util.Collection<Reference> parent) {
+            this.parent = new ArrayList<>(parent);
+            return this;
+        }
+
+        /**
+         * Request to obtain and/or infuse this biologically derived product.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -656,7 +692,7 @@ public class BiologicallyDerivedProduct extends DomainResource {
          * </ul>
          * 
          * @param request
-         *     Procedure request
+         *     Request to obtain and/or infuse this product
          * 
          * @return
          *     A reference to this Builder instance
@@ -669,7 +705,7 @@ public class BiologicallyDerivedProduct extends DomainResource {
         }
 
         /**
-         * Procedure request to obtain this biologically derived product.
+         * Request to obtain and/or infuse this biologically derived product.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -680,7 +716,7 @@ public class BiologicallyDerivedProduct extends DomainResource {
          * </ul>
          * 
          * @param request
-         *     Procedure request
+         *     Request to obtain and/or infuse this product
          * 
          * @return
          *     A reference to this Builder instance
@@ -694,72 +730,34 @@ public class BiologicallyDerivedProduct extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code quantity}.
-         * 
-         * @param quantity
-         *     The amount of this biologically derived product
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #quantity(org.linuxforhealth.fhir.model.type.Integer)
-         */
-        public Builder quantity(java.lang.Integer quantity) {
-            this.quantity = (quantity == null) ? null : Integer.of(quantity);
-            return this;
-        }
-
-        /**
-         * Number of discrete units within this product.
-         * 
-         * @param quantity
-         *     The amount of this biologically derived product
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder quantity(Integer quantity) {
-            this.quantity = quantity;
-            return this;
-        }
-
-        /**
-         * Parent product (if any).
+         * Unique instance identifiers assigned to a biologically derived product. Note: This is a business identifier, not a 
+         * resource identifier.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link BiologicallyDerivedProduct}</li>
-         * </ul>
-         * 
-         * @param parent
-         *     BiologicallyDerivedProduct parent
+         * @param identifier
+         *     Instance identifier
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder parent(Reference... parent) {
-            for (Reference value : parent) {
-                this.parent.add(value);
+        public Builder identifier(Identifier... identifier) {
+            for (Identifier value : identifier) {
+                this.identifier.add(value);
             }
             return this;
         }
 
         /**
-         * Parent product (if any).
+         * Unique instance identifiers assigned to a biologically derived product. Note: This is a business identifier, not a 
+         * resource identifier.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link BiologicallyDerivedProduct}</li>
-         * </ul>
-         * 
-         * @param parent
-         *     BiologicallyDerivedProduct parent
+         * @param identifier
+         *     Instance identifier
          * 
          * @return
          *     A reference to this Builder instance
@@ -767,8 +765,132 @@ public class BiologicallyDerivedProduct extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder parent(java.util.Collection<Reference> parent) {
-            this.parent = new ArrayList<>(parent);
+        public Builder identifier(java.util.Collection<Identifier> identifier) {
+            this.identifier = new ArrayList<>(identifier);
+            return this;
+        }
+
+        /**
+         * An identifier that supports traceability to the event during which material in this product from one or more 
+         * biological entities was obtained or pooled.
+         * 
+         * @param biologicalSourceEvent
+         *     An identifier that supports traceability to the event during which material in this product from one or more 
+         *     biological entities was obtained or pooled
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder biologicalSourceEvent(Identifier biologicalSourceEvent) {
+            this.biologicalSourceEvent = biologicalSourceEvent;
+            return this;
+        }
+
+        /**
+         * Processing facilities responsible for the labeling and distribution of this biologically derived product.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link Organization}</li>
+         * </ul>
+         * 
+         * @param processingFacility
+         *     Processing facilities responsible for the labeling and distribution of this biologically derived product
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder processingFacility(Reference... processingFacility) {
+            for (Reference value : processingFacility) {
+                this.processingFacility.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Processing facilities responsible for the labeling and distribution of this biologically derived product.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link Organization}</li>
+         * </ul>
+         * 
+         * @param processingFacility
+         *     Processing facilities responsible for the labeling and distribution of this biologically derived product
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder processingFacility(java.util.Collection<Reference> processingFacility) {
+            this.processingFacility = new ArrayList<>(processingFacility);
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code division}.
+         * 
+         * @param division
+         *     A unique identifier for an aliquot of a product
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #division(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder division(java.lang.String division) {
+            this.division = (division == null) ? null : String.of(division);
+            return this;
+        }
+
+        /**
+         * A unique identifier for an aliquot of a product. Used to distinguish individual aliquots of a product carrying the 
+         * same biologicalSource and productCode identifiers.
+         * 
+         * @param division
+         *     A unique identifier for an aliquot of a product
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder division(String division) {
+            this.division = division;
+            return this;
+        }
+
+        /**
+         * Whether the product is currently available.
+         * 
+         * @param productStatus
+         *     available | unavailable
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder productStatus(Coding productStatus) {
+            this.productStatus = productStatus;
+            return this;
+        }
+
+        /**
+         * Date, and where relevant time, of expiration.
+         * 
+         * @param expirationDate
+         *     Date, and where relevant time, of expiration
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder expirationDate(DateTime expirationDate) {
+            this.expirationDate = expirationDate;
             return this;
         }
 
@@ -787,34 +909,46 @@ public class BiologicallyDerivedProduct extends DomainResource {
         }
 
         /**
-         * Any processing of the product during collection that does not change the fundamental nature of the product. For 
-         * example adding anti-coagulants during the collection of Peripheral Blood Stem Cells.
+         * The temperature requirements for storage of the biologically-derived product.
          * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param processing
-         *     Any processing of the product during collection
+         * @param storageTempRequirements
+         *     Product storage temperature requirements
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder processing(Processing... processing) {
-            for (Processing value : processing) {
-                this.processing.add(value);
+        public Builder storageTempRequirements(Range storageTempRequirements) {
+            this.storageTempRequirements = storageTempRequirements;
+            return this;
+        }
+
+        /**
+         * A property that is specific to this BiologicallyDerviedProduct instance.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param property
+         *     A property that is specific to this BiologicallyDerviedProduct instance
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder property(Property... property) {
+            for (Property value : property) {
+                this.property.add(value);
             }
             return this;
         }
 
         /**
-         * Any processing of the product during collection that does not change the fundamental nature of the product. For 
-         * example adding anti-coagulants during the collection of Peripheral Blood Stem Cells.
+         * A property that is specific to this BiologicallyDerviedProduct instance.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param processing
-         *     Any processing of the product during collection
+         * @param property
+         *     A property that is specific to this BiologicallyDerviedProduct instance
          * 
          * @return
          *     A reference to this Builder instance
@@ -822,62 +956,8 @@ public class BiologicallyDerivedProduct extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder processing(java.util.Collection<Processing> processing) {
-            this.processing = new ArrayList<>(processing);
-            return this;
-        }
-
-        /**
-         * Any manipulation of product post-collection that is intended to alter the product. For example a buffy-coat enrichment 
-         * or CD8 reduction of Peripheral Blood Stem Cells to make it more suitable for infusion.
-         * 
-         * @param manipulation
-         *     Any manipulation of product post-collection
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder manipulation(Manipulation manipulation) {
-            this.manipulation = manipulation;
-            return this;
-        }
-
-        /**
-         * Product storage.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param storage
-         *     Product storage
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder storage(Storage... storage) {
-            for (Storage value : storage) {
-                this.storage.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Product storage.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param storage
-         *     Product storage
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder storage(java.util.Collection<Storage> storage) {
-            this.storage = new ArrayList<>(storage);
+        public Builder property(java.util.Collection<Property> property) {
+            this.property = new ArrayList<>(property);
             return this;
         }
 
@@ -900,28 +980,31 @@ public class BiologicallyDerivedProduct extends DomainResource {
 
         protected void validate(BiologicallyDerivedProduct biologicallyDerivedProduct) {
             super.validate(biologicallyDerivedProduct);
-            ValidationSupport.checkList(biologicallyDerivedProduct.identifier, "identifier", Identifier.class);
-            ValidationSupport.checkList(biologicallyDerivedProduct.request, "request", Reference.class);
             ValidationSupport.checkList(biologicallyDerivedProduct.parent, "parent", Reference.class);
-            ValidationSupport.checkList(biologicallyDerivedProduct.processing, "processing", Processing.class);
-            ValidationSupport.checkList(biologicallyDerivedProduct.storage, "storage", Storage.class);
-            ValidationSupport.checkReferenceType(biologicallyDerivedProduct.request, "request", "ServiceRequest");
+            ValidationSupport.checkList(biologicallyDerivedProduct.request, "request", Reference.class);
+            ValidationSupport.checkList(biologicallyDerivedProduct.identifier, "identifier", Identifier.class);
+            ValidationSupport.checkList(biologicallyDerivedProduct.processingFacility, "processingFacility", Reference.class);
+            ValidationSupport.checkList(biologicallyDerivedProduct.property, "property", Property.class);
             ValidationSupport.checkReferenceType(biologicallyDerivedProduct.parent, "parent", "BiologicallyDerivedProduct");
+            ValidationSupport.checkReferenceType(biologicallyDerivedProduct.request, "request", "ServiceRequest");
+            ValidationSupport.checkReferenceType(biologicallyDerivedProduct.processingFacility, "processingFacility", "Organization");
         }
 
         protected Builder from(BiologicallyDerivedProduct biologicallyDerivedProduct) {
             super.from(biologicallyDerivedProduct);
-            identifier.addAll(biologicallyDerivedProduct.identifier);
             productCategory = biologicallyDerivedProduct.productCategory;
             productCode = biologicallyDerivedProduct.productCode;
-            status = biologicallyDerivedProduct.status;
-            request.addAll(biologicallyDerivedProduct.request);
-            quantity = biologicallyDerivedProduct.quantity;
             parent.addAll(biologicallyDerivedProduct.parent);
+            request.addAll(biologicallyDerivedProduct.request);
+            identifier.addAll(biologicallyDerivedProduct.identifier);
+            biologicalSourceEvent = biologicallyDerivedProduct.biologicalSourceEvent;
+            processingFacility.addAll(biologicallyDerivedProduct.processingFacility);
+            division = biologicallyDerivedProduct.division;
+            productStatus = biologicallyDerivedProduct.productStatus;
+            expirationDate = biologicallyDerivedProduct.expirationDate;
             collection = biologicallyDerivedProduct.collection;
-            processing.addAll(biologicallyDerivedProduct.processing);
-            manipulation = biologicallyDerivedProduct.manipulation;
-            storage.addAll(biologicallyDerivedProduct.storage);
+            storageTempRequirements = biologicallyDerivedProduct.storageTempRequirements;
+            property.addAll(biologicallyDerivedProduct.property);
             return this;
         }
     }
@@ -935,7 +1018,7 @@ public class BiologicallyDerivedProduct extends DomainResource {
         @ReferenceTarget({ "Patient", "Organization" })
         private final Reference source;
         @Choice({ DateTime.class, Period.class })
-        private final Element collected;
+        private final org.linuxforhealth.fhir.model.type.Element collected;
 
         private Collection(Builder builder) {
             super(builder);
@@ -971,7 +1054,7 @@ public class BiologicallyDerivedProduct extends DomainResource {
          * @return
          *     An immutable object of type {@link DateTime} or {@link Period} that may be null.
          */
-        public Element getCollected() {
+        public org.linuxforhealth.fhir.model.type.Element getCollected() {
             return collected;
         }
 
@@ -1048,7 +1131,7 @@ public class BiologicallyDerivedProduct extends DomainResource {
         public static class Builder extends BackboneElement.Builder {
             private Reference collector;
             private Reference source;
-            private Element collected;
+            private org.linuxforhealth.fhir.model.type.Element collected;
 
             private Builder() {
                 super();
@@ -1071,7 +1154,7 @@ public class BiologicallyDerivedProduct extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1091,7 +1174,7 @@ public class BiologicallyDerivedProduct extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1116,7 +1199,7 @@ public class BiologicallyDerivedProduct extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1141,7 +1224,7 @@ public class BiologicallyDerivedProduct extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1196,7 +1279,8 @@ public class BiologicallyDerivedProduct extends DomainResource {
              * </ul>
              * 
              * @param source
-             *     Who is product from
+             *     The patient who underwent the medical procedure to collect the product or the organization that facilitated the 
+             *     collection
              * 
              * @return
              *     A reference to this Builder instance
@@ -1221,7 +1305,7 @@ public class BiologicallyDerivedProduct extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder collected(Element collected) {
+            public Builder collected(org.linuxforhealth.fhir.model.type.Element collected) {
                 this.collected = collected;
                 return this;
             }
@@ -1262,78 +1346,53 @@ public class BiologicallyDerivedProduct extends DomainResource {
     }
 
     /**
-     * Any processing of the product during collection that does not change the fundamental nature of the product. For 
-     * example adding anti-coagulants during the collection of Peripheral Blood Stem Cells.
+     * A property that is specific to this BiologicallyDerviedProduct instance.
      */
-    public static class Processing extends BackboneElement {
-        private final String description;
+    public static class Property extends BackboneElement {
         @Binding(
-            bindingName = "BiologicallyDerivedProductProcedure",
+            bindingName = "BiologicallyDerivedProductPropertyTypeCodes",
             strength = BindingStrength.Value.EXAMPLE,
-            description = "Biologically Derived Product Procedure.",
-            valueSet = "http://hl7.org/fhir/ValueSet/procedure-code"
+            description = "Biologically Derived Product Property Type Codes",
+            valueSet = "http://hl7.org/fhir/ValueSet/biologicallyderived-product-property-type-codes"
         )
-        private final CodeableConcept procedure;
-        @ReferenceTarget({ "Substance" })
-        private final Reference additive;
-        @Choice({ DateTime.class, Period.class })
-        private final Element time;
+        @Required
+        private final CodeableConcept type;
+        @Choice({ Boolean.class, Integer.class, CodeableConcept.class, Period.class, Quantity.class, Range.class, Ratio.class, String.class, Attachment.class })
+        @Required
+        private final org.linuxforhealth.fhir.model.type.Element value;
 
-        private Processing(Builder builder) {
+        private Property(Builder builder) {
             super(builder);
-            description = builder.description;
-            procedure = builder.procedure;
-            additive = builder.additive;
-            time = builder.time;
+            type = builder.type;
+            value = builder.value;
         }
 
         /**
-         * Description of of processing.
+         * Code that specifies the property. It should reference an established coding system.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link CodeableConcept} that is non-null.
          */
-        public String getDescription() {
-            return description;
+        public CodeableConcept getType() {
+            return type;
         }
 
         /**
-         * Procesing code.
+         * Property values.
          * 
          * @return
-         *     An immutable object of type {@link CodeableConcept} that may be null.
+         *     An immutable object of type {@link Boolean}, {@link Integer}, {@link CodeableConcept}, {@link Period}, {@link 
+         *     Quantity}, {@link Range}, {@link Ratio}, {@link String} or {@link Attachment} that is non-null.
          */
-        public CodeableConcept getProcedure() {
-            return procedure;
-        }
-
-        /**
-         * Substance added during processing.
-         * 
-         * @return
-         *     An immutable object of type {@link Reference} that may be null.
-         */
-        public Reference getAdditive() {
-            return additive;
-        }
-
-        /**
-         * Time of processing.
-         * 
-         * @return
-         *     An immutable object of type {@link DateTime} or {@link Period} that may be null.
-         */
-        public Element getTime() {
-            return time;
+        public org.linuxforhealth.fhir.model.type.Element getValue() {
+            return value;
         }
 
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                (description != null) || 
-                (procedure != null) || 
-                (additive != null) || 
-                (time != null);
+                (type != null) || 
+                (value != null);
         }
 
         @Override
@@ -1345,10 +1404,8 @@ public class BiologicallyDerivedProduct extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(description, "description", visitor);
-                    accept(procedure, "procedure", visitor);
-                    accept(additive, "additive", visitor);
-                    accept(time, "time", visitor);
+                    accept(type, "type", visitor);
+                    accept(value, "value", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -1366,14 +1423,12 @@ public class BiologicallyDerivedProduct extends DomainResource {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            Processing other = (Processing) obj;
+            Property other = (Property) obj;
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(description, other.description) && 
-                Objects.equals(procedure, other.procedure) && 
-                Objects.equals(additive, other.additive) && 
-                Objects.equals(time, other.time);
+                Objects.equals(type, other.type) && 
+                Objects.equals(value, other.value);
         }
 
         @Override
@@ -1383,10 +1438,8 @@ public class BiologicallyDerivedProduct extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    description, 
-                    procedure, 
-                    additive, 
-                    time);
+                    type, 
+                    value);
                 hashCode = result;
             }
             return result;
@@ -1402,10 +1455,8 @@ public class BiologicallyDerivedProduct extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private String description;
-            private CodeableConcept procedure;
-            private Reference additive;
-            private Element time;
+            private CodeableConcept type;
+            private org.linuxforhealth.fhir.model.type.Element value;
 
             private Builder() {
                 super();
@@ -1428,7 +1479,7 @@ public class BiologicallyDerivedProduct extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1448,7 +1499,7 @@ public class BiologicallyDerivedProduct extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1473,7 +1524,7 @@ public class BiologicallyDerivedProduct extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1498,7 +1549,7 @@ public class BiologicallyDerivedProduct extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1523,783 +1574,138 @@ public class BiologicallyDerivedProduct extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code description}.
+             * Code that specifies the property. It should reference an established coding system.
              * 
-             * @param description
-             *     Description of of processing
+             * <p>This element is required.
              * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #description(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder description(java.lang.String description) {
-                this.description = (description == null) ? null : String.of(description);
-                return this;
-            }
-
-            /**
-             * Description of of processing.
-             * 
-             * @param description
-             *     Description of of processing
+             * @param type
+             *     Code that specifies the property
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder description(String description) {
-                this.description = description;
+            public Builder type(CodeableConcept type) {
+                this.type = type;
                 return this;
             }
 
             /**
-             * Procesing code.
+             * Convenience method for setting {@code value} with choice type Boolean.
              * 
-             * @param procedure
-             *     Procesing code
+             * <p>This element is required.
+             * 
+             * @param value
+             *     Property values
              * 
              * @return
              *     A reference to this Builder instance
+             * 
+             * @see #value(Element)
              */
-            public Builder procedure(CodeableConcept procedure) {
-                this.procedure = procedure;
+            public Builder value(java.lang.Boolean value) {
+                this.value = (value == null) ? null : Boolean.of(value);
                 return this;
             }
 
             /**
-             * Substance added during processing.
+             * Convenience method for setting {@code value} with choice type Integer.
              * 
-             * <p>Allowed resource types for this reference:
-             * <ul>
-             * <li>{@link Substance}</li>
-             * </ul>
+             * <p>This element is required.
              * 
-             * @param additive
-             *     Substance added during processing
+             * @param value
+             *     Property values
              * 
              * @return
              *     A reference to this Builder instance
+             * 
+             * @see #value(Element)
              */
-            public Builder additive(Reference additive) {
-                this.additive = additive;
+            public Builder value(java.lang.Integer value) {
+                this.value = (value == null) ? null : Integer.of(value);
                 return this;
             }
 
             /**
-             * Time of processing.
+             * Convenience method for setting {@code value} with choice type String.
+             * 
+             * <p>This element is required.
+             * 
+             * @param value
+             *     Property values
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #value(Element)
+             */
+            public Builder value(java.lang.String value) {
+                this.value = (value == null) ? null : String.of(value);
+                return this;
+            }
+
+            /**
+             * Property values.
+             * 
+             * <p>This element is required.
              * 
              * <p>This is a choice element with the following allowed types:
              * <ul>
-             * <li>{@link DateTime}</li>
+             * <li>{@link Boolean}</li>
+             * <li>{@link Integer}</li>
+             * <li>{@link CodeableConcept}</li>
              * <li>{@link Period}</li>
+             * <li>{@link Quantity}</li>
+             * <li>{@link Range}</li>
+             * <li>{@link Ratio}</li>
+             * <li>{@link String}</li>
+             * <li>{@link Attachment}</li>
              * </ul>
              * 
-             * @param time
-             *     Time of processing
+             * @param value
+             *     Property values
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder time(Element time) {
-                this.time = time;
+            public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
+                this.value = value;
                 return this;
             }
 
             /**
-             * Build the {@link Processing}
+             * Build the {@link Property}
              * 
-             * @return
-             *     An immutable object of type {@link Processing}
-             * @throws IllegalStateException
-             *     if the current state cannot be built into a valid Processing per the base specification
-             */
-            @Override
-            public Processing build() {
-                Processing processing = new Processing(this);
-                if (validating) {
-                    validate(processing);
-                }
-                return processing;
-            }
-
-            protected void validate(Processing processing) {
-                super.validate(processing);
-                ValidationSupport.choiceElement(processing.time, "time", DateTime.class, Period.class);
-                ValidationSupport.checkReferenceType(processing.additive, "additive", "Substance");
-                ValidationSupport.requireValueOrChildren(processing);
-            }
-
-            protected Builder from(Processing processing) {
-                super.from(processing);
-                description = processing.description;
-                procedure = processing.procedure;
-                additive = processing.additive;
-                time = processing.time;
-                return this;
-            }
-        }
-    }
-
-    /**
-     * Any manipulation of product post-collection that is intended to alter the product. For example a buffy-coat enrichment 
-     * or CD8 reduction of Peripheral Blood Stem Cells to make it more suitable for infusion.
-     */
-    public static class Manipulation extends BackboneElement {
-        private final String description;
-        @Choice({ DateTime.class, Period.class })
-        private final Element time;
-
-        private Manipulation(Builder builder) {
-            super(builder);
-            description = builder.description;
-            time = builder.time;
-        }
-
-        /**
-         * Description of manipulation.
-         * 
-         * @return
-         *     An immutable object of type {@link String} that may be null.
-         */
-        public String getDescription() {
-            return description;
-        }
-
-        /**
-         * Time of manipulation.
-         * 
-         * @return
-         *     An immutable object of type {@link DateTime} or {@link Period} that may be null.
-         */
-        public Element getTime() {
-            return time;
-        }
-
-        @Override
-        public boolean hasChildren() {
-            return super.hasChildren() || 
-                (description != null) || 
-                (time != null);
-        }
-
-        @Override
-        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-            if (visitor.preVisit(this)) {
-                visitor.visitStart(elementName, elementIndex, this);
-                if (visitor.visit(elementName, elementIndex, this)) {
-                    // visit children
-                    accept(id, "id", visitor);
-                    accept(extension, "extension", visitor, Extension.class);
-                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(description, "description", visitor);
-                    accept(time, "time", visitor);
-                }
-                visitor.visitEnd(elementName, elementIndex, this);
-                visitor.postVisit(this);
-            }
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            Manipulation other = (Manipulation) obj;
-            return Objects.equals(id, other.id) && 
-                Objects.equals(extension, other.extension) && 
-                Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(description, other.description) && 
-                Objects.equals(time, other.time);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = hashCode;
-            if (result == 0) {
-                result = Objects.hash(id, 
-                    extension, 
-                    modifierExtension, 
-                    description, 
-                    time);
-                hashCode = result;
-            }
-            return result;
-        }
-
-        @Override
-        public Builder toBuilder() {
-            return new Builder().from(this);
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public static class Builder extends BackboneElement.Builder {
-            private String description;
-            private Element time;
-
-            private Builder() {
-                super();
-            }
-
-            /**
-             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-             * contain spaces.
-             * 
-             * @param id
-             *     Unique id for inter-element referencing
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder id(java.lang.String id) {
-                return (Builder) super.id(id);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder extension(Extension... extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder extension(java.util.Collection<Extension> extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder modifierExtension(Extension... modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder modifierExtension(java.util.Collection<Extension> modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * Convenience method for setting {@code description}.
-             * 
-             * @param description
-             *     Description of manipulation
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #description(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder description(java.lang.String description) {
-                this.description = (description == null) ? null : String.of(description);
-                return this;
-            }
-
-            /**
-             * Description of manipulation.
-             * 
-             * @param description
-             *     Description of manipulation
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder description(String description) {
-                this.description = description;
-                return this;
-            }
-
-            /**
-             * Time of manipulation.
-             * 
-             * <p>This is a choice element with the following allowed types:
+             * <p>Required elements:
              * <ul>
-             * <li>{@link DateTime}</li>
-             * <li>{@link Period}</li>
+             * <li>type</li>
+             * <li>value</li>
              * </ul>
              * 
-             * @param time
-             *     Time of manipulation
-             * 
              * @return
-             *     A reference to this Builder instance
-             */
-            public Builder time(Element time) {
-                this.time = time;
-                return this;
-            }
-
-            /**
-             * Build the {@link Manipulation}
-             * 
-             * @return
-             *     An immutable object of type {@link Manipulation}
+             *     An immutable object of type {@link Property}
              * @throws IllegalStateException
-             *     if the current state cannot be built into a valid Manipulation per the base specification
+             *     if the current state cannot be built into a valid Property per the base specification
              */
             @Override
-            public Manipulation build() {
-                Manipulation manipulation = new Manipulation(this);
+            public Property build() {
+                Property property = new Property(this);
                 if (validating) {
-                    validate(manipulation);
+                    validate(property);
                 }
-                return manipulation;
+                return property;
             }
 
-            protected void validate(Manipulation manipulation) {
-                super.validate(manipulation);
-                ValidationSupport.choiceElement(manipulation.time, "time", DateTime.class, Period.class);
-                ValidationSupport.requireValueOrChildren(manipulation);
+            protected void validate(Property property) {
+                super.validate(property);
+                ValidationSupport.requireNonNull(property.type, "type");
+                ValidationSupport.requireChoiceElement(property.value, "value", Boolean.class, Integer.class, CodeableConcept.class, Period.class, Quantity.class, Range.class, Ratio.class, String.class, Attachment.class);
+                ValidationSupport.requireValueOrChildren(property);
             }
 
-            protected Builder from(Manipulation manipulation) {
-                super.from(manipulation);
-                description = manipulation.description;
-                time = manipulation.time;
-                return this;
-            }
-        }
-    }
-
-    /**
-     * Product storage.
-     */
-    public static class Storage extends BackboneElement {
-        private final String description;
-        private final Decimal temperature;
-        @Binding(
-            bindingName = "BiologicallyDerivedProductStorageScale",
-            strength = BindingStrength.Value.REQUIRED,
-            description = "BiologicallyDerived Product Storage Scale.",
-            valueSet = "http://hl7.org/fhir/ValueSet/product-storage-scale|4.3.0"
-        )
-        private final BiologicallyDerivedProductStorageScale scale;
-        private final Period duration;
-
-        private Storage(Builder builder) {
-            super(builder);
-            description = builder.description;
-            temperature = builder.temperature;
-            scale = builder.scale;
-            duration = builder.duration;
-        }
-
-        /**
-         * Description of storage.
-         * 
-         * @return
-         *     An immutable object of type {@link String} that may be null.
-         */
-        public String getDescription() {
-            return description;
-        }
-
-        /**
-         * Storage temperature.
-         * 
-         * @return
-         *     An immutable object of type {@link Decimal} that may be null.
-         */
-        public Decimal getTemperature() {
-            return temperature;
-        }
-
-        /**
-         * Temperature scale used.
-         * 
-         * @return
-         *     An immutable object of type {@link BiologicallyDerivedProductStorageScale} that may be null.
-         */
-        public BiologicallyDerivedProductStorageScale getScale() {
-            return scale;
-        }
-
-        /**
-         * Storage timeperiod.
-         * 
-         * @return
-         *     An immutable object of type {@link Period} that may be null.
-         */
-        public Period getDuration() {
-            return duration;
-        }
-
-        @Override
-        public boolean hasChildren() {
-            return super.hasChildren() || 
-                (description != null) || 
-                (temperature != null) || 
-                (scale != null) || 
-                (duration != null);
-        }
-
-        @Override
-        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-            if (visitor.preVisit(this)) {
-                visitor.visitStart(elementName, elementIndex, this);
-                if (visitor.visit(elementName, elementIndex, this)) {
-                    // visit children
-                    accept(id, "id", visitor);
-                    accept(extension, "extension", visitor, Extension.class);
-                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(description, "description", visitor);
-                    accept(temperature, "temperature", visitor);
-                    accept(scale, "scale", visitor);
-                    accept(duration, "duration", visitor);
-                }
-                visitor.visitEnd(elementName, elementIndex, this);
-                visitor.postVisit(this);
-            }
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            Storage other = (Storage) obj;
-            return Objects.equals(id, other.id) && 
-                Objects.equals(extension, other.extension) && 
-                Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(description, other.description) && 
-                Objects.equals(temperature, other.temperature) && 
-                Objects.equals(scale, other.scale) && 
-                Objects.equals(duration, other.duration);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = hashCode;
-            if (result == 0) {
-                result = Objects.hash(id, 
-                    extension, 
-                    modifierExtension, 
-                    description, 
-                    temperature, 
-                    scale, 
-                    duration);
-                hashCode = result;
-            }
-            return result;
-        }
-
-        @Override
-        public Builder toBuilder() {
-            return new Builder().from(this);
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public static class Builder extends BackboneElement.Builder {
-            private String description;
-            private Decimal temperature;
-            private BiologicallyDerivedProductStorageScale scale;
-            private Period duration;
-
-            private Builder() {
-                super();
-            }
-
-            /**
-             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-             * contain spaces.
-             * 
-             * @param id
-             *     Unique id for inter-element referencing
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder id(java.lang.String id) {
-                return (Builder) super.id(id);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder extension(Extension... extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder extension(java.util.Collection<Extension> extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder modifierExtension(Extension... modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder modifierExtension(java.util.Collection<Extension> modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * Convenience method for setting {@code description}.
-             * 
-             * @param description
-             *     Description of storage
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #description(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder description(java.lang.String description) {
-                this.description = (description == null) ? null : String.of(description);
-                return this;
-            }
-
-            /**
-             * Description of storage.
-             * 
-             * @param description
-             *     Description of storage
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder description(String description) {
-                this.description = description;
-                return this;
-            }
-
-            /**
-             * Storage temperature.
-             * 
-             * @param temperature
-             *     Storage temperature
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder temperature(Decimal temperature) {
-                this.temperature = temperature;
-                return this;
-            }
-
-            /**
-             * Temperature scale used.
-             * 
-             * @param scale
-             *     farenheit | celsius | kelvin
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder scale(BiologicallyDerivedProductStorageScale scale) {
-                this.scale = scale;
-                return this;
-            }
-
-            /**
-             * Storage timeperiod.
-             * 
-             * @param duration
-             *     Storage timeperiod
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder duration(Period duration) {
-                this.duration = duration;
-                return this;
-            }
-
-            /**
-             * Build the {@link Storage}
-             * 
-             * @return
-             *     An immutable object of type {@link Storage}
-             * @throws IllegalStateException
-             *     if the current state cannot be built into a valid Storage per the base specification
-             */
-            @Override
-            public Storage build() {
-                Storage storage = new Storage(this);
-                if (validating) {
-                    validate(storage);
-                }
-                return storage;
-            }
-
-            protected void validate(Storage storage) {
-                super.validate(storage);
-                ValidationSupport.requireValueOrChildren(storage);
-            }
-
-            protected Builder from(Storage storage) {
-                super.from(storage);
-                description = storage.description;
-                temperature = storage.temperature;
-                scale = storage.scale;
-                duration = storage.duration;
+            protected Builder from(Property property) {
+                super.from(property);
+                type = property.type;
+                value = property.value;
                 return this;
             }
         }

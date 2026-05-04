@@ -15,6 +15,7 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
+import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.Required;
@@ -27,6 +28,7 @@ import org.linuxforhealth.fhir.model.type.CodeableConcept;
 import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
 import org.linuxforhealth.fhir.model.type.DateTime;
+import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Id;
 import org.linuxforhealth.fhir.model.type.Identifier;
@@ -37,12 +39,13 @@ import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
+import org.linuxforhealth.fhir.model.type.Url;
 import org.linuxforhealth.fhir.model.type.UsageContext;
 import org.linuxforhealth.fhir.model.type.code.AssertionDirectionType;
+import org.linuxforhealth.fhir.model.type.code.AssertionManualCompletionType;
 import org.linuxforhealth.fhir.model.type.code.AssertionOperatorType;
 import org.linuxforhealth.fhir.model.type.code.AssertionResponseTypes;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
-import org.linuxforhealth.fhir.model.type.code.FHIRDefinedType;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.type.code.TestScriptRequestMethodCode;
@@ -53,18 +56,26 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * A structured set of tests against a FHIR server or client implementation to determine compliance against the FHIR 
  * specification.
  * 
- * <p>Maturity level: FMM2 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 2,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "tst-0",
+    id = "cnl-0",
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
+    source = "http://hl7.org/fhir/StructureDefinition/TestScript"
+)
+@Constraint(
+    id = "cnl-1",
+    level = "Warning",
+    location = "TestScript.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
     source = "http://hl7.org/fhir/StructureDefinition/TestScript"
 )
 @Constraint(
@@ -104,7 +115,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Rule",
     location = "TestScript.setup.action.assert",
     description = "Only a single assertion SHALL be present within setup action assert element.",
-    expression = "extension.exists() or (contentType.count() + expression.count() + headerField.count() + minimumId.count() + navigationLinks.count() + path.count() + requestMethod.count() + resource.count() + responseCode.count() + response.count()  + validateProfileId.count() <=1)",
+    expression = "extension.exists() or (contentType.count() + expression.count() + headerField.count() + minimumId.count() + navigationLinks.count() + path.count() + requestMethod.count() + resource.count() + responseCode.count() + response.count() + validateProfileId.count() <=1) or (((expression.count() + minimumId.count() <=2) or (expression.count() + validateProfileId.count() <=2)) and (expression.count() + path.count() <=1) and (minimumId.count() + validateProfileId.count() <=1)) or (((path.count() + minimumId.count() <=2) or (path.count() + validateProfileId.count() <=2)) and (expression.count() + path.count() <=1) and (minimumId.count() + validateProfileId.count() <=1))",
     source = "http://hl7.org/fhir/StructureDefinition/TestScript"
 )
 @Constraint(
@@ -112,7 +123,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Rule",
     location = "TestScript.test.action.assert",
     description = "Only a single assertion SHALL be present within test action assert element.",
-    expression = "extension.exists() or (contentType.count() + expression.count() + headerField.count() + minimumId.count() + navigationLinks.count() + path.count() + requestMethod.count() + resource.count() + responseCode.count() + response.count() + validateProfileId.count() <=1)",
+    expression = "extension.exists() or (contentType.count() + expression.count() + headerField.count() + minimumId.count() + navigationLinks.count() + path.count() + requestMethod.count() + resource.count() + responseCode.count() + response.count() + validateProfileId.count() <=1) or (((expression.count() + minimumId.count() <=2) or (expression.count() + validateProfileId.count() <=2)) and (expression.count() + path.count() <=1) and (minimumId.count() + validateProfileId.count() <=1)) or (((path.count() + minimumId.count() <=2) or (path.count() + validateProfileId.count() <=2)) and (expression.count() + path.count() <=1) and (minimumId.count() + validateProfileId.count() <=1))",
     source = "http://hl7.org/fhir/StructureDefinition/TestScript"
 )
 @Constraint(
@@ -175,13 +186,22 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "testScript-14",
     level = "Warning",
     location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/TestScript",
+    generated = true
+)
+@Constraint(
+    id = "testScript-15",
+    level = "Warning",
+    location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
     expression = "jurisdiction.exists() implies (jurisdiction.all(memberOf('http://hl7.org/fhir/ValueSet/jurisdiction', 'extensible')))",
     source = "http://hl7.org/fhir/StructureDefinition/TestScript",
     generated = true
 )
 @Constraint(
-    id = "testScript-15",
+    id = "testScript-16",
     level = "Warning",
     location = "origin.profile",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/testscript-profile-origin-types",
@@ -190,7 +210,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "testScript-16",
+    id = "testScript-17",
     level = "Warning",
     location = "destination.profile",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/testscript-profile-destination-types",
@@ -199,7 +219,25 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "testScript-17",
+    id = "testScript-18",
+    level = "Warning",
+    location = "scope.conformance",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/testscript-scope-conformance-codes",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/testscript-scope-conformance-codes', 'extensible')",
+    source = "http://hl7.org/fhir/StructureDefinition/TestScript",
+    generated = true
+)
+@Constraint(
+    id = "testScript-19",
+    level = "Warning",
+    location = "scope.phase",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/testscript-scope-phase-codes",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/testscript-scope-phase-codes', 'extensible')",
+    source = "http://hl7.org/fhir/StructureDefinition/TestScript",
+    generated = true
+)
+@Constraint(
+    id = "testScript-20",
     level = "Warning",
     location = "setup.action.operation.type",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/testscript-operation-codes",
@@ -207,15 +245,39 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     source = "http://hl7.org/fhir/StructureDefinition/TestScript",
     generated = true
 )
+@Constraint(
+    id = "testScript-21",
+    level = "Warning",
+    location = "setup.action.operation.resource",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/concrete-fhir-types",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/concrete-fhir-types', 'extensible')",
+    source = "http://hl7.org/fhir/StructureDefinition/TestScript",
+    generated = true
+)
+@Constraint(
+    id = "testScript-22",
+    level = "Warning",
+    location = "setup.action.assert.resource",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/concrete-fhir-types",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/concrete-fhir-types', 'extensible')",
+    source = "http://hl7.org/fhir/StructureDefinition/TestScript",
+    generated = true
+)
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class TestScript extends DomainResource {
     @Summary
-    @Required
     private final Uri url;
     @Summary
-    private final Identifier identifier;
+    private final List<Identifier> identifier;
     @Summary
     private final String version;
+    @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
     @Summary
     @Required
     private final String name;
@@ -226,7 +288,7 @@ public class TestScript extends DomainResource {
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -251,11 +313,13 @@ public class TestScript extends DomainResource {
     private final List<CodeableConcept> jurisdiction;
     private final Markdown purpose;
     private final Markdown copyright;
+    private final String copyrightLabel;
     private final List<Origin> origin;
     private final List<Destination> destination;
     private final Metadata metadata;
+    private final List<Scope> scope;
     private final List<Fixture> fixture;
-    private final List<Reference> profile;
+    private final List<Canonical> profile;
     private final List<Variable> variable;
     private final Setup setup;
     private final List<Test> test;
@@ -264,8 +328,9 @@ public class TestScript extends DomainResource {
     private TestScript(Builder builder) {
         super(builder);
         url = builder.url;
-        identifier = builder.identifier;
+        identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
         title = builder.title;
         status = builder.status;
@@ -278,9 +343,11 @@ public class TestScript extends DomainResource {
         jurisdiction = Collections.unmodifiableList(builder.jurisdiction);
         purpose = builder.purpose;
         copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
         origin = Collections.unmodifiableList(builder.origin);
         destination = Collections.unmodifiableList(builder.destination);
         metadata = builder.metadata;
+        scope = Collections.unmodifiableList(builder.scope);
         fixture = Collections.unmodifiableList(builder.fixture);
         profile = Collections.unmodifiableList(builder.profile);
         variable = Collections.unmodifiableList(builder.variable);
@@ -292,11 +359,11 @@ public class TestScript extends DomainResource {
     /**
      * An absolute URI that is used to identify this test script when it is referenced in a specification, model, design or 
      * an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
-     * which at which an authoritative instance of this test script is (or will be) published. This URL can be the target of 
-     * a canonical reference. It SHALL remain the same when the test script is stored on different servers.
+     * which an authoritative instance of this test script is (or will be) published. This URL can be the target of a 
+     * canonical reference. It SHALL remain the same when the test script is stored on different servers.
      * 
      * @return
-     *     An immutable object of type {@link Uri} that is non-null.
+     *     An immutable object of type {@link Uri} that may be null.
      */
     public Uri getUrl() {
         return url;
@@ -307,9 +374,9 @@ public class TestScript extends DomainResource {
      * in a specification, model, design or an instance.
      * 
      * @return
-     *     An immutable object of type {@link Identifier} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
      */
-    public Identifier getIdentifier() {
+    public List<Identifier> getIdentifier() {
         return identifier;
     }
 
@@ -324,6 +391,16 @@ public class TestScript extends DomainResource {
      */
     public String getVersion() {
         return version;
+    }
+
+    /**
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
     }
 
     /**
@@ -369,9 +446,9 @@ public class TestScript extends DomainResource {
     }
 
     /**
-     * The date (and optionally time) when the test script was published. The date must change when the business version 
-     * changes and it must change if the status code changes. In addition, it should change when the substantive content of 
-     * the test script changes.
+     * The date (and optionally time) when the test script was last significantly changed. The date must change when the 
+     * business version changes and it must change if the status code changes. In addition, it should change when the 
+     * substantive content of the test script changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -381,7 +458,7 @@ public class TestScript extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the test script.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the test script.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -454,6 +531,17 @@ public class TestScript extends DomainResource {
     }
 
     /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
+    }
+
+    /**
      * An abstract server used in operations within this test script in the origin element.
      * 
      * @return
@@ -484,6 +572,17 @@ public class TestScript extends DomainResource {
     }
 
     /**
+     * The scope indicates a conformance artifact that is tested by the test(s) within this test case and the expectation of 
+     * the test outcome(s) as well as the intended test phase inclusion.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Scope} that may be empty.
+     */
+    public List<Scope> getScope() {
+        return scope;
+    }
+
+    /**
      * Fixture in the test script - by reference (uri). All fixtures are required for the test script to execute.
      * 
      * @return
@@ -497,9 +596,9 @@ public class TestScript extends DomainResource {
      * Reference to the profile to be used for validation.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link Canonical} that may be empty.
      */
-    public List<Reference> getProfile() {
+    public List<Canonical> getProfile() {
         return profile;
     }
 
@@ -547,8 +646,9 @@ public class TestScript extends DomainResource {
     public boolean hasChildren() {
         return super.hasChildren() || 
             (url != null) || 
-            (identifier != null) || 
+            !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
             (title != null) || 
             (status != null) || 
@@ -561,9 +661,11 @@ public class TestScript extends DomainResource {
             !jurisdiction.isEmpty() || 
             (purpose != null) || 
             (copyright != null) || 
+            (copyrightLabel != null) || 
             !origin.isEmpty() || 
             !destination.isEmpty() || 
             (metadata != null) || 
+            !scope.isEmpty() || 
             !fixture.isEmpty() || 
             !profile.isEmpty() || 
             !variable.isEmpty() || 
@@ -587,8 +689,9 @@ public class TestScript extends DomainResource {
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(url, "url", visitor);
-                accept(identifier, "identifier", visitor);
+                accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(status, "status", visitor);
@@ -601,11 +704,13 @@ public class TestScript extends DomainResource {
                 accept(jurisdiction, "jurisdiction", visitor, CodeableConcept.class);
                 accept(purpose, "purpose", visitor);
                 accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
                 accept(origin, "origin", visitor, Origin.class);
                 accept(destination, "destination", visitor, Destination.class);
                 accept(metadata, "metadata", visitor);
+                accept(scope, "scope", visitor, Scope.class);
                 accept(fixture, "fixture", visitor, Fixture.class);
-                accept(profile, "profile", visitor, Reference.class);
+                accept(profile, "profile", visitor, Canonical.class);
                 accept(variable, "variable", visitor, Variable.class);
                 accept(setup, "setup", visitor);
                 accept(test, "test", visitor, Test.class);
@@ -639,6 +744,7 @@ public class TestScript extends DomainResource {
             Objects.equals(url, other.url) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(status, other.status) && 
@@ -651,9 +757,11 @@ public class TestScript extends DomainResource {
             Objects.equals(jurisdiction, other.jurisdiction) && 
             Objects.equals(purpose, other.purpose) && 
             Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
             Objects.equals(origin, other.origin) && 
             Objects.equals(destination, other.destination) && 
             Objects.equals(metadata, other.metadata) && 
+            Objects.equals(scope, other.scope) && 
             Objects.equals(fixture, other.fixture) && 
             Objects.equals(profile, other.profile) && 
             Objects.equals(variable, other.variable) && 
@@ -677,6 +785,7 @@ public class TestScript extends DomainResource {
                 url, 
                 identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
                 title, 
                 status, 
@@ -689,9 +798,11 @@ public class TestScript extends DomainResource {
                 jurisdiction, 
                 purpose, 
                 copyright, 
+                copyrightLabel, 
                 origin, 
                 destination, 
                 metadata, 
+                scope, 
                 fixture, 
                 profile, 
                 variable, 
@@ -714,8 +825,9 @@ public class TestScript extends DomainResource {
 
     public static class Builder extends DomainResource.Builder {
         private Uri url;
-        private Identifier identifier;
+        private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
         private String title;
         private PublicationStatus status;
@@ -728,11 +840,13 @@ public class TestScript extends DomainResource {
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
         private Markdown purpose;
         private Markdown copyright;
+        private String copyrightLabel;
         private List<Origin> origin = new ArrayList<>();
         private List<Destination> destination = new ArrayList<>();
         private Metadata metadata;
+        private List<Scope> scope = new ArrayList<>();
         private List<Fixture> fixture = new ArrayList<>();
-        private List<Reference> profile = new ArrayList<>();
+        private List<Canonical> profile = new ArrayList<>();
         private List<Variable> variable = new ArrayList<>();
         private Setup setup;
         private List<Test> test = new ArrayList<>();
@@ -820,7 +934,8 @@ public class TestScript extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -838,7 +953,8 @@ public class TestScript extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -859,7 +975,7 @@ public class TestScript extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -879,7 +995,7 @@ public class TestScript extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -904,9 +1020,9 @@ public class TestScript extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -929,9 +1045,9 @@ public class TestScript extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -956,10 +1072,8 @@ public class TestScript extends DomainResource {
         /**
          * An absolute URI that is used to identify this test script when it is referenced in a specification, model, design or 
          * an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
-         * which at which an authoritative instance of this test script is (or will be) published. This URL can be the target of 
-         * a canonical reference. It SHALL remain the same when the test script is stored on different servers.
-         * 
-         * <p>This element is required.
+         * which an authoritative instance of this test script is (or will be) published. This URL can be the target of a 
+         * canonical reference. It SHALL remain the same when the test script is stored on different servers.
          * 
          * @param url
          *     Canonical identifier for this test script, represented as a URI (globally unique)
@@ -976,14 +1090,40 @@ public class TestScript extends DomainResource {
          * A formal identifier that is used to identify this test script when it is represented in other formats, or referenced 
          * in a specification, model, design or an instance.
          * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
          * @param identifier
          *     Additional identifier for the test script
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder identifier(Identifier identifier) {
-            this.identifier = identifier;
+        public Builder identifier(Identifier... identifier) {
+            for (Identifier value : identifier) {
+                this.identifier.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A formal identifier that is used to identify this test script when it is represented in other formats, or referenced 
+         * in a specification, model, design or an instance.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param identifier
+         *     Additional identifier for the test script
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder identifier(Collection<Identifier> identifier) {
+            this.identifier = new ArrayList<>(identifier);
             return this;
         }
 
@@ -1017,6 +1157,42 @@ public class TestScript extends DomainResource {
          */
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
             return this;
         }
 
@@ -1133,9 +1309,9 @@ public class TestScript extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the test script was published. The date must change when the business version 
-         * changes and it must change if the status code changes. In addition, it should change when the substantive content of 
-         * the test script changes.
+         * The date (and optionally time) when the test script was last significantly changed. The date must change when the 
+         * business version changes and it must change if the status code changes. In addition, it should change when the 
+         * substantive content of the test script changes.
          * 
          * @param date
          *     Date last changed
@@ -1152,7 +1328,7 @@ public class TestScript extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1165,10 +1341,10 @@ public class TestScript extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the test script.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the test script.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1343,6 +1519,37 @@ public class TestScript extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
+            return this;
+        }
+
+        /**
          * An abstract server used in operations within this test script in the origin element.
          * 
          * <p>Adds new element(s) to the existing list.
@@ -1435,6 +1642,47 @@ public class TestScript extends DomainResource {
         }
 
         /**
+         * The scope indicates a conformance artifact that is tested by the test(s) within this test case and the expectation of 
+         * the test outcome(s) as well as the intended test phase inclusion.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param scope
+         *     Indication of the artifact(s) that are tested by this test case
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder scope(Scope... scope) {
+            for (Scope value : scope) {
+                this.scope.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The scope indicates a conformance artifact that is tested by the test(s) within this test case and the expectation of 
+         * the test outcome(s) as well as the intended test phase inclusion.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param scope
+         *     Indication of the artifact(s) that are tested by this test case
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder scope(Collection<Scope> scope) {
+            this.scope = new ArrayList<>(scope);
+            return this;
+        }
+
+        /**
          * Fixture in the test script - by reference (uri). All fixtures are required for the test script to execute.
          * 
          * <p>Adds new element(s) to the existing list.
@@ -1485,8 +1733,8 @@ public class TestScript extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder profile(Reference... profile) {
-            for (Reference value : profile) {
+        public Builder profile(Canonical... profile) {
+            for (Canonical value : profile) {
                 this.profile.add(value);
             }
             return this;
@@ -1507,7 +1755,7 @@ public class TestScript extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder profile(Collection<Reference> profile) {
+        public Builder profile(Collection<Canonical> profile) {
             this.profile = new ArrayList<>(profile);
             return this;
         }
@@ -1623,7 +1871,6 @@ public class TestScript extends DomainResource {
          * 
          * <p>Required elements:
          * <ul>
-         * <li>url</li>
          * <li>name</li>
          * <li>status</li>
          * </ul>
@@ -1644,7 +1891,8 @@ public class TestScript extends DomainResource {
 
         protected void validate(TestScript testScript) {
             super.validate(testScript);
-            ValidationSupport.requireNonNull(testScript.url, "url");
+            ValidationSupport.checkList(testScript.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(testScript.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.requireNonNull(testScript.name, "name");
             ValidationSupport.requireNonNull(testScript.status, "status");
             ValidationSupport.checkList(testScript.contact, "contact", ContactDetail.class);
@@ -1652,8 +1900,9 @@ public class TestScript extends DomainResource {
             ValidationSupport.checkList(testScript.jurisdiction, "jurisdiction", CodeableConcept.class);
             ValidationSupport.checkList(testScript.origin, "origin", Origin.class);
             ValidationSupport.checkList(testScript.destination, "destination", Destination.class);
+            ValidationSupport.checkList(testScript.scope, "scope", Scope.class);
             ValidationSupport.checkList(testScript.fixture, "fixture", Fixture.class);
-            ValidationSupport.checkList(testScript.profile, "profile", Reference.class);
+            ValidationSupport.checkList(testScript.profile, "profile", Canonical.class);
             ValidationSupport.checkList(testScript.variable, "variable", Variable.class);
             ValidationSupport.checkList(testScript.test, "test", Test.class);
         }
@@ -1661,8 +1910,9 @@ public class TestScript extends DomainResource {
         protected Builder from(TestScript testScript) {
             super.from(testScript);
             url = testScript.url;
-            identifier = testScript.identifier;
+            identifier.addAll(testScript.identifier);
             version = testScript.version;
+            versionAlgorithm = testScript.versionAlgorithm;
             name = testScript.name;
             title = testScript.title;
             status = testScript.status;
@@ -1675,9 +1925,11 @@ public class TestScript extends DomainResource {
             jurisdiction.addAll(testScript.jurisdiction);
             purpose = testScript.purpose;
             copyright = testScript.copyright;
+            copyrightLabel = testScript.copyrightLabel;
             origin.addAll(testScript.origin);
             destination.addAll(testScript.destination);
             metadata = testScript.metadata;
+            scope.addAll(testScript.scope);
             fixture.addAll(testScript.fixture);
             profile.addAll(testScript.profile);
             variable.addAll(testScript.variable);
@@ -1702,11 +1954,13 @@ public class TestScript extends DomainResource {
         )
         @Required
         private final Coding profile;
+        private final Url url;
 
         private Origin(Builder builder) {
             super(builder);
             index = builder.index;
             profile = builder.profile;
+            url = builder.url;
         }
 
         /**
@@ -1729,11 +1983,22 @@ public class TestScript extends DomainResource {
             return profile;
         }
 
+        /**
+         * The explicit url path of the origin server used in this test script.
+         * 
+         * @return
+         *     An immutable object of type {@link Url} that may be null.
+         */
+        public Url getUrl() {
+            return url;
+        }
+
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
                 (index != null) || 
-                (profile != null);
+                (profile != null) || 
+                (url != null);
         }
 
         @Override
@@ -1747,6 +2012,7 @@ public class TestScript extends DomainResource {
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(index, "index", visitor);
                     accept(profile, "profile", visitor);
+                    accept(url, "url", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -1769,7 +2035,8 @@ public class TestScript extends DomainResource {
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(index, other.index) && 
-                Objects.equals(profile, other.profile);
+                Objects.equals(profile, other.profile) && 
+                Objects.equals(url, other.url);
         }
 
         @Override
@@ -1780,7 +2047,8 @@ public class TestScript extends DomainResource {
                     extension, 
                     modifierExtension, 
                     index, 
-                    profile);
+                    profile, 
+                    url);
                 hashCode = result;
             }
             return result;
@@ -1798,6 +2066,7 @@ public class TestScript extends DomainResource {
         public static class Builder extends BackboneElement.Builder {
             private Integer index;
             private Coding profile;
+            private Url url;
 
             private Builder() {
                 super();
@@ -1820,7 +2089,7 @@ public class TestScript extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1840,7 +2109,7 @@ public class TestScript extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1865,7 +2134,7 @@ public class TestScript extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1890,7 +2159,7 @@ public class TestScript extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1965,6 +2234,20 @@ public class TestScript extends DomainResource {
             }
 
             /**
+             * The explicit url path of the origin server used in this test script.
+             * 
+             * @param url
+             *     The url path of the origin server
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder url(Url url) {
+                this.url = url;
+                return this;
+            }
+
+            /**
              * Build the {@link Origin}
              * 
              * <p>Required elements:
@@ -1998,6 +2281,7 @@ public class TestScript extends DomainResource {
                 super.from(origin);
                 index = origin.index;
                 profile = origin.profile;
+                url = origin.url;
                 return this;
             }
         }
@@ -2017,11 +2301,13 @@ public class TestScript extends DomainResource {
         )
         @Required
         private final Coding profile;
+        private final Url url;
 
         private Destination(Builder builder) {
             super(builder);
             index = builder.index;
             profile = builder.profile;
+            url = builder.url;
         }
 
         /**
@@ -2044,11 +2330,22 @@ public class TestScript extends DomainResource {
             return profile;
         }
 
+        /**
+         * The explicit url path of the destination server used in this test script.
+         * 
+         * @return
+         *     An immutable object of type {@link Url} that may be null.
+         */
+        public Url getUrl() {
+            return url;
+        }
+
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
                 (index != null) || 
-                (profile != null);
+                (profile != null) || 
+                (url != null);
         }
 
         @Override
@@ -2062,6 +2359,7 @@ public class TestScript extends DomainResource {
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(index, "index", visitor);
                     accept(profile, "profile", visitor);
+                    accept(url, "url", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -2084,7 +2382,8 @@ public class TestScript extends DomainResource {
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(index, other.index) && 
-                Objects.equals(profile, other.profile);
+                Objects.equals(profile, other.profile) && 
+                Objects.equals(url, other.url);
         }
 
         @Override
@@ -2095,7 +2394,8 @@ public class TestScript extends DomainResource {
                     extension, 
                     modifierExtension, 
                     index, 
-                    profile);
+                    profile, 
+                    url);
                 hashCode = result;
             }
             return result;
@@ -2113,6 +2413,7 @@ public class TestScript extends DomainResource {
         public static class Builder extends BackboneElement.Builder {
             private Integer index;
             private Coding profile;
+            private Url url;
 
             private Builder() {
                 super();
@@ -2135,7 +2436,7 @@ public class TestScript extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2155,7 +2456,7 @@ public class TestScript extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2180,7 +2481,7 @@ public class TestScript extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2205,7 +2506,7 @@ public class TestScript extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2280,6 +2581,20 @@ public class TestScript extends DomainResource {
             }
 
             /**
+             * The explicit url path of the destination server used in this test script.
+             * 
+             * @param url
+             *     The url path of the destination server
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder url(Url url) {
+                this.url = url;
+                return this;
+            }
+
+            /**
              * Build the {@link Destination}
              * 
              * <p>Required elements:
@@ -2313,6 +2628,7 @@ public class TestScript extends DomainResource {
                 super.from(destination);
                 index = destination.index;
                 profile = destination.profile;
+                url = destination.url;
                 return this;
             }
         }
@@ -2443,7 +2759,7 @@ public class TestScript extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2463,7 +2779,7 @@ public class TestScript extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2488,7 +2804,7 @@ public class TestScript extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2513,7 +2829,7 @@ public class TestScript extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2781,7 +3097,7 @@ public class TestScript extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2801,7 +3117,7 @@ public class TestScript extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2826,7 +3142,7 @@ public class TestScript extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2851,7 +3167,7 @@ public class TestScript extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3173,7 +3489,7 @@ public class TestScript extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3193,7 +3509,7 @@ public class TestScript extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3218,7 +3534,7 @@ public class TestScript extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3243,7 +3559,7 @@ public class TestScript extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3563,6 +3879,343 @@ public class TestScript extends DomainResource {
     }
 
     /**
+     * The scope indicates a conformance artifact that is tested by the test(s) within this test case and the expectation of 
+     * the test outcome(s) as well as the intended test phase inclusion.
+     */
+    public static class Scope extends BackboneElement {
+        @Required
+        private final Canonical artifact;
+        @Binding(
+            bindingName = "TestScriptScopeConformanceType",
+            strength = BindingStrength.Value.EXTENSIBLE,
+            description = "The expectation of whether the test must pass for the system to be considered conformant with the artifact.",
+            valueSet = "http://hl7.org/fhir/ValueSet/testscript-scope-conformance-codes"
+        )
+        private final CodeableConcept conformance;
+        @Binding(
+            bindingName = "TestScriptScopePhaseType",
+            strength = BindingStrength.Value.EXTENSIBLE,
+            description = "The phase of testing for this artifact.",
+            valueSet = "http://hl7.org/fhir/ValueSet/testscript-scope-phase-codes"
+        )
+        private final CodeableConcept phase;
+
+        private Scope(Builder builder) {
+            super(builder);
+            artifact = builder.artifact;
+            conformance = builder.conformance;
+            phase = builder.phase;
+        }
+
+        /**
+         * The specific conformance artifact being tested. The canonical reference can be version-specific.
+         * 
+         * @return
+         *     An immutable object of type {@link Canonical} that is non-null.
+         */
+        public Canonical getArtifact() {
+            return artifact;
+        }
+
+        /**
+         * The expectation of whether the test must pass for the system to be considered conformant with the artifact: required - 
+         * all tests are expected to pass, optional - all test are expected to pass but non-pass status may be allowed, strict - 
+         * all tests are expected to pass and warnings are treated as a failure.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getConformance() {
+            return conformance;
+        }
+
+        /**
+         * The phase of testing for this artifact: unit - development / implementation phase, integration - internal system to 
+         * system phase, production - live system to system phase (Note, this may involve pii/phi data).
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getPhase() {
+            return phase;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (artifact != null) || 
+                (conformance != null) || 
+                (phase != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(artifact, "artifact", visitor);
+                    accept(conformance, "conformance", visitor);
+                    accept(phase, "phase", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Scope other = (Scope) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(artifact, other.artifact) && 
+                Objects.equals(conformance, other.conformance) && 
+                Objects.equals(phase, other.phase);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    artifact, 
+                    conformance, 
+                    phase);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private Canonical artifact;
+            private CodeableConcept conformance;
+            private CodeableConcept phase;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * The specific conformance artifact being tested. The canonical reference can be version-specific.
+             * 
+             * <p>This element is required.
+             * 
+             * @param artifact
+             *     The specific conformance artifact being tested
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder artifact(Canonical artifact) {
+                this.artifact = artifact;
+                return this;
+            }
+
+            /**
+             * The expectation of whether the test must pass for the system to be considered conformant with the artifact: required - 
+             * all tests are expected to pass, optional - all test are expected to pass but non-pass status may be allowed, strict - 
+             * all tests are expected to pass and warnings are treated as a failure.
+             * 
+             * @param conformance
+             *     required | optional | strict
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder conformance(CodeableConcept conformance) {
+                this.conformance = conformance;
+                return this;
+            }
+
+            /**
+             * The phase of testing for this artifact: unit - development / implementation phase, integration - internal system to 
+             * system phase, production - live system to system phase (Note, this may involve pii/phi data).
+             * 
+             * @param phase
+             *     unit | integration | production
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder phase(CodeableConcept phase) {
+                this.phase = phase;
+                return this;
+            }
+
+            /**
+             * Build the {@link Scope}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>artifact</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link Scope}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Scope per the base specification
+             */
+            @Override
+            public Scope build() {
+                Scope scope = new Scope(this);
+                if (validating) {
+                    validate(scope);
+                }
+                return scope;
+            }
+
+            protected void validate(Scope scope) {
+                super.validate(scope);
+                ValidationSupport.requireNonNull(scope.artifact, "artifact");
+                ValidationSupport.requireValueOrChildren(scope);
+            }
+
+            protected Builder from(Scope scope) {
+                super.from(scope);
+                artifact = scope.artifact;
+                conformance = scope.conformance;
+                phase = scope.phase;
+                return this;
+            }
+        }
+    }
+
+    /**
      * Fixture in the test script - by reference (uri). All fixtures are required for the test script to execute.
      */
     public static class Fixture extends BackboneElement {
@@ -3604,7 +4257,8 @@ public class TestScript extends DomainResource {
         }
 
         /**
-         * Reference to the resource (containing the contents of the resource needed for operations).
+         * Reference to the resource (containing the contents of the resource needed for operations). This is allowed to be a 
+         * Parameters resource.
          * 
          * @return
          *     An immutable object of type {@link Reference} that may be null.
@@ -3709,7 +4363,7 @@ public class TestScript extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3729,7 +4383,7 @@ public class TestScript extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3754,7 +4408,7 @@ public class TestScript extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3779,7 +4433,7 @@ public class TestScript extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3876,7 +4530,8 @@ public class TestScript extends DomainResource {
             }
 
             /**
-             * Reference to the resource (containing the contents of the resource needed for operations).
+             * Reference to the resource (containing the contents of the resource needed for operations). This is allowed to be a 
+             * Parameters resource.
              * 
              * @param resource
              *     Reference of the resource
@@ -3986,8 +4641,8 @@ public class TestScript extends DomainResource {
         }
 
         /**
-         * The FHIRPath expression to evaluate against the fixture body. When variables are defined, only one of either 
-         * expression, headerField or path must be specified.
+         * The FHIRPath expression for a specific value to evaluate against the fixture body. When variables are defined, only 
+         * one of either expression, headerField or path must be specified.
          * 
          * @return
          *     An immutable object of type {@link String} that may be null.
@@ -4158,7 +4813,7 @@ public class TestScript extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4178,7 +4833,7 @@ public class TestScript extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4203,7 +4858,7 @@ public class TestScript extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4228,7 +4883,7 @@ public class TestScript extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4363,8 +5018,8 @@ public class TestScript extends DomainResource {
             }
 
             /**
-             * The FHIRPath expression to evaluate against the fixture body. When variables are defined, only one of either 
-             * expression, headerField or path must be specified.
+             * The FHIRPath expression for a specific value to evaluate against the fixture body. When variables are defined, only 
+             * one of either expression, headerField or path must be specified.
              * 
              * @param expression
              *     The FHIRPath expression against the fixture body
@@ -4633,7 +5288,7 @@ public class TestScript extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4653,7 +5308,7 @@ public class TestScript extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4678,7 +5333,7 @@ public class TestScript extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4703,7 +5358,7 @@ public class TestScript extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4929,7 +5584,7 @@ public class TestScript extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -4949,7 +5604,7 @@ public class TestScript extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -4974,7 +5629,7 @@ public class TestScript extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4999,7 +5654,7 @@ public class TestScript extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5093,26 +5748,26 @@ public class TestScript extends DomainResource {
                 )
                 private final Coding type;
                 @Binding(
-                    bindingName = "FHIRDefinedType",
-                    strength = BindingStrength.Value.REQUIRED,
+                    bindingName = "FHIRConcreteTypes",
+                    strength = BindingStrength.Value.EXTENSIBLE,
                     description = "A list of all the concrete types defined in this version of the FHIR specification - Data Types and Resource Types.",
-                    valueSet = "http://hl7.org/fhir/ValueSet/defined-types|4.3.0"
+                    valueSet = "http://hl7.org/fhir/ValueSet/concrete-fhir-types"
                 )
-                private final FHIRDefinedType resource;
+                private final Uri resource;
                 private final String label;
                 private final String description;
                 @Binding(
                     bindingName = "MimeType",
                     strength = BindingStrength.Value.REQUIRED,
                     description = "BCP 13 (RFCs 2045, 2046, 2047, 4288, 4289 and 2049)",
-                    valueSet = "http://hl7.org/fhir/ValueSet/mimetypes|4.3.0"
+                    valueSet = "http://hl7.org/fhir/ValueSet/mimetypes|5.0.0"
                 )
                 private final Code accept;
                 @Binding(
                     bindingName = "MimeType",
                     strength = BindingStrength.Value.REQUIRED,
                     description = "BCP 13 (RFCs 2045, 2046, 2047, 4288, 4289 and 2049)",
-                    valueSet = "http://hl7.org/fhir/ValueSet/mimetypes|4.3.0"
+                    valueSet = "http://hl7.org/fhir/ValueSet/mimetypes|5.0.0"
                 )
                 private final Code contentType;
                 private final Integer destination;
@@ -5122,7 +5777,7 @@ public class TestScript extends DomainResource {
                     bindingName = "TestScriptRequestMethodCode",
                     strength = BindingStrength.Value.REQUIRED,
                     description = "The allowable request method or HTTP operation codes.",
-                    valueSet = "http://hl7.org/fhir/ValueSet/http-operations|4.3.0"
+                    valueSet = "http://hl7.org/fhir/ValueSet/http-operations|5.0.0"
                 )
                 private final TestScriptRequestMethodCode method;
                 private final Integer origin;
@@ -5166,12 +5821,13 @@ public class TestScript extends DomainResource {
                 }
 
                 /**
-                 * The type of the resource. See http://build.fhir.org/resourcelist.html.
+                 * The type of the FHIR resource. See the [resource list](resourcelist.html). Data type of uri is needed when non-HL7 
+                 * artifacts are identified.
                  * 
                  * @return
-                 *     An immutable object of type {@link FHIRDefinedType} that may be null.
+                 *     An immutable object of type {@link Uri} that may be null.
                  */
-                public FHIRDefinedType getResource() {
+                public Uri getResource() {
                     return resource;
                 }
 
@@ -5456,7 +6112,7 @@ public class TestScript extends DomainResource {
 
                 public static class Builder extends BackboneElement.Builder {
                     private Coding type;
-                    private FHIRDefinedType resource;
+                    private Uri resource;
                     private String label;
                     private String description;
                     private Code accept;
@@ -5494,7 +6150,7 @@ public class TestScript extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -5514,7 +6170,7 @@ public class TestScript extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -5539,7 +6195,7 @@ public class TestScript extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -5564,7 +6220,7 @@ public class TestScript extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -5603,7 +6259,8 @@ public class TestScript extends DomainResource {
                     }
 
                     /**
-                     * The type of the resource. See http://build.fhir.org/resourcelist.html.
+                     * The type of the FHIR resource. See the [resource list](resourcelist.html). Data type of uri is needed when non-HL7 
+                     * artifacts are identified.
                      * 
                      * @param resource
                      *     Resource type
@@ -5611,7 +6268,7 @@ public class TestScript extends DomainResource {
                      * @return
                      *     A reference to this Builder instance
                      */
-                    public Builder resource(FHIRDefinedType resource) {
+                    public Builder resource(Uri resource) {
                         this.resource = resource;
                         return this;
                     }
@@ -5680,7 +6337,7 @@ public class TestScript extends DomainResource {
                      * The mime-type to use for RESTful operation in the 'Accept' header.
                      * 
                      * @param accept
-                     *     Mime type to accept in the payload of the response, with charset etc.
+                     *     Mime type to accept in the payload of the response, with charset etc
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -5694,7 +6351,7 @@ public class TestScript extends DomainResource {
                      * The mime-type to use for RESTful operation in the 'Content-Type' header.
                      * 
                      * @param contentType
-                     *     Mime type of the request payload contents, with charset etc.
+                     *     Mime type of the request payload contents, with charset etc
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -6148,7 +6805,7 @@ public class TestScript extends DomainResource {
 
                         /**
                          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                          * of the definition of the extension.
                          * 
@@ -6168,7 +6825,7 @@ public class TestScript extends DomainResource {
 
                         /**
                          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                          * of the definition of the extension.
                          * 
@@ -6193,7 +6850,7 @@ public class TestScript extends DomainResource {
                          * May be used to represent additional information that is not part of the basic definition of the element and that 
                          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                          * extension. Applications processing a resource are required to check for modifier extensions.
                          * 
@@ -6218,7 +6875,7 @@ public class TestScript extends DomainResource {
                          * May be used to represent additional information that is not part of the basic definition of the element and that 
                          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                          * extension. Applications processing a resource are required to check for modifier extensions.
                          * 
@@ -6360,7 +7017,7 @@ public class TestScript extends DomainResource {
                     bindingName = "AssertionDirectionType",
                     strength = BindingStrength.Value.REQUIRED,
                     description = "The direction to use for assertions.",
-                    valueSet = "http://hl7.org/fhir/ValueSet/assert-direction-codes|4.3.0"
+                    valueSet = "http://hl7.org/fhir/ValueSet/assert-direction-codes|5.0.0"
                 )
                 private final AssertionDirectionType direction;
                 private final String compareToSourceId;
@@ -6370,9 +7027,16 @@ public class TestScript extends DomainResource {
                     bindingName = "MimeType",
                     strength = BindingStrength.Value.REQUIRED,
                     description = "BCP 13 (RFCs 2045, 2046, 2047, 4288, 4289 and 2049)",
-                    valueSet = "http://hl7.org/fhir/ValueSet/mimetypes|4.3.0"
+                    valueSet = "http://hl7.org/fhir/ValueSet/mimetypes|5.0.0"
                 )
                 private final Code contentType;
+                @Binding(
+                    bindingName = "AssertionManualCompletionType",
+                    strength = BindingStrength.Value.REQUIRED,
+                    description = "The default type of manual completion to use for assertion.",
+                    valueSet = "http://hl7.org/fhir/ValueSet/assert-manual-completion-codes|5.0.0"
+                )
+                private final AssertionManualCompletionType defaultManualCompletion;
                 private final String expression;
                 private final String headerField;
                 private final String minimumId;
@@ -6381,7 +7045,7 @@ public class TestScript extends DomainResource {
                     bindingName = "AssertionOperatorType",
                     strength = BindingStrength.Value.REQUIRED,
                     description = "The type of operator to use for assertions.",
-                    valueSet = "http://hl7.org/fhir/ValueSet/assert-operator-codes|4.3.0"
+                    valueSet = "http://hl7.org/fhir/ValueSet/assert-operator-codes|5.0.0"
                 )
                 private final AssertionOperatorType operator;
                 private final String path;
@@ -6389,30 +7053,33 @@ public class TestScript extends DomainResource {
                     bindingName = "TestScriptRequestMethodCode",
                     strength = BindingStrength.Value.REQUIRED,
                     description = "The allowable request method or HTTP operation codes.",
-                    valueSet = "http://hl7.org/fhir/ValueSet/http-operations|4.3.0"
+                    valueSet = "http://hl7.org/fhir/ValueSet/http-operations|5.0.0"
                 )
                 private final TestScriptRequestMethodCode requestMethod;
                 private final String requestURL;
                 @Binding(
-                    bindingName = "FHIRDefinedType",
-                    strength = BindingStrength.Value.REQUIRED,
+                    bindingName = "FHIRConcreteType",
+                    strength = BindingStrength.Value.EXTENSIBLE,
                     description = "A list of all the concrete types defined in this version of the FHIR specification - Data Types and Resource Types.",
-                    valueSet = "http://hl7.org/fhir/ValueSet/defined-types|4.3.0"
+                    valueSet = "http://hl7.org/fhir/ValueSet/concrete-fhir-types"
                 )
-                private final FHIRDefinedType resource;
+                private final Uri resource;
                 @Binding(
                     bindingName = "AssertionResponseTypes",
                     strength = BindingStrength.Value.REQUIRED,
                     description = "The response code to expect in the response.",
-                    valueSet = "http://hl7.org/fhir/ValueSet/assert-response-code-types|4.3.0"
+                    valueSet = "http://hl7.org/fhir/ValueSet/assert-response-code-types|5.0.0"
                 )
                 private final AssertionResponseTypes response;
                 private final String responseCode;
                 private final Id sourceId;
+                @Required
+                private final Boolean stopTestOnFail;
                 private final Id validateProfileId;
                 private final String value;
                 @Required
                 private final Boolean warningOnly;
+                private final List<Requirement> requirement;
 
                 private Assert(Builder builder) {
                     super(builder);
@@ -6423,6 +7090,7 @@ public class TestScript extends DomainResource {
                     compareToSourceExpression = builder.compareToSourceExpression;
                     compareToSourcePath = builder.compareToSourcePath;
                     contentType = builder.contentType;
+                    defaultManualCompletion = builder.defaultManualCompletion;
                     expression = builder.expression;
                     headerField = builder.headerField;
                     minimumId = builder.minimumId;
@@ -6435,9 +7103,11 @@ public class TestScript extends DomainResource {
                     response = builder.response;
                     responseCode = builder.responseCode;
                     sourceId = builder.sourceId;
+                    stopTestOnFail = builder.stopTestOnFail;
                     validateProfileId = builder.validateProfileId;
                     value = builder.value;
                     warningOnly = builder.warningOnly;
+                    requirement = Collections.unmodifiableList(builder.requirement);
                 }
 
                 /**
@@ -6482,8 +7152,8 @@ public class TestScript extends DomainResource {
                 }
 
                 /**
-                 * The FHIRPath expression to evaluate against the source fixture. When compareToSourceId is defined, either 
-                 * compareToSourceExpression or compareToSourcePath must be defined, but not both.
+                 * The FHIRPath expression for a specific value to evaluate against the source fixture. When compareToSourceId is 
+                 * defined, either compareToSourceExpression or compareToSourcePath must be defined, but not both.
                  * 
                  * @return
                  *     An immutable object of type {@link String} that may be null.
@@ -6511,6 +7181,16 @@ public class TestScript extends DomainResource {
                  */
                 public Code getContentType() {
                     return contentType;
+                }
+
+                /**
+                 * The default manual completion outcome applied to this assertion.
+                 * 
+                 * @return
+                 *     An immutable object of type {@link AssertionManualCompletionType} that may be null.
+                 */
+                public AssertionManualCompletionType getDefaultManualCompletion() {
+                    return defaultManualCompletion;
                 }
 
                 /**
@@ -6554,7 +7234,7 @@ public class TestScript extends DomainResource {
                 }
 
                 /**
-                 * The operator type defines the conditional behavior of the assert. If not defined, the default is equals.
+                 * The operator type defines the conditional behavior of the assert.
                  * 
                  * @return
                  *     An immutable object of type {@link AssertionOperatorType} that may be null.
@@ -6594,18 +7274,23 @@ public class TestScript extends DomainResource {
                 }
 
                 /**
-                 * The type of the resource. See http://build.fhir.org/resourcelist.html.
+                 * The type of the resource. See the [resource list](resourcelist.html).
                  * 
                  * @return
-                 *     An immutable object of type {@link FHIRDefinedType} that may be null.
+                 *     An immutable object of type {@link Uri} that may be null.
                  */
-                public FHIRDefinedType getResource() {
+                public Uri getResource() {
                     return resource;
                 }
 
                 /**
-                 * okay | created | noContent | notModified | bad | forbidden | notFound | methodNotAllowed | conflict | gone | 
-                 * preconditionFailed | unprocessable.
+                 * continue | switchingProtocols | okay | created | accepted | nonAuthoritativeInformation | noContent | resetContent | 
+                 * partialContent | multipleChoices | movedPermanently | found | seeOther | notModified | useProxy | temporaryRedirect | 
+                 * permanentRedirect | badRequest | unauthorized | paymentRequired | forbidden | notFound | methodNotAllowed | 
+                 * notAcceptable | proxyAuthenticationRequired | requestTimeout | conflict | gone | lengthRequired | preconditionFailed | 
+                 * contentTooLarge | uriTooLong | unsupportedMediaType | rangeNotSatisfiable | expectationFailed | misdirectedRequest | 
+                 * unprocessableContent | upgradeRequired | internalServerError | notImplemented | badGateway | serviceUnavailable | 
+                 * gatewayTimeout | httpVersionNotSupported.
                  * 
                  * @return
                  *     An immutable object of type {@link AssertionResponseTypes} that may be null.
@@ -6632,6 +7317,16 @@ public class TestScript extends DomainResource {
                  */
                 public Id getSourceId() {
                     return sourceId;
+                }
+
+                /**
+                 * Whether or not the current test execution will stop on failure for this assert.
+                 * 
+                 * @return
+                 *     An immutable object of type {@link Boolean} that is non-null.
+                 */
+                public Boolean getStopTestOnFail() {
+                    return stopTestOnFail;
                 }
 
                 /**
@@ -6664,6 +7359,16 @@ public class TestScript extends DomainResource {
                     return warningOnly;
                 }
 
+                /**
+                 * Links or references providing traceability to the testing requirements for this assert.
+                 * 
+                 * @return
+                 *     An unmodifiable list containing immutable objects of type {@link Requirement} that may be empty.
+                 */
+                public List<Requirement> getRequirement() {
+                    return requirement;
+                }
+
                 @Override
                 public boolean hasChildren() {
                     return super.hasChildren() || 
@@ -6674,6 +7379,7 @@ public class TestScript extends DomainResource {
                         (compareToSourceExpression != null) || 
                         (compareToSourcePath != null) || 
                         (contentType != null) || 
+                        (defaultManualCompletion != null) || 
                         (expression != null) || 
                         (headerField != null) || 
                         (minimumId != null) || 
@@ -6686,9 +7392,11 @@ public class TestScript extends DomainResource {
                         (response != null) || 
                         (responseCode != null) || 
                         (sourceId != null) || 
+                        (stopTestOnFail != null) || 
                         (validateProfileId != null) || 
                         (value != null) || 
-                        (warningOnly != null);
+                        (warningOnly != null) || 
+                        !requirement.isEmpty();
                 }
 
                 @Override
@@ -6707,6 +7415,7 @@ public class TestScript extends DomainResource {
                             accept(compareToSourceExpression, "compareToSourceExpression", visitor);
                             accept(compareToSourcePath, "compareToSourcePath", visitor);
                             accept(contentType, "contentType", visitor);
+                            accept(defaultManualCompletion, "defaultManualCompletion", visitor);
                             accept(expression, "expression", visitor);
                             accept(headerField, "headerField", visitor);
                             accept(minimumId, "minimumId", visitor);
@@ -6719,9 +7428,11 @@ public class TestScript extends DomainResource {
                             accept(response, "response", visitor);
                             accept(responseCode, "responseCode", visitor);
                             accept(sourceId, "sourceId", visitor);
+                            accept(stopTestOnFail, "stopTestOnFail", visitor);
                             accept(validateProfileId, "validateProfileId", visitor);
                             accept(value, "value", visitor);
                             accept(warningOnly, "warningOnly", visitor);
+                            accept(requirement, "requirement", visitor, Requirement.class);
                         }
                         visitor.visitEnd(elementName, elementIndex, this);
                         visitor.postVisit(this);
@@ -6750,6 +7461,7 @@ public class TestScript extends DomainResource {
                         Objects.equals(compareToSourceExpression, other.compareToSourceExpression) && 
                         Objects.equals(compareToSourcePath, other.compareToSourcePath) && 
                         Objects.equals(contentType, other.contentType) && 
+                        Objects.equals(defaultManualCompletion, other.defaultManualCompletion) && 
                         Objects.equals(expression, other.expression) && 
                         Objects.equals(headerField, other.headerField) && 
                         Objects.equals(minimumId, other.minimumId) && 
@@ -6762,9 +7474,11 @@ public class TestScript extends DomainResource {
                         Objects.equals(response, other.response) && 
                         Objects.equals(responseCode, other.responseCode) && 
                         Objects.equals(sourceId, other.sourceId) && 
+                        Objects.equals(stopTestOnFail, other.stopTestOnFail) && 
                         Objects.equals(validateProfileId, other.validateProfileId) && 
                         Objects.equals(value, other.value) && 
-                        Objects.equals(warningOnly, other.warningOnly);
+                        Objects.equals(warningOnly, other.warningOnly) && 
+                        Objects.equals(requirement, other.requirement);
                 }
 
                 @Override
@@ -6781,6 +7495,7 @@ public class TestScript extends DomainResource {
                             compareToSourceExpression, 
                             compareToSourcePath, 
                             contentType, 
+                            defaultManualCompletion, 
                             expression, 
                             headerField, 
                             minimumId, 
@@ -6793,9 +7508,11 @@ public class TestScript extends DomainResource {
                             response, 
                             responseCode, 
                             sourceId, 
+                            stopTestOnFail, 
                             validateProfileId, 
                             value, 
-                            warningOnly);
+                            warningOnly, 
+                            requirement);
                         hashCode = result;
                     }
                     return result;
@@ -6818,6 +7535,7 @@ public class TestScript extends DomainResource {
                     private String compareToSourceExpression;
                     private String compareToSourcePath;
                     private Code contentType;
+                    private AssertionManualCompletionType defaultManualCompletion;
                     private String expression;
                     private String headerField;
                     private String minimumId;
@@ -6826,13 +7544,15 @@ public class TestScript extends DomainResource {
                     private String path;
                     private TestScriptRequestMethodCode requestMethod;
                     private String requestURL;
-                    private FHIRDefinedType resource;
+                    private Uri resource;
                     private AssertionResponseTypes response;
                     private String responseCode;
                     private Id sourceId;
+                    private Boolean stopTestOnFail;
                     private Id validateProfileId;
                     private String value;
                     private Boolean warningOnly;
+                    private List<Requirement> requirement = new ArrayList<>();
 
                     private Builder() {
                         super();
@@ -6855,7 +7575,7 @@ public class TestScript extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -6875,7 +7595,7 @@ public class TestScript extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -6900,7 +7620,7 @@ public class TestScript extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -6925,7 +7645,7 @@ public class TestScript extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -7071,8 +7791,8 @@ public class TestScript extends DomainResource {
                     }
 
                     /**
-                     * The FHIRPath expression to evaluate against the source fixture. When compareToSourceId is defined, either 
-                     * compareToSourceExpression or compareToSourcePath must be defined, but not both.
+                     * The FHIRPath expression for a specific value to evaluate against the source fixture. When compareToSourceId is 
+                     * defined, either compareToSourceExpression or compareToSourcePath must be defined, but not both.
                      * 
                      * @param compareToSourceExpression
                      *     The FHIRPath expression to evaluate against the source fixture
@@ -7127,6 +7847,20 @@ public class TestScript extends DomainResource {
                      */
                     public Builder contentType(Code contentType) {
                         this.contentType = contentType;
+                        return this;
+                    }
+
+                    /**
+                     * The default manual completion outcome applied to this assertion.
+                     * 
+                     * @param defaultManualCompletion
+                     *     fail | pass | skip | stop
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder defaultManualCompletion(AssertionManualCompletionType defaultManualCompletion) {
+                        this.defaultManualCompletion = defaultManualCompletion;
                         return this;
                     }
 
@@ -7251,10 +7985,11 @@ public class TestScript extends DomainResource {
                     }
 
                     /**
-                     * The operator type defines the conditional behavior of the assert. If not defined, the default is equals.
+                     * The operator type defines the conditional behavior of the assert.
                      * 
                      * @param operator
-                     *     equals | notEquals | in | notIn | greaterThan | lessThan | empty | notEmpty | contains | notContains | eval
+                     *     equals | notEquals | in | notIn | greaterThan | lessThan | empty | notEmpty | contains | notContains | eval | 
+                     *     manualEval
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -7339,7 +8074,7 @@ public class TestScript extends DomainResource {
                     }
 
                     /**
-                     * The type of the resource. See http://build.fhir.org/resourcelist.html.
+                     * The type of the resource. See the [resource list](resourcelist.html).
                      * 
                      * @param resource
                      *     Resource type
@@ -7347,18 +8082,28 @@ public class TestScript extends DomainResource {
                      * @return
                      *     A reference to this Builder instance
                      */
-                    public Builder resource(FHIRDefinedType resource) {
+                    public Builder resource(Uri resource) {
                         this.resource = resource;
                         return this;
                     }
 
                     /**
-                     * okay | created | noContent | notModified | bad | forbidden | notFound | methodNotAllowed | conflict | gone | 
-                     * preconditionFailed | unprocessable.
+                     * continue | switchingProtocols | okay | created | accepted | nonAuthoritativeInformation | noContent | resetContent | 
+                     * partialContent | multipleChoices | movedPermanently | found | seeOther | notModified | useProxy | temporaryRedirect | 
+                     * permanentRedirect | badRequest | unauthorized | paymentRequired | forbidden | notFound | methodNotAllowed | 
+                     * notAcceptable | proxyAuthenticationRequired | requestTimeout | conflict | gone | lengthRequired | preconditionFailed | 
+                     * contentTooLarge | uriTooLong | unsupportedMediaType | rangeNotSatisfiable | expectationFailed | misdirectedRequest | 
+                     * unprocessableContent | upgradeRequired | internalServerError | notImplemented | badGateway | serviceUnavailable | 
+                     * gatewayTimeout | httpVersionNotSupported.
                      * 
                      * @param response
-                     *     okay | created | noContent | notModified | bad | forbidden | notFound | methodNotAllowed | conflict | gone | 
-                     *     preconditionFailed | unprocessable
+                     *     continue | switchingProtocols | okay | created | accepted | nonAuthoritativeInformation | noContent | resetContent | 
+                     *     partialContent | multipleChoices | movedPermanently | found | seeOther | notModified | useProxy | temporaryRedirect | 
+                     *     permanentRedirect | badRequest | unauthorized | paymentRequired | forbidden | notFound | methodNotAllowed | 
+                     *     notAcceptable | proxyAuthenticationRequired | requestTimeout | conflict | gone | lengthRequired | preconditionFailed | 
+                     *     contentTooLarge | uriTooLong | unsupportedMediaType | rangeNotSatisfiable | expectationFailed | misdirectedRequest | 
+                     *     unprocessableContent | upgradeRequired | internalServerError | notImplemented | badGateway | serviceUnavailable | 
+                     *     gatewayTimeout | httpVersionNotSupported
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -7409,6 +8154,40 @@ public class TestScript extends DomainResource {
                      */
                     public Builder sourceId(Id sourceId) {
                         this.sourceId = sourceId;
+                        return this;
+                    }
+
+                    /**
+                     * Convenience method for setting {@code stopTestOnFail}.
+                     * 
+                     * <p>This element is required.
+                     * 
+                     * @param stopTestOnFail
+                     *     If this assert fails, will the current test execution stop?
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @see #stopTestOnFail(org.linuxforhealth.fhir.model.type.Boolean)
+                     */
+                    public Builder stopTestOnFail(java.lang.Boolean stopTestOnFail) {
+                        this.stopTestOnFail = (stopTestOnFail == null) ? null : Boolean.of(stopTestOnFail);
+                        return this;
+                    }
+
+                    /**
+                     * Whether or not the current test execution will stop on failure for this assert.
+                     * 
+                     * <p>This element is required.
+                     * 
+                     * @param stopTestOnFail
+                     *     If this assert fails, will the current test execution stop?
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder stopTestOnFail(Boolean stopTestOnFail) {
+                        this.stopTestOnFail = stopTestOnFail;
                         return this;
                     }
 
@@ -7491,10 +8270,50 @@ public class TestScript extends DomainResource {
                     }
 
                     /**
+                     * Links or references providing traceability to the testing requirements for this assert.
+                     * 
+                     * <p>Adds new element(s) to the existing list.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param requirement
+                     *     Links or references to the testing requirements
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder requirement(Requirement... requirement) {
+                        for (Requirement value : requirement) {
+                            this.requirement.add(value);
+                        }
+                        return this;
+                    }
+
+                    /**
+                     * Links or references providing traceability to the testing requirements for this assert.
+                     * 
+                     * <p>Replaces the existing list with a new one containing elements from the Collection.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param requirement
+                     *     Links or references to the testing requirements
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @throws NullPointerException
+                     *     If the passed collection is null
+                     */
+                    public Builder requirement(Collection<Requirement> requirement) {
+                        this.requirement = new ArrayList<>(requirement);
+                        return this;
+                    }
+
+                    /**
                      * Build the {@link Assert}
                      * 
                      * <p>Required elements:
                      * <ul>
+                     * <li>stopTestOnFail</li>
                      * <li>warningOnly</li>
                      * </ul>
                      * 
@@ -7514,7 +8333,9 @@ public class TestScript extends DomainResource {
 
                     protected void validate(Assert _assert) {
                         super.validate(_assert);
+                        ValidationSupport.requireNonNull(_assert.stopTestOnFail, "stopTestOnFail");
                         ValidationSupport.requireNonNull(_assert.warningOnly, "warningOnly");
+                        ValidationSupport.checkList(_assert.requirement, "requirement", Requirement.class);
                         ValidationSupport.requireValueOrChildren(_assert);
                     }
 
@@ -7527,6 +8348,7 @@ public class TestScript extends DomainResource {
                         compareToSourceExpression = _assert.compareToSourceExpression;
                         compareToSourcePath = _assert.compareToSourcePath;
                         contentType = _assert.contentType;
+                        defaultManualCompletion = _assert.defaultManualCompletion;
                         expression = _assert.expression;
                         headerField = _assert.headerField;
                         minimumId = _assert.minimumId;
@@ -7539,10 +8361,265 @@ public class TestScript extends DomainResource {
                         response = _assert.response;
                         responseCode = _assert.responseCode;
                         sourceId = _assert.sourceId;
+                        stopTestOnFail = _assert.stopTestOnFail;
                         validateProfileId = _assert.validateProfileId;
                         value = _assert.value;
                         warningOnly = _assert.warningOnly;
+                        requirement.addAll(_assert.requirement);
                         return this;
+                    }
+                }
+
+                /**
+                 * Links or references providing traceability to the testing requirements for this assert.
+                 */
+                public static class Requirement extends BackboneElement {
+                    @Choice({ Uri.class, Canonical.class })
+                    private final org.linuxforhealth.fhir.model.type.Element link;
+
+                    private Requirement(Builder builder) {
+                        super(builder);
+                        link = builder.link;
+                    }
+
+                    /**
+                     * Link or reference providing traceability to the testing requirement for this test.
+                     * 
+                     * @return
+                     *     An immutable object of type {@link Uri} or {@link Canonical} that may be null.
+                     */
+                    public org.linuxforhealth.fhir.model.type.Element getLink() {
+                        return link;
+                    }
+
+                    @Override
+                    public boolean hasChildren() {
+                        return super.hasChildren() || 
+                            (link != null);
+                    }
+
+                    @Override
+                    public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                        if (visitor.preVisit(this)) {
+                            visitor.visitStart(elementName, elementIndex, this);
+                            if (visitor.visit(elementName, elementIndex, this)) {
+                                // visit children
+                                accept(id, "id", visitor);
+                                accept(extension, "extension", visitor, Extension.class);
+                                accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                                accept(link, "link", visitor);
+                            }
+                            visitor.visitEnd(elementName, elementIndex, this);
+                            visitor.postVisit(this);
+                        }
+                    }
+
+                    @Override
+                    public boolean equals(Object obj) {
+                        if (this == obj) {
+                            return true;
+                        }
+                        if (obj == null) {
+                            return false;
+                        }
+                        if (getClass() != obj.getClass()) {
+                            return false;
+                        }
+                        Requirement other = (Requirement) obj;
+                        return Objects.equals(id, other.id) && 
+                            Objects.equals(extension, other.extension) && 
+                            Objects.equals(modifierExtension, other.modifierExtension) && 
+                            Objects.equals(link, other.link);
+                    }
+
+                    @Override
+                    public int hashCode() {
+                        int result = hashCode;
+                        if (result == 0) {
+                            result = Objects.hash(id, 
+                                extension, 
+                                modifierExtension, 
+                                link);
+                            hashCode = result;
+                        }
+                        return result;
+                    }
+
+                    @Override
+                    public Builder toBuilder() {
+                        return new Builder().from(this);
+                    }
+
+                    public static Builder builder() {
+                        return new Builder();
+                    }
+
+                    public static class Builder extends BackboneElement.Builder {
+                        private org.linuxforhealth.fhir.model.type.Element link;
+
+                        private Builder() {
+                            super();
+                        }
+
+                        /**
+                         * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                         * contain spaces.
+                         * 
+                         * @param id
+                         *     Unique id for inter-element referencing
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        @Override
+                        public Builder id(java.lang.String id) {
+                            return (Builder) super.id(id);
+                        }
+
+                        /**
+                         * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                         * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                         * of the definition of the extension.
+                         * 
+                         * <p>Adds new element(s) to the existing list.
+                         * If any of the elements are null, calling {@link #build()} will fail.
+                         * 
+                         * @param extension
+                         *     Additional content defined by implementations
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        @Override
+                        public Builder extension(Extension... extension) {
+                            return (Builder) super.extension(extension);
+                        }
+
+                        /**
+                         * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                         * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                         * of the definition of the extension.
+                         * 
+                         * <p>Replaces the existing list with a new one containing elements from the Collection.
+                         * If any of the elements are null, calling {@link #build()} will fail.
+                         * 
+                         * @param extension
+                         *     Additional content defined by implementations
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         * 
+                         * @throws NullPointerException
+                         *     If the passed collection is null
+                         */
+                        @Override
+                        public Builder extension(Collection<Extension> extension) {
+                            return (Builder) super.extension(extension);
+                        }
+
+                        /**
+                         * May be used to represent additional information that is not part of the basic definition of the element and that 
+                         * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                         * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                         * extension. Applications processing a resource are required to check for modifier extensions.
+                         * 
+                         * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                         * change the meaning of modifierExtension itself).
+                         * 
+                         * <p>Adds new element(s) to the existing list.
+                         * If any of the elements are null, calling {@link #build()} will fail.
+                         * 
+                         * @param modifierExtension
+                         *     Extensions that cannot be ignored even if unrecognized
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        @Override
+                        public Builder modifierExtension(Extension... modifierExtension) {
+                            return (Builder) super.modifierExtension(modifierExtension);
+                        }
+
+                        /**
+                         * May be used to represent additional information that is not part of the basic definition of the element and that 
+                         * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                         * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                         * extension. Applications processing a resource are required to check for modifier extensions.
+                         * 
+                         * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                         * change the meaning of modifierExtension itself).
+                         * 
+                         * <p>Replaces the existing list with a new one containing elements from the Collection.
+                         * If any of the elements are null, calling {@link #build()} will fail.
+                         * 
+                         * @param modifierExtension
+                         *     Extensions that cannot be ignored even if unrecognized
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         * 
+                         * @throws NullPointerException
+                         *     If the passed collection is null
+                         */
+                        @Override
+                        public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                            return (Builder) super.modifierExtension(modifierExtension);
+                        }
+
+                        /**
+                         * Link or reference providing traceability to the testing requirement for this test.
+                         * 
+                         * <p>This is a choice element with the following allowed types:
+                         * <ul>
+                         * <li>{@link Uri}</li>
+                         * <li>{@link Canonical}</li>
+                         * </ul>
+                         * 
+                         * @param link
+                         *     Link or reference to the testing requirement
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        public Builder link(org.linuxforhealth.fhir.model.type.Element link) {
+                            this.link = link;
+                            return this;
+                        }
+
+                        /**
+                         * Build the {@link Requirement}
+                         * 
+                         * @return
+                         *     An immutable object of type {@link Requirement}
+                         * @throws IllegalStateException
+                         *     if the current state cannot be built into a valid Requirement per the base specification
+                         */
+                        @Override
+                        public Requirement build() {
+                            Requirement requirement = new Requirement(this);
+                            if (validating) {
+                                validate(requirement);
+                            }
+                            return requirement;
+                        }
+
+                        protected void validate(Requirement requirement) {
+                            super.validate(requirement);
+                            ValidationSupport.choiceElement(requirement.link, "link", Uri.class, Canonical.class);
+                            ValidationSupport.requireValueOrChildren(requirement);
+                        }
+
+                        protected Builder from(Requirement requirement) {
+                            super.from(requirement);
+                            link = requirement.link;
+                            return this;
+                        }
                     }
                 }
             }
@@ -7691,7 +8768,7 @@ public class TestScript extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -7711,7 +8788,7 @@ public class TestScript extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -7736,7 +8813,7 @@ public class TestScript extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -7761,7 +8838,7 @@ public class TestScript extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -8049,7 +9126,7 @@ public class TestScript extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -8069,7 +9146,7 @@ public class TestScript extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -8094,7 +9171,7 @@ public class TestScript extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -8119,7 +9196,7 @@ public class TestScript extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -8311,7 +9388,7 @@ public class TestScript extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -8331,7 +9408,7 @@ public class TestScript extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -8356,7 +9433,7 @@ public class TestScript extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -8381,7 +9458,7 @@ public class TestScript extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -8591,7 +9668,7 @@ public class TestScript extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -8611,7 +9688,7 @@ public class TestScript extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -8636,7 +9713,7 @@ public class TestScript extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -8661,7 +9738,7 @@ public class TestScript extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 

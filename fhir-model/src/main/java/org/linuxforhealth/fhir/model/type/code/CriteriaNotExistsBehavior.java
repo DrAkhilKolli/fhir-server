@@ -20,7 +20,7 @@ import javax.annotation.Generated;
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class CriteriaNotExistsBehavior extends Code {
     /**
-     * test passes
+     * Test passes
      * 
      * <p>The requested conditional statement will pass if a matching state does not exist (e.g., previous state during 
      * create).
@@ -28,7 +28,7 @@ public class CriteriaNotExistsBehavior extends Code {
     public static final CriteriaNotExistsBehavior TEST_PASSES = CriteriaNotExistsBehavior.builder().value(Value.TEST_PASSES).build();
 
     /**
-     * test fails
+     * Test fails
      * 
      * <p>The requested conditional statement will fail if a matching state does not exist (e.g., previous state during 
      * create).
@@ -190,7 +190,7 @@ public class CriteriaNotExistsBehavior extends Code {
 
     public enum Value {
         /**
-         * test passes
+         * Test passes
          * 
          * <p>The requested conditional statement will pass if a matching state does not exist (e.g., previous state during 
          * create).
@@ -198,7 +198,7 @@ public class CriteriaNotExistsBehavior extends Code {
         TEST_PASSES("test-passes"),
 
         /**
-         * test fails
+         * Test fails
          * 
          * <p>The requested conditional statement will fail if a matching state does not exist (e.g., previous state during 
          * create).

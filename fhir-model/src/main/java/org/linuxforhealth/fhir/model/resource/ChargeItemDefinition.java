@@ -15,6 +15,7 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
+import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
@@ -25,23 +26,25 @@ import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
 import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.DateTime;
-import org.linuxforhealth.fhir.model.type.Decimal;
+import org.linuxforhealth.fhir.model.type.Element;
+import org.linuxforhealth.fhir.model.type.Expression;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
-import org.linuxforhealth.fhir.model.type.Money;
+import org.linuxforhealth.fhir.model.type.MonetaryComponent;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
 import org.linuxforhealth.fhir.model.type.Reference;
+import org.linuxforhealth.fhir.model.type.RelatedArtifact;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.UsageContext;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
-import org.linuxforhealth.fhir.model.type.code.ChargeItemDefinitionPriceComponentType;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
@@ -52,22 +55,39 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * costs and prices. The properties may differ largely depending on type and realm, therefore this resource gives only a 
  * rough structure and requires profiling for each type of billing code system.
  * 
- * <p>Maturity level: FMM0 (Trial Use)
+ * <p>Maturity level: FMM1 (Trial Use)
  */
 @Maturity(
-    level = 0,
+    level = 1,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "cid-0",
+    id = "cnl-0",
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
     source = "http://hl7.org/fhir/StructureDefinition/ChargeItemDefinition"
 )
 @Constraint(
-    id = "chargeItemDefinition-1",
+    id = "cnl-1",
+    level = "Warning",
+    location = "ChargeItemDefinition.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
+    source = "http://hl7.org/fhir/StructureDefinition/ChargeItemDefinition"
+)
+@Constraint(
+    id = "chargeItemDefinition-2",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/ChargeItemDefinition",
+    generated = true
+)
+@Constraint(
+    id = "chargeItemDefinition-3",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
@@ -78,12 +98,20 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class ChargeItemDefinition extends DomainResource {
     @Summary
-    @Required
     private final Uri url;
     @Summary
     private final List<Identifier> identifier;
     @Summary
     private final String version;
+    @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+    @Summary
+    private final String name;
     @Summary
     private final String title;
     @Summary
@@ -97,7 +125,7 @@ public class ChargeItemDefinition extends DomainResource {
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -121,11 +149,11 @@ public class ChargeItemDefinition extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/jurisdiction"
     )
     private final List<CodeableConcept> jurisdiction;
+    private final Markdown purpose;
     private final Markdown copyright;
+    private final String copyrightLabel;
     private final Date approvalDate;
     private final Date lastReviewDate;
-    @Summary
-    private final Period effectivePeriod;
     @Summary
     @Binding(
         bindingName = "ChargeItemDefinitionCode",
@@ -134,7 +162,7 @@ public class ChargeItemDefinition extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/chargeitem-billingcodes"
     )
     private final CodeableConcept code;
-    @ReferenceTarget({ "Medication", "Substance", "Device" })
+    @ReferenceTarget({ "Medication", "Substance", "Device", "DeviceDefinition", "ActivityDefinition", "PlanDefinition", "HealthcareService" })
     private final List<Reference> instance;
     private final List<Applicability> applicability;
     private final List<PropertyGroup> propertyGroup;
@@ -144,6 +172,8 @@ public class ChargeItemDefinition extends DomainResource {
         url = builder.url;
         identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
+        name = builder.name;
         title = builder.title;
         derivedFromUri = Collections.unmodifiableList(builder.derivedFromUri);
         partOf = Collections.unmodifiableList(builder.partOf);
@@ -156,10 +186,11 @@ public class ChargeItemDefinition extends DomainResource {
         description = builder.description;
         useContext = Collections.unmodifiableList(builder.useContext);
         jurisdiction = Collections.unmodifiableList(builder.jurisdiction);
+        purpose = builder.purpose;
         copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
         approvalDate = builder.approvalDate;
         lastReviewDate = builder.lastReviewDate;
-        effectivePeriod = builder.effectivePeriod;
         code = builder.code;
         instance = Collections.unmodifiableList(builder.instance);
         applicability = Collections.unmodifiableList(builder.applicability);
@@ -169,12 +200,12 @@ public class ChargeItemDefinition extends DomainResource {
     /**
      * An absolute URI that is used to identify this charge item definition when it is referenced in a specification, model, 
      * design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal 
-     * address at which at which an authoritative instance of this charge item definition is (or will be) published. This URL 
-     * can be the target of a canonical reference. It SHALL remain the same when the charge item definition is stored on 
-     * different servers.
+     * address at which an authoritative instance of this charge item definition is (or will be) published. This URL can be 
+     * the target of a canonical reference. It SHALL remain the same when the charge item definition is stored on different 
+     * servers.
      * 
      * @return
-     *     An immutable object of type {@link Uri} that is non-null.
+     *     An immutable object of type {@link Uri} that may be null.
      */
     public Uri getUrl() {
         return url;
@@ -205,6 +236,27 @@ public class ChargeItemDefinition extends DomainResource {
      */
     public String getVersion() {
         return version;
+    }
+
+    /**
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
+    }
+
+    /**
+     * A natural language name identifying the ChargeItemDefinition. This name should be usable as an identifier for the 
+     * module by machine processing applications such as code generation.
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getName() {
+        return name;
     }
 
     /**
@@ -271,9 +323,9 @@ public class ChargeItemDefinition extends DomainResource {
     }
 
     /**
-     * The date (and optionally time) when the charge item definition was published. The date must change when the business 
-     * version changes and it must change if the status code changes. In addition, it should change when the substantive 
-     * content of the charge item definition changes.
+     * The date (and optionally time) when the charge item definition was last significantly changed. The date must change 
+     * when the business version changes and it must change if the status code changes. In addition, it should change when 
+     * the substantive content of the charge item definition changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -283,7 +335,8 @@ public class ChargeItemDefinition extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the charge item definition.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the charge item 
+     * definition.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -335,6 +388,16 @@ public class ChargeItemDefinition extends DomainResource {
     }
 
     /**
+     * Explanation of why this charge item definition is needed and why it has been designed as it has.
+     * 
+     * @return
+     *     An immutable object of type {@link Markdown} that may be null.
+     */
+    public Markdown getPurpose() {
+        return purpose;
+    }
+
+    /**
      * A copyright statement relating to the charge item definition and/or its contents. Copyright statements are generally 
      * legal restrictions on the use and publishing of the charge item definition.
      * 
@@ -343,6 +406,17 @@ public class ChargeItemDefinition extends DomainResource {
      */
     public Markdown getCopyright() {
         return copyright;
+    }
+
+    /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
     }
 
     /**
@@ -365,16 +439,6 @@ public class ChargeItemDefinition extends DomainResource {
      */
     public Date getLastReviewDate() {
         return lastReviewDate;
-    }
-
-    /**
-     * The period during which the charge item definition content was or is planned to be in active use.
-     * 
-     * @return
-     *     An immutable object of type {@link Period} that may be null.
-     */
-    public Period getEffectivePeriod() {
-        return effectivePeriod;
     }
 
     /**
@@ -424,6 +488,8 @@ public class ChargeItemDefinition extends DomainResource {
             (url != null) || 
             !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
+            (name != null) || 
             (title != null) || 
             !derivedFromUri.isEmpty() || 
             !partOf.isEmpty() || 
@@ -436,10 +502,11 @@ public class ChargeItemDefinition extends DomainResource {
             (description != null) || 
             !useContext.isEmpty() || 
             !jurisdiction.isEmpty() || 
+            (purpose != null) || 
             (copyright != null) || 
+            (copyrightLabel != null) || 
             (approvalDate != null) || 
             (lastReviewDate != null) || 
-            (effectivePeriod != null) || 
             (code != null) || 
             !instance.isEmpty() || 
             !applicability.isEmpty() || 
@@ -463,6 +530,8 @@ public class ChargeItemDefinition extends DomainResource {
                 accept(url, "url", visitor);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
+                accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(derivedFromUri, "derivedFromUri", visitor, Uri.class);
                 accept(partOf, "partOf", visitor, Canonical.class);
@@ -475,10 +544,11 @@ public class ChargeItemDefinition extends DomainResource {
                 accept(description, "description", visitor);
                 accept(useContext, "useContext", visitor, UsageContext.class);
                 accept(jurisdiction, "jurisdiction", visitor, CodeableConcept.class);
+                accept(purpose, "purpose", visitor);
                 accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
                 accept(approvalDate, "approvalDate", visitor);
                 accept(lastReviewDate, "lastReviewDate", visitor);
-                accept(effectivePeriod, "effectivePeriod", visitor);
                 accept(code, "code", visitor);
                 accept(instance, "instance", visitor, Reference.class);
                 accept(applicability, "applicability", visitor, Applicability.class);
@@ -512,6 +582,8 @@ public class ChargeItemDefinition extends DomainResource {
             Objects.equals(url, other.url) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
+            Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(derivedFromUri, other.derivedFromUri) && 
             Objects.equals(partOf, other.partOf) && 
@@ -524,10 +596,11 @@ public class ChargeItemDefinition extends DomainResource {
             Objects.equals(description, other.description) && 
             Objects.equals(useContext, other.useContext) && 
             Objects.equals(jurisdiction, other.jurisdiction) && 
+            Objects.equals(purpose, other.purpose) && 
             Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
             Objects.equals(approvalDate, other.approvalDate) && 
             Objects.equals(lastReviewDate, other.lastReviewDate) && 
-            Objects.equals(effectivePeriod, other.effectivePeriod) && 
             Objects.equals(code, other.code) && 
             Objects.equals(instance, other.instance) && 
             Objects.equals(applicability, other.applicability) && 
@@ -549,6 +622,8 @@ public class ChargeItemDefinition extends DomainResource {
                 url, 
                 identifier, 
                 version, 
+                versionAlgorithm, 
+                name, 
                 title, 
                 derivedFromUri, 
                 partOf, 
@@ -561,10 +636,11 @@ public class ChargeItemDefinition extends DomainResource {
                 description, 
                 useContext, 
                 jurisdiction, 
+                purpose, 
                 copyright, 
+                copyrightLabel, 
                 approvalDate, 
                 lastReviewDate, 
-                effectivePeriod, 
                 code, 
                 instance, 
                 applicability, 
@@ -587,6 +663,8 @@ public class ChargeItemDefinition extends DomainResource {
         private Uri url;
         private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+        private String name;
         private String title;
         private List<Uri> derivedFromUri = new ArrayList<>();
         private List<Canonical> partOf = new ArrayList<>();
@@ -599,10 +677,11 @@ public class ChargeItemDefinition extends DomainResource {
         private Markdown description;
         private List<UsageContext> useContext = new ArrayList<>();
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
+        private Markdown purpose;
         private Markdown copyright;
+        private String copyrightLabel;
         private Date approvalDate;
         private Date lastReviewDate;
-        private Period effectivePeriod;
         private CodeableConcept code;
         private List<Reference> instance = new ArrayList<>();
         private List<Applicability> applicability = new ArrayList<>();
@@ -690,7 +769,8 @@ public class ChargeItemDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -708,7 +788,8 @@ public class ChargeItemDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -729,7 +810,7 @@ public class ChargeItemDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -749,7 +830,7 @@ public class ChargeItemDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -774,9 +855,9 @@ public class ChargeItemDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -799,9 +880,9 @@ public class ChargeItemDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -826,11 +907,9 @@ public class ChargeItemDefinition extends DomainResource {
         /**
          * An absolute URI that is used to identify this charge item definition when it is referenced in a specification, model, 
          * design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal 
-         * address at which at which an authoritative instance of this charge item definition is (or will be) published. This URL 
-         * can be the target of a canonical reference. It SHALL remain the same when the charge item definition is stored on 
-         * different servers.
-         * 
-         * <p>This element is required.
+         * address at which an authoritative instance of this charge item definition is (or will be) published. This URL can be 
+         * the target of a canonical reference. It SHALL remain the same when the charge item definition is stored on different 
+         * servers.
          * 
          * @param url
          *     Canonical identifier for this charge item definition, represented as a URI (globally unique)
@@ -917,6 +996,73 @@ public class ChargeItemDefinition extends DomainResource {
          */
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code name}.
+         * 
+         * @param name
+         *     Name for this charge item definition (computer friendly)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #name(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder name(java.lang.String name) {
+            this.name = (name == null) ? null : String.of(name);
+            return this;
+        }
+
+        /**
+         * A natural language name identifying the ChargeItemDefinition. This name should be usable as an identifier for the 
+         * module by machine processing applications such as code generation.
+         * 
+         * @param name
+         *     Name for this charge item definition (computer friendly)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder name(String name) {
+            this.name = name;
             return this;
         }
 
@@ -1119,9 +1265,9 @@ public class ChargeItemDefinition extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the charge item definition was published. The date must change when the business 
-         * version changes and it must change if the status code changes. In addition, it should change when the substantive 
-         * content of the charge item definition changes.
+         * The date (and optionally time) when the charge item definition was last significantly changed. The date must change 
+         * when the business version changes and it must change if the status code changes. In addition, it should change when 
+         * the substantive content of the charge item definition changes.
          * 
          * @param date
          *     Date last changed
@@ -1138,7 +1284,7 @@ public class ChargeItemDefinition extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1151,10 +1297,11 @@ public class ChargeItemDefinition extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the charge item definition.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the charge item 
+         * definition.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1300,6 +1447,20 @@ public class ChargeItemDefinition extends DomainResource {
         }
 
         /**
+         * Explanation of why this charge item definition is needed and why it has been designed as it has.
+         * 
+         * @param purpose
+         *     Why this charge item definition is defined
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder purpose(Markdown purpose) {
+            this.purpose = purpose;
+            return this;
+        }
+
+        /**
          * A copyright statement relating to the charge item definition and/or its contents. Copyright statements are generally 
          * legal restrictions on the use and publishing of the charge item definition.
          * 
@@ -1311,6 +1472,37 @@ public class ChargeItemDefinition extends DomainResource {
          */
         public Builder copyright(Markdown copyright) {
             this.copyright = copyright;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
             return this;
         }
 
@@ -1349,7 +1541,7 @@ public class ChargeItemDefinition extends DomainResource {
          * Convenience method for setting {@code lastReviewDate}.
          * 
          * @param lastReviewDate
-         *     When the charge item definition was last reviewed
+         *     When the charge item definition was last reviewed by the publisher
          * 
          * @return
          *     A reference to this Builder instance
@@ -1366,7 +1558,7 @@ public class ChargeItemDefinition extends DomainResource {
          * change the original approval date.
          * 
          * @param lastReviewDate
-         *     When the charge item definition was last reviewed
+         *     When the charge item definition was last reviewed by the publisher
          * 
          * @return
          *     A reference to this Builder instance
@@ -1377,24 +1569,10 @@ public class ChargeItemDefinition extends DomainResource {
         }
 
         /**
-         * The period during which the charge item definition content was or is planned to be in active use.
-         * 
-         * @param effectivePeriod
-         *     When the charge item definition is expected to be used
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder effectivePeriod(Period effectivePeriod) {
-            this.effectivePeriod = effectivePeriod;
-            return this;
-        }
-
-        /**
          * The defined billing details in this resource pertain to the given billing code.
          * 
          * @param code
-         *     Billing codes or product types this definition applies to
+         *     Billing code or product type this definition applies to
          * 
          * @return
          *     A reference to this Builder instance
@@ -1415,6 +1593,10 @@ public class ChargeItemDefinition extends DomainResource {
          * <li>{@link Medication}</li>
          * <li>{@link Substance}</li>
          * <li>{@link Device}</li>
+         * <li>{@link DeviceDefinition}</li>
+         * <li>{@link ActivityDefinition}</li>
+         * <li>{@link PlanDefinition}</li>
+         * <li>{@link HealthcareService}</li>
          * </ul>
          * 
          * @param instance
@@ -1441,6 +1623,10 @@ public class ChargeItemDefinition extends DomainResource {
          * <li>{@link Medication}</li>
          * <li>{@link Substance}</li>
          * <li>{@link Device}</li>
+         * <li>{@link DeviceDefinition}</li>
+         * <li>{@link ActivityDefinition}</li>
+         * <li>{@link PlanDefinition}</li>
+         * <li>{@link HealthcareService}</li>
          * </ul>
          * 
          * @param instance
@@ -1542,7 +1728,6 @@ public class ChargeItemDefinition extends DomainResource {
          * 
          * <p>Required elements:
          * <ul>
-         * <li>url</li>
          * <li>status</li>
          * </ul>
          * 
@@ -1562,8 +1747,8 @@ public class ChargeItemDefinition extends DomainResource {
 
         protected void validate(ChargeItemDefinition chargeItemDefinition) {
             super.validate(chargeItemDefinition);
-            ValidationSupport.requireNonNull(chargeItemDefinition.url, "url");
             ValidationSupport.checkList(chargeItemDefinition.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(chargeItemDefinition.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.checkList(chargeItemDefinition.derivedFromUri, "derivedFromUri", Uri.class);
             ValidationSupport.checkList(chargeItemDefinition.partOf, "partOf", Canonical.class);
             ValidationSupport.checkList(chargeItemDefinition.replaces, "replaces", Canonical.class);
@@ -1574,7 +1759,7 @@ public class ChargeItemDefinition extends DomainResource {
             ValidationSupport.checkList(chargeItemDefinition.instance, "instance", Reference.class);
             ValidationSupport.checkList(chargeItemDefinition.applicability, "applicability", Applicability.class);
             ValidationSupport.checkList(chargeItemDefinition.propertyGroup, "propertyGroup", PropertyGroup.class);
-            ValidationSupport.checkReferenceType(chargeItemDefinition.instance, "instance", "Medication", "Substance", "Device");
+            ValidationSupport.checkReferenceType(chargeItemDefinition.instance, "instance", "Medication", "Substance", "Device", "DeviceDefinition", "ActivityDefinition", "PlanDefinition", "HealthcareService");
         }
 
         protected Builder from(ChargeItemDefinition chargeItemDefinition) {
@@ -1582,6 +1767,8 @@ public class ChargeItemDefinition extends DomainResource {
             url = chargeItemDefinition.url;
             identifier.addAll(chargeItemDefinition.identifier);
             version = chargeItemDefinition.version;
+            versionAlgorithm = chargeItemDefinition.versionAlgorithm;
+            name = chargeItemDefinition.name;
             title = chargeItemDefinition.title;
             derivedFromUri.addAll(chargeItemDefinition.derivedFromUri);
             partOf.addAll(chargeItemDefinition.partOf);
@@ -1594,10 +1781,11 @@ public class ChargeItemDefinition extends DomainResource {
             description = chargeItemDefinition.description;
             useContext.addAll(chargeItemDefinition.useContext);
             jurisdiction.addAll(chargeItemDefinition.jurisdiction);
+            purpose = chargeItemDefinition.purpose;
             copyright = chargeItemDefinition.copyright;
+            copyrightLabel = chargeItemDefinition.copyrightLabel;
             approvalDate = chargeItemDefinition.approvalDate;
             lastReviewDate = chargeItemDefinition.lastReviewDate;
-            effectivePeriod = chargeItemDefinition.effectivePeriod;
             code = chargeItemDefinition.code;
             instance.addAll(chargeItemDefinition.instance);
             applicability.addAll(chargeItemDefinition.applicability);
@@ -1610,36 +1798,16 @@ public class ChargeItemDefinition extends DomainResource {
      * Expressions that describe applicability criteria for the billing code.
      */
     public static class Applicability extends BackboneElement {
-        private final String description;
-        private final String language;
-        private final String expression;
+        private final Expression condition;
+        @Summary
+        private final Period effectivePeriod;
+        private final RelatedArtifact relatedArtifact;
 
         private Applicability(Builder builder) {
             super(builder);
-            description = builder.description;
-            language = builder.language;
-            expression = builder.expression;
-        }
-
-        /**
-         * A brief, natural language description of the condition that effectively communicates the intended semantics.
-         * 
-         * @return
-         *     An immutable object of type {@link String} that may be null.
-         */
-        public String getDescription() {
-            return description;
-        }
-
-        /**
-         * The media type of the language for the expression, e.g. "text/cql" for Clinical Query Language expressions or 
-         * "text/fhirpath" for FHIRPath expressions.
-         * 
-         * @return
-         *     An immutable object of type {@link String} that may be null.
-         */
-        public String getLanguage() {
-            return language;
+            condition = builder.condition;
+            effectivePeriod = builder.effectivePeriod;
+            relatedArtifact = builder.relatedArtifact;
         }
 
         /**
@@ -1648,18 +1816,38 @@ public class ChargeItemDefinition extends DomainResource {
          * definition is applied.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link Expression} that may be null.
          */
-        public String getExpression() {
-            return expression;
+        public Expression getCondition() {
+            return condition;
+        }
+
+        /**
+         * The period during which the charge item definition content was or is planned to be in active use.
+         * 
+         * @return
+         *     An immutable object of type {@link Period} that may be null.
+         */
+        public Period getEffectivePeriod() {
+            return effectivePeriod;
+        }
+
+        /**
+         * Reference to / quotation of the external source of the group of properties.
+         * 
+         * @return
+         *     An immutable object of type {@link RelatedArtifact} that may be null.
+         */
+        public RelatedArtifact getRelatedArtifact() {
+            return relatedArtifact;
         }
 
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                (description != null) || 
-                (language != null) || 
-                (expression != null);
+                (condition != null) || 
+                (effectivePeriod != null) || 
+                (relatedArtifact != null);
         }
 
         @Override
@@ -1671,9 +1859,9 @@ public class ChargeItemDefinition extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(description, "description", visitor);
-                    accept(language, "language", visitor);
-                    accept(expression, "expression", visitor);
+                    accept(condition, "condition", visitor);
+                    accept(effectivePeriod, "effectivePeriod", visitor);
+                    accept(relatedArtifact, "relatedArtifact", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -1695,9 +1883,9 @@ public class ChargeItemDefinition extends DomainResource {
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(description, other.description) && 
-                Objects.equals(language, other.language) && 
-                Objects.equals(expression, other.expression);
+                Objects.equals(condition, other.condition) && 
+                Objects.equals(effectivePeriod, other.effectivePeriod) && 
+                Objects.equals(relatedArtifact, other.relatedArtifact);
         }
 
         @Override
@@ -1707,9 +1895,9 @@ public class ChargeItemDefinition extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    description, 
-                    language, 
-                    expression);
+                    condition, 
+                    effectivePeriod, 
+                    relatedArtifact);
                 hashCode = result;
             }
             return result;
@@ -1725,9 +1913,9 @@ public class ChargeItemDefinition extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private String description;
-            private String language;
-            private String expression;
+            private Expression condition;
+            private Period effectivePeriod;
+            private RelatedArtifact relatedArtifact;
 
             private Builder() {
                 super();
@@ -1750,7 +1938,7 @@ public class ChargeItemDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1770,7 +1958,7 @@ public class ChargeItemDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1795,7 +1983,7 @@ public class ChargeItemDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1820,7 +2008,7 @@ public class ChargeItemDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1845,95 +2033,46 @@ public class ChargeItemDefinition extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code description}.
-             * 
-             * @param description
-             *     Natural language description of the condition
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #description(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder description(java.lang.String description) {
-                this.description = (description == null) ? null : String.of(description);
-                return this;
-            }
-
-            /**
-             * A brief, natural language description of the condition that effectively communicates the intended semantics.
-             * 
-             * @param description
-             *     Natural language description of the condition
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder description(String description) {
-                this.description = description;
-                return this;
-            }
-
-            /**
-             * Convenience method for setting {@code language}.
-             * 
-             * @param language
-             *     Language of the expression
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #language(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder language(java.lang.String language) {
-                this.language = (language == null) ? null : String.of(language);
-                return this;
-            }
-
-            /**
-             * The media type of the language for the expression, e.g. "text/cql" for Clinical Query Language expressions or 
-             * "text/fhirpath" for FHIRPath expressions.
-             * 
-             * @param language
-             *     Language of the expression
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder language(String language) {
-                this.language = language;
-                return this;
-            }
-
-            /**
-             * Convenience method for setting {@code expression}.
-             * 
-             * @param expression
-             *     Boolean-valued expression
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #expression(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder expression(java.lang.String expression) {
-                this.expression = (expression == null) ? null : String.of(expression);
-                return this;
-            }
-
-            /**
              * An expression that returns true or false, indicating whether the condition is satisfied. When using FHIRPath 
              * expressions, the %context environment variable must be replaced at runtime with the ChargeItem resource to which this 
              * definition is applied.
              * 
-             * @param expression
+             * @param condition
              *     Boolean-valued expression
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder expression(String expression) {
-                this.expression = expression;
+            public Builder condition(Expression condition) {
+                this.condition = condition;
+                return this;
+            }
+
+            /**
+             * The period during which the charge item definition content was or is planned to be in active use.
+             * 
+             * @param effectivePeriod
+             *     When the charge item definition is expected to be used
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder effectivePeriod(Period effectivePeriod) {
+                this.effectivePeriod = effectivePeriod;
+                return this;
+            }
+
+            /**
+             * Reference to / quotation of the external source of the group of properties.
+             * 
+             * @param relatedArtifact
+             *     Reference to / quotation of the external source of the group of properties
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder relatedArtifact(RelatedArtifact relatedArtifact) {
+                this.relatedArtifact = relatedArtifact;
                 return this;
             }
 
@@ -1961,9 +2100,9 @@ public class ChargeItemDefinition extends DomainResource {
 
             protected Builder from(Applicability applicability) {
                 super.from(applicability);
-                description = applicability.description;
-                language = applicability.language;
-                expression = applicability.expression;
+                condition = applicability.condition;
+                effectivePeriod = applicability.effectivePeriod;
+                relatedArtifact = applicability.relatedArtifact;
                 return this;
             }
         }
@@ -1975,7 +2114,7 @@ public class ChargeItemDefinition extends DomainResource {
      */
     public static class PropertyGroup extends BackboneElement {
         private final List<ChargeItemDefinition.Applicability> applicability;
-        private final List<PriceComponent> priceComponent;
+        private final List<MonetaryComponent> priceComponent;
 
         private PropertyGroup(Builder builder) {
             super(builder);
@@ -2000,9 +2139,9 @@ public class ChargeItemDefinition extends DomainResource {
          * the Invoice of how the prices have been calculated.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link PriceComponent} that may be empty.
+         *     An unmodifiable list containing immutable objects of type {@link MonetaryComponent} that may be empty.
          */
-        public List<PriceComponent> getPriceComponent() {
+        public List<MonetaryComponent> getPriceComponent() {
             return priceComponent;
         }
 
@@ -2023,7 +2162,7 @@ public class ChargeItemDefinition extends DomainResource {
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(applicability, "applicability", visitor, ChargeItemDefinition.Applicability.class);
-                    accept(priceComponent, "priceComponent", visitor, PriceComponent.class);
+                    accept(priceComponent, "priceComponent", visitor, MonetaryComponent.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -2074,7 +2213,7 @@ public class ChargeItemDefinition extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private List<ChargeItemDefinition.Applicability> applicability = new ArrayList<>();
-            private List<PriceComponent> priceComponent = new ArrayList<>();
+            private List<MonetaryComponent> priceComponent = new ArrayList<>();
 
             private Builder() {
                 super();
@@ -2097,7 +2236,7 @@ public class ChargeItemDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2117,7 +2256,7 @@ public class ChargeItemDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2142,7 +2281,7 @@ public class ChargeItemDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2167,7 +2306,7 @@ public class ChargeItemDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2245,8 +2384,8 @@ public class ChargeItemDefinition extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder priceComponent(PriceComponent... priceComponent) {
-                for (PriceComponent value : priceComponent) {
+            public Builder priceComponent(MonetaryComponent... priceComponent) {
+                for (MonetaryComponent value : priceComponent) {
                     this.priceComponent.add(value);
                 }
                 return this;
@@ -2270,7 +2409,7 @@ public class ChargeItemDefinition extends DomainResource {
              * @throws NullPointerException
              *     If the passed collection is null
              */
-            public Builder priceComponent(Collection<PriceComponent> priceComponent) {
+            public Builder priceComponent(Collection<MonetaryComponent> priceComponent) {
                 this.priceComponent = new ArrayList<>(priceComponent);
                 return this;
             }
@@ -2295,7 +2434,7 @@ public class ChargeItemDefinition extends DomainResource {
             protected void validate(PropertyGroup propertyGroup) {
                 super.validate(propertyGroup);
                 ValidationSupport.checkList(propertyGroup.applicability, "applicability", ChargeItemDefinition.Applicability.class);
-                ValidationSupport.checkList(propertyGroup.priceComponent, "priceComponent", PriceComponent.class);
+                ValidationSupport.checkList(propertyGroup.priceComponent, "priceComponent", MonetaryComponent.class);
                 ValidationSupport.requireValueOrChildren(propertyGroup);
             }
 
@@ -2304,367 +2443,6 @@ public class ChargeItemDefinition extends DomainResource {
                 applicability.addAll(propertyGroup.applicability);
                 priceComponent.addAll(propertyGroup.priceComponent);
                 return this;
-            }
-        }
-
-        /**
-         * The price for a ChargeItem may be calculated as a base price with surcharges/deductions that apply in certain 
-         * conditions. A ChargeItemDefinition resource that defines the prices, factors and conditions that apply to a billing 
-         * code is currently under development. The priceComponent element can be used to offer transparency to the recipient of 
-         * the Invoice of how the prices have been calculated.
-         */
-        public static class PriceComponent extends BackboneElement {
-            @Binding(
-                bindingName = "ChargeItemDefinitionPriceComponentType",
-                strength = BindingStrength.Value.REQUIRED,
-                description = "Codes indicating the kind of the price component.",
-                valueSet = "http://hl7.org/fhir/ValueSet/invoice-priceComponentType|4.3.0"
-            )
-            @Required
-            private final ChargeItemDefinitionPriceComponentType type;
-            private final CodeableConcept code;
-            private final Decimal factor;
-            private final Money amount;
-
-            private PriceComponent(Builder builder) {
-                super(builder);
-                type = builder.type;
-                code = builder.code;
-                factor = builder.factor;
-                amount = builder.amount;
-            }
-
-            /**
-             * This code identifies the type of the component.
-             * 
-             * @return
-             *     An immutable object of type {@link ChargeItemDefinitionPriceComponentType} that is non-null.
-             */
-            public ChargeItemDefinitionPriceComponentType getType() {
-                return type;
-            }
-
-            /**
-             * A code that identifies the component. Codes may be used to differentiate between kinds of taxes, surcharges, discounts 
-             * etc.
-             * 
-             * @return
-             *     An immutable object of type {@link CodeableConcept} that may be null.
-             */
-            public CodeableConcept getCode() {
-                return code;
-            }
-
-            /**
-             * The factor that has been applied on the base price for calculating this component.
-             * 
-             * @return
-             *     An immutable object of type {@link Decimal} that may be null.
-             */
-            public Decimal getFactor() {
-                return factor;
-            }
-
-            /**
-             * The amount calculated for this component.
-             * 
-             * @return
-             *     An immutable object of type {@link Money} that may be null.
-             */
-            public Money getAmount() {
-                return amount;
-            }
-
-            @Override
-            public boolean hasChildren() {
-                return super.hasChildren() || 
-                    (type != null) || 
-                    (code != null) || 
-                    (factor != null) || 
-                    (amount != null);
-            }
-
-            @Override
-            public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-                if (visitor.preVisit(this)) {
-                    visitor.visitStart(elementName, elementIndex, this);
-                    if (visitor.visit(elementName, elementIndex, this)) {
-                        // visit children
-                        accept(id, "id", visitor);
-                        accept(extension, "extension", visitor, Extension.class);
-                        accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                        accept(type, "type", visitor);
-                        accept(code, "code", visitor);
-                        accept(factor, "factor", visitor);
-                        accept(amount, "amount", visitor);
-                    }
-                    visitor.visitEnd(elementName, elementIndex, this);
-                    visitor.postVisit(this);
-                }
-            }
-
-            @Override
-            public boolean equals(Object obj) {
-                if (this == obj) {
-                    return true;
-                }
-                if (obj == null) {
-                    return false;
-                }
-                if (getClass() != obj.getClass()) {
-                    return false;
-                }
-                PriceComponent other = (PriceComponent) obj;
-                return Objects.equals(id, other.id) && 
-                    Objects.equals(extension, other.extension) && 
-                    Objects.equals(modifierExtension, other.modifierExtension) && 
-                    Objects.equals(type, other.type) && 
-                    Objects.equals(code, other.code) && 
-                    Objects.equals(factor, other.factor) && 
-                    Objects.equals(amount, other.amount);
-            }
-
-            @Override
-            public int hashCode() {
-                int result = hashCode;
-                if (result == 0) {
-                    result = Objects.hash(id, 
-                        extension, 
-                        modifierExtension, 
-                        type, 
-                        code, 
-                        factor, 
-                        amount);
-                    hashCode = result;
-                }
-                return result;
-            }
-
-            @Override
-            public Builder toBuilder() {
-                return new Builder().from(this);
-            }
-
-            public static Builder builder() {
-                return new Builder();
-            }
-
-            public static class Builder extends BackboneElement.Builder {
-                private ChargeItemDefinitionPriceComponentType type;
-                private CodeableConcept code;
-                private Decimal factor;
-                private Money amount;
-
-                private Builder() {
-                    super();
-                }
-
-                /**
-                 * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-                 * contain spaces.
-                 * 
-                 * @param id
-                 *     Unique id for inter-element referencing
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                @Override
-                public Builder id(java.lang.String id) {
-                    return (Builder) super.id(id);
-                }
-
-                /**
-                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-                 * of the definition of the extension.
-                 * 
-                 * <p>Adds new element(s) to the existing list.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param extension
-                 *     Additional content defined by implementations
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                @Override
-                public Builder extension(Extension... extension) {
-                    return (Builder) super.extension(extension);
-                }
-
-                /**
-                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-                 * of the definition of the extension.
-                 * 
-                 * <p>Replaces the existing list with a new one containing elements from the Collection.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param extension
-                 *     Additional content defined by implementations
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @throws NullPointerException
-                 *     If the passed collection is null
-                 */
-                @Override
-                public Builder extension(Collection<Extension> extension) {
-                    return (Builder) super.extension(extension);
-                }
-
-                /**
-                 * May be used to represent additional information that is not part of the basic definition of the element and that 
-                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-                 * extension. Applications processing a resource are required to check for modifier extensions.
-                 * 
-                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-                 * change the meaning of modifierExtension itself).
-                 * 
-                 * <p>Adds new element(s) to the existing list.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param modifierExtension
-                 *     Extensions that cannot be ignored even if unrecognized
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                @Override
-                public Builder modifierExtension(Extension... modifierExtension) {
-                    return (Builder) super.modifierExtension(modifierExtension);
-                }
-
-                /**
-                 * May be used to represent additional information that is not part of the basic definition of the element and that 
-                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-                 * extension. Applications processing a resource are required to check for modifier extensions.
-                 * 
-                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-                 * change the meaning of modifierExtension itself).
-                 * 
-                 * <p>Replaces the existing list with a new one containing elements from the Collection.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param modifierExtension
-                 *     Extensions that cannot be ignored even if unrecognized
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @throws NullPointerException
-                 *     If the passed collection is null
-                 */
-                @Override
-                public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                    return (Builder) super.modifierExtension(modifierExtension);
-                }
-
-                /**
-                 * This code identifies the type of the component.
-                 * 
-                 * <p>This element is required.
-                 * 
-                 * @param type
-                 *     base | surcharge | deduction | discount | tax | informational
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder type(ChargeItemDefinitionPriceComponentType type) {
-                    this.type = type;
-                    return this;
-                }
-
-                /**
-                 * A code that identifies the component. Codes may be used to differentiate between kinds of taxes, surcharges, discounts 
-                 * etc.
-                 * 
-                 * @param code
-                 *     Code identifying the specific component
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder code(CodeableConcept code) {
-                    this.code = code;
-                    return this;
-                }
-
-                /**
-                 * The factor that has been applied on the base price for calculating this component.
-                 * 
-                 * @param factor
-                 *     Factor used for calculating this component
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder factor(Decimal factor) {
-                    this.factor = factor;
-                    return this;
-                }
-
-                /**
-                 * The amount calculated for this component.
-                 * 
-                 * @param amount
-                 *     Monetary amount associated with this component
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder amount(Money amount) {
-                    this.amount = amount;
-                    return this;
-                }
-
-                /**
-                 * Build the {@link PriceComponent}
-                 * 
-                 * <p>Required elements:
-                 * <ul>
-                 * <li>type</li>
-                 * </ul>
-                 * 
-                 * @return
-                 *     An immutable object of type {@link PriceComponent}
-                 * @throws IllegalStateException
-                 *     if the current state cannot be built into a valid PriceComponent per the base specification
-                 */
-                @Override
-                public PriceComponent build() {
-                    PriceComponent priceComponent = new PriceComponent(this);
-                    if (validating) {
-                        validate(priceComponent);
-                    }
-                    return priceComponent;
-                }
-
-                protected void validate(PriceComponent priceComponent) {
-                    super.validate(priceComponent);
-                    ValidationSupport.requireNonNull(priceComponent.type, "type");
-                    ValidationSupport.requireValueOrChildren(priceComponent);
-                }
-
-                protected Builder from(PriceComponent priceComponent) {
-                    super.from(priceComponent);
-                    type = priceComponent.type;
-                    code = priceComponent.code;
-                    factor = priceComponent.factor;
-                    amount = priceComponent.amount;
-                    return this;
-                }
             }
         }
     }

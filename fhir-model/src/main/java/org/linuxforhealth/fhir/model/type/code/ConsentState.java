@@ -27,25 +27,11 @@ public class ConsentState extends Code {
     public static final ConsentState DRAFT = ConsentState.builder().value(Value.DRAFT).build();
 
     /**
-     * Proposed
-     * 
-     * <p>The consent has been proposed but not yet agreed to by all parties. The negotiation stage.
-     */
-    public static final ConsentState PROPOSED = ConsentState.builder().value(Value.PROPOSED).build();
-
-    /**
      * Active
      * 
      * <p>The consent is to be followed and enforced.
      */
     public static final ConsentState ACTIVE = ConsentState.builder().value(Value.ACTIVE).build();
-
-    /**
-     * Rejected
-     * 
-     * <p>The consent has been rejected by one or more of the parties.
-     */
-    public static final ConsentState REJECTED = ConsentState.builder().value(Value.REJECTED).build();
 
     /**
      * Inactive
@@ -55,11 +41,25 @@ public class ConsentState extends Code {
     public static final ConsentState INACTIVE = ConsentState.builder().value(Value.INACTIVE).build();
 
     /**
+     * Abandoned
+     * 
+     * <p>The consent development has been terminated prior to completion.
+     */
+    public static final ConsentState NOT_DONE = ConsentState.builder().value(Value.NOT_DONE).build();
+
+    /**
      * Entered in Error
      * 
      * <p>The consent was created wrongly (e.g. wrong patient) and should be ignored.
      */
     public static final ConsentState ENTERED_IN_ERROR = ConsentState.builder().value(Value.ENTERED_IN_ERROR).build();
+
+    /**
+     * Unknown
+     * 
+     * <p>The resource is in an indeterminate state.
+     */
+    public static final ConsentState UNKNOWN = ConsentState.builder().value(Value.UNKNOWN).build();
 
     private volatile int hashCode;
 
@@ -81,16 +81,16 @@ public class ConsentState extends Code {
         switch (value) {
         case DRAFT:
             return DRAFT;
-        case PROPOSED:
-            return PROPOSED;
         case ACTIVE:
             return ACTIVE;
-        case REJECTED:
-            return REJECTED;
         case INACTIVE:
             return INACTIVE;
+        case NOT_DONE:
+            return NOT_DONE;
         case ENTERED_IN_ERROR:
             return ENTERED_IN_ERROR;
+        case UNKNOWN:
+            return UNKNOWN;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -231,25 +231,11 @@ public class ConsentState extends Code {
         DRAFT("draft"),
 
         /**
-         * Proposed
-         * 
-         * <p>The consent has been proposed but not yet agreed to by all parties. The negotiation stage.
-         */
-        PROPOSED("proposed"),
-
-        /**
          * Active
          * 
          * <p>The consent is to be followed and enforced.
          */
         ACTIVE("active"),
-
-        /**
-         * Rejected
-         * 
-         * <p>The consent has been rejected by one or more of the parties.
-         */
-        REJECTED("rejected"),
 
         /**
          * Inactive
@@ -259,11 +245,25 @@ public class ConsentState extends Code {
         INACTIVE("inactive"),
 
         /**
+         * Abandoned
+         * 
+         * <p>The consent development has been terminated prior to completion.
+         */
+        NOT_DONE("not-done"),
+
+        /**
          * Entered in Error
          * 
          * <p>The consent was created wrongly (e.g. wrong patient) and should be ignored.
          */
-        ENTERED_IN_ERROR("entered-in-error");
+        ENTERED_IN_ERROR("entered-in-error"),
+
+        /**
+         * Unknown
+         * 
+         * <p>The resource is in an indeterminate state.
+         */
+        UNKNOWN("unknown");
 
         private final java.lang.String value;
 
@@ -296,16 +296,16 @@ public class ConsentState extends Code {
             switch (value) {
             case "draft":
                 return DRAFT;
-            case "proposed":
-                return PROPOSED;
             case "active":
                 return ACTIVE;
-            case "rejected":
-                return REJECTED;
             case "inactive":
                 return INACTIVE;
+            case "not-done":
+                return NOT_DONE;
             case "entered-in-error":
                 return ENTERED_IN_ERROR;
+            case "unknown":
+                return UNKNOWN;
             default:
                 throw new IllegalArgumentException(value);
             }

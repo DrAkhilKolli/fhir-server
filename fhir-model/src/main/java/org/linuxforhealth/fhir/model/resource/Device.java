@@ -15,23 +15,32 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
+import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.Annotation;
+import org.linuxforhealth.fhir.model.type.Attachment;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Base64Binary;
+import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.ContactPoint;
+import org.linuxforhealth.fhir.model.type.Count;
 import org.linuxforhealth.fhir.model.type.DateTime;
+import org.linuxforhealth.fhir.model.type.Duration;
+import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
+import org.linuxforhealth.fhir.model.type.Integer;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Quantity;
+import org.linuxforhealth.fhir.model.type.Range;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
@@ -54,65 +63,95 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "device-0",
+    id = "dev-1",
+    level = "Rule",
+    location = "(base)",
+    description = "only one Device.name.display SHALL be true when there is more than one Device.name",
+    expression = "name.where(display=true).count() <= 1",
+    source = "http://hl7.org/fhir/StructureDefinition/Device"
+)
+@Constraint(
+    id = "device-2",
     level = "Warning",
     location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/device-status-reason",
-    expression = "statusReason.exists() implies (statusReason.all(memberOf('http://hl7.org/fhir/ValueSet/device-status-reason', 'extensible')))",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/device-availability-status",
+    expression = "availabilityStatus.exists() implies (availabilityStatus.memberOf('http://hl7.org/fhir/ValueSet/device-availability-status', 'extensible'))",
     source = "http://hl7.org/fhir/StructureDefinition/Device",
     generated = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class Device extends DomainResource {
     private final List<Identifier> identifier;
-    @ReferenceTarget({ "DeviceDefinition" })
-    private final Reference definition;
+    private final String displayName;
+    private final CodeableReference definition;
     @Summary
     private final List<UdiCarrier> udiCarrier;
     @Summary
     @Binding(
         bindingName = "FHIRDeviceStatus",
         strength = BindingStrength.Value.REQUIRED,
-        description = "The availability status of the device.",
-        valueSet = "http://hl7.org/fhir/ValueSet/device-status|4.3.0"
+        description = "The record status of the device.",
+        valueSet = "http://hl7.org/fhir/ValueSet/device-status|5.0.0"
     )
     private final FHIRDeviceStatus status;
     @Binding(
-        bindingName = "FHIRDeviceStatusReason",
+        bindingName = "FHIRDeviceAvailabilityStatus",
         strength = BindingStrength.Value.EXTENSIBLE,
         description = "The availability status reason of the device.",
-        valueSet = "http://hl7.org/fhir/ValueSet/device-status-reason"
+        valueSet = "http://hl7.org/fhir/ValueSet/device-availability-status"
     )
-    private final List<CodeableConcept> statusReason;
-    private final String distinctIdentifier;
+    private final CodeableConcept availabilityStatus;
+    private final Identifier biologicalSourceEvent;
     private final String manufacturer;
     private final DateTime manufactureDate;
     private final DateTime expirationDate;
     private final String lotNumber;
     private final String serialNumber;
-    private final List<DeviceName> deviceName;
+    private final List<Name> name;
     private final String modelNumber;
     private final String partNumber;
+    @Binding(
+        bindingName = "DeviceCategory",
+        strength = BindingStrength.Value.EXAMPLE,
+        description = "Categories of medical devices.",
+        valueSet = "http://hl7.org/fhir/ValueSet/device-category"
+    )
+    private final List<CodeableConcept> category;
     @Binding(
         bindingName = "DeviceType",
         strength = BindingStrength.Value.EXAMPLE,
         description = "Codes to identify medical devices.",
         valueSet = "http://hl7.org/fhir/ValueSet/device-type"
     )
-    private final CodeableConcept type;
-    private final List<Specialization> specialization;
+    private final List<CodeableConcept> type;
     private final List<Version> version;
+    private final List<ConformsTo> conformsTo;
     private final List<Property> property;
-    @ReferenceTarget({ "Patient" })
-    private final Reference patient;
+    @Binding(
+        bindingName = "DeviceOperationMode",
+        strength = BindingStrength.Value.EXAMPLE,
+        description = "Operational mode of a device.",
+        valueSet = "http://hl7.org/fhir/ValueSet/device-operation-mode"
+    )
+    private final CodeableConcept mode;
+    private final Count cycle;
+    private final Duration duration;
     @ReferenceTarget({ "Organization" })
     private final Reference owner;
     private final List<ContactPoint> contact;
     @ReferenceTarget({ "Location" })
     private final Reference location;
     private final Uri url;
+    @ReferenceTarget({ "Endpoint" })
+    private final List<Reference> endpoint;
+    private final List<CodeableReference> gateway;
     private final List<Annotation> note;
     @Summary
+    @Binding(
+        bindingName = "Safety",
+        strength = BindingStrength.Value.EXAMPLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/device-safety"
+    )
     private final List<CodeableConcept> safety;
     @ReferenceTarget({ "Device" })
     private final Reference parent;
@@ -120,28 +159,34 @@ public class Device extends DomainResource {
     private Device(Builder builder) {
         super(builder);
         identifier = Collections.unmodifiableList(builder.identifier);
+        displayName = builder.displayName;
         definition = builder.definition;
         udiCarrier = Collections.unmodifiableList(builder.udiCarrier);
         status = builder.status;
-        statusReason = Collections.unmodifiableList(builder.statusReason);
-        distinctIdentifier = builder.distinctIdentifier;
+        availabilityStatus = builder.availabilityStatus;
+        biologicalSourceEvent = builder.biologicalSourceEvent;
         manufacturer = builder.manufacturer;
         manufactureDate = builder.manufactureDate;
         expirationDate = builder.expirationDate;
         lotNumber = builder.lotNumber;
         serialNumber = builder.serialNumber;
-        deviceName = Collections.unmodifiableList(builder.deviceName);
+        name = Collections.unmodifiableList(builder.name);
         modelNumber = builder.modelNumber;
         partNumber = builder.partNumber;
-        type = builder.type;
-        specialization = Collections.unmodifiableList(builder.specialization);
+        category = Collections.unmodifiableList(builder.category);
+        type = Collections.unmodifiableList(builder.type);
         version = Collections.unmodifiableList(builder.version);
+        conformsTo = Collections.unmodifiableList(builder.conformsTo);
         property = Collections.unmodifiableList(builder.property);
-        patient = builder.patient;
+        mode = builder.mode;
+        cycle = builder.cycle;
+        duration = builder.duration;
         owner = builder.owner;
         contact = Collections.unmodifiableList(builder.contact);
         location = builder.location;
         url = builder.url;
+        endpoint = Collections.unmodifiableList(builder.endpoint);
+        gateway = Collections.unmodifiableList(builder.gateway);
         note = Collections.unmodifiableList(builder.note);
         safety = Collections.unmodifiableList(builder.safety);
         parent = builder.parent;
@@ -158,12 +203,23 @@ public class Device extends DomainResource {
     }
 
     /**
+     * The name used to display by default when the device is referenced. Based on intent of use by the resource creator, 
+     * this may reflect one of the names in Device.name, or may be another simple name.
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    /**
      * The reference to the definition for the device.
      * 
      * @return
-     *     An immutable object of type {@link Reference} that may be null.
+     *     An immutable object of type {@link CodeableReference} that may be null.
      */
-    public Reference getDefinition() {
+    public CodeableReference getDefinition() {
         return definition;
     }
 
@@ -180,7 +236,7 @@ public class Device extends DomainResource {
     }
 
     /**
-     * Status of the Device availability.
+     * The Device record status. This is not the status of the device like availability.
      * 
      * @return
      *     An immutable object of type {@link FHIRDeviceStatus} that may be null.
@@ -190,28 +246,28 @@ public class Device extends DomainResource {
     }
 
     /**
-     * Reason for the dtatus of the Device availability.
+     * The availability of the device.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An immutable object of type {@link CodeableConcept} that may be null.
      */
-    public List<CodeableConcept> getStatusReason() {
-        return statusReason;
+    public CodeableConcept getAvailabilityStatus() {
+        return availabilityStatus;
     }
 
     /**
-     * The distinct identification string as required by regulation for a human cell, tissue, or cellular and tissue-based 
-     * product.
+     * An identifier that supports traceability to the event during which material in this product from one or more 
+     * biological entities was obtained or pooled.
      * 
      * @return
-     *     An immutable object of type {@link String} that may be null.
+     *     An immutable object of type {@link Identifier} that may be null.
      */
-    public String getDistinctIdentifier() {
-        return distinctIdentifier;
+    public Identifier getBiologicalSourceEvent() {
+        return biologicalSourceEvent;
     }
 
     /**
-     * A name of the manufacturer.
+     * A name of the manufacturer or entity legally responsible for the device.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -266,10 +322,10 @@ public class Device extends DomainResource {
      * one of the names available from DeviceDefinition.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link DeviceName} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link Name} that may be empty.
      */
-    public List<DeviceName> getDeviceName() {
-        return deviceName;
+    public List<Name> getName() {
+        return name;
     }
 
     /**
@@ -293,24 +349,24 @@ public class Device extends DomainResource {
     }
 
     /**
-     * The kind or type of device.
+     * Devices may be associated with one or more categories.
      * 
      * @return
-     *     An immutable object of type {@link CodeableConcept} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
      */
-    public CodeableConcept getType() {
-        return type;
+    public List<CodeableConcept> getCategory() {
+        return category;
     }
 
     /**
-     * The capabilities supported on a device, the standards to which the device conforms for a particular purpose, and used 
-     * for the communication.
+     * The kind or type of device. A device instance may have more than one type - in which case those are the types that 
+     * apply to the specific instance of the device.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Specialization} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
      */
-    public List<Specialization> getSpecialization() {
-        return specialization;
+    public List<CodeableConcept> getType() {
+        return type;
     }
 
     /**
@@ -324,7 +380,21 @@ public class Device extends DomainResource {
     }
 
     /**
-     * The actual configuration settings of a device as it actually operates, e.g., regulation status, time properties.
+     * Identifies the standards, specifications, or formal guidances for the capabilities supported by the device. The device 
+     * may be certified as conformant to these specifications e.g., communication, performance, process, measurement, or 
+     * specialization standards.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link ConformsTo} that may be empty.
+     */
+    public List<ConformsTo> getConformsTo() {
+        return conformsTo;
+    }
+
+    /**
+     * Static or essentially fixed characteristics or features of the device (e.g., time or timing attributes, resolution, 
+     * accuracy, intended use or instructions for use, and physical attributes) that are not otherwise captured in more 
+     * specific attributes.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Property} that may be empty.
@@ -334,13 +404,33 @@ public class Device extends DomainResource {
     }
 
     /**
-     * Patient information, If the device is affixed to a person.
+     * The designated condition for performing a task with the device.
      * 
      * @return
-     *     An immutable object of type {@link Reference} that may be null.
+     *     An immutable object of type {@link CodeableConcept} that may be null.
      */
-    public Reference getPatient() {
-        return patient;
+    public CodeableConcept getMode() {
+        return mode;
+    }
+
+    /**
+     * The series of occurrences that repeats during the operation of the device.
+     * 
+     * @return
+     *     An immutable object of type {@link Count} that may be null.
+     */
+    public Count getCycle() {
+        return cycle;
+    }
+
+    /**
+     * A measurement of time during the device's operation (e.g., days, hours, mins, etc.).
+     * 
+     * @return
+     *     An immutable object of type {@link Duration} that may be null.
+     */
+    public Duration getDuration() {
+        return duration;
     }
 
     /**
@@ -384,6 +474,27 @@ public class Device extends DomainResource {
     }
 
     /**
+     * Technical endpoints providing access to services provided by the device defined at this resource.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getEndpoint() {
+        return endpoint;
+    }
+
+    /**
+     * The linked device acting as a communication controller, data collector, translator, or concentrator for the current 
+     * device (e.g., mobile phone application that relays a blood pressure device's data).
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
+     */
+    public List<CodeableReference> getGateway() {
+        return gateway;
+    }
+
+    /**
      * Descriptive information, usage information or implantation information that is not captured in an existing element.
      * 
      * @return
@@ -404,7 +515,7 @@ public class Device extends DomainResource {
     }
 
     /**
-     * The device that this device is attached to or is part of.
+     * The higher level or encompassing device that this device is a logical part of.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
@@ -417,28 +528,34 @@ public class Device extends DomainResource {
     public boolean hasChildren() {
         return super.hasChildren() || 
             !identifier.isEmpty() || 
+            (displayName != null) || 
             (definition != null) || 
             !udiCarrier.isEmpty() || 
             (status != null) || 
-            !statusReason.isEmpty() || 
-            (distinctIdentifier != null) || 
+            (availabilityStatus != null) || 
+            (biologicalSourceEvent != null) || 
             (manufacturer != null) || 
             (manufactureDate != null) || 
             (expirationDate != null) || 
             (lotNumber != null) || 
             (serialNumber != null) || 
-            !deviceName.isEmpty() || 
+            !name.isEmpty() || 
             (modelNumber != null) || 
             (partNumber != null) || 
-            (type != null) || 
-            !specialization.isEmpty() || 
+            !category.isEmpty() || 
+            !type.isEmpty() || 
             !version.isEmpty() || 
+            !conformsTo.isEmpty() || 
             !property.isEmpty() || 
-            (patient != null) || 
+            (mode != null) || 
+            (cycle != null) || 
+            (duration != null) || 
             (owner != null) || 
             !contact.isEmpty() || 
             (location != null) || 
             (url != null) || 
+            !endpoint.isEmpty() || 
+            !gateway.isEmpty() || 
             !note.isEmpty() || 
             !safety.isEmpty() || 
             (parent != null);
@@ -459,28 +576,34 @@ public class Device extends DomainResource {
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(identifier, "identifier", visitor, Identifier.class);
+                accept(displayName, "displayName", visitor);
                 accept(definition, "definition", visitor);
                 accept(udiCarrier, "udiCarrier", visitor, UdiCarrier.class);
                 accept(status, "status", visitor);
-                accept(statusReason, "statusReason", visitor, CodeableConcept.class);
-                accept(distinctIdentifier, "distinctIdentifier", visitor);
+                accept(availabilityStatus, "availabilityStatus", visitor);
+                accept(biologicalSourceEvent, "biologicalSourceEvent", visitor);
                 accept(manufacturer, "manufacturer", visitor);
                 accept(manufactureDate, "manufactureDate", visitor);
                 accept(expirationDate, "expirationDate", visitor);
                 accept(lotNumber, "lotNumber", visitor);
                 accept(serialNumber, "serialNumber", visitor);
-                accept(deviceName, "deviceName", visitor, DeviceName.class);
+                accept(name, "name", visitor, Name.class);
                 accept(modelNumber, "modelNumber", visitor);
                 accept(partNumber, "partNumber", visitor);
-                accept(type, "type", visitor);
-                accept(specialization, "specialization", visitor, Specialization.class);
+                accept(category, "category", visitor, CodeableConcept.class);
+                accept(type, "type", visitor, CodeableConcept.class);
                 accept(version, "version", visitor, Version.class);
+                accept(conformsTo, "conformsTo", visitor, ConformsTo.class);
                 accept(property, "property", visitor, Property.class);
-                accept(patient, "patient", visitor);
+                accept(mode, "mode", visitor);
+                accept(cycle, "cycle", visitor);
+                accept(duration, "duration", visitor);
                 accept(owner, "owner", visitor);
                 accept(contact, "contact", visitor, ContactPoint.class);
                 accept(location, "location", visitor);
                 accept(url, "url", visitor);
+                accept(endpoint, "endpoint", visitor, Reference.class);
+                accept(gateway, "gateway", visitor, CodeableReference.class);
                 accept(note, "note", visitor, Annotation.class);
                 accept(safety, "safety", visitor, CodeableConcept.class);
                 accept(parent, "parent", visitor);
@@ -511,28 +634,34 @@ public class Device extends DomainResource {
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(identifier, other.identifier) && 
+            Objects.equals(displayName, other.displayName) && 
             Objects.equals(definition, other.definition) && 
             Objects.equals(udiCarrier, other.udiCarrier) && 
             Objects.equals(status, other.status) && 
-            Objects.equals(statusReason, other.statusReason) && 
-            Objects.equals(distinctIdentifier, other.distinctIdentifier) && 
+            Objects.equals(availabilityStatus, other.availabilityStatus) && 
+            Objects.equals(biologicalSourceEvent, other.biologicalSourceEvent) && 
             Objects.equals(manufacturer, other.manufacturer) && 
             Objects.equals(manufactureDate, other.manufactureDate) && 
             Objects.equals(expirationDate, other.expirationDate) && 
             Objects.equals(lotNumber, other.lotNumber) && 
             Objects.equals(serialNumber, other.serialNumber) && 
-            Objects.equals(deviceName, other.deviceName) && 
+            Objects.equals(name, other.name) && 
             Objects.equals(modelNumber, other.modelNumber) && 
             Objects.equals(partNumber, other.partNumber) && 
+            Objects.equals(category, other.category) && 
             Objects.equals(type, other.type) && 
-            Objects.equals(specialization, other.specialization) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(conformsTo, other.conformsTo) && 
             Objects.equals(property, other.property) && 
-            Objects.equals(patient, other.patient) && 
+            Objects.equals(mode, other.mode) && 
+            Objects.equals(cycle, other.cycle) && 
+            Objects.equals(duration, other.duration) && 
             Objects.equals(owner, other.owner) && 
             Objects.equals(contact, other.contact) && 
             Objects.equals(location, other.location) && 
             Objects.equals(url, other.url) && 
+            Objects.equals(endpoint, other.endpoint) && 
+            Objects.equals(gateway, other.gateway) && 
             Objects.equals(note, other.note) && 
             Objects.equals(safety, other.safety) && 
             Objects.equals(parent, other.parent);
@@ -551,28 +680,34 @@ public class Device extends DomainResource {
                 extension, 
                 modifierExtension, 
                 identifier, 
+                displayName, 
                 definition, 
                 udiCarrier, 
                 status, 
-                statusReason, 
-                distinctIdentifier, 
+                availabilityStatus, 
+                biologicalSourceEvent, 
                 manufacturer, 
                 manufactureDate, 
                 expirationDate, 
                 lotNumber, 
                 serialNumber, 
-                deviceName, 
+                name, 
                 modelNumber, 
                 partNumber, 
+                category, 
                 type, 
-                specialization, 
                 version, 
+                conformsTo, 
                 property, 
-                patient, 
+                mode, 
+                cycle, 
+                duration, 
                 owner, 
                 contact, 
                 location, 
                 url, 
+                endpoint, 
+                gateway, 
                 note, 
                 safety, 
                 parent);
@@ -592,28 +727,34 @@ public class Device extends DomainResource {
 
     public static class Builder extends DomainResource.Builder {
         private List<Identifier> identifier = new ArrayList<>();
-        private Reference definition;
+        private String displayName;
+        private CodeableReference definition;
         private List<UdiCarrier> udiCarrier = new ArrayList<>();
         private FHIRDeviceStatus status;
-        private List<CodeableConcept> statusReason = new ArrayList<>();
-        private String distinctIdentifier;
+        private CodeableConcept availabilityStatus;
+        private Identifier biologicalSourceEvent;
         private String manufacturer;
         private DateTime manufactureDate;
         private DateTime expirationDate;
         private String lotNumber;
         private String serialNumber;
-        private List<DeviceName> deviceName = new ArrayList<>();
+        private List<Name> name = new ArrayList<>();
         private String modelNumber;
         private String partNumber;
-        private CodeableConcept type;
-        private List<Specialization> specialization = new ArrayList<>();
+        private List<CodeableConcept> category = new ArrayList<>();
+        private List<CodeableConcept> type = new ArrayList<>();
         private List<Version> version = new ArrayList<>();
+        private List<ConformsTo> conformsTo = new ArrayList<>();
         private List<Property> property = new ArrayList<>();
-        private Reference patient;
+        private CodeableConcept mode;
+        private Count cycle;
+        private Duration duration;
         private Reference owner;
         private List<ContactPoint> contact = new ArrayList<>();
         private Reference location;
         private Uri url;
+        private List<Reference> endpoint = new ArrayList<>();
+        private List<CodeableReference> gateway = new ArrayList<>();
         private List<Annotation> note = new ArrayList<>();
         private List<CodeableConcept> safety = new ArrayList<>();
         private Reference parent;
@@ -700,7 +841,8 @@ public class Device extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -718,7 +860,8 @@ public class Device extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -739,7 +882,7 @@ public class Device extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -759,7 +902,7 @@ public class Device extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -784,9 +927,9 @@ public class Device extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -809,9 +952,9 @@ public class Device extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -873,12 +1016,38 @@ public class Device extends DomainResource {
         }
 
         /**
-         * The reference to the definition for the device.
+         * Convenience method for setting {@code displayName}.
          * 
-         * <p>Allowed resource types for this reference:
-         * <ul>
-         * <li>{@link DeviceDefinition}</li>
-         * </ul>
+         * @param displayName
+         *     The name used to display by default when the device is referenced
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #displayName(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder displayName(java.lang.String displayName) {
+            this.displayName = (displayName == null) ? null : String.of(displayName);
+            return this;
+        }
+
+        /**
+         * The name used to display by default when the device is referenced. Based on intent of use by the resource creator, 
+         * this may reflect one of the names in Device.name, or may be another simple name.
+         * 
+         * @param displayName
+         *     The name used to display by default when the device is referenced
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder displayName(String displayName) {
+            this.displayName = displayName;
+            return this;
+        }
+
+        /**
+         * The reference to the definition for the device.
          * 
          * @param definition
          *     The reference to the definition for the device
@@ -886,7 +1055,7 @@ public class Device extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder definition(Reference definition) {
+        public Builder definition(CodeableReference definition) {
             this.definition = definition;
             return this;
         }
@@ -935,10 +1104,10 @@ public class Device extends DomainResource {
         }
 
         /**
-         * Status of the Device availability.
+         * The Device record status. This is not the status of the device like availability.
          * 
          * @param status
-         *     active | inactive | entered-in-error | unknown
+         *     active | inactive | entered-in-error
          * 
          * @return
          *     A reference to this Builder instance
@@ -949,72 +1118,32 @@ public class Device extends DomainResource {
         }
 
         /**
-         * Reason for the dtatus of the Device availability.
+         * The availability of the device.
          * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param statusReason
-         *     online | paused | standby | offline | not-ready | transduc-discon | hw-discon | off
+         * @param availabilityStatus
+         *     lost | damaged | destroyed | available
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder statusReason(CodeableConcept... statusReason) {
-            for (CodeableConcept value : statusReason) {
-                this.statusReason.add(value);
-            }
+        public Builder availabilityStatus(CodeableConcept availabilityStatus) {
+            this.availabilityStatus = availabilityStatus;
             return this;
         }
 
         /**
-         * Reason for the dtatus of the Device availability.
+         * An identifier that supports traceability to the event during which material in this product from one or more 
+         * biological entities was obtained or pooled.
          * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param statusReason
-         *     online | paused | standby | offline | not-ready | transduc-discon | hw-discon | off
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder statusReason(Collection<CodeableConcept> statusReason) {
-            this.statusReason = new ArrayList<>(statusReason);
-            return this;
-        }
-
-        /**
-         * Convenience method for setting {@code distinctIdentifier}.
-         * 
-         * @param distinctIdentifier
-         *     The distinct identification string
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #distinctIdentifier(org.linuxforhealth.fhir.model.type.String)
-         */
-        public Builder distinctIdentifier(java.lang.String distinctIdentifier) {
-            this.distinctIdentifier = (distinctIdentifier == null) ? null : String.of(distinctIdentifier);
-            return this;
-        }
-
-        /**
-         * The distinct identification string as required by regulation for a human cell, tissue, or cellular and tissue-based 
-         * product.
-         * 
-         * @param distinctIdentifier
-         *     The distinct identification string
+         * @param biologicalSourceEvent
+         *     An identifier that supports traceability to the event during which material in this product from one or more 
+         *     biological entities was obtained or pooled
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder distinctIdentifier(String distinctIdentifier) {
-            this.distinctIdentifier = distinctIdentifier;
+        public Builder biologicalSourceEvent(Identifier biologicalSourceEvent) {
+            this.biologicalSourceEvent = biologicalSourceEvent;
             return this;
         }
 
@@ -1035,7 +1164,7 @@ public class Device extends DomainResource {
         }
 
         /**
-         * A name of the manufacturer.
+         * A name of the manufacturer or entity legally responsible for the device.
          * 
          * @param manufacturer
          *     Name of device manufacturer
@@ -1144,15 +1273,15 @@ public class Device extends DomainResource {
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param deviceName
-         *     The name of the device as given by the manufacturer
+         * @param name
+         *     The name or names of the device as known to the manufacturer and/or patient
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder deviceName(DeviceName... deviceName) {
-            for (DeviceName value : deviceName) {
-                this.deviceName.add(value);
+        public Builder name(Name... name) {
+            for (Name value : name) {
+                this.name.add(value);
             }
             return this;
         }
@@ -1165,8 +1294,8 @@ public class Device extends DomainResource {
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param deviceName
-         *     The name of the device as given by the manufacturer
+         * @param name
+         *     The name or names of the device as known to the manufacturer and/or patient
          * 
          * @return
          *     A reference to this Builder instance
@@ -1174,8 +1303,8 @@ public class Device extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder deviceName(Collection<DeviceName> deviceName) {
-            this.deviceName = new ArrayList<>(deviceName);
+        public Builder name(Collection<Name> name) {
+            this.name = new ArrayList<>(name);
             return this;
         }
 
@@ -1240,50 +1369,32 @@ public class Device extends DomainResource {
         }
 
         /**
-         * The kind or type of device.
-         * 
-         * @param type
-         *     The kind or type of device
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder type(CodeableConcept type) {
-            this.type = type;
-            return this;
-        }
-
-        /**
-         * The capabilities supported on a device, the standards to which the device conforms for a particular purpose, and used 
-         * for the communication.
+         * Devices may be associated with one or more categories.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param specialization
-         *     The capabilities supported on a device, the standards to which the device conforms for a particular purpose, and used 
-         *     for the communication
+         * @param category
+         *     Indicates a high-level grouping of the device
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder specialization(Specialization... specialization) {
-            for (Specialization value : specialization) {
-                this.specialization.add(value);
+        public Builder category(CodeableConcept... category) {
+            for (CodeableConcept value : category) {
+                this.category.add(value);
             }
             return this;
         }
 
         /**
-         * The capabilities supported on a device, the standards to which the device conforms for a particular purpose, and used 
-         * for the communication.
+         * Devices may be associated with one or more categories.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param specialization
-         *     The capabilities supported on a device, the standards to which the device conforms for a particular purpose, and used 
-         *     for the communication
+         * @param category
+         *     Indicates a high-level grouping of the device
          * 
          * @return
          *     A reference to this Builder instance
@@ -1291,8 +1402,49 @@ public class Device extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder specialization(Collection<Specialization> specialization) {
-            this.specialization = new ArrayList<>(specialization);
+        public Builder category(Collection<CodeableConcept> category) {
+            this.category = new ArrayList<>(category);
+            return this;
+        }
+
+        /**
+         * The kind or type of device. A device instance may have more than one type - in which case those are the types that 
+         * apply to the specific instance of the device.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param type
+         *     The kind or type of device
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder type(CodeableConcept... type) {
+            for (CodeableConcept value : type) {
+                this.type.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The kind or type of device. A device instance may have more than one type - in which case those are the types that 
+         * apply to the specific instance of the device.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param type
+         *     The kind or type of device
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder type(Collection<CodeableConcept> type) {
+            this.type = new ArrayList<>(type);
             return this;
         }
 
@@ -1336,13 +1488,58 @@ public class Device extends DomainResource {
         }
 
         /**
-         * The actual configuration settings of a device as it actually operates, e.g., regulation status, time properties.
+         * Identifies the standards, specifications, or formal guidances for the capabilities supported by the device. The device 
+         * may be certified as conformant to these specifications e.g., communication, performance, process, measurement, or 
+         * specialization standards.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param conformsTo
+         *     Identifies the standards, specifications, or formal guidances for the capabilities supported by the device
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder conformsTo(ConformsTo... conformsTo) {
+            for (ConformsTo value : conformsTo) {
+                this.conformsTo.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Identifies the standards, specifications, or formal guidances for the capabilities supported by the device. The device 
+         * may be certified as conformant to these specifications e.g., communication, performance, process, measurement, or 
+         * specialization standards.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param conformsTo
+         *     Identifies the standards, specifications, or formal guidances for the capabilities supported by the device
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder conformsTo(Collection<ConformsTo> conformsTo) {
+            this.conformsTo = new ArrayList<>(conformsTo);
+            return this;
+        }
+
+        /**
+         * Static or essentially fixed characteristics or features of the device (e.g., time or timing attributes, resolution, 
+         * accuracy, intended use or instructions for use, and physical attributes) that are not otherwise captured in more 
+         * specific attributes.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param property
-         *     The actual configuration settings of a device as it actually operates, e.g., regulation status, time properties
+         *     Inherent, essentially fixed, characteristics of the device. e.g., time properties, size, material, etc.
          * 
          * @return
          *     A reference to this Builder instance
@@ -1355,13 +1552,15 @@ public class Device extends DomainResource {
         }
 
         /**
-         * The actual configuration settings of a device as it actually operates, e.g., regulation status, time properties.
+         * Static or essentially fixed characteristics or features of the device (e.g., time or timing attributes, resolution, 
+         * accuracy, intended use or instructions for use, and physical attributes) that are not otherwise captured in more 
+         * specific attributes.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param property
-         *     The actual configuration settings of a device as it actually operates, e.g., regulation status, time properties
+         *     Inherent, essentially fixed, characteristics of the device. e.g., time properties, size, material, etc.
          * 
          * @return
          *     A reference to this Builder instance
@@ -1375,21 +1574,44 @@ public class Device extends DomainResource {
         }
 
         /**
-         * Patient information, If the device is affixed to a person.
+         * The designated condition for performing a task with the device.
          * 
-         * <p>Allowed resource types for this reference:
-         * <ul>
-         * <li>{@link Patient}</li>
-         * </ul>
-         * 
-         * @param patient
-         *     Patient to whom Device is affixed
+         * @param mode
+         *     The designated condition for performing a task
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder patient(Reference patient) {
-            this.patient = patient;
+        public Builder mode(CodeableConcept mode) {
+            this.mode = mode;
+            return this;
+        }
+
+        /**
+         * The series of occurrences that repeats during the operation of the device.
+         * 
+         * @param cycle
+         *     The series of occurrences that repeats during the operation of the device
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder cycle(Count cycle) {
+            this.cycle = cycle;
+            return this;
+        }
+
+        /**
+         * A measurement of time during the device's operation (e.g., days, hours, mins, etc.).
+         * 
+         * @param duration
+         *     A measurement of time during the device's operation (e.g., days, hours, mins, etc.)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder duration(Duration duration) {
+            this.duration = duration;
             return this;
         }
 
@@ -1485,6 +1707,96 @@ public class Device extends DomainResource {
         }
 
         /**
+         * Technical endpoints providing access to services provided by the device defined at this resource.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link Endpoint}</li>
+         * </ul>
+         * 
+         * @param endpoint
+         *     Technical endpoints providing access to electronic services provided by the device
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder endpoint(Reference... endpoint) {
+            for (Reference value : endpoint) {
+                this.endpoint.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Technical endpoints providing access to services provided by the device defined at this resource.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link Endpoint}</li>
+         * </ul>
+         * 
+         * @param endpoint
+         *     Technical endpoints providing access to electronic services provided by the device
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder endpoint(Collection<Reference> endpoint) {
+            this.endpoint = new ArrayList<>(endpoint);
+            return this;
+        }
+
+        /**
+         * The linked device acting as a communication controller, data collector, translator, or concentrator for the current 
+         * device (e.g., mobile phone application that relays a blood pressure device's data).
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param gateway
+         *     Linked device acting as a communication/data collector, translator or controller
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder gateway(CodeableReference... gateway) {
+            for (CodeableReference value : gateway) {
+                this.gateway.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The linked device acting as a communication controller, data collector, translator, or concentrator for the current 
+         * device (e.g., mobile phone application that relays a blood pressure device's data).
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param gateway
+         *     Linked device acting as a communication/data collector, translator or controller
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder gateway(Collection<CodeableReference> gateway) {
+            this.gateway = new ArrayList<>(gateway);
+            return this;
+        }
+
+        /**
          * Descriptive information, usage information or implantation information that is not captured in an existing element.
          * 
          * <p>Adds new element(s) to the existing list.
@@ -1563,7 +1875,7 @@ public class Device extends DomainResource {
         }
 
         /**
-         * The device that this device is attached to or is part of.
+         * The higher level or encompassing device that this device is a logical part of.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
@@ -1571,7 +1883,7 @@ public class Device extends DomainResource {
          * </ul>
          * 
          * @param parent
-         *     The device that this device is attached to or is part of
+         *     The higher level or encompassing device that this device is a logical part of
          * 
          * @return
          *     A reference to this Builder instance
@@ -1602,46 +1914,54 @@ public class Device extends DomainResource {
             super.validate(device);
             ValidationSupport.checkList(device.identifier, "identifier", Identifier.class);
             ValidationSupport.checkList(device.udiCarrier, "udiCarrier", UdiCarrier.class);
-            ValidationSupport.checkList(device.statusReason, "statusReason", CodeableConcept.class);
-            ValidationSupport.checkList(device.deviceName, "deviceName", DeviceName.class);
-            ValidationSupport.checkList(device.specialization, "specialization", Specialization.class);
+            ValidationSupport.checkList(device.name, "name", Name.class);
+            ValidationSupport.checkList(device.category, "category", CodeableConcept.class);
+            ValidationSupport.checkList(device.type, "type", CodeableConcept.class);
             ValidationSupport.checkList(device.version, "version", Version.class);
+            ValidationSupport.checkList(device.conformsTo, "conformsTo", ConformsTo.class);
             ValidationSupport.checkList(device.property, "property", Property.class);
             ValidationSupport.checkList(device.contact, "contact", ContactPoint.class);
+            ValidationSupport.checkList(device.endpoint, "endpoint", Reference.class);
+            ValidationSupport.checkList(device.gateway, "gateway", CodeableReference.class);
             ValidationSupport.checkList(device.note, "note", Annotation.class);
             ValidationSupport.checkList(device.safety, "safety", CodeableConcept.class);
-            ValidationSupport.checkReferenceType(device.definition, "definition", "DeviceDefinition");
-            ValidationSupport.checkReferenceType(device.patient, "patient", "Patient");
             ValidationSupport.checkReferenceType(device.owner, "owner", "Organization");
             ValidationSupport.checkReferenceType(device.location, "location", "Location");
+            ValidationSupport.checkReferenceType(device.endpoint, "endpoint", "Endpoint");
             ValidationSupport.checkReferenceType(device.parent, "parent", "Device");
         }
 
         protected Builder from(Device device) {
             super.from(device);
             identifier.addAll(device.identifier);
+            displayName = device.displayName;
             definition = device.definition;
             udiCarrier.addAll(device.udiCarrier);
             status = device.status;
-            statusReason.addAll(device.statusReason);
-            distinctIdentifier = device.distinctIdentifier;
+            availabilityStatus = device.availabilityStatus;
+            biologicalSourceEvent = device.biologicalSourceEvent;
             manufacturer = device.manufacturer;
             manufactureDate = device.manufactureDate;
             expirationDate = device.expirationDate;
             lotNumber = device.lotNumber;
             serialNumber = device.serialNumber;
-            deviceName.addAll(device.deviceName);
+            name.addAll(device.name);
             modelNumber = device.modelNumber;
             partNumber = device.partNumber;
-            type = device.type;
-            specialization.addAll(device.specialization);
+            category.addAll(device.category);
+            type.addAll(device.type);
             version.addAll(device.version);
+            conformsTo.addAll(device.conformsTo);
             property.addAll(device.property);
-            patient = device.patient;
+            mode = device.mode;
+            cycle = device.cycle;
+            duration = device.duration;
             owner = device.owner;
             contact.addAll(device.contact);
             location = device.location;
             url = device.url;
+            endpoint.addAll(device.endpoint);
+            gateway.addAll(device.gateway);
             note.addAll(device.note);
             safety.addAll(device.safety);
             parent = device.parent;
@@ -1656,7 +1976,10 @@ public class Device extends DomainResource {
      */
     public static class UdiCarrier extends BackboneElement {
         @Summary
+        @Required
         private final String deviceIdentifier;
+        @Summary
+        @Required
         private final Uri issuer;
         private final Uri jurisdiction;
         @Summary
@@ -1667,7 +1990,7 @@ public class Device extends DomainResource {
             bindingName = "UDIEntryType",
             strength = BindingStrength.Value.REQUIRED,
             description = "Codes to identify how UDI data was entered.",
-            valueSet = "http://hl7.org/fhir/ValueSet/udi-entry-type|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/udi-entry-type|5.0.0"
         )
         private final UDIEntryType entryType;
 
@@ -1686,25 +2009,22 @@ public class Device extends DomainResource {
          * or model of a device.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link String} that is non-null.
          */
         public String getDeviceIdentifier() {
             return deviceIdentifier;
         }
 
         /**
-         * Organization that is charged with issuing UDIs for devices. For example, the US FDA issuers include :
-         * 1) GS1: 
-         * http://hl7.org/fhir/NamingSystem/gs1-di, 
-         * 2) HIBCC:
-         * http://hl7.org/fhir/NamingSystem/hibcc-dI, 
-         * 3) ICCBBA for blood containers:
-         * http://hl7.org/fhir/NamingSystem/iccbba-blood-di, 
-         * 4) ICCBA for other devices:
-         * http://hl7.org/fhir/NamingSystem/iccbba-other-di.
+         * Organization that is charged with issuing UDIs for devices. For example, the US FDA issuers include: 
+         * 1) GS1: http://hl7.org/fhir/NamingSystem/gs1-di, 
+         * 2) HIBCC: http://hl7.org/fhir/NamingSystem/hibcc-diI, 
+         * 3) ICCBBA for blood containers: http://hl7.org/fhir/NamingSystem/iccbba-blood-di, 
+         * 4) ICCBA for other devices: http://hl7.org/fhir/NamingSystem/iccbba-other-di # Informationsstelle für 
+         * Arzneispezialitäten (IFA GmbH) (EU only): http://hl7.org/fhir/NamingSystem/ifa-gmbh-di.
          * 
          * @return
-         *     An immutable object of type {@link Uri} that may be null.
+         *     An immutable object of type {@link Uri} that is non-null.
          */
         public Uri getIssuer() {
             return issuer;
@@ -1713,7 +2033,8 @@ public class Device extends DomainResource {
         /**
          * The identity of the authoritative source for UDI generation within a jurisdiction. All UDIs are globally unique within 
          * a single namespace with the appropriate repository uri as the system. For example, UDIs of devices managed in the U.S. 
-         * by the FDA, the value is http://hl7.org/fhir/NamingSystem/fda-udi.
+         * by the FDA, the value is http://hl7.org/fhir/NamingSystem/us-fda-udi or in the European Union by the European 
+         * Commission http://hl7.org/fhir/NamingSystem/eu-ec-udi.
          * 
          * @return
          *     An immutable object of type {@link Uri} that may be null.
@@ -1866,7 +2187,7 @@ public class Device extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1886,7 +2207,7 @@ public class Device extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1911,7 +2232,7 @@ public class Device extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1936,7 +2257,7 @@ public class Device extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1963,6 +2284,8 @@ public class Device extends DomainResource {
             /**
              * Convenience method for setting {@code deviceIdentifier}.
              * 
+             * <p>This element is required.
+             * 
              * @param deviceIdentifier
              *     Mandatory fixed portion of UDI
              * 
@@ -1980,6 +2303,8 @@ public class Device extends DomainResource {
              * The device identifier (DI) is a mandatory, fixed portion of a UDI that identifies the labeler and the specific version 
              * or model of a device.
              * 
+             * <p>This element is required.
+             * 
              * @param deviceIdentifier
              *     Mandatory fixed portion of UDI
              * 
@@ -1992,15 +2317,14 @@ public class Device extends DomainResource {
             }
 
             /**
-             * Organization that is charged with issuing UDIs for devices. For example, the US FDA issuers include :
-             * 1) GS1: 
-             * http://hl7.org/fhir/NamingSystem/gs1-di, 
-             * 2) HIBCC:
-             * http://hl7.org/fhir/NamingSystem/hibcc-dI, 
-             * 3) ICCBBA for blood containers:
-             * http://hl7.org/fhir/NamingSystem/iccbba-blood-di, 
-             * 4) ICCBA for other devices:
-             * http://hl7.org/fhir/NamingSystem/iccbba-other-di.
+             * Organization that is charged with issuing UDIs for devices. For example, the US FDA issuers include: 
+             * 1) GS1: http://hl7.org/fhir/NamingSystem/gs1-di, 
+             * 2) HIBCC: http://hl7.org/fhir/NamingSystem/hibcc-diI, 
+             * 3) ICCBBA for blood containers: http://hl7.org/fhir/NamingSystem/iccbba-blood-di, 
+             * 4) ICCBA for other devices: http://hl7.org/fhir/NamingSystem/iccbba-other-di # Informationsstelle für 
+             * Arzneispezialitäten (IFA GmbH) (EU only): http://hl7.org/fhir/NamingSystem/ifa-gmbh-di.
+             * 
+             * <p>This element is required.
              * 
              * @param issuer
              *     UDI Issuing Organization
@@ -2016,7 +2340,8 @@ public class Device extends DomainResource {
             /**
              * The identity of the authoritative source for UDI generation within a jurisdiction. All UDIs are globally unique within 
              * a single namespace with the appropriate repository uri as the system. For example, UDIs of devices managed in the U.S. 
-             * by the FDA, the value is http://hl7.org/fhir/NamingSystem/fda-udi.
+             * by the FDA, the value is http://hl7.org/fhir/NamingSystem/us-fda-udi or in the European Union by the European 
+             * Commission http://hl7.org/fhir/NamingSystem/eu-ec-udi.
              * 
              * @param jurisdiction
              *     Regional UDI authority
@@ -2080,7 +2405,7 @@ public class Device extends DomainResource {
              * A coded entry to indicate how the data was entered.
              * 
              * @param entryType
-             *     barcode | rfid | manual +
+             *     barcode | rfid | manual | card | self-reported | electronic-transmission | unknown
              * 
              * @return
              *     A reference to this Builder instance
@@ -2092,6 +2417,12 @@ public class Device extends DomainResource {
 
             /**
              * Build the {@link UdiCarrier}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>deviceIdentifier</li>
+             * <li>issuer</li>
+             * </ul>
              * 
              * @return
              *     An immutable object of type {@link UdiCarrier}
@@ -2109,6 +2440,8 @@ public class Device extends DomainResource {
 
             protected void validate(UdiCarrier udiCarrier) {
                 super.validate(udiCarrier);
+                ValidationSupport.requireNonNull(udiCarrier.deviceIdentifier, "deviceIdentifier");
+                ValidationSupport.requireNonNull(udiCarrier.issuer, "issuer");
                 ValidationSupport.requireValueOrChildren(udiCarrier);
             }
 
@@ -2130,37 +2463,41 @@ public class Device extends DomainResource {
      * describing the Device. This typically would be used when a person provides the name(s) or when the device represents 
      * one of the names available from DeviceDefinition.
      */
-    public static class DeviceName extends BackboneElement {
+    public static class Name extends BackboneElement {
+        @Summary
         @Required
-        private final String name;
+        private final String value;
+        @Summary
         @Binding(
             bindingName = "DeviceNameType",
             strength = BindingStrength.Value.REQUIRED,
             description = "The type of name the device is referred by.",
-            valueSet = "http://hl7.org/fhir/ValueSet/device-nametype|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/device-nametype|5.0.0"
         )
         @Required
         private final DeviceNameType type;
+        @Summary
+        private final Boolean display;
 
-        private DeviceName(Builder builder) {
+        private Name(Builder builder) {
             super(builder);
-            name = builder.name;
+            value = builder.value;
             type = builder.type;
+            display = builder.display;
         }
 
         /**
-         * The name that identifies the device.
+         * The actual name that identifies the device.
          * 
          * @return
          *     An immutable object of type {@link String} that is non-null.
          */
-        public String getName() {
-            return name;
+        public String getValue() {
+            return value;
         }
 
         /**
-         * The type of deviceName.
-         * UDILabelName | UserFriendlyName | PatientReportedName | ManufactureDeviceName | ModelName.
+         * Indicates the kind of name. RegisteredName | UserFriendlyName | PatientReportedName.
          * 
          * @return
          *     An immutable object of type {@link DeviceNameType} that is non-null.
@@ -2169,11 +2506,22 @@ public class Device extends DomainResource {
             return type;
         }
 
+        /**
+         * Indicates the default or preferred name to be displayed.
+         * 
+         * @return
+         *     An immutable object of type {@link Boolean} that may be null.
+         */
+        public Boolean getDisplay() {
+            return display;
+        }
+
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                (name != null) || 
-                (type != null);
+                (value != null) || 
+                (type != null) || 
+                (display != null);
         }
 
         @Override
@@ -2185,8 +2533,9 @@ public class Device extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(name, "name", visitor);
+                    accept(value, "value", visitor);
                     accept(type, "type", visitor);
+                    accept(display, "display", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -2204,12 +2553,13 @@ public class Device extends DomainResource {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            DeviceName other = (DeviceName) obj;
+            Name other = (Name) obj;
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(name, other.name) && 
-                Objects.equals(type, other.type);
+                Objects.equals(value, other.value) && 
+                Objects.equals(type, other.type) && 
+                Objects.equals(display, other.display);
         }
 
         @Override
@@ -2219,8 +2569,9 @@ public class Device extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    name, 
-                    type);
+                    value, 
+                    type, 
+                    display);
                 hashCode = result;
             }
             return result;
@@ -2236,8 +2587,9 @@ public class Device extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private String name;
+            private String value;
             private DeviceNameType type;
+            private Boolean display;
 
             private Builder() {
                 super();
@@ -2260,7 +2612,7 @@ public class Device extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2280,7 +2632,7 @@ public class Device extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2305,7 +2657,7 @@ public class Device extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2330,7 +2682,7 @@ public class Device extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2355,47 +2707,46 @@ public class Device extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code name}.
+             * Convenience method for setting {@code value}.
              * 
              * <p>This element is required.
              * 
-             * @param name
-             *     The name that identifies the device
+             * @param value
+             *     The term that names the device
              * 
              * @return
              *     A reference to this Builder instance
              * 
-             * @see #name(org.linuxforhealth.fhir.model.type.String)
+             * @see #value(org.linuxforhealth.fhir.model.type.String)
              */
-            public Builder name(java.lang.String name) {
-                this.name = (name == null) ? null : String.of(name);
+            public Builder value(java.lang.String value) {
+                this.value = (value == null) ? null : String.of(value);
                 return this;
             }
 
             /**
-             * The name that identifies the device.
+             * The actual name that identifies the device.
              * 
              * <p>This element is required.
              * 
-             * @param name
-             *     The name that identifies the device
+             * @param value
+             *     The term that names the device
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder name(String name) {
-                this.name = name;
+            public Builder value(String value) {
+                this.value = value;
                 return this;
             }
 
             /**
-             * The type of deviceName.
-             * UDILabelName | UserFriendlyName | PatientReportedName | ManufactureDeviceName | ModelName.
+             * Indicates the kind of name. RegisteredName | UserFriendlyName | PatientReportedName.
              * 
              * <p>This element is required.
              * 
              * @param type
-             *     udi-label-name | user-friendly-name | patient-reported-name | manufacturer-name | model-name | other
+             *     registered-name | user-friendly-name | patient-reported-name
              * 
              * @return
              *     A reference to this Builder instance
@@ -2406,342 +2757,70 @@ public class Device extends DomainResource {
             }
 
             /**
-             * Build the {@link DeviceName}
+             * Convenience method for setting {@code display}.
+             * 
+             * @param display
+             *     The preferred device name
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #display(org.linuxforhealth.fhir.model.type.Boolean)
+             */
+            public Builder display(java.lang.Boolean display) {
+                this.display = (display == null) ? null : Boolean.of(display);
+                return this;
+            }
+
+            /**
+             * Indicates the default or preferred name to be displayed.
+             * 
+             * @param display
+             *     The preferred device name
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder display(Boolean display) {
+                this.display = display;
+                return this;
+            }
+
+            /**
+             * Build the {@link Name}
              * 
              * <p>Required elements:
              * <ul>
-             * <li>name</li>
+             * <li>value</li>
              * <li>type</li>
              * </ul>
              * 
              * @return
-             *     An immutable object of type {@link DeviceName}
+             *     An immutable object of type {@link Name}
              * @throws IllegalStateException
-             *     if the current state cannot be built into a valid DeviceName per the base specification
+             *     if the current state cannot be built into a valid Name per the base specification
              */
             @Override
-            public DeviceName build() {
-                DeviceName deviceName = new DeviceName(this);
+            public Name build() {
+                Name name = new Name(this);
                 if (validating) {
-                    validate(deviceName);
+                    validate(name);
                 }
-                return deviceName;
+                return name;
             }
 
-            protected void validate(DeviceName deviceName) {
-                super.validate(deviceName);
-                ValidationSupport.requireNonNull(deviceName.name, "name");
-                ValidationSupport.requireNonNull(deviceName.type, "type");
-                ValidationSupport.requireValueOrChildren(deviceName);
+            protected void validate(Name name) {
+                super.validate(name);
+                ValidationSupport.requireNonNull(name.value, "value");
+                ValidationSupport.requireNonNull(name.type, "type");
+                ValidationSupport.requireValueOrChildren(name);
             }
 
-            protected Builder from(DeviceName deviceName) {
-                super.from(deviceName);
-                name = deviceName.name;
-                type = deviceName.type;
-                return this;
-            }
-        }
-    }
-
-    /**
-     * The capabilities supported on a device, the standards to which the device conforms for a particular purpose, and used 
-     * for the communication.
-     */
-    public static class Specialization extends BackboneElement {
-        @Required
-        private final CodeableConcept systemType;
-        private final String version;
-
-        private Specialization(Builder builder) {
-            super(builder);
-            systemType = builder.systemType;
-            version = builder.version;
-        }
-
-        /**
-         * The standard that is used to operate and communicate.
-         * 
-         * @return
-         *     An immutable object of type {@link CodeableConcept} that is non-null.
-         */
-        public CodeableConcept getSystemType() {
-            return systemType;
-        }
-
-        /**
-         * The version of the standard that is used to operate and communicate.
-         * 
-         * @return
-         *     An immutable object of type {@link String} that may be null.
-         */
-        public String getVersion() {
-            return version;
-        }
-
-        @Override
-        public boolean hasChildren() {
-            return super.hasChildren() || 
-                (systemType != null) || 
-                (version != null);
-        }
-
-        @Override
-        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-            if (visitor.preVisit(this)) {
-                visitor.visitStart(elementName, elementIndex, this);
-                if (visitor.visit(elementName, elementIndex, this)) {
-                    // visit children
-                    accept(id, "id", visitor);
-                    accept(extension, "extension", visitor, Extension.class);
-                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(systemType, "systemType", visitor);
-                    accept(version, "version", visitor);
-                }
-                visitor.visitEnd(elementName, elementIndex, this);
-                visitor.postVisit(this);
-            }
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            Specialization other = (Specialization) obj;
-            return Objects.equals(id, other.id) && 
-                Objects.equals(extension, other.extension) && 
-                Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(systemType, other.systemType) && 
-                Objects.equals(version, other.version);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = hashCode;
-            if (result == 0) {
-                result = Objects.hash(id, 
-                    extension, 
-                    modifierExtension, 
-                    systemType, 
-                    version);
-                hashCode = result;
-            }
-            return result;
-        }
-
-        @Override
-        public Builder toBuilder() {
-            return new Builder().from(this);
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public static class Builder extends BackboneElement.Builder {
-            private CodeableConcept systemType;
-            private String version;
-
-            private Builder() {
-                super();
-            }
-
-            /**
-             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-             * contain spaces.
-             * 
-             * @param id
-             *     Unique id for inter-element referencing
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder id(java.lang.String id) {
-                return (Builder) super.id(id);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder extension(Extension... extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder extension(Collection<Extension> extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder modifierExtension(Extension... modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * The standard that is used to operate and communicate.
-             * 
-             * <p>This element is required.
-             * 
-             * @param systemType
-             *     The standard that is used to operate and communicate
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder systemType(CodeableConcept systemType) {
-                this.systemType = systemType;
-                return this;
-            }
-
-            /**
-             * Convenience method for setting {@code version}.
-             * 
-             * @param version
-             *     The version of the standard that is used to operate and communicate
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #version(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder version(java.lang.String version) {
-                this.version = (version == null) ? null : String.of(version);
-                return this;
-            }
-
-            /**
-             * The version of the standard that is used to operate and communicate.
-             * 
-             * @param version
-             *     The version of the standard that is used to operate and communicate
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder version(String version) {
-                this.version = version;
-                return this;
-            }
-
-            /**
-             * Build the {@link Specialization}
-             * 
-             * <p>Required elements:
-             * <ul>
-             * <li>systemType</li>
-             * </ul>
-             * 
-             * @return
-             *     An immutable object of type {@link Specialization}
-             * @throws IllegalStateException
-             *     if the current state cannot be built into a valid Specialization per the base specification
-             */
-            @Override
-            public Specialization build() {
-                Specialization specialization = new Specialization(this);
-                if (validating) {
-                    validate(specialization);
-                }
-                return specialization;
-            }
-
-            protected void validate(Specialization specialization) {
-                super.validate(specialization);
-                ValidationSupport.requireNonNull(specialization.systemType, "systemType");
-                ValidationSupport.requireValueOrChildren(specialization);
-            }
-
-            protected Builder from(Specialization specialization) {
-                super.from(specialization);
-                systemType = specialization.systemType;
-                version = specialization.version;
+            protected Builder from(Name name) {
+                super.from(name);
+                value = name.value;
+                type = name.type;
+                display = name.display;
                 return this;
             }
         }
@@ -2751,8 +2830,15 @@ public class Device extends DomainResource {
      * The actual design of the device or software version running on the device.
      */
     public static class Version extends BackboneElement {
+        @Binding(
+            bindingName = "FHIRDeviceVersionType",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "The type of version indicated for the device.",
+            valueSet = "http://hl7.org/fhir/ValueSet/device-versiontype"
+        )
         private final CodeableConcept type;
         private final Identifier component;
+        private final DateTime installDate;
         @Required
         private final String value;
 
@@ -2760,6 +2846,7 @@ public class Device extends DomainResource {
             super(builder);
             type = builder.type;
             component = builder.component;
+            installDate = builder.installDate;
             value = builder.value;
         }
 
@@ -2774,13 +2861,23 @@ public class Device extends DomainResource {
         }
 
         /**
-         * A single component of the device version.
+         * The hardware or software module of the device to which the version applies.
          * 
          * @return
          *     An immutable object of type {@link Identifier} that may be null.
          */
         public Identifier getComponent() {
             return component;
+        }
+
+        /**
+         * The date the version was installed on the device.
+         * 
+         * @return
+         *     An immutable object of type {@link DateTime} that may be null.
+         */
+        public DateTime getInstallDate() {
+            return installDate;
         }
 
         /**
@@ -2798,6 +2895,7 @@ public class Device extends DomainResource {
             return super.hasChildren() || 
                 (type != null) || 
                 (component != null) || 
+                (installDate != null) || 
                 (value != null);
         }
 
@@ -2812,6 +2910,7 @@ public class Device extends DomainResource {
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(type, "type", visitor);
                     accept(component, "component", visitor);
+                    accept(installDate, "installDate", visitor);
                     accept(value, "value", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
@@ -2836,6 +2935,7 @@ public class Device extends DomainResource {
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(type, other.type) && 
                 Objects.equals(component, other.component) && 
+                Objects.equals(installDate, other.installDate) && 
                 Objects.equals(value, other.value);
         }
 
@@ -2848,6 +2948,7 @@ public class Device extends DomainResource {
                     modifierExtension, 
                     type, 
                     component, 
+                    installDate, 
                     value);
                 hashCode = result;
             }
@@ -2866,6 +2967,7 @@ public class Device extends DomainResource {
         public static class Builder extends BackboneElement.Builder {
             private CodeableConcept type;
             private Identifier component;
+            private DateTime installDate;
             private String value;
 
             private Builder() {
@@ -2889,7 +2991,7 @@ public class Device extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2909,7 +3011,7 @@ public class Device extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2934,7 +3036,7 @@ public class Device extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2959,7 +3061,7 @@ public class Device extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2998,16 +3100,30 @@ public class Device extends DomainResource {
             }
 
             /**
-             * A single component of the device version.
+             * The hardware or software module of the device to which the version applies.
              * 
              * @param component
-             *     A single component of the device version
+             *     The hardware or software module of the device to which the version applies
              * 
              * @return
              *     A reference to this Builder instance
              */
             public Builder component(Identifier component) {
                 this.component = component;
+                return this;
+            }
+
+            /**
+             * The date the version was installed on the device.
+             * 
+             * @param installDate
+             *     The date the version was installed on the device
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder installDate(DateTime installDate) {
+                this.installDate = installDate;
                 return this;
             }
 
@@ -3077,6 +3193,7 @@ public class Device extends DomainResource {
                 super.from(version);
                 type = version.type;
                 component = version.component;
+                installDate = version.installDate;
                 value = version.value;
                 return this;
             }
@@ -3084,57 +3201,73 @@ public class Device extends DomainResource {
     }
 
     /**
-     * The actual configuration settings of a device as it actually operates, e.g., regulation status, time properties.
+     * Identifies the standards, specifications, or formal guidances for the capabilities supported by the device. The device 
+     * may be certified as conformant to these specifications e.g., communication, performance, process, measurement, or 
+     * specialization standards.
      */
-    public static class Property extends BackboneElement {
+    public static class ConformsTo extends BackboneElement {
+        @Binding(
+            bindingName = "DeviceSpecificationCategory",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "The kind of standards used by the device.",
+            valueSet = "http://hl7.org/fhir/ValueSet/device-specification-category"
+        )
+        private final CodeableConcept category;
+        @Binding(
+            bindingName = "DeviceSpecification-type",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "The type of version indicated for the device.",
+            valueSet = "http://hl7.org/fhir/ValueSet/device-specification-type"
+        )
         @Required
-        private final CodeableConcept type;
-        private final List<Quantity> valueQuantity;
-        private final List<CodeableConcept> valueCode;
+        private final CodeableConcept specification;
+        private final String version;
 
-        private Property(Builder builder) {
+        private ConformsTo(Builder builder) {
             super(builder);
-            type = builder.type;
-            valueQuantity = Collections.unmodifiableList(builder.valueQuantity);
-            valueCode = Collections.unmodifiableList(builder.valueCode);
+            category = builder.category;
+            specification = builder.specification;
+            version = builder.version;
         }
 
         /**
-         * Code that specifies the property DeviceDefinitionPropetyCode (Extensible).
+         * Describes the type of the standard, specification, or formal guidance.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getCategory() {
+            return category;
+        }
+
+        /**
+         * Code that identifies the specific standard, specification, protocol, formal guidance, regulation, legislation, or 
+         * certification scheme to which the device adheres.
          * 
          * @return
          *     An immutable object of type {@link CodeableConcept} that is non-null.
          */
-        public CodeableConcept getType() {
-            return type;
+        public CodeableConcept getSpecification() {
+            return specification;
         }
 
         /**
-         * Property value as a quantity.
+         * Identifies the specific form or variant of the standard, specification, or formal guidance. This may be a 'version 
+         * number', release, document edition, publication year, or other label.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link Quantity} that may be empty.
+         *     An immutable object of type {@link String} that may be null.
          */
-        public List<Quantity> getValueQuantity() {
-            return valueQuantity;
-        }
-
-        /**
-         * Property value as a code, e.g., NTP4 (synced to NTP).
-         * 
-         * @return
-         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
-         */
-        public List<CodeableConcept> getValueCode() {
-            return valueCode;
+        public String getVersion() {
+            return version;
         }
 
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                (type != null) || 
-                !valueQuantity.isEmpty() || 
-                !valueCode.isEmpty();
+                (category != null) || 
+                (specification != null) || 
+                (version != null);
         }
 
         @Override
@@ -3146,9 +3279,9 @@ public class Device extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(type, "type", visitor);
-                    accept(valueQuantity, "valueQuantity", visitor, Quantity.class);
-                    accept(valueCode, "valueCode", visitor, CodeableConcept.class);
+                    accept(category, "category", visitor);
+                    accept(specification, "specification", visitor);
+                    accept(version, "version", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -3166,13 +3299,13 @@ public class Device extends DomainResource {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            Property other = (Property) obj;
+            ConformsTo other = (ConformsTo) obj;
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(type, other.type) && 
-                Objects.equals(valueQuantity, other.valueQuantity) && 
-                Objects.equals(valueCode, other.valueCode);
+                Objects.equals(category, other.category) && 
+                Objects.equals(specification, other.specification) && 
+                Objects.equals(version, other.version);
         }
 
         @Override
@@ -3182,9 +3315,9 @@ public class Device extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    type, 
-                    valueQuantity, 
-                    valueCode);
+                    category, 
+                    specification, 
+                    version);
                 hashCode = result;
             }
             return result;
@@ -3200,9 +3333,9 @@ public class Device extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private CodeableConcept type;
-            private List<Quantity> valueQuantity = new ArrayList<>();
-            private List<CodeableConcept> valueCode = new ArrayList<>();
+            private CodeableConcept category;
+            private CodeableConcept specification;
+            private String version;
 
             private Builder() {
                 super();
@@ -3225,7 +3358,7 @@ public class Device extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3245,7 +3378,7 @@ public class Device extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3270,7 +3403,7 @@ public class Device extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3295,7 +3428,7 @@ public class Device extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3320,12 +3453,342 @@ public class Device extends DomainResource {
             }
 
             /**
-             * Code that specifies the property DeviceDefinitionPropetyCode (Extensible).
+             * Describes the type of the standard, specification, or formal guidance.
+             * 
+             * @param category
+             *     Describes the common type of the standard, specification, or formal guidance. communication | performance | measurement
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder category(CodeableConcept category) {
+                this.category = category;
+                return this;
+            }
+
+            /**
+             * Code that identifies the specific standard, specification, protocol, formal guidance, regulation, legislation, or 
+             * certification scheme to which the device adheres.
+             * 
+             * <p>This element is required.
+             * 
+             * @param specification
+             *     Identifies the standard, specification, or formal guidance that the device adheres to
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder specification(CodeableConcept specification) {
+                this.specification = specification;
+                return this;
+            }
+
+            /**
+             * Convenience method for setting {@code version}.
+             * 
+             * @param version
+             *     Specific form or variant of the standard
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #version(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder version(java.lang.String version) {
+                this.version = (version == null) ? null : String.of(version);
+                return this;
+            }
+
+            /**
+             * Identifies the specific form or variant of the standard, specification, or formal guidance. This may be a 'version 
+             * number', release, document edition, publication year, or other label.
+             * 
+             * @param version
+             *     Specific form or variant of the standard
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder version(String version) {
+                this.version = version;
+                return this;
+            }
+
+            /**
+             * Build the {@link ConformsTo}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>specification</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link ConformsTo}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid ConformsTo per the base specification
+             */
+            @Override
+            public ConformsTo build() {
+                ConformsTo conformsTo = new ConformsTo(this);
+                if (validating) {
+                    validate(conformsTo);
+                }
+                return conformsTo;
+            }
+
+            protected void validate(ConformsTo conformsTo) {
+                super.validate(conformsTo);
+                ValidationSupport.requireNonNull(conformsTo.specification, "specification");
+                ValidationSupport.requireValueOrChildren(conformsTo);
+            }
+
+            protected Builder from(ConformsTo conformsTo) {
+                super.from(conformsTo);
+                category = conformsTo.category;
+                specification = conformsTo.specification;
+                version = conformsTo.version;
+                return this;
+            }
+        }
+    }
+
+    /**
+     * Static or essentially fixed characteristics or features of the device (e.g., time or timing attributes, resolution, 
+     * accuracy, intended use or instructions for use, and physical attributes) that are not otherwise captured in more 
+     * specific attributes.
+     */
+    public static class Property extends BackboneElement {
+        @Binding(
+            bindingName = "DevicePropertyType",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "Device property type.",
+            valueSet = "http://hl7.org/fhir/ValueSet/device-property-type"
+        )
+        @Required
+        private final CodeableConcept type;
+        @Choice({ Quantity.class, CodeableConcept.class, String.class, Boolean.class, Integer.class, Range.class, Attachment.class })
+        @Required
+        private final org.linuxforhealth.fhir.model.type.Element value;
+
+        private Property(Builder builder) {
+            super(builder);
+            type = builder.type;
+            value = builder.value;
+        }
+
+        /**
+         * Code that specifies the property, such as resolution, color, size, being represented.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that is non-null.
+         */
+        public CodeableConcept getType() {
+            return type;
+        }
+
+        /**
+         * The value of the property specified by the associated property.type code.
+         * 
+         * @return
+         *     An immutable object of type {@link Quantity}, {@link CodeableConcept}, {@link String}, {@link Boolean}, {@link 
+         *     Integer}, {@link Range} or {@link Attachment} that is non-null.
+         */
+        public org.linuxforhealth.fhir.model.type.Element getValue() {
+            return value;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (type != null) || 
+                (value != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(type, "type", visitor);
+                    accept(value, "value", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Property other = (Property) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(type, other.type) && 
+                Objects.equals(value, other.value);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    type, 
+                    value);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private CodeableConcept type;
+            private org.linuxforhealth.fhir.model.type.Element value;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * Code that specifies the property, such as resolution, color, size, being represented.
              * 
              * <p>This element is required.
              * 
              * @param type
-             *     Code that specifies the property DeviceDefinitionPropetyCode (Extensible)
+             *     Code that specifies the property being represented
              * 
              * @return
              *     A reference to this Builder instance
@@ -3336,80 +3799,83 @@ public class Device extends DomainResource {
             }
 
             /**
-             * Property value as a quantity.
+             * Convenience method for setting {@code value} with choice type String.
              * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
+             * <p>This element is required.
              * 
-             * @param valueQuantity
-             *     Property value as a quantity
+             * @param value
+             *     Value of the property
              * 
              * @return
              *     A reference to this Builder instance
+             * 
+             * @see #value(Element)
              */
-            public Builder valueQuantity(Quantity... valueQuantity) {
-                for (Quantity value : valueQuantity) {
-                    this.valueQuantity.add(value);
-                }
+            public Builder value(java.lang.String value) {
+                this.value = (value == null) ? null : String.of(value);
                 return this;
             }
 
             /**
-             * Property value as a quantity.
+             * Convenience method for setting {@code value} with choice type Boolean.
              * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
+             * <p>This element is required.
              * 
-             * @param valueQuantity
-             *     Property value as a quantity
+             * @param value
+             *     Value of the property
              * 
              * @return
              *     A reference to this Builder instance
              * 
-             * @throws NullPointerException
-             *     If the passed collection is null
+             * @see #value(Element)
              */
-            public Builder valueQuantity(Collection<Quantity> valueQuantity) {
-                this.valueQuantity = new ArrayList<>(valueQuantity);
+            public Builder value(java.lang.Boolean value) {
+                this.value = (value == null) ? null : Boolean.of(value);
                 return this;
             }
 
             /**
-             * Property value as a code, e.g., NTP4 (synced to NTP).
+             * Convenience method for setting {@code value} with choice type Integer.
              * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
+             * <p>This element is required.
              * 
-             * @param valueCode
-             *     Property value as a code, e.g., NTP4 (synced to NTP)
+             * @param value
+             *     Value of the property
              * 
              * @return
              *     A reference to this Builder instance
+             * 
+             * @see #value(Element)
              */
-            public Builder valueCode(CodeableConcept... valueCode) {
-                for (CodeableConcept value : valueCode) {
-                    this.valueCode.add(value);
-                }
+            public Builder value(java.lang.Integer value) {
+                this.value = (value == null) ? null : Integer.of(value);
                 return this;
             }
 
             /**
-             * Property value as a code, e.g., NTP4 (synced to NTP).
+             * The value of the property specified by the associated property.type code.
              * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
+             * <p>This element is required.
              * 
-             * @param valueCode
-             *     Property value as a code, e.g., NTP4 (synced to NTP)
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link Quantity}</li>
+             * <li>{@link CodeableConcept}</li>
+             * <li>{@link String}</li>
+             * <li>{@link Boolean}</li>
+             * <li>{@link Integer}</li>
+             * <li>{@link Range}</li>
+             * <li>{@link Attachment}</li>
+             * </ul>
+             * 
+             * @param value
+             *     Value of the property
              * 
              * @return
              *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
              */
-            public Builder valueCode(Collection<CodeableConcept> valueCode) {
-                this.valueCode = new ArrayList<>(valueCode);
+            public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
+                this.value = value;
                 return this;
             }
 
@@ -3419,6 +3885,7 @@ public class Device extends DomainResource {
              * <p>Required elements:
              * <ul>
              * <li>type</li>
+             * <li>value</li>
              * </ul>
              * 
              * @return
@@ -3438,16 +3905,14 @@ public class Device extends DomainResource {
             protected void validate(Property property) {
                 super.validate(property);
                 ValidationSupport.requireNonNull(property.type, "type");
-                ValidationSupport.checkList(property.valueQuantity, "valueQuantity", Quantity.class);
-                ValidationSupport.checkList(property.valueCode, "valueCode", CodeableConcept.class);
+                ValidationSupport.requireChoiceElement(property.value, "value", Quantity.class, CodeableConcept.class, String.class, Boolean.class, Integer.class, Range.class, Attachment.class);
                 ValidationSupport.requireValueOrChildren(property);
             }
 
             protected Builder from(Property property) {
                 super.from(property);
                 type = property.type;
-                valueQuantity.addAll(property.valueQuantity);
-                valueCode.addAll(property.valueCode);
+                value = property.value;
                 return this;
             }
         }

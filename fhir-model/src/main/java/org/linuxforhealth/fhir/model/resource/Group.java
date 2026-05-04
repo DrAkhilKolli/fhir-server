@@ -16,7 +16,6 @@ import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
 import org.linuxforhealth.fhir.model.annotation.Choice;
-import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
@@ -28,6 +27,7 @@ import org.linuxforhealth.fhir.model.type.CodeableConcept;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
+import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
@@ -48,19 +48,11 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * expected to act collectively, and are not formally or legally recognized; i.e. a collection of entities that isn't an 
  * Organization.
  * 
- * <p>Maturity level: FMM1 (Trial Use)
+ * <p>Maturity level: FMM3 (Trial Use)
  */
 @Maturity(
-    level = 1,
+    level = 3,
     status = StandardsStatus.Value.TRIAL_USE
-)
-@Constraint(
-    id = "grp-1",
-    level = "Rule",
-    location = "(base)",
-    description = "Can only have members if group is \"actual\"",
-    expression = "member.empty() or (actual = true)",
-    source = "http://hl7.org/fhir/StructureDefinition/Group"
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class Group extends DomainResource {
@@ -73,13 +65,18 @@ public class Group extends DomainResource {
         bindingName = "GroupType",
         strength = BindingStrength.Value.REQUIRED,
         description = "Types of resources that are part of group.",
-        valueSet = "http://hl7.org/fhir/ValueSet/group-type|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/group-type|5.0.0"
     )
     @Required
     private final GroupType type;
     @Summary
+    @Binding(
+        strength = BindingStrength.Value.REQUIRED,
+        description = "The basis for membership in a group",
+        valueSet = "http://hl7.org/fhir/ValueSet/group-membership-basis|5.0.0"
+    )
     @Required
-    private final Boolean actual;
+    private final Code membership;
     @Summary
     @Binding(
         bindingName = "GroupKind",
@@ -89,11 +86,13 @@ public class Group extends DomainResource {
     private final CodeableConcept code;
     @Summary
     private final String name;
+    private final Markdown description;
     @Summary
     private final UnsignedInt quantity;
     @Summary
     @ReferenceTarget({ "Organization", "RelatedPerson", "Practitioner", "PractitionerRole" })
     private final Reference managingEntity;
+    @Summary
     private final List<Characteristic> characteristic;
     private final List<Member> member;
 
@@ -102,9 +101,10 @@ public class Group extends DomainResource {
         identifier = Collections.unmodifiableList(builder.identifier);
         active = builder.active;
         type = builder.type;
-        actual = builder.actual;
+        membership = builder.membership;
         code = builder.code;
         name = builder.name;
+        description = builder.description;
         quantity = builder.quantity;
         managingEntity = builder.managingEntity;
         characteristic = Collections.unmodifiableList(builder.characteristic);
@@ -112,7 +112,8 @@ public class Group extends DomainResource {
     }
 
     /**
-     * A unique business identifier for this group.
+     * Business identifiers assigned to this participant by one of the applications involved. These identifiers remain 
+     * constant as the resource is updated and propagates from server to server.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
@@ -142,14 +143,20 @@ public class Group extends DomainResource {
     }
 
     /**
-     * If true, indicates that the resource refers to a specific group of real individuals. If false, the group defines a set 
-     * of intended individuals.
+     * Basis for membership in the Group:
+     * 
+     * <p>* 'definitional': The Group.characteristics specified are both necessary and sufficient to determine membership. 
+     * All entities that meet the criteria are considered to be members of the group, whether referenced by the group or not. 
+     * If members are present, they are individuals that happen to be known as meeting the Group.characteristics. The list 
+     * cannot be presumed to be complete.
+     * <p>* 'enumerated': The Group.characteristics are necessary but not sufficient to determine membership. Membership is 
+     * determined by being listed as one of the Group.member.
      * 
      * @return
-     *     An immutable object of type {@link Boolean} that is non-null.
+     *     An immutable object of type {@link Code} that is non-null.
      */
-    public Boolean getActual() {
-        return actual;
+    public Code getMembership() {
+        return membership;
     }
 
     /**
@@ -170,6 +177,16 @@ public class Group extends DomainResource {
      */
     public String getName() {
         return name;
+    }
+
+    /**
+     * Explanation of what the group represents and how it is intended to be used.
+     * 
+     * @return
+     *     An immutable object of type {@link Markdown} that may be null.
+     */
+    public Markdown getDescription() {
+        return description;
     }
 
     /**
@@ -218,9 +235,10 @@ public class Group extends DomainResource {
             !identifier.isEmpty() || 
             (active != null) || 
             (type != null) || 
-            (actual != null) || 
+            (membership != null) || 
             (code != null) || 
             (name != null) || 
+            (description != null) || 
             (quantity != null) || 
             (managingEntity != null) || 
             !characteristic.isEmpty() || 
@@ -244,9 +262,10 @@ public class Group extends DomainResource {
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(active, "active", visitor);
                 accept(type, "type", visitor);
-                accept(actual, "actual", visitor);
+                accept(membership, "membership", visitor);
                 accept(code, "code", visitor);
                 accept(name, "name", visitor);
+                accept(description, "description", visitor);
                 accept(quantity, "quantity", visitor);
                 accept(managingEntity, "managingEntity", visitor);
                 accept(characteristic, "characteristic", visitor, Characteristic.class);
@@ -280,9 +299,10 @@ public class Group extends DomainResource {
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(active, other.active) && 
             Objects.equals(type, other.type) && 
-            Objects.equals(actual, other.actual) && 
+            Objects.equals(membership, other.membership) && 
             Objects.equals(code, other.code) && 
             Objects.equals(name, other.name) && 
+            Objects.equals(description, other.description) && 
             Objects.equals(quantity, other.quantity) && 
             Objects.equals(managingEntity, other.managingEntity) && 
             Objects.equals(characteristic, other.characteristic) && 
@@ -304,9 +324,10 @@ public class Group extends DomainResource {
                 identifier, 
                 active, 
                 type, 
-                actual, 
+                membership, 
                 code, 
                 name, 
+                description, 
                 quantity, 
                 managingEntity, 
                 characteristic, 
@@ -329,9 +350,10 @@ public class Group extends DomainResource {
         private List<Identifier> identifier = new ArrayList<>();
         private Boolean active;
         private GroupType type;
-        private Boolean actual;
+        private Code membership;
         private CodeableConcept code;
         private String name;
+        private Markdown description;
         private UnsignedInt quantity;
         private Reference managingEntity;
         private List<Characteristic> characteristic = new ArrayList<>();
@@ -419,7 +441,8 @@ public class Group extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -437,7 +460,8 @@ public class Group extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -458,7 +482,7 @@ public class Group extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -478,7 +502,7 @@ public class Group extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -503,9 +527,9 @@ public class Group extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -528,9 +552,9 @@ public class Group extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -553,13 +577,14 @@ public class Group extends DomainResource {
         }
 
         /**
-         * A unique business identifier for this group.
+         * Business identifiers assigned to this participant by one of the applications involved. These identifiers remain 
+         * constant as the resource is updated and propagates from server to server.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param identifier
-         *     Unique id
+         *     Business Identifier for this Group
          * 
          * @return
          *     A reference to this Builder instance
@@ -572,13 +597,14 @@ public class Group extends DomainResource {
         }
 
         /**
-         * A unique business identifier for this group.
+         * Business identifiers assigned to this participant by one of the applications involved. These identifiers remain 
+         * constant as the resource is updated and propagates from server to server.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param identifier
-         *     Unique id
+         *     Business Identifier for this Group
          * 
          * @return
          *     A reference to this Builder instance
@@ -627,7 +653,8 @@ public class Group extends DomainResource {
          * <p>This element is required.
          * 
          * @param type
-         *     person | animal | practitioner | device | medication | substance
+         *     person | animal | practitioner | device | careteam | healthcareservice | location | organization | relatedperson | 
+         *     specimen
          * 
          * @return
          *     A reference to this Builder instance
@@ -638,37 +665,25 @@ public class Group extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code actual}.
+         * Basis for membership in the Group:
+         * 
+         * <p>* 'definitional': The Group.characteristics specified are both necessary and sufficient to determine membership. 
+         * All entities that meet the criteria are considered to be members of the group, whether referenced by the group or not. 
+         * If members are present, they are individuals that happen to be known as meeting the Group.characteristics. The list 
+         * cannot be presumed to be complete.
+         * <p>* 'enumerated': The Group.characteristics are necessary but not sufficient to determine membership. Membership is 
+         * determined by being listed as one of the Group.member.
          * 
          * <p>This element is required.
          * 
-         * @param actual
-         *     Descriptive or actual
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #actual(org.linuxforhealth.fhir.model.type.Boolean)
-         */
-        public Builder actual(java.lang.Boolean actual) {
-            this.actual = (actual == null) ? null : Boolean.of(actual);
-            return this;
-        }
-
-        /**
-         * If true, indicates that the resource refers to a specific group of real individuals. If false, the group defines a set 
-         * of intended individuals.
-         * 
-         * <p>This element is required.
-         * 
-         * @param actual
-         *     Descriptive or actual
+         * @param membership
+         *     definitional | enumerated
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder actual(Boolean actual) {
-            this.actual = actual;
+        public Builder membership(Code membership) {
+            this.membership = membership;
             return this;
         }
 
@@ -713,6 +728,20 @@ public class Group extends DomainResource {
          */
         public Builder name(String name) {
             this.name = name;
+            return this;
+        }
+
+        /**
+         * Explanation of what the group represents and how it is intended to be used.
+         * 
+         * @param description
+         *     Natural language description of the group
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder description(Markdown description) {
+            this.description = description;
             return this;
         }
 
@@ -836,7 +865,7 @@ public class Group extends DomainResource {
          * <p>Required elements:
          * <ul>
          * <li>type</li>
-         * <li>actual</li>
+         * <li>membership</li>
          * </ul>
          * 
          * @return
@@ -857,7 +886,7 @@ public class Group extends DomainResource {
             super.validate(group);
             ValidationSupport.checkList(group.identifier, "identifier", Identifier.class);
             ValidationSupport.requireNonNull(group.type, "type");
-            ValidationSupport.requireNonNull(group.actual, "actual");
+            ValidationSupport.requireNonNull(group.membership, "membership");
             ValidationSupport.checkList(group.characteristic, "characteristic", Characteristic.class);
             ValidationSupport.checkList(group.member, "member", Member.class);
             ValidationSupport.checkReferenceType(group.managingEntity, "managingEntity", "Organization", "RelatedPerson", "Practitioner", "PractitionerRole");
@@ -868,9 +897,10 @@ public class Group extends DomainResource {
             identifier.addAll(group.identifier);
             active = group.active;
             type = group.type;
-            actual = group.actual;
+            membership = group.membership;
             code = group.code;
             name = group.name;
+            description = group.description;
             quantity = group.quantity;
             managingEntity = group.managingEntity;
             characteristic.addAll(group.characteristic);
@@ -883,6 +913,7 @@ public class Group extends DomainResource {
      * Identifies traits whose presence r absence is shared by members of the group.
      */
     public static class Characteristic extends BackboneElement {
+        @Summary
         @Binding(
             bindingName = "GroupCharacteristicKind",
             strength = BindingStrength.Value.EXAMPLE,
@@ -890,6 +921,7 @@ public class Group extends DomainResource {
         )
         @Required
         private final CodeableConcept code;
+        @Summary
         @Choice({ CodeableConcept.class, Boolean.class, Quantity.class, Range.class, Reference.class })
         @Binding(
             bindingName = "GroupCharacteristicValue",
@@ -897,7 +929,8 @@ public class Group extends DomainResource {
             description = "Value of descriptive member characteristic; e.g. red, male, pneumonia, Caucasian, etc."
         )
         @Required
-        private final Element value;
+        private final org.linuxforhealth.fhir.model.type.Element value;
+        @Summary
         @Required
         private final Boolean exclude;
         private final Period period;
@@ -927,7 +960,7 @@ public class Group extends DomainResource {
          *     An immutable object of type {@link CodeableConcept}, {@link Boolean}, {@link Quantity}, {@link Range} or {@link 
          *     Reference} that is non-null.
          */
-        public Element getValue() {
+        public org.linuxforhealth.fhir.model.type.Element getValue() {
             return value;
         }
 
@@ -1027,7 +1060,7 @@ public class Group extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private CodeableConcept code;
-            private Element value;
+            private org.linuxforhealth.fhir.model.type.Element value;
             private Boolean exclude;
             private Period period;
 
@@ -1052,7 +1085,7 @@ public class Group extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1072,7 +1105,7 @@ public class Group extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1097,7 +1130,7 @@ public class Group extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1122,7 +1155,7 @@ public class Group extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1200,7 +1233,7 @@ public class Group extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder value(Element value) {
+            public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                 this.value = value;
                 return this;
             }
@@ -1300,7 +1333,7 @@ public class Group extends DomainResource {
      * Identifies the resource instances that are members of the group.
      */
     public static class Member extends BackboneElement {
-        @ReferenceTarget({ "Patient", "RelatedPerson", "Practitioner", "PractitionerRole", "Device", "Medication", "Substance", "Group" })
+        @ReferenceTarget({ "CareTeam", "Device", "Group", "HealthcareService", "Location", "Organization", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "Specimen" })
         @Required
         private final Reference entity;
         private final Period period;
@@ -1440,7 +1473,7 @@ public class Group extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1460,7 +1493,7 @@ public class Group extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1485,7 +1518,7 @@ public class Group extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1510,7 +1543,7 @@ public class Group extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1542,14 +1575,17 @@ public class Group extends DomainResource {
              * 
              * <p>Allowed resource types for this reference:
              * <ul>
+             * <li>{@link CareTeam}</li>
+             * <li>{@link Device}</li>
+             * <li>{@link Group}</li>
+             * <li>{@link HealthcareService}</li>
+             * <li>{@link Location}</li>
+             * <li>{@link Organization}</li>
              * <li>{@link Patient}</li>
-             * <li>{@link RelatedPerson}</li>
              * <li>{@link Practitioner}</li>
              * <li>{@link PractitionerRole}</li>
-             * <li>{@link Device}</li>
-             * <li>{@link Medication}</li>
-             * <li>{@link Substance}</li>
-             * <li>{@link Group}</li>
+             * <li>{@link RelatedPerson}</li>
+             * <li>{@link Specimen}</li>
              * </ul>
              * 
              * @param entity
@@ -1632,7 +1668,7 @@ public class Group extends DomainResource {
             protected void validate(Member member) {
                 super.validate(member);
                 ValidationSupport.requireNonNull(member.entity, "entity");
-                ValidationSupport.checkReferenceType(member.entity, "entity", "Patient", "RelatedPerson", "Practitioner", "PractitionerRole", "Device", "Medication", "Substance", "Group");
+                ValidationSupport.checkReferenceType(member.entity, "entity", "CareTeam", "Device", "Group", "HealthcareService", "Location", "Organization", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "Specimen");
                 ValidationSupport.requireValueOrChildren(member);
             }
 

@@ -27,6 +27,8 @@ import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
+import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
 import org.linuxforhealth.fhir.model.type.DataRequirement;
 import org.linuxforhealth.fhir.model.type.Date;
@@ -37,12 +39,14 @@ import org.linuxforhealth.fhir.model.type.Expression;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Id;
 import org.linuxforhealth.fhir.model.type.Identifier;
+import org.linuxforhealth.fhir.model.type.Integer;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
 import org.linuxforhealth.fhir.model.type.Quantity;
 import org.linuxforhealth.fhir.model.type.Range;
+import org.linuxforhealth.fhir.model.type.Ratio;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.RelatedArtifact;
 import org.linuxforhealth.fhir.model.type.String;
@@ -53,11 +57,11 @@ import org.linuxforhealth.fhir.model.type.UsageContext;
 import org.linuxforhealth.fhir.model.type.code.ActionCardinalityBehavior;
 import org.linuxforhealth.fhir.model.type.code.ActionConditionKind;
 import org.linuxforhealth.fhir.model.type.code.ActionGroupingBehavior;
-import org.linuxforhealth.fhir.model.type.code.ActionParticipantType;
 import org.linuxforhealth.fhir.model.type.code.ActionPrecheckBehavior;
 import org.linuxforhealth.fhir.model.type.code.ActionRelationshipType;
 import org.linuxforhealth.fhir.model.type.code.ActionRequiredBehavior;
 import org.linuxforhealth.fhir.model.type.code.ActionSelectionBehavior;
+import org.linuxforhealth.fhir.model.type.code.ActivityParticipantType;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
 import org.linuxforhealth.fhir.model.type.code.RequestPriority;
@@ -70,10 +74,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * The resource is general enough to support the description of a broad range of clinical and non-clinical artifacts such 
  * as clinical decision support rules, order sets, protocols, and drug quality specifications.
  * 
- * <p>Maturity level: FMM3 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 3,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
@@ -81,11 +85,60 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
     source = "http://hl7.org/fhir/StructureDefinition/PlanDefinition"
 )
 @Constraint(
-    id = "planDefinition-1",
+    id = "pld-0",
+    level = "Rule",
+    location = "PlanDefinition.action.input",
+    description = "Input data elements must have a requirement or a relatedData, but not both",
+    expression = "requirement.exists() xor relatedData.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/PlanDefinition"
+)
+@Constraint(
+    id = "cnl-1",
+    level = "Warning",
+    location = "PlanDefinition.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
+    source = "http://hl7.org/fhir/StructureDefinition/PlanDefinition"
+)
+@Constraint(
+    id = "pld-1",
+    level = "Rule",
+    location = "PlanDefinition.action.output",
+    description = "Output data element must have a requirement or a relatedData, but not both",
+    expression = "requirement.exists() xor relatedData.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/PlanDefinition"
+)
+@Constraint(
+    id = "pld-3",
+    level = "Warning",
+    location = "(base)",
+    description = "goalid should reference the id of a goal definition",
+    expression = "%context.repeat(action).where((goalId in %context.goal.id).not()).exists().not()",
+    source = "http://hl7.org/fhir/StructureDefinition/PlanDefinition"
+)
+@Constraint(
+    id = "pld-4",
+    level = "Warning",
+    location = "(base)",
+    description = "targetId should reference the id of an action",
+    expression = "%context.repeat(action).relatedAction.where((targetId in %context.repeat(action).id).not()).exists().not()",
+    source = "http://hl7.org/fhir/StructureDefinition/PlanDefinition"
+)
+@Constraint(
+    id = "planDefinition-5",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/PlanDefinition",
+    generated = true
+)
+@Constraint(
+    id = "planDefinition-6",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/plan-definition-type",
@@ -94,16 +147,16 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "planDefinition-2",
+    id = "planDefinition-7",
     level = "Warning",
     location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/subject-type",
-    expression = "subject.as(CodeableConcept).exists() implies (subject.as(CodeableConcept).memberOf('http://hl7.org/fhir/ValueSet/subject-type', 'extensible'))",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/participant-resource-types",
+    expression = "subject.as(CodeableConcept).exists() implies (subject.as(CodeableConcept).memberOf('http://hl7.org/fhir/ValueSet/participant-resource-types', 'extensible'))",
     source = "http://hl7.org/fhir/StructureDefinition/PlanDefinition",
     generated = true
 )
 @Constraint(
-    id = "planDefinition-3",
+    id = "planDefinition-8",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
@@ -112,7 +165,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "planDefinition-4",
+    id = "planDefinition-9",
     level = "Warning",
     location = "goal.priority",
     description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/goal-priority",
@@ -121,16 +174,16 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "planDefinition-5",
+    id = "planDefinition-10",
     level = "Warning",
     location = "action.subject",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/subject-type",
-    expression = "$this.as(CodeableConcept).memberOf('http://hl7.org/fhir/ValueSet/subject-type', 'extensible')",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/participant-resource-types",
+    expression = "$this.as(CodeableConcept).memberOf('http://hl7.org/fhir/ValueSet/participant-resource-types', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/PlanDefinition",
     generated = true
 )
 @Constraint(
-    id = "planDefinition-6",
+    id = "planDefinition-11",
     level = "Warning",
     location = "action.type",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/action-type",
@@ -146,6 +199,13 @@ public class PlanDefinition extends DomainResource {
     private final List<Identifier> identifier;
     @Summary
     private final String version;
+    @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
     @Summary
     private final String name;
     @Summary
@@ -164,21 +224,21 @@ public class PlanDefinition extends DomainResource {
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
     @Summary
     private final Boolean experimental;
-    @ReferenceTarget({ "Group", "MedicinalProductDefinition", "SubstanceDefinition", "AdministrableProductDefinition", "ManufacturedItemDefinition", "PackagedProductDefinition" })
+    @ReferenceTarget({ "Group", "MedicinalProductDefinition", "SubstanceDefinition", "AdministrableProductDefinition", "ManufacturedItemDefinition", "PackagedProductDefinition", "EvidenceVariable" })
     @Choice({ CodeableConcept.class, Reference.class, Canonical.class })
     @Binding(
         bindingName = "SubjectType",
         strength = BindingStrength.Value.EXTENSIBLE,
         description = "The possible types of subjects for a plan definition (E.g. Patient, Practitioner, Organization, Location, etc.).",
-        valueSet = "http://hl7.org/fhir/ValueSet/subject-type"
+        valueSet = "http://hl7.org/fhir/ValueSet/participant-resource-types"
     )
-    private final Element subject;
+    private final org.linuxforhealth.fhir.model.type.Element subject;
     @Summary
     private final DateTime date;
     @Summary
@@ -198,8 +258,9 @@ public class PlanDefinition extends DomainResource {
     )
     private final List<CodeableConcept> jurisdiction;
     private final Markdown purpose;
-    private final String usage;
+    private final Markdown usage;
     private final Markdown copyright;
+    private final String copyrightLabel;
     private final Date approvalDate;
     private final Date lastReviewDate;
     @Summary
@@ -218,13 +279,24 @@ public class PlanDefinition extends DomainResource {
     private final List<RelatedArtifact> relatedArtifact;
     private final List<Canonical> library;
     private final List<Goal> goal;
+    private final List<Actor> actor;
     private final List<Action> action;
+    @Summary
+    @Choice({ Boolean.class, CodeableConcept.class })
+    @Binding(
+        bindingName = "ProcedureAsNeededReason",
+        strength = BindingStrength.Value.EXAMPLE,
+        description = "A coded concept identifying the pre-condition that should hold prior to performing a procedure.  For example \"pain\", \"on flare-up\", etc.",
+        valueSet = "http://hl7.org/fhir/ValueSet/medication-as-needed-reason"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element asNeeded;
 
     private PlanDefinition(Builder builder) {
         super(builder);
         url = builder.url;
         identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
         title = builder.title;
         subtitle = builder.subtitle;
@@ -241,6 +313,7 @@ public class PlanDefinition extends DomainResource {
         purpose = builder.purpose;
         usage = builder.usage;
         copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
         approvalDate = builder.approvalDate;
         lastReviewDate = builder.lastReviewDate;
         effectivePeriod = builder.effectivePeriod;
@@ -252,14 +325,16 @@ public class PlanDefinition extends DomainResource {
         relatedArtifact = Collections.unmodifiableList(builder.relatedArtifact);
         library = Collections.unmodifiableList(builder.library);
         goal = Collections.unmodifiableList(builder.goal);
+        actor = Collections.unmodifiableList(builder.actor);
         action = Collections.unmodifiableList(builder.action);
+        asNeeded = builder.asNeeded;
     }
 
     /**
      * An absolute URI that is used to identify this plan definition when it is referenced in a specification, model, design 
      * or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address 
-     * at which at which an authoritative instance of this plan definition is (or will be) published. This URL can be the 
-     * target of a canonical reference. It SHALL remain the same when the plan definition is stored on different servers.
+     * at which an authoritative instance of this plan definition is (or will be) published. This URL can be the target of a 
+     * canonical reference. It SHALL remain the same when the plan definition is stored on different servers.
      * 
      * @return
      *     An immutable object of type {@link Uri} that may be null.
@@ -293,6 +368,16 @@ public class PlanDefinition extends DomainResource {
      */
     public String getVersion() {
         return version;
+    }
+
+    /**
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
     }
 
     /**
@@ -367,14 +452,14 @@ public class PlanDefinition extends DomainResource {
      * @return
      *     An immutable object of type {@link CodeableConcept}, {@link Reference} or {@link Canonical} that may be null.
      */
-    public Element getSubject() {
+    public org.linuxforhealth.fhir.model.type.Element getSubject() {
         return subject;
     }
 
     /**
-     * The date (and optionally time) when the plan definition was published. The date must change when the business version 
-     * changes and it must change if the status code changes. In addition, it should change when the substantive content of 
-     * the plan definition changes.
+     * The date (and optionally time) when the plan definition was last significantly changed. The date must change when the 
+     * business version changes and it must change if the status code changes. In addition, it should change when the 
+     * substantive content of the plan definition changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -384,7 +469,7 @@ public class PlanDefinition extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the plan definition.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the plan definition.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -449,9 +534,9 @@ public class PlanDefinition extends DomainResource {
      * A detailed description of how the plan definition is used from a clinical perspective.
      * 
      * @return
-     *     An immutable object of type {@link String} that may be null.
+     *     An immutable object of type {@link Markdown} that may be null.
      */
-    public String getUsage() {
+    public Markdown getUsage() {
         return usage;
     }
 
@@ -464,6 +549,17 @@ public class PlanDefinition extends DomainResource {
      */
     public Markdown getCopyright() {
         return copyright;
+    }
+
+    /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
     }
 
     /**
@@ -530,7 +626,8 @@ public class PlanDefinition extends DomainResource {
     }
 
     /**
-     * An individual or organization primarily responsible for review of some aspect of the content.
+     * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+     * content.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
@@ -540,7 +637,8 @@ public class PlanDefinition extends DomainResource {
     }
 
     /**
-     * An individual or organization responsible for officially endorsing the content for use in some setting.
+     * An individual or organization asserted by the publisher to be responsible for officially endorsing the content for use 
+     * in some setting.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
@@ -582,6 +680,16 @@ public class PlanDefinition extends DomainResource {
     }
 
     /**
+     * Actors represent the individuals or groups involved in the execution of the defined set of activities.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Actor} that may be empty.
+     */
+    public List<Actor> getActor() {
+        return actor;
+    }
+
+    /**
      * An action or group of actions to be taken as part of the plan. For example, in clinical care, an action would be to 
      * prescribe a particular indicated medication, or perform a particular test as appropriate. In pharmaceutical quality, 
      * an action would be the test that needs to be performed on a drug product as defined in the quality specification.
@@ -593,12 +701,24 @@ public class PlanDefinition extends DomainResource {
         return action;
     }
 
+    /**
+     * If a CodeableConcept is present, it indicates the pre-condition for performing the service. For example "pain", "on 
+     * flare-up", etc.
+     * 
+     * @return
+     *     An immutable object of type {@link Boolean} or {@link CodeableConcept} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getAsNeeded() {
+        return asNeeded;
+    }
+
     @Override
     public boolean hasChildren() {
         return super.hasChildren() || 
             (url != null) || 
             !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
             (title != null) || 
             (subtitle != null) || 
@@ -615,6 +735,7 @@ public class PlanDefinition extends DomainResource {
             (purpose != null) || 
             (usage != null) || 
             (copyright != null) || 
+            (copyrightLabel != null) || 
             (approvalDate != null) || 
             (lastReviewDate != null) || 
             (effectivePeriod != null) || 
@@ -626,7 +747,9 @@ public class PlanDefinition extends DomainResource {
             !relatedArtifact.isEmpty() || 
             !library.isEmpty() || 
             !goal.isEmpty() || 
-            !action.isEmpty();
+            !actor.isEmpty() || 
+            !action.isEmpty() || 
+            (asNeeded != null);
     }
 
     @Override
@@ -646,6 +769,7 @@ public class PlanDefinition extends DomainResource {
                 accept(url, "url", visitor);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(subtitle, "subtitle", visitor);
@@ -662,6 +786,7 @@ public class PlanDefinition extends DomainResource {
                 accept(purpose, "purpose", visitor);
                 accept(usage, "usage", visitor);
                 accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
                 accept(approvalDate, "approvalDate", visitor);
                 accept(lastReviewDate, "lastReviewDate", visitor);
                 accept(effectivePeriod, "effectivePeriod", visitor);
@@ -673,7 +798,9 @@ public class PlanDefinition extends DomainResource {
                 accept(relatedArtifact, "relatedArtifact", visitor, RelatedArtifact.class);
                 accept(library, "library", visitor, Canonical.class);
                 accept(goal, "goal", visitor, Goal.class);
+                accept(actor, "actor", visitor, Actor.class);
                 accept(action, "action", visitor, Action.class);
+                accept(asNeeded, "asNeeded", visitor);
             }
             visitor.visitEnd(elementName, elementIndex, this);
             visitor.postVisit(this);
@@ -703,6 +830,7 @@ public class PlanDefinition extends DomainResource {
             Objects.equals(url, other.url) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(subtitle, other.subtitle) && 
@@ -719,6 +847,7 @@ public class PlanDefinition extends DomainResource {
             Objects.equals(purpose, other.purpose) && 
             Objects.equals(usage, other.usage) && 
             Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
             Objects.equals(approvalDate, other.approvalDate) && 
             Objects.equals(lastReviewDate, other.lastReviewDate) && 
             Objects.equals(effectivePeriod, other.effectivePeriod) && 
@@ -730,7 +859,9 @@ public class PlanDefinition extends DomainResource {
             Objects.equals(relatedArtifact, other.relatedArtifact) && 
             Objects.equals(library, other.library) && 
             Objects.equals(goal, other.goal) && 
-            Objects.equals(action, other.action);
+            Objects.equals(actor, other.actor) && 
+            Objects.equals(action, other.action) && 
+            Objects.equals(asNeeded, other.asNeeded);
     }
 
     @Override
@@ -748,6 +879,7 @@ public class PlanDefinition extends DomainResource {
                 url, 
                 identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
                 title, 
                 subtitle, 
@@ -764,6 +896,7 @@ public class PlanDefinition extends DomainResource {
                 purpose, 
                 usage, 
                 copyright, 
+                copyrightLabel, 
                 approvalDate, 
                 lastReviewDate, 
                 effectivePeriod, 
@@ -775,7 +908,9 @@ public class PlanDefinition extends DomainResource {
                 relatedArtifact, 
                 library, 
                 goal, 
-                action);
+                actor, 
+                action, 
+                asNeeded);
             hashCode = result;
         }
         return result;
@@ -794,13 +929,14 @@ public class PlanDefinition extends DomainResource {
         private Uri url;
         private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
         private String title;
         private String subtitle;
         private CodeableConcept type;
         private PublicationStatus status;
         private Boolean experimental;
-        private Element subject;
+        private org.linuxforhealth.fhir.model.type.Element subject;
         private DateTime date;
         private String publisher;
         private List<ContactDetail> contact = new ArrayList<>();
@@ -808,8 +944,9 @@ public class PlanDefinition extends DomainResource {
         private List<UsageContext> useContext = new ArrayList<>();
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
         private Markdown purpose;
-        private String usage;
+        private Markdown usage;
         private Markdown copyright;
+        private String copyrightLabel;
         private Date approvalDate;
         private Date lastReviewDate;
         private Period effectivePeriod;
@@ -821,7 +958,9 @@ public class PlanDefinition extends DomainResource {
         private List<RelatedArtifact> relatedArtifact = new ArrayList<>();
         private List<Canonical> library = new ArrayList<>();
         private List<Goal> goal = new ArrayList<>();
+        private List<Actor> actor = new ArrayList<>();
         private List<Action> action = new ArrayList<>();
+        private org.linuxforhealth.fhir.model.type.Element asNeeded;
 
         private Builder() {
             super();
@@ -905,7 +1044,8 @@ public class PlanDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -923,7 +1063,8 @@ public class PlanDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -944,7 +1085,7 @@ public class PlanDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -964,7 +1105,7 @@ public class PlanDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -989,9 +1130,9 @@ public class PlanDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1014,9 +1155,9 @@ public class PlanDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1041,8 +1182,8 @@ public class PlanDefinition extends DomainResource {
         /**
          * An absolute URI that is used to identify this plan definition when it is referenced in a specification, model, design 
          * or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address 
-         * at which at which an authoritative instance of this plan definition is (or will be) published. This URL can be the 
-         * target of a canonical reference. It SHALL remain the same when the plan definition is stored on different servers.
+         * at which an authoritative instance of this plan definition is (or will be) published. This URL can be the target of a 
+         * canonical reference. It SHALL remain the same when the plan definition is stored on different servers.
          * 
          * @param url
          *     Canonical identifier for this plan definition, represented as a URI (globally unique)
@@ -1129,6 +1270,42 @@ public class PlanDefinition extends DomainResource {
          */
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
             return this;
         }
 
@@ -1306,6 +1483,7 @@ public class PlanDefinition extends DomainResource {
          * <li>{@link AdministrableProductDefinition}</li>
          * <li>{@link ManufacturedItemDefinition}</li>
          * <li>{@link PackagedProductDefinition}</li>
+         * <li>{@link EvidenceVariable}</li>
          * </ul>
          * 
          * @param subject
@@ -1314,15 +1492,15 @@ public class PlanDefinition extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder subject(Element subject) {
+        public Builder subject(org.linuxforhealth.fhir.model.type.Element subject) {
             this.subject = subject;
             return this;
         }
 
         /**
-         * The date (and optionally time) when the plan definition was published. The date must change when the business version 
-         * changes and it must change if the status code changes. In addition, it should change when the substantive content of 
-         * the plan definition changes.
+         * The date (and optionally time) when the plan definition was last significantly changed. The date must change when the 
+         * business version changes and it must change if the status code changes. In addition, it should change when the 
+         * substantive content of the plan definition changes.
          * 
          * @param date
          *     Date last changed
@@ -1339,7 +1517,7 @@ public class PlanDefinition extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1352,10 +1530,10 @@ public class PlanDefinition extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the plan definition.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the plan definition.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1515,22 +1693,6 @@ public class PlanDefinition extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code usage}.
-         * 
-         * @param usage
-         *     Describes the clinical usage of the plan
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #usage(org.linuxforhealth.fhir.model.type.String)
-         */
-        public Builder usage(java.lang.String usage) {
-            this.usage = (usage == null) ? null : String.of(usage);
-            return this;
-        }
-
-        /**
          * A detailed description of how the plan definition is used from a clinical perspective.
          * 
          * @param usage
@@ -1539,7 +1701,7 @@ public class PlanDefinition extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder usage(String usage) {
+        public Builder usage(Markdown usage) {
             this.usage = usage;
             return this;
         }
@@ -1556,6 +1718,37 @@ public class PlanDefinition extends DomainResource {
          */
         public Builder copyright(Markdown copyright) {
             this.copyright = copyright;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
             return this;
         }
 
@@ -1594,7 +1787,7 @@ public class PlanDefinition extends DomainResource {
          * Convenience method for setting {@code lastReviewDate}.
          * 
          * @param lastReviewDate
-         *     When the plan definition was last reviewed
+         *     When the plan definition was last reviewed by the publisher
          * 
          * @return
          *     A reference to this Builder instance
@@ -1611,7 +1804,7 @@ public class PlanDefinition extends DomainResource {
          * change the original approval date.
          * 
          * @param lastReviewDate
-         *     When the plan definition was last reviewed
+         *     When the plan definition was last reviewed by the publisher
          * 
          * @return
          *     A reference to this Builder instance
@@ -1755,7 +1948,8 @@ public class PlanDefinition extends DomainResource {
         }
 
         /**
-         * An individual or organization primarily responsible for review of some aspect of the content.
+         * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+         * content.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1774,7 +1968,8 @@ public class PlanDefinition extends DomainResource {
         }
 
         /**
-         * An individual or organization primarily responsible for review of some aspect of the content.
+         * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+         * content.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1794,7 +1989,8 @@ public class PlanDefinition extends DomainResource {
         }
 
         /**
-         * An individual or organization responsible for officially endorsing the content for use in some setting.
+         * An individual or organization asserted by the publisher to be responsible for officially endorsing the content for use 
+         * in some setting.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1813,7 +2009,8 @@ public class PlanDefinition extends DomainResource {
         }
 
         /**
-         * An individual or organization responsible for officially endorsing the content for use in some setting.
+         * An individual or organization asserted by the publisher to be responsible for officially endorsing the content for use 
+         * in some setting.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1954,6 +2151,45 @@ public class PlanDefinition extends DomainResource {
         }
 
         /**
+         * Actors represent the individuals or groups involved in the execution of the defined set of activities.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param actor
+         *     Actors within the plan
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder actor(Actor... actor) {
+            for (Actor value : actor) {
+                this.actor.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Actors represent the individuals or groups involved in the execution of the defined set of activities.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param actor
+         *     Actors within the plan
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder actor(Collection<Actor> actor) {
+            this.actor = new ArrayList<>(actor);
+            return this;
+        }
+
+        /**
          * An action or group of actions to be taken as part of the plan. For example, in clinical care, an action would be to 
          * prescribe a particular indicated medication, or perform a particular test as appropriate. In pharmaceutical quality, 
          * an action would be the test that needs to be performed on a drug product as defined in the quality specification.
@@ -1997,6 +2233,43 @@ public class PlanDefinition extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code asNeeded} with choice type Boolean.
+         * 
+         * @param asNeeded
+         *     Preconditions for service
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #asNeeded(Element)
+         */
+        public Builder asNeeded(java.lang.Boolean asNeeded) {
+            this.asNeeded = (asNeeded == null) ? null : Boolean.of(asNeeded);
+            return this;
+        }
+
+        /**
+         * If a CodeableConcept is present, it indicates the pre-condition for performing the service. For example "pain", "on 
+         * flare-up", etc.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link Boolean}</li>
+         * <li>{@link CodeableConcept}</li>
+         * </ul>
+         * 
+         * @param asNeeded
+         *     Preconditions for service
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder asNeeded(org.linuxforhealth.fhir.model.type.Element asNeeded) {
+            this.asNeeded = asNeeded;
+            return this;
+        }
+
+        /**
          * Build the {@link PlanDefinition}
          * 
          * <p>Required elements:
@@ -2021,6 +2294,7 @@ public class PlanDefinition extends DomainResource {
         protected void validate(PlanDefinition planDefinition) {
             super.validate(planDefinition);
             ValidationSupport.checkList(planDefinition.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(planDefinition.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.requireNonNull(planDefinition.status, "status");
             ValidationSupport.choiceElement(planDefinition.subject, "subject", CodeableConcept.class, Reference.class, Canonical.class);
             ValidationSupport.checkList(planDefinition.contact, "contact", ContactDetail.class);
@@ -2034,8 +2308,10 @@ public class PlanDefinition extends DomainResource {
             ValidationSupport.checkList(planDefinition.relatedArtifact, "relatedArtifact", RelatedArtifact.class);
             ValidationSupport.checkList(planDefinition.library, "library", Canonical.class);
             ValidationSupport.checkList(planDefinition.goal, "goal", Goal.class);
+            ValidationSupport.checkList(planDefinition.actor, "actor", Actor.class);
             ValidationSupport.checkList(planDefinition.action, "action", Action.class);
-            ValidationSupport.checkReferenceType(planDefinition.subject, "subject", "Group", "MedicinalProductDefinition", "SubstanceDefinition", "AdministrableProductDefinition", "ManufacturedItemDefinition", "PackagedProductDefinition");
+            ValidationSupport.choiceElement(planDefinition.asNeeded, "asNeeded", Boolean.class, CodeableConcept.class);
+            ValidationSupport.checkReferenceType(planDefinition.subject, "subject", "Group", "MedicinalProductDefinition", "SubstanceDefinition", "AdministrableProductDefinition", "ManufacturedItemDefinition", "PackagedProductDefinition", "EvidenceVariable");
         }
 
         protected Builder from(PlanDefinition planDefinition) {
@@ -2043,6 +2319,7 @@ public class PlanDefinition extends DomainResource {
             url = planDefinition.url;
             identifier.addAll(planDefinition.identifier);
             version = planDefinition.version;
+            versionAlgorithm = planDefinition.versionAlgorithm;
             name = planDefinition.name;
             title = planDefinition.title;
             subtitle = planDefinition.subtitle;
@@ -2059,6 +2336,7 @@ public class PlanDefinition extends DomainResource {
             purpose = planDefinition.purpose;
             usage = planDefinition.usage;
             copyright = planDefinition.copyright;
+            copyrightLabel = planDefinition.copyrightLabel;
             approvalDate = planDefinition.approvalDate;
             lastReviewDate = planDefinition.lastReviewDate;
             effectivePeriod = planDefinition.effectivePeriod;
@@ -2070,7 +2348,9 @@ public class PlanDefinition extends DomainResource {
             relatedArtifact.addAll(planDefinition.relatedArtifact);
             library.addAll(planDefinition.library);
             goal.addAll(planDefinition.goal);
+            actor.addAll(planDefinition.actor);
             action.addAll(planDefinition.action);
+            asNeeded = planDefinition.asNeeded;
             return this;
         }
     }
@@ -2319,7 +2599,7 @@ public class PlanDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2339,7 +2619,7 @@ public class PlanDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2364,7 +2644,7 @@ public class PlanDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2389,7 +2669,7 @@ public class PlanDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2646,8 +2926,8 @@ public class PlanDefinition extends DomainResource {
                 valueSet = "http://hl7.org/fhir/ValueSet/observation-codes"
             )
             private final CodeableConcept measure;
-            @Choice({ Quantity.class, Range.class, CodeableConcept.class })
-            private final Element detail;
+            @Choice({ Quantity.class, Range.class, CodeableConcept.class, String.class, Boolean.class, Integer.class, Ratio.class })
+            private final org.linuxforhealth.fhir.model.type.Element detail;
             private final Duration due;
 
             private Target(Builder builder) {
@@ -2675,9 +2955,10 @@ public class PlanDefinition extends DomainResource {
              * low value.
              * 
              * @return
-             *     An immutable object of type {@link Quantity}, {@link Range} or {@link CodeableConcept} that may be null.
+             *     An immutable object of type {@link Quantity}, {@link Range}, {@link CodeableConcept}, {@link String}, {@link Boolean}, 
+             *     {@link Integer} or {@link Ratio} that may be null.
              */
-            public Element getDetail() {
+            public org.linuxforhealth.fhir.model.type.Element getDetail() {
                 return detail;
             }
 
@@ -2763,7 +3044,7 @@ public class PlanDefinition extends DomainResource {
 
             public static class Builder extends BackboneElement.Builder {
                 private CodeableConcept measure;
-                private Element detail;
+                private org.linuxforhealth.fhir.model.type.Element detail;
                 private Duration due;
 
                 private Builder() {
@@ -2787,7 +3068,7 @@ public class PlanDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2807,7 +3088,7 @@ public class PlanDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2832,7 +3113,7 @@ public class PlanDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2857,7 +3138,7 @@ public class PlanDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2896,6 +3177,54 @@ public class PlanDefinition extends DomainResource {
                 }
 
                 /**
+                 * Convenience method for setting {@code detail} with choice type String.
+                 * 
+                 * @param detail
+                 *     The target value to be achieved
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #detail(Element)
+                 */
+                public Builder detail(java.lang.String detail) {
+                    this.detail = (detail == null) ? null : String.of(detail);
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code detail} with choice type Boolean.
+                 * 
+                 * @param detail
+                 *     The target value to be achieved
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #detail(Element)
+                 */
+                public Builder detail(java.lang.Boolean detail) {
+                    this.detail = (detail == null) ? null : Boolean.of(detail);
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code detail} with choice type Integer.
+                 * 
+                 * @param detail
+                 *     The target value to be achieved
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #detail(Element)
+                 */
+                public Builder detail(java.lang.Integer detail) {
+                    this.detail = (detail == null) ? null : Integer.of(detail);
+                    return this;
+                }
+
+                /**
                  * The target value of the measure to be achieved to signify fulfillment of the goal, e.g. 150 pounds or 7.0%, or in the 
                  * case of pharmaceutical quality - NMT 0.6%, Clear solution, etc. Either the high or low or both values of the range can 
                  * be specified. When a low value is missing, it indicates that the goal is achieved at any value at or below the high 
@@ -2907,6 +3236,10 @@ public class PlanDefinition extends DomainResource {
                  * <li>{@link Quantity}</li>
                  * <li>{@link Range}</li>
                  * <li>{@link CodeableConcept}</li>
+                 * <li>{@link String}</li>
+                 * <li>{@link Boolean}</li>
+                 * <li>{@link Integer}</li>
+                 * <li>{@link Ratio}</li>
                  * </ul>
                  * 
                  * @param detail
@@ -2915,7 +3248,7 @@ public class PlanDefinition extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder detail(Element detail) {
+                public Builder detail(org.linuxforhealth.fhir.model.type.Element detail) {
                     this.detail = detail;
                     return this;
                 }
@@ -2953,7 +3286,7 @@ public class PlanDefinition extends DomainResource {
 
                 protected void validate(Target target) {
                     super.validate(target);
-                    ValidationSupport.choiceElement(target.detail, "detail", Quantity.class, Range.class, CodeableConcept.class);
+                    ValidationSupport.choiceElement(target.detail, "detail", Quantity.class, Range.class, CodeableConcept.class, String.class, Boolean.class, Integer.class, Ratio.class);
                     ValidationSupport.requireValueOrChildren(target);
                 }
 
@@ -2969,20 +3302,753 @@ public class PlanDefinition extends DomainResource {
     }
 
     /**
+     * Actors represent the individuals or groups involved in the execution of the defined set of activities.
+     */
+    public static class Actor extends BackboneElement {
+        private final String title;
+        private final Markdown description;
+        @Required
+        private final List<Option> option;
+
+        private Actor(Builder builder) {
+            super(builder);
+            title = builder.title;
+            description = builder.description;
+            option = Collections.unmodifiableList(builder.option);
+        }
+
+        /**
+         * A descriptive label for the actor.
+         * 
+         * @return
+         *     An immutable object of type {@link String} that may be null.
+         */
+        public String getTitle() {
+            return title;
+        }
+
+        /**
+         * A description of how the actor fits into the overall actions of the plan definition.
+         * 
+         * @return
+         *     An immutable object of type {@link Markdown} that may be null.
+         */
+        public Markdown getDescription() {
+            return description;
+        }
+
+        /**
+         * The characteristics of the candidates that could serve as the actor.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link Option} that is non-empty.
+         */
+        public List<Option> getOption() {
+            return option;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (title != null) || 
+                (description != null) || 
+                !option.isEmpty();
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(title, "title", visitor);
+                    accept(description, "description", visitor);
+                    accept(option, "option", visitor, Option.class);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Actor other = (Actor) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(title, other.title) && 
+                Objects.equals(description, other.description) && 
+                Objects.equals(option, other.option);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    title, 
+                    description, 
+                    option);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private String title;
+            private Markdown description;
+            private List<Option> option = new ArrayList<>();
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * Convenience method for setting {@code title}.
+             * 
+             * @param title
+             *     User-visible title
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #title(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder title(java.lang.String title) {
+                this.title = (title == null) ? null : String.of(title);
+                return this;
+            }
+
+            /**
+             * A descriptive label for the actor.
+             * 
+             * @param title
+             *     User-visible title
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder title(String title) {
+                this.title = title;
+                return this;
+            }
+
+            /**
+             * A description of how the actor fits into the overall actions of the plan definition.
+             * 
+             * @param description
+             *     Describes the actor
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder description(Markdown description) {
+                this.description = description;
+                return this;
+            }
+
+            /**
+             * The characteristics of the candidates that could serve as the actor.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * <p>This element is required.
+             * 
+             * @param option
+             *     Who or what can be this actor
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder option(Option... option) {
+                for (Option value : option) {
+                    this.option.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * The characteristics of the candidates that could serve as the actor.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * <p>This element is required.
+             * 
+             * @param option
+             *     Who or what can be this actor
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder option(Collection<Option> option) {
+                this.option = new ArrayList<>(option);
+                return this;
+            }
+
+            /**
+             * Build the {@link Actor}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>option</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link Actor}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Actor per the base specification
+             */
+            @Override
+            public Actor build() {
+                Actor actor = new Actor(this);
+                if (validating) {
+                    validate(actor);
+                }
+                return actor;
+            }
+
+            protected void validate(Actor actor) {
+                super.validate(actor);
+                ValidationSupport.checkNonEmptyList(actor.option, "option", Option.class);
+                ValidationSupport.requireValueOrChildren(actor);
+            }
+
+            protected Builder from(Actor actor) {
+                super.from(actor);
+                title = actor.title;
+                description = actor.description;
+                option.addAll(actor.option);
+                return this;
+            }
+        }
+
+        /**
+         * The characteristics of the candidates that could serve as the actor.
+         */
+        public static class Option extends BackboneElement {
+            @Binding(
+                bindingName = "ActivityParticipantType",
+                strength = BindingStrength.Value.REQUIRED,
+                description = "The type of participant in the activity.",
+                valueSet = "http://hl7.org/fhir/ValueSet/action-participant-type|5.0.0"
+            )
+            private final ActivityParticipantType type;
+            private final Canonical typeCanonical;
+            @ReferenceTarget({ "CareTeam", "Device", "DeviceDefinition", "Endpoint", "Group", "HealthcareService", "Location", "Organization", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson" })
+            private final Reference typeReference;
+            @Binding(
+                bindingName = "ActionParticipantRole",
+                strength = BindingStrength.Value.EXAMPLE,
+                valueSet = "http://terminology.hl7.org/ValueSet/action-participant-role"
+            )
+            private final CodeableConcept role;
+
+            private Option(Builder builder) {
+                super(builder);
+                type = builder.type;
+                typeCanonical = builder.typeCanonical;
+                typeReference = builder.typeReference;
+                role = builder.role;
+            }
+
+            /**
+             * The type of participant in the action.
+             * 
+             * @return
+             *     An immutable object of type {@link ActivityParticipantType} that may be null.
+             */
+            public ActivityParticipantType getType() {
+                return type;
+            }
+
+            /**
+             * The type of participant in the action.
+             * 
+             * @return
+             *     An immutable object of type {@link Canonical} that may be null.
+             */
+            public Canonical getTypeCanonical() {
+                return typeCanonical;
+            }
+
+            /**
+             * The type of participant in the action.
+             * 
+             * @return
+             *     An immutable object of type {@link Reference} that may be null.
+             */
+            public Reference getTypeReference() {
+                return typeReference;
+            }
+
+            /**
+             * The role the participant should play in performing the described action.
+             * 
+             * @return
+             *     An immutable object of type {@link CodeableConcept} that may be null.
+             */
+            public CodeableConcept getRole() {
+                return role;
+            }
+
+            @Override
+            public boolean hasChildren() {
+                return super.hasChildren() || 
+                    (type != null) || 
+                    (typeCanonical != null) || 
+                    (typeReference != null) || 
+                    (role != null);
+            }
+
+            @Override
+            public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                if (visitor.preVisit(this)) {
+                    visitor.visitStart(elementName, elementIndex, this);
+                    if (visitor.visit(elementName, elementIndex, this)) {
+                        // visit children
+                        accept(id, "id", visitor);
+                        accept(extension, "extension", visitor, Extension.class);
+                        accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                        accept(type, "type", visitor);
+                        accept(typeCanonical, "typeCanonical", visitor);
+                        accept(typeReference, "typeReference", visitor);
+                        accept(role, "role", visitor);
+                    }
+                    visitor.visitEnd(elementName, elementIndex, this);
+                    visitor.postVisit(this);
+                }
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj) {
+                    return true;
+                }
+                if (obj == null) {
+                    return false;
+                }
+                if (getClass() != obj.getClass()) {
+                    return false;
+                }
+                Option other = (Option) obj;
+                return Objects.equals(id, other.id) && 
+                    Objects.equals(extension, other.extension) && 
+                    Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(type, other.type) && 
+                    Objects.equals(typeCanonical, other.typeCanonical) && 
+                    Objects.equals(typeReference, other.typeReference) && 
+                    Objects.equals(role, other.role);
+            }
+
+            @Override
+            public int hashCode() {
+                int result = hashCode;
+                if (result == 0) {
+                    result = Objects.hash(id, 
+                        extension, 
+                        modifierExtension, 
+                        type, 
+                        typeCanonical, 
+                        typeReference, 
+                        role);
+                    hashCode = result;
+                }
+                return result;
+            }
+
+            @Override
+            public Builder toBuilder() {
+                return new Builder().from(this);
+            }
+
+            public static Builder builder() {
+                return new Builder();
+            }
+
+            public static class Builder extends BackboneElement.Builder {
+                private ActivityParticipantType type;
+                private Canonical typeCanonical;
+                private Reference typeReference;
+                private CodeableConcept role;
+
+                private Builder() {
+                    super();
+                }
+
+                /**
+                 * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                 * contain spaces.
+                 * 
+                 * @param id
+                 *     Unique id for inter-element referencing
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder id(java.lang.String id) {
+                    return (Builder) super.id(id);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder extension(Extension... extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder extension(Collection<Extension> extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder modifierExtension(Extension... modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * The type of participant in the action.
+                 * 
+                 * @param type
+                 *     careteam | device | group | healthcareservice | location | organization | patient | practitioner | practitionerrole | 
+                 *     relatedperson
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder type(ActivityParticipantType type) {
+                    this.type = type;
+                    return this;
+                }
+
+                /**
+                 * The type of participant in the action.
+                 * 
+                 * @param typeCanonical
+                 *     Who or what can participate
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder typeCanonical(Canonical typeCanonical) {
+                    this.typeCanonical = typeCanonical;
+                    return this;
+                }
+
+                /**
+                 * The type of participant in the action.
+                 * 
+                 * <p>Allowed resource types for this reference:
+                 * <ul>
+                 * <li>{@link CareTeam}</li>
+                 * <li>{@link Device}</li>
+                 * <li>{@link DeviceDefinition}</li>
+                 * <li>{@link Endpoint}</li>
+                 * <li>{@link Group}</li>
+                 * <li>{@link HealthcareService}</li>
+                 * <li>{@link Location}</li>
+                 * <li>{@link Organization}</li>
+                 * <li>{@link Patient}</li>
+                 * <li>{@link Practitioner}</li>
+                 * <li>{@link PractitionerRole}</li>
+                 * <li>{@link RelatedPerson}</li>
+                 * </ul>
+                 * 
+                 * @param typeReference
+                 *     Who or what can participate
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder typeReference(Reference typeReference) {
+                    this.typeReference = typeReference;
+                    return this;
+                }
+
+                /**
+                 * The role the participant should play in performing the described action.
+                 * 
+                 * @param role
+                 *     E.g. Nurse, Surgeon, Parent
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder role(CodeableConcept role) {
+                    this.role = role;
+                    return this;
+                }
+
+                /**
+                 * Build the {@link Option}
+                 * 
+                 * @return
+                 *     An immutable object of type {@link Option}
+                 * @throws IllegalStateException
+                 *     if the current state cannot be built into a valid Option per the base specification
+                 */
+                @Override
+                public Option build() {
+                    Option option = new Option(this);
+                    if (validating) {
+                        validate(option);
+                    }
+                    return option;
+                }
+
+                protected void validate(Option option) {
+                    super.validate(option);
+                    ValidationSupport.checkReferenceType(option.typeReference, "typeReference", "CareTeam", "Device", "DeviceDefinition", "Endpoint", "Group", "HealthcareService", "Location", "Organization", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson");
+                    ValidationSupport.requireValueOrChildren(option);
+                }
+
+                protected Builder from(Option option) {
+                    super.from(option);
+                    type = option.type;
+                    typeCanonical = option.typeCanonical;
+                    typeReference = option.typeReference;
+                    role = option.role;
+                    return this;
+                }
+            }
+        }
+    }
+
+    /**
      * An action or group of actions to be taken as part of the plan. For example, in clinical care, an action would be to 
      * prescribe a particular indicated medication, or perform a particular test as appropriate. In pharmaceutical quality, 
      * an action would be the test that needs to be performed on a drug product as defined in the quality specification.
      */
     public static class Action extends BackboneElement {
+        private final String linkId;
         private final String prefix;
         private final String title;
-        private final String description;
-        private final String textEquivalent;
+        private final Markdown description;
+        private final Markdown textEquivalent;
         @Binding(
             bindingName = "RequestPriority",
             strength = BindingStrength.Value.REQUIRED,
             description = "Identifies the level of importance to be assigned to actioning the request.",
-            valueSet = "http://hl7.org/fhir/ValueSet/request-priority|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/request-priority|5.0.0"
         )
         private final RequestPriority priority;
         @Binding(
@@ -2991,7 +4057,7 @@ public class PlanDefinition extends DomainResource {
             description = "Provides examples of actions to be performed.",
             valueSet = "http://hl7.org/fhir/ValueSet/action-code"
         )
-        private final List<CodeableConcept> code;
+        private final CodeableConcept code;
         @Binding(
             bindingName = "ActionReasonCode",
             strength = BindingStrength.Value.EXAMPLE,
@@ -3007,16 +4073,17 @@ public class PlanDefinition extends DomainResource {
             bindingName = "SubjectType",
             strength = BindingStrength.Value.EXTENSIBLE,
             description = "The possible types of subjects for a plan definition (E.g. Patient, Practitioner, Organization, Location, etc.).",
-            valueSet = "http://hl7.org/fhir/ValueSet/subject-type"
+            valueSet = "http://hl7.org/fhir/ValueSet/participant-resource-types"
         )
-        private final Element subject;
+        private final org.linuxforhealth.fhir.model.type.Element subject;
         private final List<TriggerDefinition> trigger;
         private final List<Condition> condition;
-        private final List<DataRequirement> input;
-        private final List<DataRequirement> output;
+        private final List<Input> input;
+        private final List<Output> output;
         private final List<RelatedAction> relatedAction;
-        @Choice({ DateTime.class, Age.class, Period.class, Duration.class, Range.class, Timing.class })
-        private final Element timing;
+        @Choice({ Age.class, Duration.class, Range.class, Timing.class })
+        private final org.linuxforhealth.fhir.model.type.Element timing;
+        private final CodeableReference location;
         private final List<Participant> participant;
         @Binding(
             bindingName = "ActionType",
@@ -3029,51 +4096,52 @@ public class PlanDefinition extends DomainResource {
             bindingName = "ActionGroupingBehavior",
             strength = BindingStrength.Value.REQUIRED,
             description = "Defines organization behavior of a group.",
-            valueSet = "http://hl7.org/fhir/ValueSet/action-grouping-behavior|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/action-grouping-behavior|5.0.0"
         )
         private final ActionGroupingBehavior groupingBehavior;
         @Binding(
             bindingName = "ActionSelectionBehavior",
             strength = BindingStrength.Value.REQUIRED,
             description = "Defines selection behavior of a group.",
-            valueSet = "http://hl7.org/fhir/ValueSet/action-selection-behavior|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/action-selection-behavior|5.0.0"
         )
         private final ActionSelectionBehavior selectionBehavior;
         @Binding(
             bindingName = "ActionRequiredBehavior",
             strength = BindingStrength.Value.REQUIRED,
             description = "Defines expectations around whether an action or action group is required.",
-            valueSet = "http://hl7.org/fhir/ValueSet/action-required-behavior|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/action-required-behavior|5.0.0"
         )
         private final ActionRequiredBehavior requiredBehavior;
         @Binding(
             bindingName = "ActionPrecheckBehavior",
             strength = BindingStrength.Value.REQUIRED,
             description = "Defines selection frequency behavior for an action or group.",
-            valueSet = "http://hl7.org/fhir/ValueSet/action-precheck-behavior|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/action-precheck-behavior|5.0.0"
         )
         private final ActionPrecheckBehavior precheckBehavior;
         @Binding(
             bindingName = "ActionCardinalityBehavior",
             strength = BindingStrength.Value.REQUIRED,
             description = "Defines behavior for an action or a group for how many times that item may be repeated.",
-            valueSet = "http://hl7.org/fhir/ValueSet/action-cardinality-behavior|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/action-cardinality-behavior|5.0.0"
         )
         private final ActionCardinalityBehavior cardinalityBehavior;
         @Choice({ Canonical.class, Uri.class })
-        private final Element definition;
+        private final org.linuxforhealth.fhir.model.type.Element definition;
         private final Canonical transform;
         private final List<DynamicValue> dynamicValue;
         private final List<PlanDefinition.Action> action;
 
         private Action(Builder builder) {
             super(builder);
+            linkId = builder.linkId;
             prefix = builder.prefix;
             title = builder.title;
             description = builder.description;
             textEquivalent = builder.textEquivalent;
             priority = builder.priority;
-            code = Collections.unmodifiableList(builder.code);
+            code = builder.code;
             reason = Collections.unmodifiableList(builder.reason);
             documentation = Collections.unmodifiableList(builder.documentation);
             goalId = Collections.unmodifiableList(builder.goalId);
@@ -3084,6 +4152,7 @@ public class PlanDefinition extends DomainResource {
             output = Collections.unmodifiableList(builder.output);
             relatedAction = Collections.unmodifiableList(builder.relatedAction);
             timing = builder.timing;
+            location = builder.location;
             participant = Collections.unmodifiableList(builder.participant);
             type = builder.type;
             groupingBehavior = builder.groupingBehavior;
@@ -3098,7 +4167,18 @@ public class PlanDefinition extends DomainResource {
         }
 
         /**
-         * A user-visible prefix for the action.
+         * An identifier that is unique within the PlanDefinition to allow linkage within the realized CarePlan and/or 
+         * RequestOrchestration.
+         * 
+         * @return
+         *     An immutable object of type {@link String} that may be null.
+         */
+        public String getLinkId() {
+            return linkId;
+        }
+
+        /**
+         * A user-visible prefix for the action. For example a section or item numbering such as 1. or A.
          * 
          * @return
          *     An immutable object of type {@link String} that may be null.
@@ -3122,9 +4202,9 @@ public class PlanDefinition extends DomainResource {
          * A brief description of the action used to provide a summary to display to the user.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link Markdown} that may be null.
          */
-        public String getDescription() {
+        public Markdown getDescription() {
             return description;
         }
 
@@ -3133,9 +4213,9 @@ public class PlanDefinition extends DomainResource {
          * the definition is consumed by a system that might not be capable of interpreting it dynamically.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link Markdown} that may be null.
          */
-        public String getTextEquivalent() {
+        public Markdown getTextEquivalent() {
             return textEquivalent;
         }
 
@@ -3155,9 +4235,9 @@ public class PlanDefinition extends DomainResource {
          * could be classified as a physical property.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+         *     An immutable object of type {@link CodeableConcept} that may be null.
          */
-        public List<CodeableConcept> getCode() {
+        public CodeableConcept getCode() {
             return code;
         }
 
@@ -3203,12 +4283,13 @@ public class PlanDefinition extends DomainResource {
          * @return
          *     An immutable object of type {@link CodeableConcept}, {@link Reference} or {@link Canonical} that may be null.
          */
-        public Element getSubject() {
+        public org.linuxforhealth.fhir.model.type.Element getSubject() {
             return subject;
         }
 
         /**
-         * A description of when the action should be triggered.
+         * A description of when the action should be triggered. When multiple triggers are specified on an action, any 
+         * triggering event invokes the action.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link TriggerDefinition} that may be empty.
@@ -3231,9 +4312,9 @@ public class PlanDefinition extends DomainResource {
          * Defines input data requirements for the action.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link DataRequirement} that may be empty.
+         *     An unmodifiable list containing immutable objects of type {@link Input} that may be empty.
          */
-        public List<DataRequirement> getInput() {
+        public List<Input> getInput() {
             return input;
         }
 
@@ -3241,9 +4322,9 @@ public class PlanDefinition extends DomainResource {
          * Defines the outputs of the action, if any.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link DataRequirement} that may be empty.
+         *     An unmodifiable list containing immutable objects of type {@link Output} that may be empty.
          */
-        public List<DataRequirement> getOutput() {
+        public List<Output> getOutput() {
             return output;
         }
 
@@ -3261,11 +4342,20 @@ public class PlanDefinition extends DomainResource {
          * An optional value describing when the action should be performed.
          * 
          * @return
-         *     An immutable object of type {@link DateTime}, {@link Age}, {@link Period}, {@link Duration}, {@link Range} or {@link 
-         *     Timing} that may be null.
+         *     An immutable object of type {@link Age}, {@link Duration}, {@link Range} or {@link Timing} that may be null.
          */
-        public Element getTiming() {
+        public org.linuxforhealth.fhir.model.type.Element getTiming() {
             return timing;
+        }
+
+        /**
+         * Identifies the facility where the action will occur; e.g. home, hospital, specific clinic, etc.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableReference} that may be null.
+         */
+        public CodeableReference getLocation() {
+            return location;
         }
 
         /**
@@ -3339,13 +4429,15 @@ public class PlanDefinition extends DomainResource {
         }
 
         /**
-         * A reference to an ActivityDefinition that describes the action to be taken in detail, or a PlanDefinition that 
-         * describes a series of actions to be taken.
+         * A reference to an ActivityDefinition that describes the action to be taken in detail, a MessageDefinition describing a 
+         * message to be snet, a PlanDefinition that describes a series of actions to be taken, a Questionnaire that should be 
+         * filled out, a SpecimenDefinition describing a specimen to be collected, or an ObservationDefinition that specifies 
+         * what observation should be captured.
          * 
          * @return
          *     An immutable object of type {@link Canonical} or {@link Uri} that may be null.
          */
-        public Element getDefinition() {
+        public org.linuxforhealth.fhir.model.type.Element getDefinition() {
             return definition;
         }
 
@@ -3387,12 +4479,13 @@ public class PlanDefinition extends DomainResource {
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
+                (linkId != null) || 
                 (prefix != null) || 
                 (title != null) || 
                 (description != null) || 
                 (textEquivalent != null) || 
                 (priority != null) || 
-                !code.isEmpty() || 
+                (code != null) || 
                 !reason.isEmpty() || 
                 !documentation.isEmpty() || 
                 !goalId.isEmpty() || 
@@ -3403,6 +4496,7 @@ public class PlanDefinition extends DomainResource {
                 !output.isEmpty() || 
                 !relatedAction.isEmpty() || 
                 (timing != null) || 
+                (location != null) || 
                 !participant.isEmpty() || 
                 (type != null) || 
                 (groupingBehavior != null) || 
@@ -3425,22 +4519,24 @@ public class PlanDefinition extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(linkId, "linkId", visitor);
                     accept(prefix, "prefix", visitor);
                     accept(title, "title", visitor);
                     accept(description, "description", visitor);
                     accept(textEquivalent, "textEquivalent", visitor);
                     accept(priority, "priority", visitor);
-                    accept(code, "code", visitor, CodeableConcept.class);
+                    accept(code, "code", visitor);
                     accept(reason, "reason", visitor, CodeableConcept.class);
                     accept(documentation, "documentation", visitor, RelatedArtifact.class);
                     accept(goalId, "goalId", visitor, Id.class);
                     accept(subject, "subject", visitor);
                     accept(trigger, "trigger", visitor, TriggerDefinition.class);
                     accept(condition, "condition", visitor, Condition.class);
-                    accept(input, "input", visitor, DataRequirement.class);
-                    accept(output, "output", visitor, DataRequirement.class);
+                    accept(input, "input", visitor, Input.class);
+                    accept(output, "output", visitor, Output.class);
                     accept(relatedAction, "relatedAction", visitor, RelatedAction.class);
                     accept(timing, "timing", visitor);
+                    accept(location, "location", visitor);
                     accept(participant, "participant", visitor, Participant.class);
                     accept(type, "type", visitor);
                     accept(groupingBehavior, "groupingBehavior", visitor);
@@ -3473,6 +4569,7 @@ public class PlanDefinition extends DomainResource {
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(linkId, other.linkId) && 
                 Objects.equals(prefix, other.prefix) && 
                 Objects.equals(title, other.title) && 
                 Objects.equals(description, other.description) && 
@@ -3489,6 +4586,7 @@ public class PlanDefinition extends DomainResource {
                 Objects.equals(output, other.output) && 
                 Objects.equals(relatedAction, other.relatedAction) && 
                 Objects.equals(timing, other.timing) && 
+                Objects.equals(location, other.location) && 
                 Objects.equals(participant, other.participant) && 
                 Objects.equals(type, other.type) && 
                 Objects.equals(groupingBehavior, other.groupingBehavior) && 
@@ -3509,6 +4607,7 @@ public class PlanDefinition extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
+                    linkId, 
                     prefix, 
                     title, 
                     description, 
@@ -3525,6 +4624,7 @@ public class PlanDefinition extends DomainResource {
                     output, 
                     relatedAction, 
                     timing, 
+                    location, 
                     participant, 
                     type, 
                     groupingBehavior, 
@@ -3551,22 +4651,24 @@ public class PlanDefinition extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
+            private String linkId;
             private String prefix;
             private String title;
-            private String description;
-            private String textEquivalent;
+            private Markdown description;
+            private Markdown textEquivalent;
             private RequestPriority priority;
-            private List<CodeableConcept> code = new ArrayList<>();
+            private CodeableConcept code;
             private List<CodeableConcept> reason = new ArrayList<>();
             private List<RelatedArtifact> documentation = new ArrayList<>();
             private List<Id> goalId = new ArrayList<>();
-            private Element subject;
+            private org.linuxforhealth.fhir.model.type.Element subject;
             private List<TriggerDefinition> trigger = new ArrayList<>();
             private List<Condition> condition = new ArrayList<>();
-            private List<DataRequirement> input = new ArrayList<>();
-            private List<DataRequirement> output = new ArrayList<>();
+            private List<Input> input = new ArrayList<>();
+            private List<Output> output = new ArrayList<>();
             private List<RelatedAction> relatedAction = new ArrayList<>();
-            private Element timing;
+            private org.linuxforhealth.fhir.model.type.Element timing;
+            private CodeableReference location;
             private List<Participant> participant = new ArrayList<>();
             private CodeableConcept type;
             private ActionGroupingBehavior groupingBehavior;
@@ -3574,7 +4676,7 @@ public class PlanDefinition extends DomainResource {
             private ActionRequiredBehavior requiredBehavior;
             private ActionPrecheckBehavior precheckBehavior;
             private ActionCardinalityBehavior cardinalityBehavior;
-            private Element definition;
+            private org.linuxforhealth.fhir.model.type.Element definition;
             private Canonical transform;
             private List<DynamicValue> dynamicValue = new ArrayList<>();
             private List<PlanDefinition.Action> action = new ArrayList<>();
@@ -3600,7 +4702,7 @@ public class PlanDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3620,7 +4722,7 @@ public class PlanDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3645,7 +4747,7 @@ public class PlanDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3670,7 +4772,7 @@ public class PlanDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3695,6 +4797,37 @@ public class PlanDefinition extends DomainResource {
             }
 
             /**
+             * Convenience method for setting {@code linkId}.
+             * 
+             * @param linkId
+             *     Unique id for the action in the PlanDefinition
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #linkId(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder linkId(java.lang.String linkId) {
+                this.linkId = (linkId == null) ? null : String.of(linkId);
+                return this;
+            }
+
+            /**
+             * An identifier that is unique within the PlanDefinition to allow linkage within the realized CarePlan and/or 
+             * RequestOrchestration.
+             * 
+             * @param linkId
+             *     Unique id for the action in the PlanDefinition
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder linkId(String linkId) {
+                this.linkId = linkId;
+                return this;
+            }
+
+            /**
              * Convenience method for setting {@code prefix}.
              * 
              * @param prefix
@@ -3711,7 +4844,7 @@ public class PlanDefinition extends DomainResource {
             }
 
             /**
-             * A user-visible prefix for the action.
+             * A user-visible prefix for the action. For example a section or item numbering such as 1. or A.
              * 
              * @param prefix
              *     User-visible prefix for the action (e.g. 1. or A.)
@@ -3756,22 +4889,6 @@ public class PlanDefinition extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code description}.
-             * 
-             * @param description
-             *     Brief description of the action
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #description(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder description(java.lang.String description) {
-                this.description = (description == null) ? null : String.of(description);
-                return this;
-            }
-
-            /**
              * A brief description of the action used to provide a summary to display to the user.
              * 
              * @param description
@@ -3780,24 +4897,8 @@ public class PlanDefinition extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder description(String description) {
+            public Builder description(Markdown description) {
                 this.description = description;
-                return this;
-            }
-
-            /**
-             * Convenience method for setting {@code textEquivalent}.
-             * 
-             * @param textEquivalent
-             *     Static text equivalent of the action, used if the dynamic aspects cannot be interpreted by the receiving system
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #textEquivalent(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder textEquivalent(java.lang.String textEquivalent) {
-                this.textEquivalent = (textEquivalent == null) ? null : String.of(textEquivalent);
                 return this;
             }
 
@@ -3811,7 +4912,7 @@ public class PlanDefinition extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder textEquivalent(String textEquivalent) {
+            public Builder textEquivalent(Markdown textEquivalent) {
                 this.textEquivalent = textEquivalent;
                 return this;
             }
@@ -3835,41 +4936,14 @@ public class PlanDefinition extends DomainResource {
              * have a LOINC code for the section of a documentation template. In pharmaceutical quality, an action (Test) such as pH 
              * could be classified as a physical property.
              * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
              * @param code
              *     Code representing the meaning of the action or sub-actions
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder code(CodeableConcept... code) {
-                for (CodeableConcept value : code) {
-                    this.code.add(value);
-                }
-                return this;
-            }
-
-            /**
-             * A code that provides a meaning, grouping, or classification for the action or action group. For example, a section may 
-             * have a LOINC code for the section of a documentation template. In pharmaceutical quality, an action (Test) such as pH 
-             * could be classified as a physical property.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param code
-             *     Code representing the meaning of the action or sub-actions
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            public Builder code(Collection<CodeableConcept> code) {
-                this.code = new ArrayList<>(code);
+            public Builder code(CodeableConcept code) {
+                this.code = code;
                 return this;
             }
 
@@ -4020,13 +5094,14 @@ public class PlanDefinition extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder subject(Element subject) {
+            public Builder subject(org.linuxforhealth.fhir.model.type.Element subject) {
                 this.subject = subject;
                 return this;
             }
 
             /**
-             * A description of when the action should be triggered.
+             * A description of when the action should be triggered. When multiple triggers are specified on an action, any 
+             * triggering event invokes the action.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -4045,7 +5120,8 @@ public class PlanDefinition extends DomainResource {
             }
 
             /**
-             * A description of when the action should be triggered.
+             * A description of when the action should be triggered. When multiple triggers are specified on an action, any 
+             * triggering event invokes the action.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -4115,8 +5191,8 @@ public class PlanDefinition extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder input(DataRequirement... input) {
-                for (DataRequirement value : input) {
+            public Builder input(Input... input) {
+                for (Input value : input) {
                     this.input.add(value);
                 }
                 return this;
@@ -4137,7 +5213,7 @@ public class PlanDefinition extends DomainResource {
              * @throws NullPointerException
              *     If the passed collection is null
              */
-            public Builder input(Collection<DataRequirement> input) {
+            public Builder input(Collection<Input> input) {
                 this.input = new ArrayList<>(input);
                 return this;
             }
@@ -4154,8 +5230,8 @@ public class PlanDefinition extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder output(DataRequirement... output) {
-                for (DataRequirement value : output) {
+            public Builder output(Output... output) {
+                for (Output value : output) {
                     this.output.add(value);
                 }
                 return this;
@@ -4176,7 +5252,7 @@ public class PlanDefinition extends DomainResource {
              * @throws NullPointerException
              *     If the passed collection is null
              */
-            public Builder output(Collection<DataRequirement> output) {
+            public Builder output(Collection<Output> output) {
                 this.output = new ArrayList<>(output);
                 return this;
             }
@@ -4225,9 +5301,7 @@ public class PlanDefinition extends DomainResource {
              * 
              * <p>This is a choice element with the following allowed types:
              * <ul>
-             * <li>{@link DateTime}</li>
              * <li>{@link Age}</li>
-             * <li>{@link Period}</li>
              * <li>{@link Duration}</li>
              * <li>{@link Range}</li>
              * <li>{@link Timing}</li>
@@ -4239,8 +5313,22 @@ public class PlanDefinition extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder timing(Element timing) {
+            public Builder timing(org.linuxforhealth.fhir.model.type.Element timing) {
                 this.timing = timing;
+                return this;
+            }
+
+            /**
+             * Identifies the facility where the action will occur; e.g. home, hospital, specific clinic, etc.
+             * 
+             * @param location
+             *     Where it should happen
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder location(CodeableReference location) {
+                this.location = location;
                 return this;
             }
 
@@ -4368,8 +5456,10 @@ public class PlanDefinition extends DomainResource {
             }
 
             /**
-             * A reference to an ActivityDefinition that describes the action to be taken in detail, or a PlanDefinition that 
-             * describes a series of actions to be taken.
+             * A reference to an ActivityDefinition that describes the action to be taken in detail, a MessageDefinition describing a 
+             * message to be snet, a PlanDefinition that describes a series of actions to be taken, a Questionnaire that should be 
+             * filled out, a SpecimenDefinition describing a specimen to be collected, or an ObservationDefinition that specifies 
+             * what observation should be captured.
              * 
              * <p>This is a choice element with the following allowed types:
              * <ul>
@@ -4383,7 +5473,7 @@ public class PlanDefinition extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder definition(Element definition) {
+            public Builder definition(org.linuxforhealth.fhir.model.type.Element definition) {
                 this.definition = definition;
                 return this;
             }
@@ -4508,17 +5598,16 @@ public class PlanDefinition extends DomainResource {
 
             protected void validate(Action action) {
                 super.validate(action);
-                ValidationSupport.checkList(action.code, "code", CodeableConcept.class);
                 ValidationSupport.checkList(action.reason, "reason", CodeableConcept.class);
                 ValidationSupport.checkList(action.documentation, "documentation", RelatedArtifact.class);
                 ValidationSupport.checkList(action.goalId, "goalId", Id.class);
                 ValidationSupport.choiceElement(action.subject, "subject", CodeableConcept.class, Reference.class, Canonical.class);
                 ValidationSupport.checkList(action.trigger, "trigger", TriggerDefinition.class);
                 ValidationSupport.checkList(action.condition, "condition", Condition.class);
-                ValidationSupport.checkList(action.input, "input", DataRequirement.class);
-                ValidationSupport.checkList(action.output, "output", DataRequirement.class);
+                ValidationSupport.checkList(action.input, "input", Input.class);
+                ValidationSupport.checkList(action.output, "output", Output.class);
                 ValidationSupport.checkList(action.relatedAction, "relatedAction", RelatedAction.class);
-                ValidationSupport.choiceElement(action.timing, "timing", DateTime.class, Age.class, Period.class, Duration.class, Range.class, Timing.class);
+                ValidationSupport.choiceElement(action.timing, "timing", Age.class, Duration.class, Range.class, Timing.class);
                 ValidationSupport.checkList(action.participant, "participant", Participant.class);
                 ValidationSupport.choiceElement(action.definition, "definition", Canonical.class, Uri.class);
                 ValidationSupport.checkList(action.dynamicValue, "dynamicValue", DynamicValue.class);
@@ -4529,12 +5618,13 @@ public class PlanDefinition extends DomainResource {
 
             protected Builder from(Action action) {
                 super.from(action);
+                linkId = action.linkId;
                 prefix = action.prefix;
                 title = action.title;
                 description = action.description;
                 textEquivalent = action.textEquivalent;
                 priority = action.priority;
-                code.addAll(action.code);
+                code = action.code;
                 reason.addAll(action.reason);
                 documentation.addAll(action.documentation);
                 goalId.addAll(action.goalId);
@@ -4545,6 +5635,7 @@ public class PlanDefinition extends DomainResource {
                 output.addAll(action.output);
                 relatedAction.addAll(action.relatedAction);
                 timing = action.timing;
+                location = action.location;
                 participant.addAll(action.participant);
                 type = action.type;
                 groupingBehavior = action.groupingBehavior;
@@ -4568,7 +5659,7 @@ public class PlanDefinition extends DomainResource {
                 bindingName = "ActionConditionKind",
                 strength = BindingStrength.Value.REQUIRED,
                 description = "Defines the kinds of conditions that can appear on actions.",
-                valueSet = "http://hl7.org/fhir/ValueSet/action-condition-kind|4.3.0"
+                valueSet = "http://hl7.org/fhir/ValueSet/action-condition-kind|5.0.0"
             )
             @Required
             private final ActionConditionKind kind;
@@ -4691,7 +5782,7 @@ public class PlanDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -4711,7 +5802,7 @@ public class PlanDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -4736,7 +5827,7 @@ public class PlanDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4761,7 +5852,7 @@ public class PlanDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4853,41 +5944,719 @@ public class PlanDefinition extends DomainResource {
         }
 
         /**
+         * Defines input data requirements for the action.
+         */
+        public static class Input extends BackboneElement {
+            private final String title;
+            private final DataRequirement requirement;
+            private final Id relatedData;
+
+            private Input(Builder builder) {
+                super(builder);
+                title = builder.title;
+                requirement = builder.requirement;
+                relatedData = builder.relatedData;
+            }
+
+            /**
+             * A human-readable label for the data requirement used to label data flows in BPMN or similar diagrams. Also provides a 
+             * human readable label when rendering the data requirement that conveys its purpose to human readers.
+             * 
+             * @return
+             *     An immutable object of type {@link String} that may be null.
+             */
+            public String getTitle() {
+                return title;
+            }
+
+            /**
+             * Defines the data that is to be provided as input to the action.
+             * 
+             * @return
+             *     An immutable object of type {@link DataRequirement} that may be null.
+             */
+            public DataRequirement getRequirement() {
+                return requirement;
+            }
+
+            /**
+             * Points to an existing input or output element that provides data to this input.
+             * 
+             * @return
+             *     An immutable object of type {@link Id} that may be null.
+             */
+            public Id getRelatedData() {
+                return relatedData;
+            }
+
+            @Override
+            public boolean hasChildren() {
+                return super.hasChildren() || 
+                    (title != null) || 
+                    (requirement != null) || 
+                    (relatedData != null);
+            }
+
+            @Override
+            public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                if (visitor.preVisit(this)) {
+                    visitor.visitStart(elementName, elementIndex, this);
+                    if (visitor.visit(elementName, elementIndex, this)) {
+                        // visit children
+                        accept(id, "id", visitor);
+                        accept(extension, "extension", visitor, Extension.class);
+                        accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                        accept(title, "title", visitor);
+                        accept(requirement, "requirement", visitor);
+                        accept(relatedData, "relatedData", visitor);
+                    }
+                    visitor.visitEnd(elementName, elementIndex, this);
+                    visitor.postVisit(this);
+                }
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj) {
+                    return true;
+                }
+                if (obj == null) {
+                    return false;
+                }
+                if (getClass() != obj.getClass()) {
+                    return false;
+                }
+                Input other = (Input) obj;
+                return Objects.equals(id, other.id) && 
+                    Objects.equals(extension, other.extension) && 
+                    Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(title, other.title) && 
+                    Objects.equals(requirement, other.requirement) && 
+                    Objects.equals(relatedData, other.relatedData);
+            }
+
+            @Override
+            public int hashCode() {
+                int result = hashCode;
+                if (result == 0) {
+                    result = Objects.hash(id, 
+                        extension, 
+                        modifierExtension, 
+                        title, 
+                        requirement, 
+                        relatedData);
+                    hashCode = result;
+                }
+                return result;
+            }
+
+            @Override
+            public Builder toBuilder() {
+                return new Builder().from(this);
+            }
+
+            public static Builder builder() {
+                return new Builder();
+            }
+
+            public static class Builder extends BackboneElement.Builder {
+                private String title;
+                private DataRequirement requirement;
+                private Id relatedData;
+
+                private Builder() {
+                    super();
+                }
+
+                /**
+                 * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                 * contain spaces.
+                 * 
+                 * @param id
+                 *     Unique id for inter-element referencing
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder id(java.lang.String id) {
+                    return (Builder) super.id(id);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder extension(Extension... extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder extension(Collection<Extension> extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder modifierExtension(Extension... modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * Convenience method for setting {@code title}.
+                 * 
+                 * @param title
+                 *     User-visible title
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #title(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder title(java.lang.String title) {
+                    this.title = (title == null) ? null : String.of(title);
+                    return this;
+                }
+
+                /**
+                 * A human-readable label for the data requirement used to label data flows in BPMN or similar diagrams. Also provides a 
+                 * human readable label when rendering the data requirement that conveys its purpose to human readers.
+                 * 
+                 * @param title
+                 *     User-visible title
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder title(String title) {
+                    this.title = title;
+                    return this;
+                }
+
+                /**
+                 * Defines the data that is to be provided as input to the action.
+                 * 
+                 * @param requirement
+                 *     What data is provided
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder requirement(DataRequirement requirement) {
+                    this.requirement = requirement;
+                    return this;
+                }
+
+                /**
+                 * Points to an existing input or output element that provides data to this input.
+                 * 
+                 * @param relatedData
+                 *     What data is provided
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder relatedData(Id relatedData) {
+                    this.relatedData = relatedData;
+                    return this;
+                }
+
+                /**
+                 * Build the {@link Input}
+                 * 
+                 * @return
+                 *     An immutable object of type {@link Input}
+                 * @throws IllegalStateException
+                 *     if the current state cannot be built into a valid Input per the base specification
+                 */
+                @Override
+                public Input build() {
+                    Input input = new Input(this);
+                    if (validating) {
+                        validate(input);
+                    }
+                    return input;
+                }
+
+                protected void validate(Input input) {
+                    super.validate(input);
+                    ValidationSupport.requireValueOrChildren(input);
+                }
+
+                protected Builder from(Input input) {
+                    super.from(input);
+                    title = input.title;
+                    requirement = input.requirement;
+                    relatedData = input.relatedData;
+                    return this;
+                }
+            }
+        }
+
+        /**
+         * Defines the outputs of the action, if any.
+         */
+        public static class Output extends BackboneElement {
+            private final String title;
+            private final DataRequirement requirement;
+            private final String relatedData;
+
+            private Output(Builder builder) {
+                super(builder);
+                title = builder.title;
+                requirement = builder.requirement;
+                relatedData = builder.relatedData;
+            }
+
+            /**
+             * A human-readable label for the data requirement used to label data flows in BPMN or similar diagrams. Also provides a 
+             * human readable label when rendering the data requirement that conveys its purpose to human readers.
+             * 
+             * @return
+             *     An immutable object of type {@link String} that may be null.
+             */
+            public String getTitle() {
+                return title;
+            }
+
+            /**
+             * Defines the data that results as output from the action.
+             * 
+             * @return
+             *     An immutable object of type {@link DataRequirement} that may be null.
+             */
+            public DataRequirement getRequirement() {
+                return requirement;
+            }
+
+            /**
+             * Points to an existing input or output element that is results as output from the action.
+             * 
+             * @return
+             *     An immutable object of type {@link String} that may be null.
+             */
+            public String getRelatedData() {
+                return relatedData;
+            }
+
+            @Override
+            public boolean hasChildren() {
+                return super.hasChildren() || 
+                    (title != null) || 
+                    (requirement != null) || 
+                    (relatedData != null);
+            }
+
+            @Override
+            public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                if (visitor.preVisit(this)) {
+                    visitor.visitStart(elementName, elementIndex, this);
+                    if (visitor.visit(elementName, elementIndex, this)) {
+                        // visit children
+                        accept(id, "id", visitor);
+                        accept(extension, "extension", visitor, Extension.class);
+                        accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                        accept(title, "title", visitor);
+                        accept(requirement, "requirement", visitor);
+                        accept(relatedData, "relatedData", visitor);
+                    }
+                    visitor.visitEnd(elementName, elementIndex, this);
+                    visitor.postVisit(this);
+                }
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj) {
+                    return true;
+                }
+                if (obj == null) {
+                    return false;
+                }
+                if (getClass() != obj.getClass()) {
+                    return false;
+                }
+                Output other = (Output) obj;
+                return Objects.equals(id, other.id) && 
+                    Objects.equals(extension, other.extension) && 
+                    Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(title, other.title) && 
+                    Objects.equals(requirement, other.requirement) && 
+                    Objects.equals(relatedData, other.relatedData);
+            }
+
+            @Override
+            public int hashCode() {
+                int result = hashCode;
+                if (result == 0) {
+                    result = Objects.hash(id, 
+                        extension, 
+                        modifierExtension, 
+                        title, 
+                        requirement, 
+                        relatedData);
+                    hashCode = result;
+                }
+                return result;
+            }
+
+            @Override
+            public Builder toBuilder() {
+                return new Builder().from(this);
+            }
+
+            public static Builder builder() {
+                return new Builder();
+            }
+
+            public static class Builder extends BackboneElement.Builder {
+                private String title;
+                private DataRequirement requirement;
+                private String relatedData;
+
+                private Builder() {
+                    super();
+                }
+
+                /**
+                 * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                 * contain spaces.
+                 * 
+                 * @param id
+                 *     Unique id for inter-element referencing
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder id(java.lang.String id) {
+                    return (Builder) super.id(id);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder extension(Extension... extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder extension(Collection<Extension> extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder modifierExtension(Extension... modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * Convenience method for setting {@code title}.
+                 * 
+                 * @param title
+                 *     User-visible title
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #title(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder title(java.lang.String title) {
+                    this.title = (title == null) ? null : String.of(title);
+                    return this;
+                }
+
+                /**
+                 * A human-readable label for the data requirement used to label data flows in BPMN or similar diagrams. Also provides a 
+                 * human readable label when rendering the data requirement that conveys its purpose to human readers.
+                 * 
+                 * @param title
+                 *     User-visible title
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder title(String title) {
+                    this.title = title;
+                    return this;
+                }
+
+                /**
+                 * Defines the data that results as output from the action.
+                 * 
+                 * @param requirement
+                 *     What data is provided
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder requirement(DataRequirement requirement) {
+                    this.requirement = requirement;
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code relatedData}.
+                 * 
+                 * @param relatedData
+                 *     What data is provided
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #relatedData(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder relatedData(java.lang.String relatedData) {
+                    this.relatedData = (relatedData == null) ? null : String.of(relatedData);
+                    return this;
+                }
+
+                /**
+                 * Points to an existing input or output element that is results as output from the action.
+                 * 
+                 * @param relatedData
+                 *     What data is provided
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder relatedData(String relatedData) {
+                    this.relatedData = relatedData;
+                    return this;
+                }
+
+                /**
+                 * Build the {@link Output}
+                 * 
+                 * @return
+                 *     An immutable object of type {@link Output}
+                 * @throws IllegalStateException
+                 *     if the current state cannot be built into a valid Output per the base specification
+                 */
+                @Override
+                public Output build() {
+                    Output output = new Output(this);
+                    if (validating) {
+                        validate(output);
+                    }
+                    return output;
+                }
+
+                protected void validate(Output output) {
+                    super.validate(output);
+                    ValidationSupport.requireValueOrChildren(output);
+                }
+
+                protected Builder from(Output output) {
+                    super.from(output);
+                    title = output.title;
+                    requirement = output.requirement;
+                    relatedData = output.relatedData;
+                    return this;
+                }
+            }
+        }
+
+        /**
          * A relationship to another action such as "before" or "30-60 minutes after start of".
          */
         public static class RelatedAction extends BackboneElement {
             @Required
-            private final Id actionId;
+            private final Id targetId;
             @Binding(
                 bindingName = "ActionRelationshipType",
                 strength = BindingStrength.Value.REQUIRED,
                 description = "Defines the types of relationships between actions.",
-                valueSet = "http://hl7.org/fhir/ValueSet/action-relationship-type|4.3.0"
+                valueSet = "http://hl7.org/fhir/ValueSet/action-relationship-type|5.0.0"
             )
             @Required
             private final ActionRelationshipType relationship;
+            @Binding(
+                bindingName = "ActionRelationshipType",
+                strength = BindingStrength.Value.REQUIRED,
+                description = "Defines the types of relationships between actions.",
+                valueSet = "http://hl7.org/fhir/ValueSet/action-relationship-type|5.0.0"
+            )
+            private final ActionRelationshipType endRelationship;
             @Choice({ Duration.class, Range.class })
-            private final Element offset;
+            private final org.linuxforhealth.fhir.model.type.Element offset;
 
             private RelatedAction(Builder builder) {
                 super(builder);
-                actionId = builder.actionId;
+                targetId = builder.targetId;
                 relationship = builder.relationship;
+                endRelationship = builder.endRelationship;
                 offset = builder.offset;
             }
 
             /**
-             * The element id of the related action.
+             * The element id of the target related action.
              * 
              * @return
              *     An immutable object of type {@link Id} that is non-null.
              */
-            public Id getActionId() {
-                return actionId;
+            public Id getTargetId() {
+                return targetId;
             }
 
             /**
-             * The relationship of this action to the related action.
+             * The relationship of the start of this action to the related action.
              * 
              * @return
              *     An immutable object of type {@link ActionRelationshipType} that is non-null.
@@ -4897,20 +6666,31 @@ public class PlanDefinition extends DomainResource {
             }
 
             /**
+             * The relationship of the end of this action to the related action.
+             * 
+             * @return
+             *     An immutable object of type {@link ActionRelationshipType} that may be null.
+             */
+            public ActionRelationshipType getEndRelationship() {
+                return endRelationship;
+            }
+
+            /**
              * A duration or range of durations to apply to the relationship. For example, 30-60 minutes before.
              * 
              * @return
              *     An immutable object of type {@link Duration} or {@link Range} that may be null.
              */
-            public Element getOffset() {
+            public org.linuxforhealth.fhir.model.type.Element getOffset() {
                 return offset;
             }
 
             @Override
             public boolean hasChildren() {
                 return super.hasChildren() || 
-                    (actionId != null) || 
+                    (targetId != null) || 
                     (relationship != null) || 
+                    (endRelationship != null) || 
                     (offset != null);
             }
 
@@ -4923,8 +6703,9 @@ public class PlanDefinition extends DomainResource {
                         accept(id, "id", visitor);
                         accept(extension, "extension", visitor, Extension.class);
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                        accept(actionId, "actionId", visitor);
+                        accept(targetId, "targetId", visitor);
                         accept(relationship, "relationship", visitor);
+                        accept(endRelationship, "endRelationship", visitor);
                         accept(offset, "offset", visitor);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
@@ -4947,8 +6728,9 @@ public class PlanDefinition extends DomainResource {
                 return Objects.equals(id, other.id) && 
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
-                    Objects.equals(actionId, other.actionId) && 
+                    Objects.equals(targetId, other.targetId) && 
                     Objects.equals(relationship, other.relationship) && 
+                    Objects.equals(endRelationship, other.endRelationship) && 
                     Objects.equals(offset, other.offset);
             }
 
@@ -4959,8 +6741,9 @@ public class PlanDefinition extends DomainResource {
                     result = Objects.hash(id, 
                         extension, 
                         modifierExtension, 
-                        actionId, 
+                        targetId, 
                         relationship, 
+                        endRelationship, 
                         offset);
                     hashCode = result;
                 }
@@ -4977,9 +6760,10 @@ public class PlanDefinition extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private Id actionId;
+                private Id targetId;
                 private ActionRelationshipType relationship;
-                private Element offset;
+                private ActionRelationshipType endRelationship;
+                private org.linuxforhealth.fhir.model.type.Element offset;
 
                 private Builder() {
                     super();
@@ -5002,7 +6786,7 @@ public class PlanDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5022,7 +6806,7 @@ public class PlanDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5047,7 +6831,7 @@ public class PlanDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5072,7 +6856,7 @@ public class PlanDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5097,28 +6881,28 @@ public class PlanDefinition extends DomainResource {
                 }
 
                 /**
-                 * The element id of the related action.
+                 * The element id of the target related action.
                  * 
                  * <p>This element is required.
                  * 
-                 * @param actionId
+                 * @param targetId
                  *     What action is this related to
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder actionId(Id actionId) {
-                    this.actionId = actionId;
+                public Builder targetId(Id targetId) {
+                    this.targetId = targetId;
                     return this;
                 }
 
                 /**
-                 * The relationship of this action to the related action.
+                 * The relationship of the start of this action to the related action.
                  * 
                  * <p>This element is required.
                  * 
                  * @param relationship
-                 *     before-start | before | before-end | concurrent-with-start | concurrent | concurrent-with-end | after-start | after | 
+                 *     before | before-start | before-end | concurrent | concurrent-with-start | concurrent-with-end | after | after-start | 
                  *     after-end
                  * 
                  * @return
@@ -5126,6 +6910,21 @@ public class PlanDefinition extends DomainResource {
                  */
                 public Builder relationship(ActionRelationshipType relationship) {
                     this.relationship = relationship;
+                    return this;
+                }
+
+                /**
+                 * The relationship of the end of this action to the related action.
+                 * 
+                 * @param endRelationship
+                 *     before | before-start | before-end | concurrent | concurrent-with-start | concurrent-with-end | after | after-start | 
+                 *     after-end
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder endRelationship(ActionRelationshipType endRelationship) {
+                    this.endRelationship = endRelationship;
                     return this;
                 }
 
@@ -5144,7 +6943,7 @@ public class PlanDefinition extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder offset(Element offset) {
+                public Builder offset(org.linuxforhealth.fhir.model.type.Element offset) {
                     this.offset = offset;
                     return this;
                 }
@@ -5154,7 +6953,7 @@ public class PlanDefinition extends DomainResource {
                  * 
                  * <p>Required elements:
                  * <ul>
-                 * <li>actionId</li>
+                 * <li>targetId</li>
                  * <li>relationship</li>
                  * </ul>
                  * 
@@ -5174,7 +6973,7 @@ public class PlanDefinition extends DomainResource {
 
                 protected void validate(RelatedAction relatedAction) {
                     super.validate(relatedAction);
-                    ValidationSupport.requireNonNull(relatedAction.actionId, "actionId");
+                    ValidationSupport.requireNonNull(relatedAction.targetId, "targetId");
                     ValidationSupport.requireNonNull(relatedAction.relationship, "relationship");
                     ValidationSupport.choiceElement(relatedAction.offset, "offset", Duration.class, Range.class);
                     ValidationSupport.requireValueOrChildren(relatedAction);
@@ -5182,8 +6981,9 @@ public class PlanDefinition extends DomainResource {
 
                 protected Builder from(RelatedAction relatedAction) {
                     super.from(relatedAction);
-                    actionId = relatedAction.actionId;
+                    targetId = relatedAction.targetId;
                     relationship = relatedAction.relationship;
+                    endRelationship = relatedAction.endRelationship;
                     offset = relatedAction.offset;
                     return this;
                 }
@@ -5194,14 +6994,17 @@ public class PlanDefinition extends DomainResource {
          * Indicates who should participate in performing the action described.
          */
         public static class Participant extends BackboneElement {
+            private final String actorId;
             @Binding(
-                bindingName = "ActionParticipantType",
+                bindingName = "ActivityParticipantType",
                 strength = BindingStrength.Value.REQUIRED,
-                description = "The type of participant for the action.",
-                valueSet = "http://hl7.org/fhir/ValueSet/action-participant-type|4.3.0"
+                description = "The type of participant in the activity.",
+                valueSet = "http://hl7.org/fhir/ValueSet/action-participant-type|5.0.0"
             )
-            @Required
-            private final ActionParticipantType type;
+            private final ActivityParticipantType type;
+            private final Canonical typeCanonical;
+            @ReferenceTarget({ "CareTeam", "Device", "DeviceDefinition", "Endpoint", "Group", "HealthcareService", "Location", "Organization", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson" })
+            private final Reference typeReference;
             @Binding(
                 bindingName = "ActionParticipantRole",
                 strength = BindingStrength.Value.EXAMPLE,
@@ -5209,21 +7012,61 @@ public class PlanDefinition extends DomainResource {
                 valueSet = "http://terminology.hl7.org/ValueSet/action-participant-role"
             )
             private final CodeableConcept role;
+            @Binding(
+                bindingName = "ActionParticipantFunction",
+                strength = BindingStrength.Value.EXAMPLE,
+                valueSet = "http://hl7.org/fhir/ValueSet/action-participant-function"
+            )
+            private final CodeableConcept function;
 
             private Participant(Builder builder) {
                 super(builder);
+                actorId = builder.actorId;
                 type = builder.type;
+                typeCanonical = builder.typeCanonical;
+                typeReference = builder.typeReference;
                 role = builder.role;
+                function = builder.function;
+            }
+
+            /**
+             * A reference to the id element of the actor who will participate in this action.
+             * 
+             * @return
+             *     An immutable object of type {@link String} that may be null.
+             */
+            public String getActorId() {
+                return actorId;
             }
 
             /**
              * The type of participant in the action.
              * 
              * @return
-             *     An immutable object of type {@link ActionParticipantType} that is non-null.
+             *     An immutable object of type {@link ActivityParticipantType} that may be null.
              */
-            public ActionParticipantType getType() {
+            public ActivityParticipantType getType() {
                 return type;
+            }
+
+            /**
+             * The type of participant in the action.
+             * 
+             * @return
+             *     An immutable object of type {@link Canonical} that may be null.
+             */
+            public Canonical getTypeCanonical() {
+                return typeCanonical;
+            }
+
+            /**
+             * The type of participant in the action.
+             * 
+             * @return
+             *     An immutable object of type {@link Reference} that may be null.
+             */
+            public Reference getTypeReference() {
+                return typeReference;
             }
 
             /**
@@ -5236,11 +7079,25 @@ public class PlanDefinition extends DomainResource {
                 return role;
             }
 
+            /**
+             * Indicates how the actor will be involved in the action - author, reviewer, witness, etc.
+             * 
+             * @return
+             *     An immutable object of type {@link CodeableConcept} that may be null.
+             */
+            public CodeableConcept getFunction() {
+                return function;
+            }
+
             @Override
             public boolean hasChildren() {
                 return super.hasChildren() || 
+                    (actorId != null) || 
                     (type != null) || 
-                    (role != null);
+                    (typeCanonical != null) || 
+                    (typeReference != null) || 
+                    (role != null) || 
+                    (function != null);
             }
 
             @Override
@@ -5252,8 +7109,12 @@ public class PlanDefinition extends DomainResource {
                         accept(id, "id", visitor);
                         accept(extension, "extension", visitor, Extension.class);
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                        accept(actorId, "actorId", visitor);
                         accept(type, "type", visitor);
+                        accept(typeCanonical, "typeCanonical", visitor);
+                        accept(typeReference, "typeReference", visitor);
                         accept(role, "role", visitor);
+                        accept(function, "function", visitor);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
                     visitor.postVisit(this);
@@ -5275,8 +7136,12 @@ public class PlanDefinition extends DomainResource {
                 return Objects.equals(id, other.id) && 
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(actorId, other.actorId) && 
                     Objects.equals(type, other.type) && 
-                    Objects.equals(role, other.role);
+                    Objects.equals(typeCanonical, other.typeCanonical) && 
+                    Objects.equals(typeReference, other.typeReference) && 
+                    Objects.equals(role, other.role) && 
+                    Objects.equals(function, other.function);
             }
 
             @Override
@@ -5286,8 +7151,12 @@ public class PlanDefinition extends DomainResource {
                     result = Objects.hash(id, 
                         extension, 
                         modifierExtension, 
+                        actorId, 
                         type, 
-                        role);
+                        typeCanonical, 
+                        typeReference, 
+                        role, 
+                        function);
                     hashCode = result;
                 }
                 return result;
@@ -5303,8 +7172,12 @@ public class PlanDefinition extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private ActionParticipantType type;
+                private String actorId;
+                private ActivityParticipantType type;
+                private Canonical typeCanonical;
+                private Reference typeReference;
                 private CodeableConcept role;
+                private CodeableConcept function;
 
                 private Builder() {
                     super();
@@ -5327,7 +7200,7 @@ public class PlanDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5347,7 +7220,7 @@ public class PlanDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5372,7 +7245,7 @@ public class PlanDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5397,7 +7270,7 @@ public class PlanDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5422,18 +7295,91 @@ public class PlanDefinition extends DomainResource {
                 }
 
                 /**
-                 * The type of participant in the action.
+                 * Convenience method for setting {@code actorId}.
                  * 
-                 * <p>This element is required.
+                 * @param actorId
+                 *     What actor
                  * 
-                 * @param type
-                 *     patient | practitioner | related-person | device
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #actorId(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder actorId(java.lang.String actorId) {
+                    this.actorId = (actorId == null) ? null : String.of(actorId);
+                    return this;
+                }
+
+                /**
+                 * A reference to the id element of the actor who will participate in this action.
+                 * 
+                 * @param actorId
+                 *     What actor
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder type(ActionParticipantType type) {
+                public Builder actorId(String actorId) {
+                    this.actorId = actorId;
+                    return this;
+                }
+
+                /**
+                 * The type of participant in the action.
+                 * 
+                 * @param type
+                 *     careteam | device | group | healthcareservice | location | organization | patient | practitioner | practitionerrole | 
+                 *     relatedperson
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder type(ActivityParticipantType type) {
                     this.type = type;
+                    return this;
+                }
+
+                /**
+                 * The type of participant in the action.
+                 * 
+                 * @param typeCanonical
+                 *     Who or what can participate
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder typeCanonical(Canonical typeCanonical) {
+                    this.typeCanonical = typeCanonical;
+                    return this;
+                }
+
+                /**
+                 * The type of participant in the action.
+                 * 
+                 * <p>Allowed resource types for this reference:
+                 * <ul>
+                 * <li>{@link CareTeam}</li>
+                 * <li>{@link Device}</li>
+                 * <li>{@link DeviceDefinition}</li>
+                 * <li>{@link Endpoint}</li>
+                 * <li>{@link Group}</li>
+                 * <li>{@link HealthcareService}</li>
+                 * <li>{@link Location}</li>
+                 * <li>{@link Organization}</li>
+                 * <li>{@link Patient}</li>
+                 * <li>{@link Practitioner}</li>
+                 * <li>{@link PractitionerRole}</li>
+                 * <li>{@link RelatedPerson}</li>
+                 * </ul>
+                 * 
+                 * @param typeReference
+                 *     Who or what can participate
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder typeReference(Reference typeReference) {
+                    this.typeReference = typeReference;
                     return this;
                 }
 
@@ -5452,12 +7398,21 @@ public class PlanDefinition extends DomainResource {
                 }
 
                 /**
-                 * Build the {@link Participant}
+                 * Indicates how the actor will be involved in the action - author, reviewer, witness, etc.
                  * 
-                 * <p>Required elements:
-                 * <ul>
-                 * <li>type</li>
-                 * </ul>
+                 * @param function
+                 *     E.g. Author, Reviewer, Witness, etc
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder function(CodeableConcept function) {
+                    this.function = function;
+                    return this;
+                }
+
+                /**
+                 * Build the {@link Participant}
                  * 
                  * @return
                  *     An immutable object of type {@link Participant}
@@ -5475,14 +7430,18 @@ public class PlanDefinition extends DomainResource {
 
                 protected void validate(Participant participant) {
                     super.validate(participant);
-                    ValidationSupport.requireNonNull(participant.type, "type");
+                    ValidationSupport.checkReferenceType(participant.typeReference, "typeReference", "CareTeam", "Device", "DeviceDefinition", "Endpoint", "Group", "HealthcareService", "Location", "Organization", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson");
                     ValidationSupport.requireValueOrChildren(participant);
                 }
 
                 protected Builder from(Participant participant) {
                     super.from(participant);
+                    actorId = participant.actorId;
                     type = participant.type;
+                    typeCanonical = participant.typeCanonical;
+                    typeReference = participant.typeReference;
                     role = participant.role;
+                    function = participant.function;
                     return this;
                 }
             }
@@ -5505,7 +7464,7 @@ public class PlanDefinition extends DomainResource {
 
             /**
              * The path to the element to be customized. This is the path on the resource that will hold the result of the 
-             * calculation defined by the expression. The specified path SHALL be a FHIRPath resolveable on the specified target type 
+             * calculation defined by the expression. The specified path SHALL be a FHIRPath resolvable on the specified target type 
              * of the ActivityDefinition, and SHALL consist only of identifiers, constant indexers, and a restricted subset of 
              * functions. The path is allowed to contain qualifiers (.) to traverse sub-elements, as well as indexers ([x]) to 
              * traverse multiple-cardinality sub-elements (see the [Simple FHIRPath Profile](fhirpath.html#simple) for full details).
@@ -5618,7 +7577,7 @@ public class PlanDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5638,7 +7597,7 @@ public class PlanDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5663,7 +7622,7 @@ public class PlanDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5688,7 +7647,7 @@ public class PlanDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5730,7 +7689,7 @@ public class PlanDefinition extends DomainResource {
 
                 /**
                  * The path to the element to be customized. This is the path on the resource that will hold the result of the 
-                 * calculation defined by the expression. The specified path SHALL be a FHIRPath resolveable on the specified target type 
+                 * calculation defined by the expression. The specified path SHALL be a FHIRPath resolvable on the specified target type 
                  * of the ActivityDefinition, and SHALL consist only of identifiers, constant indexers, and a restricted subset of 
                  * functions. The path is allowed to contain qualifiers (.) to traverse sub-elements, as well as indexers ([x]) to 
                  * traverse multiple-cardinality sub-elements (see the [Simple FHIRPath Profile](fhirpath.html#simple) for full details).

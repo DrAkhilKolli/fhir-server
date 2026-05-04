@@ -54,6 +54,13 @@ public class CompartmentCode extends Code {
      */
     public static final CompartmentCode DEVICE = CompartmentCode.builder().value(Value.DEVICE).build();
 
+    /**
+     * EpisodeOfCare
+     * 
+     * <p>The compartment definition is for the episodeofcare compartment.
+     */
+    public static final CompartmentCode EPISODE_OF_CARE = CompartmentCode.builder().value(Value.EPISODE_OF_CARE).build();
+
     private volatile int hashCode;
 
     private CompartmentCode(Builder builder) {
@@ -82,6 +89,8 @@ public class CompartmentCode extends Code {
             return PRACTITIONER;
         case DEVICE:
             return DEVICE;
+        case EPISODE_OF_CARE:
+            return EPISODE_OF_CARE;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -247,7 +256,14 @@ public class CompartmentCode extends Code {
          * 
          * <p>The compartment definition is for the device compartment.
          */
-        DEVICE("Device");
+        DEVICE("Device"),
+
+        /**
+         * EpisodeOfCare
+         * 
+         * <p>The compartment definition is for the episodeofcare compartment.
+         */
+        EPISODE_OF_CARE("EpisodeOfCare");
 
         private final java.lang.String value;
 
@@ -288,6 +304,8 @@ public class CompartmentCode extends Code {
                 return PRACTITIONER;
             case "Device":
                 return DEVICE;
+            case "EpisodeOfCare":
+                return EPISODE_OF_CARE;
             default:
                 throw new IllegalArgumentException(value);
             }

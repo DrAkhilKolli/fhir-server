@@ -58,11 +58,19 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "msd-0",
+    id = "cnl-0",
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
+    source = "http://hl7.org/fhir/StructureDefinition/MessageDefinition"
+)
+@Constraint(
+    id = "cnl-1",
+    level = "Warning",
+    location = "MessageDefinition.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
     source = "http://hl7.org/fhir/StructureDefinition/MessageDefinition"
 )
 @Constraint(
@@ -75,6 +83,15 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 )
 @Constraint(
     id = "messageDefinition-2",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/MessageDefinition",
+    generated = true
+)
+@Constraint(
+    id = "messageDefinition-3",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
@@ -91,6 +108,13 @@ public class MessageDefinition extends DomainResource {
     @Summary
     private final String version;
     @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+    @Summary
     private final String name;
     @Summary
     private final String title;
@@ -101,7 +125,7 @@ public class MessageDefinition extends DomainResource {
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -129,6 +153,7 @@ public class MessageDefinition extends DomainResource {
     @Summary
     private final Markdown purpose;
     private final Markdown copyright;
+    private final String copyrightLabel;
     @Summary
     private final Canonical base;
     @Summary
@@ -142,13 +167,13 @@ public class MessageDefinition extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/message-events"
     )
     @Required
-    private final Element event;
+    private final org.linuxforhealth.fhir.model.type.Element event;
     @Summary
     @Binding(
         bindingName = "MessageSignificanceCategory",
         strength = BindingStrength.Value.REQUIRED,
         description = "The impact of the content of a message.",
-        valueSet = "http://hl7.org/fhir/ValueSet/message-significance-category|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/message-significance-category|5.0.0"
     )
     private final MessageSignificanceCategory category;
     @Summary
@@ -157,17 +182,18 @@ public class MessageDefinition extends DomainResource {
         bindingName = "messageheader-response-request",
         strength = BindingStrength.Value.REQUIRED,
         description = "This enables the capability currently available through MSH-16 (Application Level acknowledgement) in HL7 Version 2 to declare at a message definition level whether a response is required or only upon error or success, or never.",
-        valueSet = "http://hl7.org/fhir/ValueSet/messageheader-response-request|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/messageheader-response-request|5.0.0"
     )
     private final MessageHeaderResponseRequest responseRequired;
     private final List<AllowedResponse> allowedResponse;
-    private final List<Canonical> graph;
+    private final Canonical graph;
 
     private MessageDefinition(Builder builder) {
         super(builder);
         url = builder.url;
         identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
         title = builder.title;
         replaces = Collections.unmodifiableList(builder.replaces);
@@ -181,6 +207,7 @@ public class MessageDefinition extends DomainResource {
         jurisdiction = Collections.unmodifiableList(builder.jurisdiction);
         purpose = builder.purpose;
         copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
         base = builder.base;
         parent = Collections.unmodifiableList(builder.parent);
         event = builder.event;
@@ -188,7 +215,7 @@ public class MessageDefinition extends DomainResource {
         focus = Collections.unmodifiableList(builder.focus);
         responseRequired = builder.responseRequired;
         allowedResponse = Collections.unmodifiableList(builder.allowedResponse);
-        graph = Collections.unmodifiableList(builder.graph);
+        graph = builder.graph;
     }
 
     /**
@@ -224,6 +251,16 @@ public class MessageDefinition extends DomainResource {
      */
     public String getVersion() {
         return version;
+    }
+
+    /**
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
     }
 
     /**
@@ -279,9 +316,9 @@ public class MessageDefinition extends DomainResource {
     }
 
     /**
-     * The date (and optionally time) when the message definition was published. The date must change when the business 
-     * version changes and it must change if the status code changes. In addition, it should change when the substantive 
-     * content of the message definition changes.
+     * The date (and optionally time) when the message definition was last significantly changed. The date must change when 
+     * the business version changes and it must change if the status code changes. In addition, it should change when the 
+     * substantive content of the message definition changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that is non-null.
@@ -291,7 +328,8 @@ public class MessageDefinition extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the message definition.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the message 
+     * definition.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -364,6 +402,17 @@ public class MessageDefinition extends DomainResource {
     }
 
     /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
+    }
+
+    /**
      * The MessageDefinition that is the basis for the contents of this resource.
      * 
      * @return
@@ -389,7 +438,7 @@ public class MessageDefinition extends DomainResource {
      * @return
      *     An immutable object of type {@link Coding} or {@link Uri} that is non-null.
      */
-    public Element getEvent() {
+    public org.linuxforhealth.fhir.model.type.Element getEvent() {
         return event;
     }
 
@@ -435,14 +484,14 @@ public class MessageDefinition extends DomainResource {
     }
 
     /**
-     * Canonical reference to a GraphDefinition. If a URL is provided, it is the canonical reference to a [GraphDefinition]
-     * (graphdefinition.html) that it controls what resources are to be added to the bundle when building the document. The 
-     * GraphDefinition can also specify profiles that apply to the various resources.
+     * Graph is Canonical reference to a GraphDefinition. If a URL is provided, it is the canonical reference to a 
+     * GraphDefinition that it controls what additional resources are to be added to the Bundle when building the message. 
+     * The GraphDefinition can also specify profiles that apply to the various resources.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Canonical} that may be empty.
+     *     An immutable object of type {@link Canonical} that may be null.
      */
-    public List<Canonical> getGraph() {
+    public Canonical getGraph() {
         return graph;
     }
 
@@ -452,6 +501,7 @@ public class MessageDefinition extends DomainResource {
             (url != null) || 
             !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
             (title != null) || 
             !replaces.isEmpty() || 
@@ -465,6 +515,7 @@ public class MessageDefinition extends DomainResource {
             !jurisdiction.isEmpty() || 
             (purpose != null) || 
             (copyright != null) || 
+            (copyrightLabel != null) || 
             (base != null) || 
             !parent.isEmpty() || 
             (event != null) || 
@@ -472,7 +523,7 @@ public class MessageDefinition extends DomainResource {
             !focus.isEmpty() || 
             (responseRequired != null) || 
             !allowedResponse.isEmpty() || 
-            !graph.isEmpty();
+            (graph != null);
     }
 
     @Override
@@ -492,6 +543,7 @@ public class MessageDefinition extends DomainResource {
                 accept(url, "url", visitor);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(replaces, "replaces", visitor, Canonical.class);
@@ -505,6 +557,7 @@ public class MessageDefinition extends DomainResource {
                 accept(jurisdiction, "jurisdiction", visitor, CodeableConcept.class);
                 accept(purpose, "purpose", visitor);
                 accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
                 accept(base, "base", visitor);
                 accept(parent, "parent", visitor, Canonical.class);
                 accept(event, "event", visitor);
@@ -512,7 +565,7 @@ public class MessageDefinition extends DomainResource {
                 accept(focus, "focus", visitor, Focus.class);
                 accept(responseRequired, "responseRequired", visitor);
                 accept(allowedResponse, "allowedResponse", visitor, AllowedResponse.class);
-                accept(graph, "graph", visitor, Canonical.class);
+                accept(graph, "graph", visitor);
             }
             visitor.visitEnd(elementName, elementIndex, this);
             visitor.postVisit(this);
@@ -542,6 +595,7 @@ public class MessageDefinition extends DomainResource {
             Objects.equals(url, other.url) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(replaces, other.replaces) && 
@@ -555,6 +609,7 @@ public class MessageDefinition extends DomainResource {
             Objects.equals(jurisdiction, other.jurisdiction) && 
             Objects.equals(purpose, other.purpose) && 
             Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
             Objects.equals(base, other.base) && 
             Objects.equals(parent, other.parent) && 
             Objects.equals(event, other.event) && 
@@ -580,6 +635,7 @@ public class MessageDefinition extends DomainResource {
                 url, 
                 identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
                 title, 
                 replaces, 
@@ -593,6 +649,7 @@ public class MessageDefinition extends DomainResource {
                 jurisdiction, 
                 purpose, 
                 copyright, 
+                copyrightLabel, 
                 base, 
                 parent, 
                 event, 
@@ -619,6 +676,7 @@ public class MessageDefinition extends DomainResource {
         private Uri url;
         private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
         private String title;
         private List<Canonical> replaces = new ArrayList<>();
@@ -632,14 +690,15 @@ public class MessageDefinition extends DomainResource {
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
         private Markdown purpose;
         private Markdown copyright;
+        private String copyrightLabel;
         private Canonical base;
         private List<Canonical> parent = new ArrayList<>();
-        private Element event;
+        private org.linuxforhealth.fhir.model.type.Element event;
         private MessageSignificanceCategory category;
         private List<Focus> focus = new ArrayList<>();
         private MessageHeaderResponseRequest responseRequired;
         private List<AllowedResponse> allowedResponse = new ArrayList<>();
-        private List<Canonical> graph = new ArrayList<>();
+        private Canonical graph;
 
         private Builder() {
             super();
@@ -723,7 +782,8 @@ public class MessageDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -741,7 +801,8 @@ public class MessageDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -762,7 +823,7 @@ public class MessageDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -782,7 +843,7 @@ public class MessageDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -807,9 +868,9 @@ public class MessageDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -832,9 +893,9 @@ public class MessageDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -861,7 +922,7 @@ public class MessageDefinition extends DomainResource {
          * to server.
          * 
          * @param url
-         *     Business Identifier for a given MessageDefinition
+         *     The cannonical URL for a given MessageDefinition
          * 
          * @return
          *     A reference to this Builder instance
@@ -879,7 +940,7 @@ public class MessageDefinition extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param identifier
-         *     Primary key for the message definition on a given server
+         *     Business Identifier for a given MessageDefinition
          * 
          * @return
          *     A reference to this Builder instance
@@ -899,7 +960,7 @@ public class MessageDefinition extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param identifier
-         *     Primary key for the message definition on a given server
+         *     Business Identifier for a given MessageDefinition
          * 
          * @return
          *     A reference to this Builder instance
@@ -942,6 +1003,42 @@ public class MessageDefinition extends DomainResource {
          */
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
             return this;
         }
 
@@ -1093,9 +1190,9 @@ public class MessageDefinition extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the message definition was published. The date must change when the business 
-         * version changes and it must change if the status code changes. In addition, it should change when the substantive 
-         * content of the message definition changes.
+         * The date (and optionally time) when the message definition was last significantly changed. The date must change when 
+         * the business version changes and it must change if the status code changes. In addition, it should change when the 
+         * substantive content of the message definition changes.
          * 
          * <p>This element is required.
          * 
@@ -1114,7 +1211,7 @@ public class MessageDefinition extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1127,10 +1224,11 @@ public class MessageDefinition extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the message definition.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the message 
+         * definition.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1305,6 +1403,37 @@ public class MessageDefinition extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
+            return this;
+        }
+
+        /**
          * The MessageDefinition that is the basis for the contents of this resource.
          * 
          * @param base
@@ -1374,7 +1503,7 @@ public class MessageDefinition extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder event(Element event) {
+        public Builder event(org.linuxforhealth.fhir.model.type.Element event) {
             this.event = event;
             return this;
         }
@@ -1488,12 +1617,9 @@ public class MessageDefinition extends DomainResource {
         }
 
         /**
-         * Canonical reference to a GraphDefinition. If a URL is provided, it is the canonical reference to a [GraphDefinition]
-         * (graphdefinition.html) that it controls what resources are to be added to the bundle when building the document. The 
-         * GraphDefinition can also specify profiles that apply to the various resources.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
+         * Graph is Canonical reference to a GraphDefinition. If a URL is provided, it is the canonical reference to a 
+         * GraphDefinition that it controls what additional resources are to be added to the Bundle when building the message. 
+         * The GraphDefinition can also specify profiles that apply to the various resources.
          * 
          * @param graph
          *     Canonical reference to a GraphDefinition
@@ -1501,32 +1627,8 @@ public class MessageDefinition extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder graph(Canonical... graph) {
-            for (Canonical value : graph) {
-                this.graph.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Canonical reference to a GraphDefinition. If a URL is provided, it is the canonical reference to a [GraphDefinition]
-         * (graphdefinition.html) that it controls what resources are to be added to the bundle when building the document. The 
-         * GraphDefinition can also specify profiles that apply to the various resources.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param graph
-         *     Canonical reference to a GraphDefinition
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder graph(Collection<Canonical> graph) {
-            this.graph = new ArrayList<>(graph);
+        public Builder graph(Canonical graph) {
+            this.graph = graph;
             return this;
         }
 
@@ -1557,6 +1659,7 @@ public class MessageDefinition extends DomainResource {
         protected void validate(MessageDefinition messageDefinition) {
             super.validate(messageDefinition);
             ValidationSupport.checkList(messageDefinition.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(messageDefinition.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.checkList(messageDefinition.replaces, "replaces", Canonical.class);
             ValidationSupport.requireNonNull(messageDefinition.status, "status");
             ValidationSupport.requireNonNull(messageDefinition.date, "date");
@@ -1567,7 +1670,6 @@ public class MessageDefinition extends DomainResource {
             ValidationSupport.requireChoiceElement(messageDefinition.event, "event", Coding.class, Uri.class);
             ValidationSupport.checkList(messageDefinition.focus, "focus", Focus.class);
             ValidationSupport.checkList(messageDefinition.allowedResponse, "allowedResponse", AllowedResponse.class);
-            ValidationSupport.checkList(messageDefinition.graph, "graph", Canonical.class);
         }
 
         protected Builder from(MessageDefinition messageDefinition) {
@@ -1575,6 +1677,7 @@ public class MessageDefinition extends DomainResource {
             url = messageDefinition.url;
             identifier.addAll(messageDefinition.identifier);
             version = messageDefinition.version;
+            versionAlgorithm = messageDefinition.versionAlgorithm;
             name = messageDefinition.name;
             title = messageDefinition.title;
             replaces.addAll(messageDefinition.replaces);
@@ -1588,6 +1691,7 @@ public class MessageDefinition extends DomainResource {
             jurisdiction.addAll(messageDefinition.jurisdiction);
             purpose = messageDefinition.purpose;
             copyright = messageDefinition.copyright;
+            copyrightLabel = messageDefinition.copyrightLabel;
             base = messageDefinition.base;
             parent.addAll(messageDefinition.parent);
             event = messageDefinition.event;
@@ -1595,7 +1699,7 @@ public class MessageDefinition extends DomainResource {
             focus.addAll(messageDefinition.focus);
             responseRequired = messageDefinition.responseRequired;
             allowedResponse.addAll(messageDefinition.allowedResponse);
-            graph.addAll(messageDefinition.graph);
+            graph = messageDefinition.graph;
             return this;
         }
     }
@@ -1610,7 +1714,7 @@ public class MessageDefinition extends DomainResource {
             bindingName = "ResourceType",
             strength = BindingStrength.Value.REQUIRED,
             description = "One of the resource types defined as part of this version of FHIR.",
-            valueSet = "http://hl7.org/fhir/ValueSet/resource-types|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/resource-types|5.0.0"
         )
         @Required
         private final ResourceTypeCode code;
@@ -1771,7 +1875,7 @@ public class MessageDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1791,7 +1895,7 @@ public class MessageDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1816,7 +1920,7 @@ public class MessageDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1841,7 +1945,7 @@ public class MessageDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2110,7 +2214,7 @@ public class MessageDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2130,7 +2234,7 @@ public class MessageDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2155,7 +2259,7 @@ public class MessageDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2180,7 +2284,7 @@ public class MessageDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 

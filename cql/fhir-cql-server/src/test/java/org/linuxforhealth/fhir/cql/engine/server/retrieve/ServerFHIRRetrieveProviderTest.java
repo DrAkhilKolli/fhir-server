@@ -38,6 +38,7 @@ import org.linuxforhealth.fhir.model.resource.Bundle.Link;
 import org.linuxforhealth.fhir.model.resource.Condition;
 import org.linuxforhealth.fhir.model.resource.Patient;
 import org.linuxforhealth.fhir.model.resource.Resource;
+import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.UnsignedInt;
 import org.linuxforhealth.fhir.model.type.Uri;
@@ -104,7 +105,7 @@ public class ServerFHIRRetrieveProviderTest {
         Condition c1 = Condition.builder().id("c1").subject(Reference.builder().reference(org.linuxforhealth.fhir.model.type.String.of("Patient/123")).build()).build();
 
         Bundle page1 =
-                Bundle.builder().type(BundleType.SEARCHSET).total(UnsignedInt.of(1)).entry(Bundle.Entry.builder().resource(c1).build()).link(Link.builder().relation(org.linuxforhealth.fhir.model.type.String.of("next")).url(Uri.of(getBaseUrl()
+                Bundle.builder().type(BundleType.SEARCHSET).total(UnsignedInt.of(1)).entry(Bundle.Entry.builder().resource(c1).build()).link(Link.builder().relation(Code.of("next")).url(Uri.of(getBaseUrl()
                         + "/Condition?subject:Patient=123&_page=2")).build()).build();
 
         Condition c2 = Condition.builder().id("c2").subject(Reference.builder().reference(org.linuxforhealth.fhir.model.type.String.of("Patient/123")).build()).build();

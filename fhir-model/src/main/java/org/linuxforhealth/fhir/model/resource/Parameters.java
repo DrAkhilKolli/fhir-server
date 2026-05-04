@@ -23,16 +23,17 @@ import org.linuxforhealth.fhir.model.type.Address;
 import org.linuxforhealth.fhir.model.type.Age;
 import org.linuxforhealth.fhir.model.type.Annotation;
 import org.linuxforhealth.fhir.model.type.Attachment;
+import org.linuxforhealth.fhir.model.type.Availability;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Base64Binary;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
 import org.linuxforhealth.fhir.model.type.ContactPoint;
-import org.linuxforhealth.fhir.model.type.Contributor;
 import org.linuxforhealth.fhir.model.type.Count;
 import org.linuxforhealth.fhir.model.type.DataRequirement;
 import org.linuxforhealth.fhir.model.type.Date;
@@ -43,12 +44,14 @@ import org.linuxforhealth.fhir.model.type.Dosage;
 import org.linuxforhealth.fhir.model.type.Duration;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Expression;
+import org.linuxforhealth.fhir.model.type.ExtendedContactDetail;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.HumanName;
 import org.linuxforhealth.fhir.model.type.Id;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Instant;
 import org.linuxforhealth.fhir.model.type.Integer;
+import org.linuxforhealth.fhir.model.type.Integer64;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Money;
@@ -59,6 +62,7 @@ import org.linuxforhealth.fhir.model.type.PositiveInt;
 import org.linuxforhealth.fhir.model.type.Quantity;
 import org.linuxforhealth.fhir.model.type.Range;
 import org.linuxforhealth.fhir.model.type.Ratio;
+import org.linuxforhealth.fhir.model.type.RatioRange;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.RelatedArtifact;
 import org.linuxforhealth.fhir.model.type.SampledData;
@@ -77,8 +81,8 @@ import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
- * This resource is a non-persisted resource used to pass information into and back from an [operation](operations.html). 
- * It has no other use, and there is no RESTful endpoint associated with it.
+ * This resource is used to pass information into and back from an operation (whether invoked directly from REST or 
+ * within a messaging environment). It is not persisted or allowed to be referenced by other resources.
  * 
  * <p>Maturity level: FMM5 (Normative)
  */
@@ -321,8 +325,8 @@ public class Parameters extends Resource {
         @Required
         private final String name;
         @Summary
-        @Choice({ Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, Contributor.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Dosage.class, Meta.class })
-        private final Element value;
+        @Choice({ Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Integer64.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Availability.class, ExtendedContactDetail.class, Dosage.class, Meta.class })
+        private final org.linuxforhealth.fhir.model.type.Element value;
         @Summary
         private final Resource resource;
         @Summary
@@ -351,21 +355,22 @@ public class Parameters extends Resource {
          * 
          * @return
          *     An immutable object of type {@link Base64Binary}, {@link Boolean}, {@link Canonical}, {@link Code}, {@link Date}, 
-         *     {@link DateTime}, {@link Decimal}, {@link Id}, {@link Instant}, {@link Integer}, {@link Markdown}, {@link Oid}, {@link 
-         *     PositiveInt}, {@link String}, {@link Time}, {@link UnsignedInt}, {@link Uri}, {@link Url}, {@link Uuid}, {@link 
-         *     Address}, {@link Age}, {@link Annotation}, {@link Attachment}, {@link CodeableConcept}, {@link Coding}, {@link 
-         *     ContactPoint}, {@link Count}, {@link Distance}, {@link Duration}, {@link HumanName}, {@link Identifier}, {@link 
-         *     Money}, {@link Period}, {@link Quantity}, {@link Range}, {@link Ratio}, {@link Reference}, {@link SampledData}, {@link 
-         *     Signature}, {@link Timing}, {@link ContactDetail}, {@link Contributor}, {@link DataRequirement}, {@link Expression}, 
-         *     {@link ParameterDefinition}, {@link RelatedArtifact}, {@link TriggerDefinition}, {@link UsageContext}, {@link Dosage} 
-         *     or {@link Meta} that may be null.
+         *     {@link DateTime}, {@link Decimal}, {@link Id}, {@link Instant}, {@link Integer}, {@link Integer64}, {@link Markdown}, 
+         *     {@link Oid}, {@link PositiveInt}, {@link String}, {@link Time}, {@link UnsignedInt}, {@link Uri}, {@link Url}, {@link 
+         *     Uuid}, {@link Address}, {@link Age}, {@link Annotation}, {@link Attachment}, {@link CodeableConcept}, {@link 
+         *     CodeableReference}, {@link Coding}, {@link ContactPoint}, {@link Count}, {@link Distance}, {@link Duration}, {@link 
+         *     HumanName}, {@link Identifier}, {@link Money}, {@link Period}, {@link Quantity}, {@link Range}, {@link Ratio}, {@link 
+         *     RatioRange}, {@link Reference}, {@link SampledData}, {@link Signature}, {@link Timing}, {@link ContactDetail}, {@link 
+         *     DataRequirement}, {@link Expression}, {@link ParameterDefinition}, {@link RelatedArtifact}, {@link TriggerDefinition}, 
+         *     {@link UsageContext}, {@link Availability}, {@link ExtendedContactDetail}, {@link Dosage} or {@link Meta} that may be 
+         *     null.
          */
-        public Element getValue() {
+        public org.linuxforhealth.fhir.model.type.Element getValue() {
             return value;
         }
 
         /**
-         * If the parameter is a whole resource.
+         * Conveys the content if the parameter is a whole resource.
          * 
          * @return
          *     An immutable object of type {@link Resource} that may be null.
@@ -460,7 +465,7 @@ public class Parameters extends Resource {
 
         public static class Builder extends BackboneElement.Builder {
             private String name;
-            private Element value;
+            private org.linuxforhealth.fhir.model.type.Element value;
             private Resource resource;
             private List<Parameters.Parameter> part = new ArrayList<>();
 
@@ -485,7 +490,7 @@ public class Parameters extends Resource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -505,7 +510,7 @@ public class Parameters extends Resource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -530,7 +535,7 @@ public class Parameters extends Resource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -555,7 +560,7 @@ public class Parameters extends Resource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -724,6 +729,7 @@ public class Parameters extends Resource {
              * <li>{@link Id}</li>
              * <li>{@link Instant}</li>
              * <li>{@link Integer}</li>
+             * <li>{@link Integer64}</li>
              * <li>{@link Markdown}</li>
              * <li>{@link Oid}</li>
              * <li>{@link PositiveInt}</li>
@@ -738,6 +744,7 @@ public class Parameters extends Resource {
              * <li>{@link Annotation}</li>
              * <li>{@link Attachment}</li>
              * <li>{@link CodeableConcept}</li>
+             * <li>{@link CodeableReference}</li>
              * <li>{@link Coding}</li>
              * <li>{@link ContactPoint}</li>
              * <li>{@link Count}</li>
@@ -750,18 +757,20 @@ public class Parameters extends Resource {
              * <li>{@link Quantity}</li>
              * <li>{@link Range}</li>
              * <li>{@link Ratio}</li>
+             * <li>{@link RatioRange}</li>
              * <li>{@link Reference}</li>
              * <li>{@link SampledData}</li>
              * <li>{@link Signature}</li>
              * <li>{@link Timing}</li>
              * <li>{@link ContactDetail}</li>
-             * <li>{@link Contributor}</li>
              * <li>{@link DataRequirement}</li>
              * <li>{@link Expression}</li>
              * <li>{@link ParameterDefinition}</li>
              * <li>{@link RelatedArtifact}</li>
              * <li>{@link TriggerDefinition}</li>
              * <li>{@link UsageContext}</li>
+             * <li>{@link Availability}</li>
+             * <li>{@link ExtendedContactDetail}</li>
              * <li>{@link Dosage}</li>
              * <li>{@link Meta}</li>
              * </ul>
@@ -772,13 +781,13 @@ public class Parameters extends Resource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder value(Element value) {
+            public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                 this.value = value;
                 return this;
             }
 
             /**
-             * If the parameter is a whole resource.
+             * Conveys the content if the parameter is a whole resource.
              * 
              * @param resource
              *     If parameter is a whole resource
@@ -855,7 +864,7 @@ public class Parameters extends Resource {
             protected void validate(Parameter parameter) {
                 super.validate(parameter);
                 ValidationSupport.requireNonNull(parameter.name, "name");
-                ValidationSupport.choiceElement(parameter.value, "value", Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, Contributor.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Dosage.class, Meta.class);
+                ValidationSupport.choiceElement(parameter.value, "value", Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Integer64.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Availability.class, ExtendedContactDetail.class, Dosage.class, Meta.class);
                 ValidationSupport.checkList(parameter.part, "part", Parameters.Parameter.class);
                 ValidationSupport.requireValueOrChildren(parameter);
             }

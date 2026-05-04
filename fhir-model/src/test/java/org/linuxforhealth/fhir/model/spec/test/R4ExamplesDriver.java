@@ -303,167 +303,79 @@ public class R4ExamplesDriver {
             throw error;
         }
 
-        logger.fine(String.format("Processed: wanted:%11s got:%11s %s ", expectation.name(), actual.name(), file));
-
+        if (actual != expectation) {
+            // continue processing the other files, but capture the first exception so we can fail the test
+            // if needed
+            ExampleProcessorException error = new ExampleProcessorException(file, expectation, actual);
+            if (firstException == null) {
+                firstException = error;
+            }
+            throw error;
+        } else {
+            // another successful test
+            successCount.incrementAndGet();
+        }
     }
 
     /**
-     * Process the example resource
-     *
+     * Read the resource from the file
      * @param file
-     *            so we know the name of the file if there's a problem
-     * @param resource
-     *            the parsed object
-     * @param expectation
+     * @param format
+     * @return
+     * @throws FHIRParserException
      */
-    protected Expectation processExample(String file, Resource resource, Expectation expectation)
-            throws ExampleProcessorException {
-        Expectation actual = Expectation.OK;
+    private Resource readResource(String file, Format format) throws FHIRParserException {
+        try (Reader reader = ExamplesUtil.resourceReader(file)) {
+            return FHIRParser.parser(format).parse(reader);
+        } catch (FHIRParserException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Unhandled exception for file '" + file + "'", e);
+        }
+    }
+
+    /**
+     * Process the example after it has been parsed
+     * @param file
+     * @param resource
+     * @param expectation
+     * @return
+     */
+    private Expectation processExample(String file, Resource resource, Expectation expectation) {
+        Expectation result = Expectation.OK;
+
         if (validator != null) {
-            long start = System.nanoTime();
             try {
                 validator.process(file, resource);
-
-                if (expectation == Expectation.VALIDATION) {
-                    // this is a problem, because we expected validation to fail
-                    resource = null; // prevent processing
-                    System.out.println();
-                    logger.severe("validateResource(" + file + ") should've failed but didn't");
-                    ExampleProcessorException error =
-                            new ExampleProcessorException(file, expectation, actual);
-                    if (firstException == null) {
-                        firstException = error;
-                    }
-                    throw error;
-                }
-            } catch (Exception x) {
-                // validation failed
-                actual = Expectation.VALIDATION;
-                resource = null; // stop any further processing
-
-                if (expectation == Expectation.VALIDATION) {
-                    // we expected an error, and we got it...so that's a success
-                    successCount.incrementAndGet();
-                } else {
-                    // oops, hit an unexpected validation error
-                    System.out.println();
-                    logger.log(Level.SEVERE, "validateResource(" + file + ") unexpected failure: " + x.getMessage());
-
-                    // continue processing the other files
-                    ExampleProcessorException error =
-                            new ExampleProcessorException(file, expectation, actual, x);
-                    if (firstException == null) {
-                        firstException = x;
-                    }
-                    throw error;
-                }
-            }
-            finally {
-                if (metrics != null) {
-                    long validateEnd = System.nanoTime();
-                    long validateTime = validateEnd - start;
-                    metrics.addValidateTime(validateTime / DriverMetrics.NANOS_MS);
-                }
+            } catch (Exception e) {
+                result = Expectation.VALIDATION;
             }
         }
 
-        // process the resource (as long as validation was successful)
-        if (processor != null && resource != null) {
-            long start = System.nanoTime();
+        if (result == Expectation.OK && processor != null) {
             try {
                 processor.process(file, resource);
-
-                if (expectation == Expectation.PROCESS) {
-                    // this is a problem, because we expected processing to fail
-                    System.out.println();
-                    logger.severe("processResource(" + file + ") should've failed but didn't");
-                    ExampleProcessorException error =
-                            new ExampleProcessorException(file, expectation, actual);
-                    if (firstException == null) {
-                        firstException = error;
-                    }
-                    throw error;
-                } else {
-                    // processed the resource successfully, and didn't expect an error
-                    successCount.incrementAndGet();
-                }
             } catch (Exception e) {
-                // say in which phase we failed
-                actual = Expectation.PROCESS;
-
-                if (expectation == Expectation.PROCESS) {
-                    // we expected an error, and we got it...so that's a success
-                    successCount.incrementAndGet();
-                } else {
-                    // processing error, but didn't expect it
-                    System.out.println();
-                    logger.log(Level.SEVERE, "processResource(" + file
-                            + ") unexpected failure: " + e.getMessage());
-
-                    // continue processing the other files
-                    ExampleProcessorException error =
-                            new ExampleProcessorException(file, expectation, actual, e);
-                    if (firstException == null) {
-                        firstException = e;
-                    }
-                    throw error;
-                }
-            } finally {
-                if (metrics != null) {
-                    long processEnd = System.nanoTime();
-                    long processTime = processEnd - start;
-                    metrics.addProcessTime(processTime / DriverMetrics.NANOS_MS);
-                }
+                result = Expectation.PROCESS;
             }
         }
 
-        return actual;
+        return result;
     }
 
     /**
-     * This function reads the contents of a mock resource from the specified file, then de-serializes that into a
-     * Resource.
-     *
-     * @param fileName
-     *            the name of the file containing the mock resource (e.g. "testdata/Patient1.json")
-     * @param format
-     * @return the de-serialized mock resource
-     * @throws Exception
+     * Wait for all the submitted tasks to complete
      */
-    public Resource readResource(String fileName, Format format) throws Exception {
-
-        // We don't really care about knowing the resource type. We can check this later
-        long start = System.nanoTime();
-        try (Reader reader = ExamplesUtil.resourceReader(fileName)) {
-            return FHIRParser.parser(format).parse(reader);
-        }
-        finally {
-            if (metrics != null) {
-                metrics.addReadTime((System.nanoTime() - start) / DriverMetrics.NANOS_MS);
-            }
-        }
-    }
-
-    /**
-     * Block until all the submitted requests are completed
-     */
-    private void waitForCompletion() {
+    public void waitForCompletion() {
         lock.lock();
-        logger.info("Waiting for all requests to complete (remaining = " + this.currentlySubmittedCount + ")");
-        try {
-            while (this.currentlySubmittedCount > 0) {
-                try {
-                    runningCondition.await(1000, TimeUnit.MILLISECONDS);
-                }
-                catch (InterruptedException x) {
-                    throw new IllegalStateException(x);
-                }
+        while (this.currentlySubmittedCount > 0) {
+            try {
+                this.runningCondition.await(1000, TimeUnit.MILLISECONDS);
+            }
+            catch (InterruptedException x) {
+                // NOP
             }
         }
-        finally {
-            lock.unlock();
-            logger.info("All requests complete");
-        }
+        lock.unlock();
     }
-
 }

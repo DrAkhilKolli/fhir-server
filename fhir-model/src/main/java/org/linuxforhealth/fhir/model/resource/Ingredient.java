@@ -29,8 +29,10 @@ import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
+import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
+import org.linuxforhealth.fhir.model.type.Quantity;
 import org.linuxforhealth.fhir.model.type.Ratio;
 import org.linuxforhealth.fhir.model.type.RatioRange;
 import org.linuxforhealth.fhir.model.type.Reference;
@@ -46,10 +48,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 /**
  * An ingredient of a manufactured item or pharmaceutical product.
  * 
- * <p>Maturity level: FMM1 (Trial Use)
+ * <p>Maturity level: FMM2 (Trial Use)
  */
 @Maturity(
-    level = 1,
+    level = 2,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
@@ -57,7 +59,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Rule",
     location = "(base)",
     description = "If an ingredient is noted as an allergen (allergenicIndicator) then its substance should be a code. If the substance is a SubstanceDefinition, then the allegen information should be documented in that resource",
-    expression = "(Ingredient.allergenicIndicator.where(value='true').count() + Ingredient.substance.code.reference.count())  < 2",
+    expression = "Ingredient.where(allergenicIndicator=true).count() + Ingredient.substance.code.reference.count()  < 2",
     source = "http://hl7.org/fhir/StructureDefinition/Ingredient"
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
@@ -69,7 +71,7 @@ public class Ingredient extends DomainResource {
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -94,7 +96,10 @@ public class Ingredient extends DomainResource {
     )
     private final List<CodeableConcept> function;
     @Summary
+    private final CodeableConcept group;
+    @Summary
     private final Boolean allergenicIndicator;
+    private final Markdown comment;
     @Summary
     private final List<Manufacturer> manufacturer;
     @Summary
@@ -108,7 +113,9 @@ public class Ingredient extends DomainResource {
         _for = Collections.unmodifiableList(builder._for);
         role = builder.role;
         function = Collections.unmodifiableList(builder.function);
+        group = builder.group;
         allergenicIndicator = builder.allergenicIndicator;
+        comment = builder.comment;
         manufacturer = Collections.unmodifiableList(builder.manufacturer);
         substance = builder.substance;
     }
@@ -166,6 +173,17 @@ public class Ingredient extends DomainResource {
     }
 
     /**
+     * A classification of the ingredient according to where in the physical item it tends to be used, such the outer shell 
+     * of a tablet, inner body or ink.
+     * 
+     * @return
+     *     An immutable object of type {@link CodeableConcept} that may be null.
+     */
+    public CodeableConcept getGroup() {
+        return group;
+    }
+
+    /**
      * If the ingredient is a known or suspected allergen. Note that this is a property of the substance, so if a reference 
      * to a SubstanceDefinition is used to decribe that (rather than just a code), the allergen information should go there, 
      * not here.
@@ -175,6 +193,17 @@ public class Ingredient extends DomainResource {
      */
     public Boolean getAllergenicIndicator() {
         return allergenicIndicator;
+    }
+
+    /**
+     * A place for providing any notes that are relevant to the component, e.g. removed during process, adjusted for loss on 
+     * drying.
+     * 
+     * @return
+     *     An immutable object of type {@link Markdown} that may be null.
+     */
+    public Markdown getComment() {
+        return comment;
     }
 
     /**
@@ -208,7 +237,9 @@ public class Ingredient extends DomainResource {
             !_for.isEmpty() || 
             (role != null) || 
             !function.isEmpty() || 
+            (group != null) || 
             (allergenicIndicator != null) || 
+            (comment != null) || 
             !manufacturer.isEmpty() || 
             (substance != null);
     }
@@ -232,7 +263,9 @@ public class Ingredient extends DomainResource {
                 accept(_for, "for", visitor, Reference.class);
                 accept(role, "role", visitor);
                 accept(function, "function", visitor, CodeableConcept.class);
+                accept(group, "group", visitor);
                 accept(allergenicIndicator, "allergenicIndicator", visitor);
+                accept(comment, "comment", visitor);
                 accept(manufacturer, "manufacturer", visitor, Manufacturer.class);
                 accept(substance, "substance", visitor);
             }
@@ -266,7 +299,9 @@ public class Ingredient extends DomainResource {
             Objects.equals(_for, other._for) && 
             Objects.equals(role, other.role) && 
             Objects.equals(function, other.function) && 
+            Objects.equals(group, other.group) && 
             Objects.equals(allergenicIndicator, other.allergenicIndicator) && 
+            Objects.equals(comment, other.comment) && 
             Objects.equals(manufacturer, other.manufacturer) && 
             Objects.equals(substance, other.substance);
     }
@@ -288,7 +323,9 @@ public class Ingredient extends DomainResource {
                 _for, 
                 role, 
                 function, 
+                group, 
                 allergenicIndicator, 
+                comment, 
                 manufacturer, 
                 substance);
             hashCode = result;
@@ -311,7 +348,9 @@ public class Ingredient extends DomainResource {
         private List<Reference> _for = new ArrayList<>();
         private CodeableConcept role;
         private List<CodeableConcept> function = new ArrayList<>();
+        private CodeableConcept group;
         private Boolean allergenicIndicator;
+        private Markdown comment;
         private List<Manufacturer> manufacturer = new ArrayList<>();
         private Substance substance;
 
@@ -397,7 +436,8 @@ public class Ingredient extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -415,7 +455,8 @@ public class Ingredient extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -436,7 +477,7 @@ public class Ingredient extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -456,7 +497,7 @@ public class Ingredient extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -481,9 +522,9 @@ public class Ingredient extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -506,9 +547,9 @@ public class Ingredient extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -672,6 +713,22 @@ public class Ingredient extends DomainResource {
         }
 
         /**
+         * A classification of the ingredient according to where in the physical item it tends to be used, such the outer shell 
+         * of a tablet, inner body or ink.
+         * 
+         * @param group
+         *     A classification of the ingredient according to where in the physical item it tends to be used, such the outer shell 
+         *     of a tablet, inner body or ink
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder group(CodeableConcept group) {
+            this.group = group;
+            return this;
+        }
+
+        /**
          * Convenience method for setting {@code allergenicIndicator}.
          * 
          * @param allergenicIndicator
@@ -700,6 +757,22 @@ public class Ingredient extends DomainResource {
          */
         public Builder allergenicIndicator(Boolean allergenicIndicator) {
             this.allergenicIndicator = allergenicIndicator;
+            return this;
+        }
+
+        /**
+         * A place for providing any notes that are relevant to the component, e.g. removed during process, adjusted for loss on 
+         * drying.
+         * 
+         * @param comment
+         *     A place for providing any notes that are relevant to the component, e.g. removed during process, adjusted for loss on 
+         *     drying
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder comment(Markdown comment) {
+            this.comment = comment;
             return this;
         }
 
@@ -806,7 +879,9 @@ public class Ingredient extends DomainResource {
             _for.addAll(ingredient._for);
             role = ingredient.role;
             function.addAll(ingredient.function);
+            group = ingredient.group;
             allergenicIndicator = ingredient.allergenicIndicator;
+            comment = ingredient.comment;
             manufacturer.addAll(ingredient.manufacturer);
             substance = ingredient.substance;
             return this;
@@ -825,7 +900,7 @@ public class Ingredient extends DomainResource {
             bindingName = "IngredientManufacturerRole",
             strength = BindingStrength.Value.REQUIRED,
             description = "The way in which this manufacturer is associated with the ingredient.",
-            valueSet = "http://hl7.org/fhir/ValueSet/ingredient-manufacturer-role|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/ingredient-manufacturer-role|5.0.0"
         )
         private final IngredientManufacturerRole role;
         @Summary
@@ -951,7 +1026,7 @@ public class Ingredient extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -971,7 +1046,7 @@ public class Ingredient extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -996,7 +1071,7 @@ public class Ingredient extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1021,7 +1096,7 @@ public class Ingredient extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1254,7 +1329,7 @@ public class Ingredient extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1274,7 +1349,7 @@ public class Ingredient extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1299,7 +1374,7 @@ public class Ingredient extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1324,7 +1399,7 @@ public class Ingredient extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1451,15 +1526,17 @@ public class Ingredient extends DomainResource {
          */
         public static class Strength extends BackboneElement {
             @Summary
-            @Choice({ Ratio.class, RatioRange.class })
-            private final Element presentation;
+            @Choice({ Ratio.class, RatioRange.class, CodeableConcept.class, Quantity.class })
+            private final org.linuxforhealth.fhir.model.type.Element presentation;
             @Summary
             private final String textPresentation;
             @Summary
-            @Choice({ Ratio.class, RatioRange.class })
-            private final Element concentration;
+            @Choice({ Ratio.class, RatioRange.class, CodeableConcept.class, Quantity.class })
+            private final org.linuxforhealth.fhir.model.type.Element concentration;
             @Summary
             private final String textConcentration;
+            @Summary
+            private final CodeableConcept basis;
             @Summary
             private final String measurementPoint;
             @Summary
@@ -1479,6 +1556,7 @@ public class Ingredient extends DomainResource {
                 textPresentation = builder.textPresentation;
                 concentration = builder.concentration;
                 textConcentration = builder.textConcentration;
+                basis = builder.basis;
                 measurementPoint = builder.measurementPoint;
                 country = Collections.unmodifiableList(builder.country);
                 referenceStrength = Collections.unmodifiableList(builder.referenceStrength);
@@ -1491,9 +1569,10 @@ public class Ingredient extends DomainResource {
              * 'per mg').
              * 
              * @return
-             *     An immutable object of type {@link Ratio} or {@link RatioRange} that may be null.
+             *     An immutable object of type {@link Ratio}, {@link RatioRange}, {@link CodeableConcept} or {@link Quantity} that may be 
+             *     null.
              */
-            public Element getPresentation() {
+            public org.linuxforhealth.fhir.model.type.Element getPresentation() {
                 return presentation;
             }
 
@@ -1512,9 +1591,10 @@ public class Ingredient extends DomainResource {
              * The strength per unitary volume (or mass).
              * 
              * @return
-             *     An immutable object of type {@link Ratio} or {@link RatioRange} that may be null.
+             *     An immutable object of type {@link Ratio}, {@link RatioRange}, {@link CodeableConcept} or {@link Quantity} that may be 
+             *     null.
              */
-            public Element getConcentration() {
+            public org.linuxforhealth.fhir.model.type.Element getConcentration() {
                 return concentration;
             }
 
@@ -1527,6 +1607,17 @@ public class Ingredient extends DomainResource {
              */
             public String getTextConcentration() {
                 return textConcentration;
+            }
+
+            /**
+             * A code that indicates if the strength is, for example, based on the ingredient substance as stated or on the substance 
+             * base (when the ingredient is a salt).
+             * 
+             * @return
+             *     An immutable object of type {@link CodeableConcept} that may be null.
+             */
+            public CodeableConcept getBasis() {
+                return basis;
             }
 
             /**
@@ -1571,6 +1662,7 @@ public class Ingredient extends DomainResource {
                     (textPresentation != null) || 
                     (concentration != null) || 
                     (textConcentration != null) || 
+                    (basis != null) || 
                     (measurementPoint != null) || 
                     !country.isEmpty() || 
                     !referenceStrength.isEmpty();
@@ -1589,6 +1681,7 @@ public class Ingredient extends DomainResource {
                         accept(textPresentation, "textPresentation", visitor);
                         accept(concentration, "concentration", visitor);
                         accept(textConcentration, "textConcentration", visitor);
+                        accept(basis, "basis", visitor);
                         accept(measurementPoint, "measurementPoint", visitor);
                         accept(country, "country", visitor, CodeableConcept.class);
                         accept(referenceStrength, "referenceStrength", visitor, ReferenceStrength.class);
@@ -1617,6 +1710,7 @@ public class Ingredient extends DomainResource {
                     Objects.equals(textPresentation, other.textPresentation) && 
                     Objects.equals(concentration, other.concentration) && 
                     Objects.equals(textConcentration, other.textConcentration) && 
+                    Objects.equals(basis, other.basis) && 
                     Objects.equals(measurementPoint, other.measurementPoint) && 
                     Objects.equals(country, other.country) && 
                     Objects.equals(referenceStrength, other.referenceStrength);
@@ -1633,6 +1727,7 @@ public class Ingredient extends DomainResource {
                         textPresentation, 
                         concentration, 
                         textConcentration, 
+                        basis, 
                         measurementPoint, 
                         country, 
                         referenceStrength);
@@ -1651,10 +1746,11 @@ public class Ingredient extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private Element presentation;
+                private org.linuxforhealth.fhir.model.type.Element presentation;
                 private String textPresentation;
-                private Element concentration;
+                private org.linuxforhealth.fhir.model.type.Element concentration;
                 private String textConcentration;
+                private CodeableConcept basis;
                 private String measurementPoint;
                 private List<CodeableConcept> country = new ArrayList<>();
                 private List<ReferenceStrength> referenceStrength = new ArrayList<>();
@@ -1680,7 +1776,7 @@ public class Ingredient extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1700,7 +1796,7 @@ public class Ingredient extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1725,7 +1821,7 @@ public class Ingredient extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -1750,7 +1846,7 @@ public class Ingredient extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -1784,6 +1880,8 @@ public class Ingredient extends DomainResource {
                  * <ul>
                  * <li>{@link Ratio}</li>
                  * <li>{@link RatioRange}</li>
+                 * <li>{@link CodeableConcept}</li>
+                 * <li>{@link Quantity}</li>
                  * </ul>
                  * 
                  * @param presentation
@@ -1792,7 +1890,7 @@ public class Ingredient extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder presentation(Element presentation) {
+                public Builder presentation(org.linuxforhealth.fhir.model.type.Element presentation) {
                     this.presentation = presentation;
                     return this;
                 }
@@ -1835,6 +1933,8 @@ public class Ingredient extends DomainResource {
                  * <ul>
                  * <li>{@link Ratio}</li>
                  * <li>{@link RatioRange}</li>
+                 * <li>{@link CodeableConcept}</li>
+                 * <li>{@link Quantity}</li>
                  * </ul>
                  * 
                  * @param concentration
@@ -1843,7 +1943,7 @@ public class Ingredient extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder concentration(Element concentration) {
+                public Builder concentration(org.linuxforhealth.fhir.model.type.Element concentration) {
                     this.concentration = concentration;
                     return this;
                 }
@@ -1876,6 +1976,22 @@ public class Ingredient extends DomainResource {
                  */
                 public Builder textConcentration(String textConcentration) {
                     this.textConcentration = textConcentration;
+                    return this;
+                }
+
+                /**
+                 * A code that indicates if the strength is, for example, based on the ingredient substance as stated or on the substance 
+                 * base (when the ingredient is a salt).
+                 * 
+                 * @param basis
+                 *     A code that indicates if the strength is, for example, based on the ingredient substance as stated or on the substance 
+                 *     base (when the ingredient is a salt)
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder basis(CodeableConcept basis) {
+                    this.basis = basis;
                     return this;
                 }
 
@@ -2014,8 +2130,8 @@ public class Ingredient extends DomainResource {
 
                 protected void validate(Strength strength) {
                     super.validate(strength);
-                    ValidationSupport.choiceElement(strength.presentation, "presentation", Ratio.class, RatioRange.class);
-                    ValidationSupport.choiceElement(strength.concentration, "concentration", Ratio.class, RatioRange.class);
+                    ValidationSupport.choiceElement(strength.presentation, "presentation", Ratio.class, RatioRange.class, CodeableConcept.class, Quantity.class);
+                    ValidationSupport.choiceElement(strength.concentration, "concentration", Ratio.class, RatioRange.class, CodeableConcept.class, Quantity.class);
                     ValidationSupport.checkList(strength.country, "country", CodeableConcept.class);
                     ValidationSupport.checkList(strength.referenceStrength, "referenceStrength", ReferenceStrength.class);
                     ValidationSupport.requireValueOrChildren(strength);
@@ -2027,6 +2143,7 @@ public class Ingredient extends DomainResource {
                     textPresentation = strength.textPresentation;
                     concentration = strength.concentration;
                     textConcentration = strength.textConcentration;
+                    basis = strength.basis;
                     measurementPoint = strength.measurementPoint;
                     country.addAll(strength.country);
                     referenceStrength.addAll(strength.referenceStrength);
@@ -2048,11 +2165,12 @@ public class Ingredient extends DomainResource {
                     description = "This value set includes all substance codes from SNOMED CT - provided as an exemplar value set.",
                     valueSet = "http://hl7.org/fhir/ValueSet/substance-codes"
                 )
+                @Required
                 private final CodeableReference substance;
                 @Summary
-                @Choice({ Ratio.class, RatioRange.class })
+                @Choice({ Ratio.class, RatioRange.class, Quantity.class })
                 @Required
-                private final Element strength;
+                private final org.linuxforhealth.fhir.model.type.Element strength;
                 @Summary
                 private final String measurementPoint;
                 @Summary
@@ -2076,7 +2194,7 @@ public class Ingredient extends DomainResource {
                  * Relevant reference substance.
                  * 
                  * @return
-                 *     An immutable object of type {@link CodeableReference} that may be null.
+                 *     An immutable object of type {@link CodeableReference} that is non-null.
                  */
                 public CodeableReference getSubstance() {
                     return substance;
@@ -2086,9 +2204,9 @@ public class Ingredient extends DomainResource {
                  * Strength expressed in terms of a reference substance.
                  * 
                  * @return
-                 *     An immutable object of type {@link Ratio} or {@link RatioRange} that is non-null.
+                 *     An immutable object of type {@link Ratio}, {@link RatioRange} or {@link Quantity} that is non-null.
                  */
-                public Element getStrength() {
+                public org.linuxforhealth.fhir.model.type.Element getStrength() {
                     return strength;
                 }
 
@@ -2188,7 +2306,7 @@ public class Ingredient extends DomainResource {
 
                 public static class Builder extends BackboneElement.Builder {
                     private CodeableReference substance;
-                    private Element strength;
+                    private org.linuxforhealth.fhir.model.type.Element strength;
                     private String measurementPoint;
                     private List<CodeableConcept> country = new ArrayList<>();
 
@@ -2213,7 +2331,7 @@ public class Ingredient extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -2233,7 +2351,7 @@ public class Ingredient extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -2258,7 +2376,7 @@ public class Ingredient extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -2283,7 +2401,7 @@ public class Ingredient extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -2310,6 +2428,8 @@ public class Ingredient extends DomainResource {
                     /**
                      * Relevant reference substance.
                      * 
+                     * <p>This element is required.
+                     * 
                      * @param substance
                      *     Relevant reference substance
                      * 
@@ -2330,6 +2450,7 @@ public class Ingredient extends DomainResource {
                      * <ul>
                      * <li>{@link Ratio}</li>
                      * <li>{@link RatioRange}</li>
+                     * <li>{@link Quantity}</li>
                      * </ul>
                      * 
                      * @param strength
@@ -2338,7 +2459,7 @@ public class Ingredient extends DomainResource {
                      * @return
                      *     A reference to this Builder instance
                      */
-                    public Builder strength(Element strength) {
+                    public Builder strength(org.linuxforhealth.fhir.model.type.Element strength) {
                         this.strength = strength;
                         return this;
                     }
@@ -2417,6 +2538,7 @@ public class Ingredient extends DomainResource {
                      * 
                      * <p>Required elements:
                      * <ul>
+                     * <li>substance</li>
                      * <li>strength</li>
                      * </ul>
                      * 
@@ -2436,7 +2558,8 @@ public class Ingredient extends DomainResource {
 
                     protected void validate(ReferenceStrength referenceStrength) {
                         super.validate(referenceStrength);
-                        ValidationSupport.requireChoiceElement(referenceStrength.strength, "strength", Ratio.class, RatioRange.class);
+                        ValidationSupport.requireNonNull(referenceStrength.substance, "substance");
+                        ValidationSupport.requireChoiceElement(referenceStrength.strength, "strength", Ratio.class, RatioRange.class, Quantity.class);
                         ValidationSupport.checkList(referenceStrength.country, "country", CodeableConcept.class);
                         ValidationSupport.requireValueOrChildren(referenceStrength);
                     }

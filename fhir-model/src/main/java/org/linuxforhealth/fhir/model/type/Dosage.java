@@ -16,6 +16,7 @@ import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
 import org.linuxforhealth.fhir.model.annotation.Choice;
+import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
@@ -24,8 +25,16 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 /**
  * Indicates how the medication is/was taken or should be taken by the patient.
  */
+@Constraint(
+    id = "dos-1",
+    level = "Rule",
+    location = "(base)",
+    description = "AsNeededFor can only be set if AsNeeded is empty or true",
+    expression = "asNeededFor.empty() or asNeeded.empty() or asNeeded",
+    source = "http://hl7.org/fhir/StructureDefinition/Dosage"
+)
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Dosage extends BackboneElement {
+public class Dosage extends BackboneType {
     @Summary
     private final Integer sequence;
     @Summary
@@ -34,6 +43,7 @@ public class Dosage extends BackboneElement {
     @Binding(
         bindingName = "AdditionalInstruction",
         strength = BindingStrength.Value.EXAMPLE,
+        description = "A coded concept identifying additional instructions such as \"take with water\" or \"avoid operating heavy machinery\".",
         valueSet = "http://hl7.org/fhir/ValueSet/additional-instruction-codes"
     )
     private final List<CodeableConcept> additionalInstruction;
@@ -42,17 +52,20 @@ public class Dosage extends BackboneElement {
     @Summary
     private final Timing timing;
     @Summary
-    @Choice({ Boolean.class, CodeableConcept.class })
+    private final Boolean asNeeded;
+    @Summary
     @Binding(
         bindingName = "MedicationAsNeededReason",
         strength = BindingStrength.Value.EXAMPLE,
+        description = "A coded concept identifying the precondition that should be met or evaluated prior to consuming or administering a medication dose.  For example \"pain\", \"30 minutes prior to sexual intercourse\", \"on flare-up\" etc.",
         valueSet = "http://hl7.org/fhir/ValueSet/medication-as-needed-reason"
     )
-    private final Element asNeeded;
+    private final List<CodeableConcept> asNeededFor;
     @Summary
     @Binding(
         bindingName = "MedicationAdministrationSite",
         strength = BindingStrength.Value.EXAMPLE,
+        description = "A coded concept describing the site location the medicine enters into or onto the body.",
         valueSet = "http://hl7.org/fhir/ValueSet/approach-site-codes"
     )
     private final CodeableConcept site;
@@ -60,6 +73,7 @@ public class Dosage extends BackboneElement {
     @Binding(
         bindingName = "RouteOfAdministration",
         strength = BindingStrength.Value.EXAMPLE,
+        description = "A coded concept describing the route or physiological path of administration of a therapeutic agent into or onto the body of a subject.",
         valueSet = "http://hl7.org/fhir/ValueSet/route-codes"
     )
     private final CodeableConcept route;
@@ -67,13 +81,14 @@ public class Dosage extends BackboneElement {
     @Binding(
         bindingName = "MedicationAdministrationMethod",
         strength = BindingStrength.Value.EXAMPLE,
+        description = "A coded concept describing the technique by which the medicine is administered.",
         valueSet = "http://hl7.org/fhir/ValueSet/administration-method-codes"
     )
     private final CodeableConcept method;
     @Summary
     private final List<DoseAndRate> doseAndRate;
     @Summary
-    private final Ratio maxDosePerPeriod;
+    private final List<Ratio> maxDosePerPeriod;
     @Summary
     private final SimpleQuantity maxDosePerAdministration;
     @Summary
@@ -87,11 +102,12 @@ public class Dosage extends BackboneElement {
         patientInstruction = builder.patientInstruction;
         timing = builder.timing;
         asNeeded = builder.asNeeded;
+        asNeededFor = Collections.unmodifiableList(builder.asNeededFor);
         site = builder.site;
         route = builder.route;
         method = builder.method;
         doseAndRate = Collections.unmodifiableList(builder.doseAndRate);
-        maxDosePerPeriod = builder.maxDosePerPeriod;
+        maxDosePerPeriod = Collections.unmodifiableList(builder.maxDosePerPeriod);
         maxDosePerAdministration = builder.maxDosePerAdministration;
         maxDosePerLifetime = builder.maxDosePerLifetime;
     }
@@ -149,14 +165,23 @@ public class Dosage extends BackboneElement {
     }
 
     /**
-     * Indicates whether the Medication is only taken when needed within a specific dosing schedule (Boolean option), or it 
-     * indicates the precondition for taking the Medication (CodeableConcept).
+     * Indicates whether the Medication is only taken when needed within a specific dosing schedule (Boolean option).
      * 
      * @return
-     *     An immutable object of type {@link Boolean} or {@link CodeableConcept} that may be null.
+     *     An immutable object of type {@link Boolean} that may be null.
      */
-    public Element getAsNeeded() {
+    public Boolean getAsNeeded() {
         return asNeeded;
+    }
+
+    /**
+     * Indicates whether the Medication is only taken based on a precondition for taking the Medication (CodeableConcept).
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     */
+    public List<CodeableConcept> getAsNeededFor() {
+        return asNeededFor;
     }
 
     /**
@@ -190,7 +215,8 @@ public class Dosage extends BackboneElement {
     }
 
     /**
-     * The amount of medication administered.
+     * Depending on the resource,this is the amount of medication administered, to be administered or typical amount to be 
+     * administered.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link DoseAndRate} that may be empty.
@@ -203,9 +229,9 @@ public class Dosage extends BackboneElement {
      * Upper limit on medication per unit of time.
      * 
      * @return
-     *     An immutable object of type {@link Ratio} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Ratio} that may be empty.
      */
-    public Ratio getMaxDosePerPeriod() {
+    public List<Ratio> getMaxDosePerPeriod() {
         return maxDosePerPeriod;
     }
 
@@ -238,11 +264,12 @@ public class Dosage extends BackboneElement {
             (patientInstruction != null) || 
             (timing != null) || 
             (asNeeded != null) || 
+            !asNeededFor.isEmpty() || 
             (site != null) || 
             (route != null) || 
             (method != null) || 
             !doseAndRate.isEmpty() || 
-            (maxDosePerPeriod != null) || 
+            !maxDosePerPeriod.isEmpty() || 
             (maxDosePerAdministration != null) || 
             (maxDosePerLifetime != null);
     }
@@ -262,11 +289,12 @@ public class Dosage extends BackboneElement {
                 accept(patientInstruction, "patientInstruction", visitor);
                 accept(timing, "timing", visitor);
                 accept(asNeeded, "asNeeded", visitor);
+                accept(asNeededFor, "asNeededFor", visitor, CodeableConcept.class);
                 accept(site, "site", visitor);
                 accept(route, "route", visitor);
                 accept(method, "method", visitor);
                 accept(doseAndRate, "doseAndRate", visitor, DoseAndRate.class);
-                accept(maxDosePerPeriod, "maxDosePerPeriod", visitor);
+                accept(maxDosePerPeriod, "maxDosePerPeriod", visitor, Ratio.class);
                 accept(maxDosePerAdministration, "maxDosePerAdministration", visitor);
                 accept(maxDosePerLifetime, "maxDosePerLifetime", visitor);
             }
@@ -296,6 +324,7 @@ public class Dosage extends BackboneElement {
             Objects.equals(patientInstruction, other.patientInstruction) && 
             Objects.equals(timing, other.timing) && 
             Objects.equals(asNeeded, other.asNeeded) && 
+            Objects.equals(asNeededFor, other.asNeededFor) && 
             Objects.equals(site, other.site) && 
             Objects.equals(route, other.route) && 
             Objects.equals(method, other.method) && 
@@ -318,6 +347,7 @@ public class Dosage extends BackboneElement {
                 patientInstruction, 
                 timing, 
                 asNeeded, 
+                asNeededFor, 
                 site, 
                 route, 
                 method, 
@@ -339,18 +369,19 @@ public class Dosage extends BackboneElement {
         return new Builder();
     }
 
-    public static class Builder extends BackboneElement.Builder {
+    public static class Builder extends BackboneType.Builder {
         private Integer sequence;
         private String text;
         private List<CodeableConcept> additionalInstruction = new ArrayList<>();
         private String patientInstruction;
         private Timing timing;
-        private Element asNeeded;
+        private Boolean asNeeded;
+        private List<CodeableConcept> asNeededFor = new ArrayList<>();
         private CodeableConcept site;
         private CodeableConcept route;
         private CodeableConcept method;
         private List<DoseAndRate> doseAndRate = new ArrayList<>();
-        private Ratio maxDosePerPeriod;
+        private List<Ratio> maxDosePerPeriod = new ArrayList<>();
         private SimpleQuantity maxDosePerAdministration;
         private SimpleQuantity maxDosePerLifetime;
 
@@ -375,7 +406,7 @@ public class Dosage extends BackboneElement {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -395,7 +426,7 @@ public class Dosage extends BackboneElement {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -420,7 +451,7 @@ public class Dosage extends BackboneElement {
          * May be used to represent additional information that is not part of the basic definition of the element and that 
          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
          * extension. Applications processing a resource are required to check for modifier extensions.
          * 
@@ -445,7 +476,7 @@ public class Dosage extends BackboneElement {
          * May be used to represent additional information that is not part of the basic definition of the element and that 
          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
          * extension. Applications processing a resource are required to check for modifier extensions.
          * 
@@ -617,15 +648,15 @@ public class Dosage extends BackboneElement {
         }
 
         /**
-         * Convenience method for setting {@code asNeeded} with choice type Boolean.
+         * Convenience method for setting {@code asNeeded}.
          * 
          * @param asNeeded
-         *     Take "as needed" (for x)
+         *     Take "as needed"
          * 
          * @return
          *     A reference to this Builder instance
          * 
-         * @see #asNeeded(Element)
+         * @see #asNeeded(org.linuxforhealth.fhir.model.type.Boolean)
          */
         public Builder asNeeded(java.lang.Boolean asNeeded) {
             this.asNeeded = (asNeeded == null) ? null : Boolean.of(asNeeded);
@@ -633,23 +664,55 @@ public class Dosage extends BackboneElement {
         }
 
         /**
-         * Indicates whether the Medication is only taken when needed within a specific dosing schedule (Boolean option), or it 
-         * indicates the precondition for taking the Medication (CodeableConcept).
-         * 
-         * <p>This is a choice element with the following allowed types:
-         * <ul>
-         * <li>{@link Boolean}</li>
-         * <li>{@link CodeableConcept}</li>
-         * </ul>
+         * Indicates whether the Medication is only taken when needed within a specific dosing schedule (Boolean option).
          * 
          * @param asNeeded
+         *     Take "as needed"
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder asNeeded(Boolean asNeeded) {
+            this.asNeeded = asNeeded;
+            return this;
+        }
+
+        /**
+         * Indicates whether the Medication is only taken based on a precondition for taking the Medication (CodeableConcept).
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param asNeededFor
          *     Take "as needed" (for x)
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder asNeeded(Element asNeeded) {
-            this.asNeeded = asNeeded;
+        public Builder asNeededFor(CodeableConcept... asNeededFor) {
+            for (CodeableConcept value : asNeededFor) {
+                this.asNeededFor.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Indicates whether the Medication is only taken based on a precondition for taking the Medication (CodeableConcept).
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param asNeededFor
+         *     Take "as needed" (for x)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder asNeededFor(Collection<CodeableConcept> asNeededFor) {
+            this.asNeededFor = new ArrayList<>(asNeededFor);
             return this;
         }
 
@@ -696,13 +759,14 @@ public class Dosage extends BackboneElement {
         }
 
         /**
-         * The amount of medication administered.
+         * Depending on the resource,this is the amount of medication administered, to be administered or typical amount to be 
+         * administered.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param doseAndRate
-         *     Amount of medication administered
+         *     Amount of medication administered, to be administered or typical amount to be administered
          * 
          * @return
          *     A reference to this Builder instance
@@ -715,13 +779,14 @@ public class Dosage extends BackboneElement {
         }
 
         /**
-         * The amount of medication administered.
+         * Depending on the resource,this is the amount of medication administered, to be administered or typical amount to be 
+         * administered.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param doseAndRate
-         *     Amount of medication administered
+         *     Amount of medication administered, to be administered or typical amount to be administered
          * 
          * @return
          *     A reference to this Builder instance
@@ -737,14 +802,39 @@ public class Dosage extends BackboneElement {
         /**
          * Upper limit on medication per unit of time.
          * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
          * @param maxDosePerPeriod
          *     Upper limit on medication per unit of time
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder maxDosePerPeriod(Ratio maxDosePerPeriod) {
-            this.maxDosePerPeriod = maxDosePerPeriod;
+        public Builder maxDosePerPeriod(Ratio... maxDosePerPeriod) {
+            for (Ratio value : maxDosePerPeriod) {
+                this.maxDosePerPeriod.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Upper limit on medication per unit of time.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param maxDosePerPeriod
+         *     Upper limit on medication per unit of time
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder maxDosePerPeriod(Collection<Ratio> maxDosePerPeriod) {
+            this.maxDosePerPeriod = new ArrayList<>(maxDosePerPeriod);
             return this;
         }
 
@@ -796,8 +886,9 @@ public class Dosage extends BackboneElement {
         protected void validate(Dosage dosage) {
             super.validate(dosage);
             ValidationSupport.checkList(dosage.additionalInstruction, "additionalInstruction", CodeableConcept.class);
-            ValidationSupport.choiceElement(dosage.asNeeded, "asNeeded", Boolean.class, CodeableConcept.class);
+            ValidationSupport.checkList(dosage.asNeededFor, "asNeededFor", CodeableConcept.class);
             ValidationSupport.checkList(dosage.doseAndRate, "doseAndRate", DoseAndRate.class);
+            ValidationSupport.checkList(dosage.maxDosePerPeriod, "maxDosePerPeriod", Ratio.class);
             ValidationSupport.requireValueOrChildren(dosage);
         }
 
@@ -809,11 +900,12 @@ public class Dosage extends BackboneElement {
             patientInstruction = dosage.patientInstruction;
             timing = dosage.timing;
             asNeeded = dosage.asNeeded;
+            asNeededFor.addAll(dosage.asNeededFor);
             site = dosage.site;
             route = dosage.route;
             method = dosage.method;
             doseAndRate.addAll(dosage.doseAndRate);
-            maxDosePerPeriod = dosage.maxDosePerPeriod;
+            maxDosePerPeriod.addAll(dosage.maxDosePerPeriod);
             maxDosePerAdministration = dosage.maxDosePerAdministration;
             maxDosePerLifetime = dosage.maxDosePerLifetime;
             return this;
@@ -821,22 +913,24 @@ public class Dosage extends BackboneElement {
     }
 
     /**
-     * The amount of medication administered.
+     * Depending on the resource,this is the amount of medication administered, to be administered or typical amount to be 
+     * administered.
      */
     public static class DoseAndRate extends BackboneElement {
         @Summary
         @Binding(
             bindingName = "DoseAndRateType",
             strength = BindingStrength.Value.EXAMPLE,
-            valueSet = "http://hl7.org/fhir/ValueSet/dose-rate-type"
+            description = "The kind of dose or rate specified.",
+            valueSet = "http://terminology.hl7.org/ValueSet/dose-rate-type"
         )
         private final CodeableConcept type;
         @Summary
         @Choice({ Range.class, SimpleQuantity.class })
-        private final Element dose;
+        private final org.linuxforhealth.fhir.model.type.Element dose;
         @Summary
         @Choice({ Ratio.class, Range.class, SimpleQuantity.class })
-        private final Element rate;
+        private final org.linuxforhealth.fhir.model.type.Element rate;
 
         private DoseAndRate(Builder builder) {
             super(builder);
@@ -861,7 +955,7 @@ public class Dosage extends BackboneElement {
          * @return
          *     An immutable object of type {@link Range} or {@link SimpleQuantity} that may be null.
          */
-        public Element getDose() {
+        public org.linuxforhealth.fhir.model.type.Element getDose() {
             return dose;
         }
 
@@ -871,7 +965,7 @@ public class Dosage extends BackboneElement {
          * @return
          *     An immutable object of type {@link Ratio}, {@link Range} or {@link SimpleQuantity} that may be null.
          */
-        public Element getRate() {
+        public org.linuxforhealth.fhir.model.type.Element getRate() {
             return rate;
         }
 
@@ -947,8 +1041,8 @@ public class Dosage extends BackboneElement {
 
         public static class Builder extends BackboneElement.Builder {
             private CodeableConcept type;
-            private Element dose;
-            private Element rate;
+            private org.linuxforhealth.fhir.model.type.Element dose;
+            private org.linuxforhealth.fhir.model.type.Element rate;
 
             private Builder() {
                 super();
@@ -971,7 +1065,7 @@ public class Dosage extends BackboneElement {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -991,7 +1085,7 @@ public class Dosage extends BackboneElement {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1092,7 +1186,7 @@ public class Dosage extends BackboneElement {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder dose(Element dose) {
+            public Builder dose(org.linuxforhealth.fhir.model.type.Element dose) {
                 this.dose = dose;
                 return this;
             }
@@ -1113,7 +1207,7 @@ public class Dosage extends BackboneElement {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder rate(Element rate) {
+            public Builder rate(org.linuxforhealth.fhir.model.type.Element rate) {
                 this.rate = rate;
                 return this;
             }

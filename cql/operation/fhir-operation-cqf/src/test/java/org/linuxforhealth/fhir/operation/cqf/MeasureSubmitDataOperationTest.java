@@ -6,6 +6,7 @@
 package org.linuxforhealth.fhir.operation.cqf;
 
 import static org.linuxforhealth.fhir.cql.helpers.ModelHelper.coding;
+import static org.linuxforhealth.fhir.cql.helpers.ModelHelper.concept;
 import static org.linuxforhealth.fhir.cql.helpers.ModelHelper.fhirstring;
 import static org.linuxforhealth.fhir.cql.helpers.ModelHelper.reference;
 import static org.mockito.ArgumentMatchers.any;
@@ -75,17 +76,17 @@ public class MeasureSubmitDataOperationTest {
         Encounter e = Encounter.builder()
                 .id(UUID.randomUUID().toString())
                 .meta(Meta.builder().versionId(Id.of("1")).lastUpdated(Instant.now()).build())
-                .status(EncounterStatus.FINISHED)
+                .status(EncounterStatus.COMPLETED)
                 .subject( reference( p ) )
-                .clazz( coding("wellness") )
+                .clazz(concept(coding("wellness")))
                 .build();
 
         Encounter e2 = Encounter.builder()
                 .id(e.getId())
                 .meta(Meta.builder().versionId(Id.of("2")).lastUpdated(Instant.now()).build())
-                .status(EncounterStatus.FINISHED)
+                .status(EncounterStatus.COMPLETED)
                 .subject( reference( p ) )
-                .clazz( coding("wellness") )
+                .clazz(concept(coding("wellness")))
                 .build();
 
         MeasureReport report = builder.build();

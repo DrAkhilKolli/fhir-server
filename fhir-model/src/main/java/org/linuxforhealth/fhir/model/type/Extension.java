@@ -29,11 +29,11 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     source = "http://hl7.org/fhir/StructureDefinition/Extension"
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Extension extends Element {
+public class Extension extends DataType {
     @Required
     private final java.lang.String url;
-    @Choice({ Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, Contributor.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Dosage.class })
-    private final Element value;
+    @Choice({ Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Integer64.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Availability.class, ExtendedContactDetail.class, Dosage.class, Meta.class })
+    private final org.linuxforhealth.fhir.model.type.Element value;
 
     private Extension(Builder builder) {
         super(builder);
@@ -57,16 +57,17 @@ public class Extension extends Element {
      * 
      * @return
      *     An immutable object of type {@link Base64Binary}, {@link Boolean}, {@link Canonical}, {@link Code}, {@link Date}, 
-     *     {@link DateTime}, {@link Decimal}, {@link Id}, {@link Instant}, {@link Integer}, {@link Markdown}, {@link Oid}, {@link 
-     *     PositiveInt}, {@link String}, {@link Time}, {@link UnsignedInt}, {@link Uri}, {@link Url}, {@link Uuid}, {@link 
-     *     Address}, {@link Age}, {@link Annotation}, {@link Attachment}, {@link CodeableConcept}, {@link CodeableReference}, 
-     *     {@link Coding}, {@link ContactPoint}, {@link Count}, {@link Distance}, {@link Duration}, {@link HumanName}, {@link 
-     *     Identifier}, {@link Money}, {@link Period}, {@link Quantity}, {@link Range}, {@link Ratio}, {@link RatioRange}, {@link 
-     *     Reference}, {@link SampledData}, {@link Signature}, {@link Timing}, {@link ContactDetail}, {@link Contributor}, {@link 
+     *     {@link DateTime}, {@link Decimal}, {@link Id}, {@link Instant}, {@link Integer}, {@link Integer64}, {@link Markdown}, 
+     *     {@link Oid}, {@link PositiveInt}, {@link String}, {@link Time}, {@link UnsignedInt}, {@link Uri}, {@link Url}, {@link 
+     *     Uuid}, {@link Address}, {@link Age}, {@link Annotation}, {@link Attachment}, {@link CodeableConcept}, {@link 
+     *     CodeableReference}, {@link Coding}, {@link ContactPoint}, {@link Count}, {@link Distance}, {@link Duration}, {@link 
+     *     HumanName}, {@link Identifier}, {@link Money}, {@link Period}, {@link Quantity}, {@link Range}, {@link Ratio}, {@link 
+     *     RatioRange}, {@link Reference}, {@link SampledData}, {@link Signature}, {@link Timing}, {@link ContactDetail}, {@link 
      *     DataRequirement}, {@link Expression}, {@link ParameterDefinition}, {@link RelatedArtifact}, {@link TriggerDefinition}, 
-     *     {@link UsageContext} or {@link Dosage} that may be null.
+     *     {@link UsageContext}, {@link Availability}, {@link ExtendedContactDetail}, {@link Dosage} or {@link Meta} that may be 
+     *     null.
      */
-    public Element getValue() {
+    public org.linuxforhealth.fhir.model.type.Element getValue() {
         return value;
     }
 
@@ -133,9 +134,9 @@ public class Extension extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private java.lang.String url;
-        private Element value;
+        private org.linuxforhealth.fhir.model.type.Element value;
 
         private Builder() {
             super();
@@ -158,7 +159,7 @@ public class Extension extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -178,7 +179,7 @@ public class Extension extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -327,6 +328,7 @@ public class Extension extends Element {
          * <li>{@link Id}</li>
          * <li>{@link Instant}</li>
          * <li>{@link Integer}</li>
+         * <li>{@link Integer64}</li>
          * <li>{@link Markdown}</li>
          * <li>{@link Oid}</li>
          * <li>{@link PositiveInt}</li>
@@ -360,14 +362,16 @@ public class Extension extends Element {
          * <li>{@link Signature}</li>
          * <li>{@link Timing}</li>
          * <li>{@link ContactDetail}</li>
-         * <li>{@link Contributor}</li>
          * <li>{@link DataRequirement}</li>
          * <li>{@link Expression}</li>
          * <li>{@link ParameterDefinition}</li>
          * <li>{@link RelatedArtifact}</li>
          * <li>{@link TriggerDefinition}</li>
          * <li>{@link UsageContext}</li>
+         * <li>{@link Availability}</li>
+         * <li>{@link ExtendedContactDetail}</li>
          * <li>{@link Dosage}</li>
+         * <li>{@link Meta}</li>
          * </ul>
          * 
          * @param value
@@ -376,7 +380,7 @@ public class Extension extends Element {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder value(Element value) {
+        public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
             this.value = value;
             return this;
         }
@@ -406,7 +410,7 @@ public class Extension extends Element {
         protected void validate(Extension extension) {
             super.validate(extension);
             ValidationSupport.requireNonNull(extension.url, "url");
-            ValidationSupport.choiceElement(extension.value, "value", Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, Contributor.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Dosage.class);
+            ValidationSupport.choiceElement(extension.value, "value", Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Integer64.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Availability.class, ExtendedContactDetail.class, Dosage.class, Meta.class);
             ValidationSupport.checkUri(extension.url);
             ValidationSupport.requireValueOrChildren(extension);
         }

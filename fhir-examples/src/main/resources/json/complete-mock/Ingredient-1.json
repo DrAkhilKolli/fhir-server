@@ -168,36 +168,6 @@
                     }
                 ],
                 "text": "NfQAVMilR0"
-            },
-            "reference": {
-                "reference": "Basic/FsJ4r1LQ-J",
-                "type": "Basic",
-                "identifier": {
-                    "use": "old",
-                    "type": {
-                        "coding": [
-                            {
-                                "system": "KVgUjumA2P",
-                                "version": "D6Z9exl0iZ",
-                                "code": "UO6iuKuI7Z",
-                                "display": "dmC1B5yHFY",
-                                "userSelected": true
-                            }
-                        ],
-                        "text": "elTwa6G8i6"
-                    },
-                    "system": "B45UpVn_FN",
-                    "value": "5EBMzdndzz",
-                    "period": {
-                        "extension": [
-                            {
-                                "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
-                                "valueCode": "unknown"
-                            }
-                        ]
-                    }
-                },
-                "display": "GhrowXvbzN"
             }
         },
         "strength": [
@@ -205,14 +175,12 @@
                 "presentationRatio": {
                     "numerator": {
                         "value": 0.353199753770339963665492177824489772319793701171875,
-                        "comparator": ">",
                         "unit": "yz4F1uPYz0",
                         "system": "SOylZAKJrC",
                         "code": "AhrHo2cAv7"
                     },
                     "denominator": {
                         "value": 0.97619763100570555724999621816095896065235137939453125,
-                        "comparator": "<",
                         "unit": "52Ws3nIh6N",
                         "system": "MM6OLVngSe",
                         "code": "m1AtOz0JgB"
@@ -222,14 +190,12 @@
                 "concentrationRatio": {
                     "numerator": {
                         "value": 0.07894928522686904537319918517823680303990840911865234375,
-                        "comparator": ">",
                         "unit": "NPQOMI7w2_",
                         "system": "4Y00gvSqb6",
                         "code": "ChETdkirZW"
                     },
                     "denominator": {
                         "value": 0.6465802354392786721604124977602623403072357177734375,
-                        "comparator": "<",
                         "unit": "p_oOpaIniu",
                         "system": "VjVg2DIgta",
                         "code": "k8AKwOI6hB"
@@ -300,14 +266,12 @@
                         "strengthRatio": {
                             "numerator": {
                                 "value": 0.701022576741664682486998572130687534809112548828125,
-                                "comparator": ">=",
                                 "unit": "qn9799mSOE",
                                 "system": "ooTGKYIuTD",
                                 "code": "8XHZCicOuU"
                             },
                             "denominator": {
                                 "value": 0.529412161341018094873334121075458824634552001953125,
-                                "comparator": "<=",
                                 "unit": "IqX_114_wD",
                                 "system": "LJ4iCr3zj3",
                                 "code": "kCXt2Jx_JN"

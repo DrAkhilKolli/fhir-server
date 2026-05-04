@@ -15,6 +15,7 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
+import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.Required;
@@ -24,9 +25,12 @@ import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
 import org.linuxforhealth.fhir.model.type.DateTime;
+import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
+import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
@@ -37,6 +41,8 @@ import org.linuxforhealth.fhir.model.type.UsageContext;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.CapabilityStatementKind;
 import org.linuxforhealth.fhir.model.type.code.CodeSearchSupport;
+import org.linuxforhealth.fhir.model.type.code.CodeSystemContentMode;
+import org.linuxforhealth.fhir.model.type.code.Language;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
@@ -46,18 +52,26 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * A TerminologyCapabilities resource documents a set of capabilities (behaviors) of a FHIR Terminology Server that may 
  * be used as a statement of actual server functionality or a statement of required or desired server implementation.
  * 
- * <p>Maturity level: FMM0 (Trial Use)
+ * <p>Maturity level: FMM1 (Trial Use)
  */
 @Maturity(
-    level = 0,
+    level = 1,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "tcp-0",
+    id = "cnl-0",
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
+    source = "http://hl7.org/fhir/StructureDefinition/TerminologyCapabilities"
+)
+@Constraint(
+    id = "cnl-1",
+    level = "Warning",
+    location = "TerminologyCapabilities.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
     source = "http://hl7.org/fhir/StructureDefinition/TerminologyCapabilities"
 )
 @Constraint(
@@ -72,7 +86,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "tcp-2",
     level = "Rule",
     location = "(base)",
-    description = "A Capability Statement SHALL have at least one of description, software, or implementation element.",
+    description = "A Terminology Capability statement SHALL have at least one of description, software, or implementation element",
     expression = "(description.count() + software.count() + implementation.count()) > 0",
     source = "http://hl7.org/fhir/StructureDefinition/TerminologyCapabilities"
 )
@@ -101,7 +115,40 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     source = "http://hl7.org/fhir/StructureDefinition/TerminologyCapabilities"
 )
 @Constraint(
-    id = "terminologyCapabilities-6",
+    id = "tcp-6",
+    level = "Rule",
+    location = "(base)",
+    description = "Each instance of the codeSystem element must represent a distinct code system.",
+    expression = "codeSystem.uri.isDistinct()",
+    source = "http://hl7.org/fhir/StructureDefinition/TerminologyCapabilities"
+)
+@Constraint(
+    id = "tcp-7",
+    level = "Rule",
+    location = "TerminologyCapabilities.codeSystem",
+    description = "Each version.code element must be distinct for a particular code system.",
+    expression = "version.code.isDistinct()",
+    source = "http://hl7.org/fhir/StructureDefinition/TerminologyCapabilities"
+)
+@Constraint(
+    id = "tcp-8",
+    level = "Rule",
+    location = "TerminologyCapabilities.codeSystem",
+    description = "A codeSystem element instance may have at most one version.isDefault element with a value of 'true'.",
+    expression = "version.where(isDefault = true).count() <= 1",
+    source = "http://hl7.org/fhir/StructureDefinition/TerminologyCapabilities"
+)
+@Constraint(
+    id = "terminologyCapabilities-9",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/TerminologyCapabilities",
+    generated = true
+)
+@Constraint(
+    id = "terminologyCapabilities-10",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
@@ -114,7 +161,16 @@ public class TerminologyCapabilities extends DomainResource {
     @Summary
     private final Uri url;
     @Summary
+    private final List<Identifier> identifier;
+    @Summary
     private final String version;
+    @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
     @Summary
     private final String name;
     @Summary
@@ -124,7 +180,7 @@ public class TerminologyCapabilities extends DomainResource {
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -151,12 +207,13 @@ public class TerminologyCapabilities extends DomainResource {
     private final Markdown purpose;
     @Summary
     private final Markdown copyright;
+    private final String copyrightLabel;
     @Summary
     @Binding(
         bindingName = "CapabilityStatementKind",
         strength = BindingStrength.Value.REQUIRED,
         description = "How a capability statement is intended to be used.",
-        valueSet = "http://hl7.org/fhir/ValueSet/capability-statement-kind|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/capability-statement-kind|5.0.0"
     )
     @Required
     private final CapabilityStatementKind kind;
@@ -172,7 +229,7 @@ public class TerminologyCapabilities extends DomainResource {
         bindingName = "CodeSearchSupport",
         strength = BindingStrength.Value.REQUIRED,
         description = "The degree to which the server supports the code search parameter on ValueSet, if it is supported.",
-        valueSet = "http://hl7.org/fhir/ValueSet/code-search-support|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/code-search-support|5.0.0"
     )
     private final CodeSearchSupport codeSearch;
     private final ValidateCode validateCode;
@@ -182,7 +239,9 @@ public class TerminologyCapabilities extends DomainResource {
     private TerminologyCapabilities(Builder builder) {
         super(builder);
         url = builder.url;
+        identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
         title = builder.title;
         status = builder.status;
@@ -195,6 +254,7 @@ public class TerminologyCapabilities extends DomainResource {
         jurisdiction = Collections.unmodifiableList(builder.jurisdiction);
         purpose = builder.purpose;
         copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
         kind = builder.kind;
         software = builder.software;
         implementation = builder.implementation;
@@ -210,15 +270,26 @@ public class TerminologyCapabilities extends DomainResource {
     /**
      * An absolute URI that is used to identify this terminology capabilities when it is referenced in a specification, 
      * model, design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a 
-     * literal address at which at which an authoritative instance of this terminology capabilities is (or will be) 
-     * published. This URL can be the target of a canonical reference. It SHALL remain the same when the terminology 
-     * capabilities is stored on different servers.
+     * literal address at which an authoritative instance of this terminology capabilities is (or will be) published. This 
+     * URL can be the target of a canonical reference. It SHALL remain the same when the terminology capabilities is stored 
+     * on different servers.
      * 
      * @return
      *     An immutable object of type {@link Uri} that may be null.
      */
     public Uri getUrl() {
         return url;
+    }
+
+    /**
+     * A formal identifier that is used to identify this terminology capabilities when it is represented in other formats, or 
+     * referenced in a specification, model, design or an instance.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
+     */
+    public List<Identifier> getIdentifier() {
+        return identifier;
     }
 
     /**
@@ -232,6 +303,16 @@ public class TerminologyCapabilities extends DomainResource {
      */
     public String getVersion() {
         return version;
+    }
+
+    /**
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
     }
 
     /**
@@ -277,9 +358,9 @@ public class TerminologyCapabilities extends DomainResource {
     }
 
     /**
-     * The date (and optionally time) when the terminology capabilities was published. The date must change when the business 
-     * version changes and it must change if the status code changes. In addition, it should change when the substantive 
-     * content of the terminology capabilities changes.
+     * The date (and optionally time) when the terminology capabilities was last significantly changed. The date must change 
+     * when the business version changes and it must change if the status code changes. In addition, it should change when 
+     * the substantive content of the terminology capabilities changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that is non-null.
@@ -289,7 +370,8 @@ public class TerminologyCapabilities extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the terminology capabilities.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the terminology 
+     * capabilities.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -361,6 +443,17 @@ public class TerminologyCapabilities extends DomainResource {
      */
     public Markdown getCopyright() {
         return copyright;
+    }
+
+    /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
     }
 
     /**
@@ -471,7 +564,9 @@ public class TerminologyCapabilities extends DomainResource {
     public boolean hasChildren() {
         return super.hasChildren() || 
             (url != null) || 
+            !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
             (title != null) || 
             (status != null) || 
@@ -484,6 +579,7 @@ public class TerminologyCapabilities extends DomainResource {
             !jurisdiction.isEmpty() || 
             (purpose != null) || 
             (copyright != null) || 
+            (copyrightLabel != null) || 
             (kind != null) || 
             (software != null) || 
             (implementation != null) || 
@@ -511,7 +607,9 @@ public class TerminologyCapabilities extends DomainResource {
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(url, "url", visitor);
+                accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(status, "status", visitor);
@@ -524,6 +622,7 @@ public class TerminologyCapabilities extends DomainResource {
                 accept(jurisdiction, "jurisdiction", visitor, CodeableConcept.class);
                 accept(purpose, "purpose", visitor);
                 accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
                 accept(kind, "kind", visitor);
                 accept(software, "software", visitor);
                 accept(implementation, "implementation", visitor);
@@ -561,7 +660,9 @@ public class TerminologyCapabilities extends DomainResource {
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(url, other.url) && 
+            Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(status, other.status) && 
@@ -574,6 +675,7 @@ public class TerminologyCapabilities extends DomainResource {
             Objects.equals(jurisdiction, other.jurisdiction) && 
             Objects.equals(purpose, other.purpose) && 
             Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
             Objects.equals(kind, other.kind) && 
             Objects.equals(software, other.software) && 
             Objects.equals(implementation, other.implementation) && 
@@ -599,7 +701,9 @@ public class TerminologyCapabilities extends DomainResource {
                 extension, 
                 modifierExtension, 
                 url, 
+                identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
                 title, 
                 status, 
@@ -612,6 +716,7 @@ public class TerminologyCapabilities extends DomainResource {
                 jurisdiction, 
                 purpose, 
                 copyright, 
+                copyrightLabel, 
                 kind, 
                 software, 
                 implementation, 
@@ -638,7 +743,9 @@ public class TerminologyCapabilities extends DomainResource {
 
     public static class Builder extends DomainResource.Builder {
         private Uri url;
+        private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
         private String title;
         private PublicationStatus status;
@@ -651,6 +758,7 @@ public class TerminologyCapabilities extends DomainResource {
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
         private Markdown purpose;
         private Markdown copyright;
+        private String copyrightLabel;
         private CapabilityStatementKind kind;
         private Software software;
         private Implementation implementation;
@@ -744,7 +852,8 @@ public class TerminologyCapabilities extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -762,7 +871,8 @@ public class TerminologyCapabilities extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -783,7 +893,7 @@ public class TerminologyCapabilities extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -803,7 +913,7 @@ public class TerminologyCapabilities extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -828,9 +938,9 @@ public class TerminologyCapabilities extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -853,9 +963,9 @@ public class TerminologyCapabilities extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -880,9 +990,9 @@ public class TerminologyCapabilities extends DomainResource {
         /**
          * An absolute URI that is used to identify this terminology capabilities when it is referenced in a specification, 
          * model, design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a 
-         * literal address at which at which an authoritative instance of this terminology capabilities is (or will be) 
-         * published. This URL can be the target of a canonical reference. It SHALL remain the same when the terminology 
-         * capabilities is stored on different servers.
+         * literal address at which an authoritative instance of this terminology capabilities is (or will be) published. This 
+         * URL can be the target of a canonical reference. It SHALL remain the same when the terminology capabilities is stored 
+         * on different servers.
          * 
          * @param url
          *     Canonical identifier for this terminology capabilities, represented as a URI (globally unique)
@@ -892,6 +1002,47 @@ public class TerminologyCapabilities extends DomainResource {
          */
         public Builder url(Uri url) {
             this.url = url;
+            return this;
+        }
+
+        /**
+         * A formal identifier that is used to identify this terminology capabilities when it is represented in other formats, or 
+         * referenced in a specification, model, design or an instance.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param identifier
+         *     Additional identifier for the terminology capabilities
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder identifier(Identifier... identifier) {
+            for (Identifier value : identifier) {
+                this.identifier.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A formal identifier that is used to identify this terminology capabilities when it is represented in other formats, or 
+         * referenced in a specification, model, design or an instance.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param identifier
+         *     Additional identifier for the terminology capabilities
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder identifier(Collection<Identifier> identifier) {
+            this.identifier = new ArrayList<>(identifier);
             return this;
         }
 
@@ -925,6 +1076,42 @@ public class TerminologyCapabilities extends DomainResource {
          */
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
             return this;
         }
 
@@ -1037,9 +1224,9 @@ public class TerminologyCapabilities extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the terminology capabilities was published. The date must change when the business 
-         * version changes and it must change if the status code changes. In addition, it should change when the substantive 
-         * content of the terminology capabilities changes.
+         * The date (and optionally time) when the terminology capabilities was last significantly changed. The date must change 
+         * when the business version changes and it must change if the status code changes. In addition, it should change when 
+         * the substantive content of the terminology capabilities changes.
          * 
          * <p>This element is required.
          * 
@@ -1058,7 +1245,7 @@ public class TerminologyCapabilities extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1071,10 +1258,11 @@ public class TerminologyCapabilities extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the terminology capabilities.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the terminology 
+         * capabilities.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1251,6 +1439,37 @@ public class TerminologyCapabilities extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
+            return this;
+        }
+
+        /**
          * The way that this statement is intended to be used, to describe an actual running instance of software, a particular 
          * product (kind, not instance of software) or a class of implementation (e.g. a desired purchase).
          * 
@@ -1386,7 +1605,7 @@ public class TerminologyCapabilities extends DomainResource {
          * The degree to which the server supports the code search parameter on ValueSet, if it is supported.
          * 
          * @param codeSearch
-         *     explicit | all
+         *     in-compose | in-expansion | in-compose-or-expansion
          * 
          * @return
          *     A reference to this Builder instance
@@ -1464,6 +1683,8 @@ public class TerminologyCapabilities extends DomainResource {
 
         protected void validate(TerminologyCapabilities terminologyCapabilities) {
             super.validate(terminologyCapabilities);
+            ValidationSupport.checkList(terminologyCapabilities.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(terminologyCapabilities.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.requireNonNull(terminologyCapabilities.status, "status");
             ValidationSupport.requireNonNull(terminologyCapabilities.date, "date");
             ValidationSupport.checkList(terminologyCapabilities.contact, "contact", ContactDetail.class);
@@ -1476,7 +1697,9 @@ public class TerminologyCapabilities extends DomainResource {
         protected Builder from(TerminologyCapabilities terminologyCapabilities) {
             super.from(terminologyCapabilities);
             url = terminologyCapabilities.url;
+            identifier.addAll(terminologyCapabilities.identifier);
             version = terminologyCapabilities.version;
+            versionAlgorithm = terminologyCapabilities.versionAlgorithm;
             name = terminologyCapabilities.name;
             title = terminologyCapabilities.title;
             status = terminologyCapabilities.status;
@@ -1489,6 +1712,7 @@ public class TerminologyCapabilities extends DomainResource {
             jurisdiction.addAll(terminologyCapabilities.jurisdiction);
             purpose = terminologyCapabilities.purpose;
             copyright = terminologyCapabilities.copyright;
+            copyrightLabel = terminologyCapabilities.copyrightLabel;
             kind = terminologyCapabilities.kind;
             software = terminologyCapabilities.software;
             implementation = terminologyCapabilities.implementation;
@@ -1631,7 +1855,7 @@ public class TerminologyCapabilities extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1651,7 +1875,7 @@ public class TerminologyCapabilities extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1676,7 +1900,7 @@ public class TerminologyCapabilities extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1701,7 +1925,7 @@ public class TerminologyCapabilities extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1954,7 +2178,7 @@ public class TerminologyCapabilities extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1974,7 +2198,7 @@ public class TerminologyCapabilities extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1999,7 +2223,7 @@ public class TerminologyCapabilities extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2024,7 +2248,7 @@ public class TerminologyCapabilities extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2140,17 +2364,27 @@ public class TerminologyCapabilities extends DomainResource {
     public static class CodeSystem extends BackboneElement {
         private final Canonical uri;
         private final List<Version> version;
+        @Summary
+        @Binding(
+            bindingName = "CodeSystemContentMode",
+            strength = BindingStrength.Value.REQUIRED,
+            description = "The extent of the content of the code system (the concepts and codes it defines) are represented in a code system resource.",
+            valueSet = "http://hl7.org/fhir/ValueSet/codesystem-content-mode|5.0.0"
+        )
+        @Required
+        private final CodeSystemContentMode content;
         private final Boolean subsumption;
 
         private CodeSystem(Builder builder) {
             super(builder);
             uri = builder.uri;
             version = Collections.unmodifiableList(builder.version);
+            content = builder.content;
             subsumption = builder.subsumption;
         }
 
         /**
-         * URI for the Code System.
+         * Canonical identifier for the code system, represented as a URI.
          * 
          * @return
          *     An immutable object of type {@link Canonical} that may be null.
@@ -2170,6 +2404,17 @@ public class TerminologyCapabilities extends DomainResource {
         }
 
         /**
+         * The extent of the content of the code system (the concepts and codes it defines) are represented in this resource 
+         * instance.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeSystemContentMode} that is non-null.
+         */
+        public CodeSystemContentMode getContent() {
+            return content;
+        }
+
+        /**
          * True if subsumption is supported for this version of the code system.
          * 
          * @return
@@ -2184,6 +2429,7 @@ public class TerminologyCapabilities extends DomainResource {
             return super.hasChildren() || 
                 (uri != null) || 
                 !version.isEmpty() || 
+                (content != null) || 
                 (subsumption != null);
         }
 
@@ -2198,6 +2444,7 @@ public class TerminologyCapabilities extends DomainResource {
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(uri, "uri", visitor);
                     accept(version, "version", visitor, Version.class);
+                    accept(content, "content", visitor);
                     accept(subsumption, "subsumption", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
@@ -2222,6 +2469,7 @@ public class TerminologyCapabilities extends DomainResource {
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(uri, other.uri) && 
                 Objects.equals(version, other.version) && 
+                Objects.equals(content, other.content) && 
                 Objects.equals(subsumption, other.subsumption);
         }
 
@@ -2234,6 +2482,7 @@ public class TerminologyCapabilities extends DomainResource {
                     modifierExtension, 
                     uri, 
                     version, 
+                    content, 
                     subsumption);
                 hashCode = result;
             }
@@ -2252,6 +2501,7 @@ public class TerminologyCapabilities extends DomainResource {
         public static class Builder extends BackboneElement.Builder {
             private Canonical uri;
             private List<Version> version = new ArrayList<>();
+            private CodeSystemContentMode content;
             private Boolean subsumption;
 
             private Builder() {
@@ -2275,7 +2525,7 @@ public class TerminologyCapabilities extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2295,7 +2545,7 @@ public class TerminologyCapabilities extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2320,7 +2570,7 @@ public class TerminologyCapabilities extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2345,7 +2595,7 @@ public class TerminologyCapabilities extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2370,10 +2620,10 @@ public class TerminologyCapabilities extends DomainResource {
             }
 
             /**
-             * URI for the Code System.
+             * Canonical identifier for the code system, represented as a URI.
              * 
              * @param uri
-             *     URI for the Code System
+             *     Canonical identifier for the code system, represented as a URI
              * 
              * @return
              *     A reference to this Builder instance
@@ -2423,6 +2673,23 @@ public class TerminologyCapabilities extends DomainResource {
             }
 
             /**
+             * The extent of the content of the code system (the concepts and codes it defines) are represented in this resource 
+             * instance.
+             * 
+             * <p>This element is required.
+             * 
+             * @param content
+             *     not-present | example | fragment | complete | supplement
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder content(CodeSystemContentMode content) {
+                this.content = content;
+                return this;
+            }
+
+            /**
              * Convenience method for setting {@code subsumption}.
              * 
              * @param subsumption
@@ -2455,6 +2722,11 @@ public class TerminologyCapabilities extends DomainResource {
             /**
              * Build the {@link CodeSystem}
              * 
+             * <p>Required elements:
+             * <ul>
+             * <li>content</li>
+             * </ul>
+             * 
              * @return
              *     An immutable object of type {@link CodeSystem}
              * @throws IllegalStateException
@@ -2472,6 +2744,7 @@ public class TerminologyCapabilities extends DomainResource {
             protected void validate(CodeSystem codeSystem) {
                 super.validate(codeSystem);
                 ValidationSupport.checkList(codeSystem.version, "version", Version.class);
+                ValidationSupport.requireNonNull(codeSystem.content, "content");
                 ValidationSupport.requireValueOrChildren(codeSystem);
             }
 
@@ -2479,6 +2752,7 @@ public class TerminologyCapabilities extends DomainResource {
                 super.from(codeSystem);
                 uri = codeSystem.uri;
                 version.addAll(codeSystem.version);
+                content = codeSystem.content;
                 subsumption = codeSystem.subsumption;
                 return this;
             }
@@ -2493,7 +2767,13 @@ public class TerminologyCapabilities extends DomainResource {
             @Summary
             private final Boolean isDefault;
             private final Boolean compositional;
-            private final List<Code> language;
+            @Binding(
+                bindingName = "Language",
+                strength = BindingStrength.Value.REQUIRED,
+                description = "IETF language tag",
+                valueSet = "http://hl7.org/fhir/ValueSet/languages|5.0.0"
+            )
+            private final List<Language> language;
             private final List<Filter> filter;
             private final List<Code> property;
 
@@ -2541,9 +2821,9 @@ public class TerminologyCapabilities extends DomainResource {
              * Language Displays supported.
              * 
              * @return
-             *     An unmodifiable list containing immutable objects of type {@link Code} that may be empty.
+             *     An unmodifiable list containing immutable objects of type {@link Language} that may be empty.
              */
-            public List<Code> getLanguage() {
+            public List<Language> getLanguage() {
                 return language;
             }
 
@@ -2590,7 +2870,7 @@ public class TerminologyCapabilities extends DomainResource {
                         accept(code, "code", visitor);
                         accept(isDefault, "isDefault", visitor);
                         accept(compositional, "compositional", visitor);
-                        accept(language, "language", visitor, Code.class);
+                        accept(language, "language", visitor, Language.class);
                         accept(filter, "filter", visitor, Filter.class);
                         accept(property, "property", visitor, Code.class);
                     }
@@ -2653,7 +2933,7 @@ public class TerminologyCapabilities extends DomainResource {
                 private String code;
                 private Boolean isDefault;
                 private Boolean compositional;
-                private List<Code> language = new ArrayList<>();
+                private List<Language> language = new ArrayList<>();
                 private List<Filter> filter = new ArrayList<>();
                 private List<Code> property = new ArrayList<>();
 
@@ -2678,7 +2958,7 @@ public class TerminologyCapabilities extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2698,7 +2978,7 @@ public class TerminologyCapabilities extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2723,7 +3003,7 @@ public class TerminologyCapabilities extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2748,7 +3028,7 @@ public class TerminologyCapabilities extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2874,8 +3154,8 @@ public class TerminologyCapabilities extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder language(Code... language) {
-                    for (Code value : language) {
+                public Builder language(Language... language) {
+                    for (Language value : language) {
                         this.language.add(value);
                     }
                     return this;
@@ -2896,7 +3176,7 @@ public class TerminologyCapabilities extends DomainResource {
                  * @throws NullPointerException
                  *     If the passed collection is null
                  */
-                public Builder language(Collection<Code> language) {
+                public Builder language(Collection<Language> language) {
                     this.language = new ArrayList<>(language);
                     return this;
                 }
@@ -2998,7 +3278,7 @@ public class TerminologyCapabilities extends DomainResource {
 
                 protected void validate(Version version) {
                     super.validate(version);
-                    ValidationSupport.checkList(version.language, "language", Code.class);
+                    ValidationSupport.checkList(version.language, "language", Language.class);
                     ValidationSupport.checkList(version.filter, "filter", Filter.class);
                     ValidationSupport.checkList(version.property, "property", Code.class);
                     ValidationSupport.requireValueOrChildren(version);
@@ -3142,7 +3422,7 @@ public class TerminologyCapabilities extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -3162,7 +3442,7 @@ public class TerminologyCapabilities extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -3187,7 +3467,7 @@ public class TerminologyCapabilities extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -3212,7 +3492,7 @@ public class TerminologyCapabilities extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -3376,7 +3656,7 @@ public class TerminologyCapabilities extends DomainResource {
         }
 
         /**
-         * Allow request for incomplete expansions?
+         * True if requests for incomplete expansions are allowed.
          * 
          * @return
          *     An immutable object of type {@link Boolean} that may be null.
@@ -3511,7 +3791,7 @@ public class TerminologyCapabilities extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3531,7 +3811,7 @@ public class TerminologyCapabilities extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3556,7 +3836,7 @@ public class TerminologyCapabilities extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3581,7 +3861,7 @@ public class TerminologyCapabilities extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3682,7 +3962,7 @@ public class TerminologyCapabilities extends DomainResource {
             }
 
             /**
-             * Allow request for incomplete expansions?
+             * True if requests for incomplete expansions are allowed.
              * 
              * @param incomplete
              *     Allow request for incomplete expansions?
@@ -3797,7 +4077,7 @@ public class TerminologyCapabilities extends DomainResource {
             }
 
             /**
-             * Expansion Parameter name.
+             * Name of the supported expansion parameter.
              * 
              * @return
              *     An immutable object of type {@link Code} that is non-null.
@@ -3907,7 +4187,7 @@ public class TerminologyCapabilities extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3927,7 +4207,7 @@ public class TerminologyCapabilities extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3952,7 +4232,7 @@ public class TerminologyCapabilities extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3977,7 +4257,7 @@ public class TerminologyCapabilities extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4002,12 +4282,12 @@ public class TerminologyCapabilities extends DomainResource {
                 }
 
                 /**
-                 * Expansion Parameter name.
+                 * Name of the supported expansion parameter.
                  * 
                  * <p>This element is required.
                  * 
                  * @param name
-                 *     Expansion Parameter name
+                 *     Name of the supported expansion parameter
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -4193,7 +4473,7 @@ public class TerminologyCapabilities extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4213,7 +4493,7 @@ public class TerminologyCapabilities extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4238,7 +4518,7 @@ public class TerminologyCapabilities extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4263,7 +4543,7 @@ public class TerminologyCapabilities extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4465,7 +4745,7 @@ public class TerminologyCapabilities extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4485,7 +4765,7 @@ public class TerminologyCapabilities extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4510,7 +4790,7 @@ public class TerminologyCapabilities extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4535,7 +4815,7 @@ public class TerminologyCapabilities extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4736,7 +5016,7 @@ public class TerminologyCapabilities extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4756,7 +5036,7 @@ public class TerminologyCapabilities extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4781,7 +5061,7 @@ public class TerminologyCapabilities extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4806,7 +5086,7 @@ public class TerminologyCapabilities extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 

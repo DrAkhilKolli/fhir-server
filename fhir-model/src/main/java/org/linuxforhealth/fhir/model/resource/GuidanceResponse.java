@@ -24,6 +24,7 @@ import org.linuxforhealth.fhir.model.type.Annotation;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.DataRequirement;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Element;
@@ -57,14 +58,19 @@ public class GuidanceResponse extends DomainResource {
     private final List<Identifier> identifier;
     @Summary
     @Choice({ Uri.class, Canonical.class, CodeableConcept.class })
+    @Binding(
+        bindingName = "GuidanceModuleCode",
+        strength = BindingStrength.Value.EXAMPLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/guidance-module-code"
+    )
     @Required
-    private final Element module;
+    private final org.linuxforhealth.fhir.model.type.Element module;
     @Summary
     @Binding(
         bindingName = "GuidanceResponseStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The status of a guidance response.",
-        valueSet = "http://hl7.org/fhir/ValueSet/guidance-response-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/guidance-response-status|5.0.0"
     )
     @Required
     private final GuidanceResponseStatus status;
@@ -75,16 +81,14 @@ public class GuidanceResponse extends DomainResource {
     private final DateTime occurrenceDateTime;
     @ReferenceTarget({ "Device" })
     private final Reference performer;
-    private final List<CodeableConcept> reasonCode;
-    @ReferenceTarget({ "Condition", "Observation", "DiagnosticReport", "DocumentReference" })
-    private final List<Reference> reasonReference;
+    private final List<CodeableReference> reason;
     private final List<Annotation> note;
     @ReferenceTarget({ "OperationOutcome" })
-    private final List<Reference> evaluationMessage;
+    private final Reference evaluationMessage;
     @ReferenceTarget({ "Parameters" })
     private final Reference outputParameters;
-    @ReferenceTarget({ "CarePlan", "RequestGroup" })
-    private final Reference result;
+    @ReferenceTarget({ "Appointment", "AppointmentResponse", "CarePlan", "Claim", "CommunicationRequest", "Contract", "CoverageEligibilityRequest", "DeviceRequest", "EnrollmentRequest", "ImmunizationRecommendation", "MedicationRequest", "NutritionOrder", "RequestOrchestration", "ServiceRequest", "SupplyRequest", "Task", "VisionPrescription" })
+    private final List<Reference> result;
     private final List<DataRequirement> dataRequirement;
 
     private GuidanceResponse(Builder builder) {
@@ -97,12 +101,11 @@ public class GuidanceResponse extends DomainResource {
         encounter = builder.encounter;
         occurrenceDateTime = builder.occurrenceDateTime;
         performer = builder.performer;
-        reasonCode = Collections.unmodifiableList(builder.reasonCode);
-        reasonReference = Collections.unmodifiableList(builder.reasonReference);
+        reason = Collections.unmodifiableList(builder.reason);
         note = Collections.unmodifiableList(builder.note);
-        evaluationMessage = Collections.unmodifiableList(builder.evaluationMessage);
+        evaluationMessage = builder.evaluationMessage;
         outputParameters = builder.outputParameters;
-        result = builder.result;
+        result = Collections.unmodifiableList(builder.result);
         dataRequirement = Collections.unmodifiableList(builder.dataRequirement);
     }
 
@@ -133,7 +136,7 @@ public class GuidanceResponse extends DomainResource {
      * @return
      *     An immutable object of type {@link Uri}, {@link Canonical} or {@link CodeableConcept} that is non-null.
      */
-    public Element getModule() {
+    public org.linuxforhealth.fhir.model.type.Element getModule() {
         return module;
     }
 
@@ -193,25 +196,15 @@ public class GuidanceResponse extends DomainResource {
     }
 
     /**
-     * Describes the reason for the guidance response in coded or textual form.
+     * Describes the reason for the guidance response in coded or textual form, or Indicates the reason the request was 
+     * initiated. This is typically provided as a parameter to the evaluation and echoed by the service, although for some 
+     * use cases, such as subscription- or event-based scenarios, it may provide an indication of the cause for the response.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<CodeableConcept> getReasonCode() {
-        return reasonCode;
-    }
-
-    /**
-     * Indicates the reason the request was initiated. This is typically provided as a parameter to the evaluation and echoed 
-     * by the service, although for some use cases, such as subscription- or event-based scenarios, it may provide an 
-     * indication of the cause for the response.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-     */
-    public List<Reference> getReasonReference() {
-        return reasonReference;
+    public List<CodeableReference> getReason() {
+        return reason;
     }
 
     /**
@@ -229,9 +222,9 @@ public class GuidanceResponse extends DomainResource {
      * produce informational or warning messages. These messages will be provided by this element.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     *     An immutable object of type {@link Reference} that may be null.
      */
-    public List<Reference> getEvaluationMessage() {
+    public Reference getEvaluationMessage() {
         return evaluationMessage;
     }
 
@@ -251,9 +244,9 @@ public class GuidanceResponse extends DomainResource {
      * The actions, if any, produced by the evaluation of the artifact.
      * 
      * @return
-     *     An immutable object of type {@link Reference} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
      */
-    public Reference getResult() {
+    public List<Reference> getResult() {
         return result;
     }
 
@@ -280,12 +273,11 @@ public class GuidanceResponse extends DomainResource {
             (encounter != null) || 
             (occurrenceDateTime != null) || 
             (performer != null) || 
-            !reasonCode.isEmpty() || 
-            !reasonReference.isEmpty() || 
+            !reason.isEmpty() || 
             !note.isEmpty() || 
-            !evaluationMessage.isEmpty() || 
+            (evaluationMessage != null) || 
             (outputParameters != null) || 
-            (result != null) || 
+            !result.isEmpty() || 
             !dataRequirement.isEmpty();
     }
 
@@ -311,12 +303,11 @@ public class GuidanceResponse extends DomainResource {
                 accept(encounter, "encounter", visitor);
                 accept(occurrenceDateTime, "occurrenceDateTime", visitor);
                 accept(performer, "performer", visitor);
-                accept(reasonCode, "reasonCode", visitor, CodeableConcept.class);
-                accept(reasonReference, "reasonReference", visitor, Reference.class);
+                accept(reason, "reason", visitor, CodeableReference.class);
                 accept(note, "note", visitor, Annotation.class);
-                accept(evaluationMessage, "evaluationMessage", visitor, Reference.class);
+                accept(evaluationMessage, "evaluationMessage", visitor);
                 accept(outputParameters, "outputParameters", visitor);
-                accept(result, "result", visitor);
+                accept(result, "result", visitor, Reference.class);
                 accept(dataRequirement, "dataRequirement", visitor, DataRequirement.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
@@ -352,8 +343,7 @@ public class GuidanceResponse extends DomainResource {
             Objects.equals(encounter, other.encounter) && 
             Objects.equals(occurrenceDateTime, other.occurrenceDateTime) && 
             Objects.equals(performer, other.performer) && 
-            Objects.equals(reasonCode, other.reasonCode) && 
-            Objects.equals(reasonReference, other.reasonReference) && 
+            Objects.equals(reason, other.reason) && 
             Objects.equals(note, other.note) && 
             Objects.equals(evaluationMessage, other.evaluationMessage) && 
             Objects.equals(outputParameters, other.outputParameters) && 
@@ -381,8 +371,7 @@ public class GuidanceResponse extends DomainResource {
                 encounter, 
                 occurrenceDateTime, 
                 performer, 
-                reasonCode, 
-                reasonReference, 
+                reason, 
                 note, 
                 evaluationMessage, 
                 outputParameters, 
@@ -405,18 +394,17 @@ public class GuidanceResponse extends DomainResource {
     public static class Builder extends DomainResource.Builder {
         private Identifier requestIdentifier;
         private List<Identifier> identifier = new ArrayList<>();
-        private Element module;
+        private org.linuxforhealth.fhir.model.type.Element module;
         private GuidanceResponseStatus status;
         private Reference subject;
         private Reference encounter;
         private DateTime occurrenceDateTime;
         private Reference performer;
-        private List<CodeableConcept> reasonCode = new ArrayList<>();
-        private List<Reference> reasonReference = new ArrayList<>();
+        private List<CodeableReference> reason = new ArrayList<>();
         private List<Annotation> note = new ArrayList<>();
-        private List<Reference> evaluationMessage = new ArrayList<>();
+        private Reference evaluationMessage;
         private Reference outputParameters;
-        private Reference result;
+        private List<Reference> result = new ArrayList<>();
         private List<DataRequirement> dataRequirement = new ArrayList<>();
 
         private Builder() {
@@ -501,7 +489,8 @@ public class GuidanceResponse extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -519,7 +508,8 @@ public class GuidanceResponse extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -540,7 +530,7 @@ public class GuidanceResponse extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -560,7 +550,7 @@ public class GuidanceResponse extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -585,9 +575,9 @@ public class GuidanceResponse extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -610,9 +600,9 @@ public class GuidanceResponse extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -706,7 +696,7 @@ public class GuidanceResponse extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder module(Element module) {
+        public Builder module(org.linuxforhealth.fhir.model.type.Element module) {
             this.module = module;
             return this;
         }
@@ -805,31 +795,35 @@ public class GuidanceResponse extends DomainResource {
         }
 
         /**
-         * Describes the reason for the guidance response in coded or textual form.
+         * Describes the reason for the guidance response in coded or textual form, or Indicates the reason the request was 
+         * initiated. This is typically provided as a parameter to the evaluation and echoed by the service, although for some 
+         * use cases, such as subscription- or event-based scenarios, it may provide an indication of the cause for the response.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
+         * @param reason
          *     Why guidance is needed
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder reasonCode(CodeableConcept... reasonCode) {
-            for (CodeableConcept value : reasonCode) {
-                this.reasonCode.add(value);
+        public Builder reason(CodeableReference... reason) {
+            for (CodeableReference value : reason) {
+                this.reason.add(value);
             }
             return this;
         }
 
         /**
-         * Describes the reason for the guidance response in coded or textual form.
+         * Describes the reason for the guidance response in coded or textual form, or Indicates the reason the request was 
+         * initiated. This is typically provided as a parameter to the evaluation and echoed by the service, although for some 
+         * use cases, such as subscription- or event-based scenarios, it may provide an indication of the cause for the response.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
+         * @param reason
          *     Why guidance is needed
          * 
          * @return
@@ -838,67 +832,8 @@ public class GuidanceResponse extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder reasonCode(Collection<CodeableConcept> reasonCode) {
-            this.reasonCode = new ArrayList<>(reasonCode);
-            return this;
-        }
-
-        /**
-         * Indicates the reason the request was initiated. This is typically provided as a parameter to the evaluation and echoed 
-         * by the service, although for some use cases, such as subscription- or event-based scenarios, it may provide an 
-         * indication of the cause for the response.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Why guidance is needed
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder reasonReference(Reference... reasonReference) {
-            for (Reference value : reasonReference) {
-                this.reasonReference.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Indicates the reason the request was initiated. This is typically provided as a parameter to the evaluation and echoed 
-         * by the service, although for some use cases, such as subscription- or event-based scenarios, it may provide an 
-         * indication of the cause for the response.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Why guidance is needed
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder reasonReference(Collection<Reference> reasonReference) {
-            this.reasonReference = new ArrayList<>(reasonReference);
+        public Builder reason(Collection<CodeableReference> reason) {
+            this.reason = new ArrayList<>(reason);
             return this;
         }
 
@@ -945,10 +880,7 @@ public class GuidanceResponse extends DomainResource {
          * Messages resulting from the evaluation of the artifact or artifacts. As part of evaluating the request, the engine may 
          * produce informational or warning messages. These messages will be provided by this element.
          * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
+         * <p>Allowed resource types for this reference:
          * <ul>
          * <li>{@link OperationOutcome}</li>
          * </ul>
@@ -959,36 +891,8 @@ public class GuidanceResponse extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder evaluationMessage(Reference... evaluationMessage) {
-            for (Reference value : evaluationMessage) {
-                this.evaluationMessage.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Messages resulting from the evaluation of the artifact or artifacts. As part of evaluating the request, the engine may 
-         * produce informational or warning messages. These messages will be provided by this element.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link OperationOutcome}</li>
-         * </ul>
-         * 
-         * @param evaluationMessage
-         *     Messages resulting from the evaluation of the artifact or artifacts
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder evaluationMessage(Collection<Reference> evaluationMessage) {
-            this.evaluationMessage = new ArrayList<>(evaluationMessage);
+        public Builder evaluationMessage(Reference evaluationMessage) {
+            this.evaluationMessage = evaluationMessage;
             return this;
         }
 
@@ -1016,10 +920,28 @@ public class GuidanceResponse extends DomainResource {
         /**
          * The actions, if any, produced by the evaluation of the artifact.
          * 
-         * <p>Allowed resource types for this reference:
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
          * <ul>
+         * <li>{@link Appointment}</li>
+         * <li>{@link AppointmentResponse}</li>
          * <li>{@link CarePlan}</li>
-         * <li>{@link RequestGroup}</li>
+         * <li>{@link Claim}</li>
+         * <li>{@link CommunicationRequest}</li>
+         * <li>{@link Contract}</li>
+         * <li>{@link CoverageEligibilityRequest}</li>
+         * <li>{@link DeviceRequest}</li>
+         * <li>{@link EnrollmentRequest}</li>
+         * <li>{@link ImmunizationRecommendation}</li>
+         * <li>{@link MedicationRequest}</li>
+         * <li>{@link NutritionOrder}</li>
+         * <li>{@link RequestOrchestration}</li>
+         * <li>{@link ServiceRequest}</li>
+         * <li>{@link SupplyRequest}</li>
+         * <li>{@link Task}</li>
+         * <li>{@link VisionPrescription}</li>
          * </ul>
          * 
          * @param result
@@ -1028,8 +950,51 @@ public class GuidanceResponse extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder result(Reference result) {
-            this.result = result;
+        public Builder result(Reference... result) {
+            for (Reference value : result) {
+                this.result.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The actions, if any, produced by the evaluation of the artifact.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link Appointment}</li>
+         * <li>{@link AppointmentResponse}</li>
+         * <li>{@link CarePlan}</li>
+         * <li>{@link Claim}</li>
+         * <li>{@link CommunicationRequest}</li>
+         * <li>{@link Contract}</li>
+         * <li>{@link CoverageEligibilityRequest}</li>
+         * <li>{@link DeviceRequest}</li>
+         * <li>{@link EnrollmentRequest}</li>
+         * <li>{@link ImmunizationRecommendation}</li>
+         * <li>{@link MedicationRequest}</li>
+         * <li>{@link NutritionOrder}</li>
+         * <li>{@link RequestOrchestration}</li>
+         * <li>{@link ServiceRequest}</li>
+         * <li>{@link SupplyRequest}</li>
+         * <li>{@link Task}</li>
+         * <li>{@link VisionPrescription}</li>
+         * </ul>
+         * 
+         * @param result
+         *     Proposed actions, if any
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder result(Collection<Reference> result) {
+            this.result = new ArrayList<>(result);
             return this;
         }
 
@@ -1104,18 +1069,16 @@ public class GuidanceResponse extends DomainResource {
             ValidationSupport.checkList(guidanceResponse.identifier, "identifier", Identifier.class);
             ValidationSupport.requireChoiceElement(guidanceResponse.module, "module", Uri.class, Canonical.class, CodeableConcept.class);
             ValidationSupport.requireNonNull(guidanceResponse.status, "status");
-            ValidationSupport.checkList(guidanceResponse.reasonCode, "reasonCode", CodeableConcept.class);
-            ValidationSupport.checkList(guidanceResponse.reasonReference, "reasonReference", Reference.class);
+            ValidationSupport.checkList(guidanceResponse.reason, "reason", CodeableReference.class);
             ValidationSupport.checkList(guidanceResponse.note, "note", Annotation.class);
-            ValidationSupport.checkList(guidanceResponse.evaluationMessage, "evaluationMessage", Reference.class);
+            ValidationSupport.checkList(guidanceResponse.result, "result", Reference.class);
             ValidationSupport.checkList(guidanceResponse.dataRequirement, "dataRequirement", DataRequirement.class);
             ValidationSupport.checkReferenceType(guidanceResponse.subject, "subject", "Patient", "Group");
             ValidationSupport.checkReferenceType(guidanceResponse.encounter, "encounter", "Encounter");
             ValidationSupport.checkReferenceType(guidanceResponse.performer, "performer", "Device");
-            ValidationSupport.checkReferenceType(guidanceResponse.reasonReference, "reasonReference", "Condition", "Observation", "DiagnosticReport", "DocumentReference");
             ValidationSupport.checkReferenceType(guidanceResponse.evaluationMessage, "evaluationMessage", "OperationOutcome");
             ValidationSupport.checkReferenceType(guidanceResponse.outputParameters, "outputParameters", "Parameters");
-            ValidationSupport.checkReferenceType(guidanceResponse.result, "result", "CarePlan", "RequestGroup");
+            ValidationSupport.checkReferenceType(guidanceResponse.result, "result", "Appointment", "AppointmentResponse", "CarePlan", "Claim", "CommunicationRequest", "Contract", "CoverageEligibilityRequest", "DeviceRequest", "EnrollmentRequest", "ImmunizationRecommendation", "MedicationRequest", "NutritionOrder", "RequestOrchestration", "ServiceRequest", "SupplyRequest", "Task", "VisionPrescription");
         }
 
         protected Builder from(GuidanceResponse guidanceResponse) {
@@ -1128,12 +1091,11 @@ public class GuidanceResponse extends DomainResource {
             encounter = guidanceResponse.encounter;
             occurrenceDateTime = guidanceResponse.occurrenceDateTime;
             performer = guidanceResponse.performer;
-            reasonCode.addAll(guidanceResponse.reasonCode);
-            reasonReference.addAll(guidanceResponse.reasonReference);
+            reason.addAll(guidanceResponse.reason);
             note.addAll(guidanceResponse.note);
-            evaluationMessage.addAll(guidanceResponse.evaluationMessage);
+            evaluationMessage = guidanceResponse.evaluationMessage;
             outputParameters = guidanceResponse.outputParameters;
-            result = guidanceResponse.result;
+            result.addAll(guidanceResponse.result);
             dataRequirement.addAll(guidanceResponse.dataRequirement);
             return this;
         }

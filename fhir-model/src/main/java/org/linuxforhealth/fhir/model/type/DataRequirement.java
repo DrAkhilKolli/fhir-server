@@ -21,8 +21,9 @@ import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
-import org.linuxforhealth.fhir.model.type.code.FHIRAllTypes;
+import org.linuxforhealth.fhir.model.type.code.FHIRTypes;
 import org.linuxforhealth.fhir.model.type.code.SortDirection;
+import org.linuxforhealth.fhir.model.type.code.ValueFilterComparator;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
@@ -50,21 +51,22 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "dataRequirement-3",
     level = "Warning",
     location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/subject-type",
-    expression = "subject.as(CodeableConcept).exists() implies (subject.as(CodeableConcept).memberOf('http://hl7.org/fhir/ValueSet/subject-type', 'extensible'))",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/participant-resource-types",
+    expression = "subject.as(CodeableConcept).exists() implies (subject.as(CodeableConcept).memberOf('http://hl7.org/fhir/ValueSet/participant-resource-types', 'extensible'))",
     source = "http://hl7.org/fhir/StructureDefinition/DataRequirement",
     generated = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class DataRequirement extends Element {
+public class DataRequirement extends DataType {
     @Summary
     @Binding(
-        bindingName = "FHIRAllTypes",
+        bindingName = "FHIRTypes",
         strength = BindingStrength.Value.REQUIRED,
-        valueSet = "http://hl7.org/fhir/ValueSet/all-types|4.3.0"
+        description = "List of FHIR types (resources, data types).",
+        valueSet = "http://hl7.org/fhir/ValueSet/fhir-types|5.0.0"
     )
     @Required
-    private final FHIRAllTypes type;
+    private final FHIRTypes type;
     @Summary
     private final List<Canonical> profile;
     @Summary
@@ -73,15 +75,18 @@ public class DataRequirement extends Element {
     @Binding(
         bindingName = "SubjectType",
         strength = BindingStrength.Value.EXTENSIBLE,
-        valueSet = "http://hl7.org/fhir/ValueSet/subject-type"
+        description = "The possible types of subjects for a data requirement (E.g., Patient, Practitioner, Organization, Location, etc.).",
+        valueSet = "http://hl7.org/fhir/ValueSet/participant-resource-types"
     )
-    private final Element subject;
+    private final org.linuxforhealth.fhir.model.type.Element subject;
     @Summary
     private final List<String> mustSupport;
     @Summary
     private final List<CodeFilter> codeFilter;
     @Summary
     private final List<DateFilter> dateFilter;
+    @Summary
+    private final List<ValueFilter> valueFilter;
     @Summary
     private final PositiveInt limit;
     @Summary
@@ -95,6 +100,7 @@ public class DataRequirement extends Element {
         mustSupport = Collections.unmodifiableList(builder.mustSupport);
         codeFilter = Collections.unmodifiableList(builder.codeFilter);
         dateFilter = Collections.unmodifiableList(builder.dateFilter);
+        valueFilter = Collections.unmodifiableList(builder.valueFilter);
         limit = builder.limit;
         sort = Collections.unmodifiableList(builder.sort);
     }
@@ -104,9 +110,9 @@ public class DataRequirement extends Element {
      * of the base resource of the profile.
      * 
      * @return
-     *     An immutable object of type {@link FHIRAllTypes} that is non-null.
+     *     An immutable object of type {@link FHIRTypes} that is non-null.
      */
-    public FHIRAllTypes getType() {
+    public FHIRTypes getType() {
         return type;
     }
 
@@ -126,7 +132,7 @@ public class DataRequirement extends Element {
      * @return
      *     An immutable object of type {@link CodeableConcept} or {@link Reference} that may be null.
      */
-    public Element getSubject() {
+    public org.linuxforhealth.fhir.model.type.Element getSubject() {
         return subject;
     }
 
@@ -135,7 +141,7 @@ public class DataRequirement extends Element {
      * consumer in order to obtain an effective evaluation. This does not mean that a value is required for this element, 
      * only that the consuming system must understand the element and be able to provide values for it if they are available. 
      * 
-     * <p>The value of mustSupport SHALL be a FHIRPath resolveable on the type of the DataRequirement. The path SHALL consist 
+     * <p>The value of mustSupport SHALL be a FHIRPath resolvable on the type of the DataRequirement. The path SHALL consist 
      * only of identifiers, constant indexers, and .resolve() (see the [Simple FHIRPath Profile](fhirpath.html#simple) for 
      * full details).
      * 
@@ -169,6 +175,17 @@ public class DataRequirement extends Element {
     }
 
     /**
+     * Value filters specify additional constraints on the data for elements other than code-valued or date-valued. Each 
+     * value filter specifies an additional constraint on the data (i.e. valueFilters are AND'ed, not OR'ed).
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link ValueFilter} that may be empty.
+     */
+    public List<ValueFilter> getValueFilter() {
+        return valueFilter;
+    }
+
+    /**
      * Specifies a maximum number of results that are required (uses the _count search parameter).
      * 
      * @return
@@ -197,6 +214,7 @@ public class DataRequirement extends Element {
             !mustSupport.isEmpty() || 
             !codeFilter.isEmpty() || 
             !dateFilter.isEmpty() || 
+            !valueFilter.isEmpty() || 
             (limit != null) || 
             !sort.isEmpty();
     }
@@ -215,6 +233,7 @@ public class DataRequirement extends Element {
                 accept(mustSupport, "mustSupport", visitor, String.class);
                 accept(codeFilter, "codeFilter", visitor, CodeFilter.class);
                 accept(dateFilter, "dateFilter", visitor, DateFilter.class);
+                accept(valueFilter, "valueFilter", visitor, ValueFilter.class);
                 accept(limit, "limit", visitor);
                 accept(sort, "sort", visitor, Sort.class);
             }
@@ -243,6 +262,7 @@ public class DataRequirement extends Element {
             Objects.equals(mustSupport, other.mustSupport) && 
             Objects.equals(codeFilter, other.codeFilter) && 
             Objects.equals(dateFilter, other.dateFilter) && 
+            Objects.equals(valueFilter, other.valueFilter) && 
             Objects.equals(limit, other.limit) && 
             Objects.equals(sort, other.sort);
     }
@@ -259,6 +279,7 @@ public class DataRequirement extends Element {
                 mustSupport, 
                 codeFilter, 
                 dateFilter, 
+                valueFilter, 
                 limit, 
                 sort);
             hashCode = result;
@@ -275,13 +296,14 @@ public class DataRequirement extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
-        private FHIRAllTypes type;
+    public static class Builder extends DataType.Builder {
+        private FHIRTypes type;
         private List<Canonical> profile = new ArrayList<>();
-        private Element subject;
+        private org.linuxforhealth.fhir.model.type.Element subject;
         private List<String> mustSupport = new ArrayList<>();
         private List<CodeFilter> codeFilter = new ArrayList<>();
         private List<DateFilter> dateFilter = new ArrayList<>();
+        private List<ValueFilter> valueFilter = new ArrayList<>();
         private PositiveInt limit;
         private List<Sort> sort = new ArrayList<>();
 
@@ -306,7 +328,7 @@ public class DataRequirement extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -326,7 +348,7 @@ public class DataRequirement extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -359,7 +381,7 @@ public class DataRequirement extends Element {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder type(FHIRAllTypes type) {
+        public Builder type(FHIRTypes type) {
             this.type = type;
             return this;
         }
@@ -423,7 +445,7 @@ public class DataRequirement extends Element {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder subject(Element subject) {
+        public Builder subject(org.linuxforhealth.fhir.model.type.Element subject) {
             this.subject = subject;
             return this;
         }
@@ -454,7 +476,7 @@ public class DataRequirement extends Element {
          * consumer in order to obtain an effective evaluation. This does not mean that a value is required for this element, 
          * only that the consuming system must understand the element and be able to provide values for it if they are available. 
          * 
-         * <p>The value of mustSupport SHALL be a FHIRPath resolveable on the type of the DataRequirement. The path SHALL consist 
+         * <p>The value of mustSupport SHALL be a FHIRPath resolvable on the type of the DataRequirement. The path SHALL consist 
          * only of identifiers, constant indexers, and .resolve() (see the [Simple FHIRPath Profile](fhirpath.html#simple) for 
          * full details).
          * 
@@ -479,7 +501,7 @@ public class DataRequirement extends Element {
          * consumer in order to obtain an effective evaluation. This does not mean that a value is required for this element, 
          * only that the consuming system must understand the element and be able to provide values for it if they are available. 
          * 
-         * <p>The value of mustSupport SHALL be a FHIRPath resolveable on the type of the DataRequirement. The path SHALL consist 
+         * <p>The value of mustSupport SHALL be a FHIRPath resolvable on the type of the DataRequirement. The path SHALL consist 
          * only of identifiers, constant indexers, and .resolve() (see the [Simple FHIRPath Profile](fhirpath.html#simple) for 
          * full details).
          * 
@@ -583,6 +605,47 @@ public class DataRequirement extends Element {
         }
 
         /**
+         * Value filters specify additional constraints on the data for elements other than code-valued or date-valued. Each 
+         * value filter specifies an additional constraint on the data (i.e. valueFilters are AND'ed, not OR'ed).
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param valueFilter
+         *     What values are expected
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder valueFilter(ValueFilter... valueFilter) {
+            for (ValueFilter value : valueFilter) {
+                this.valueFilter.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Value filters specify additional constraints on the data for elements other than code-valued or date-valued. Each 
+         * value filter specifies an additional constraint on the data (i.e. valueFilters are AND'ed, not OR'ed).
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param valueFilter
+         *     What values are expected
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder valueFilter(Collection<ValueFilter> valueFilter) {
+            this.valueFilter = new ArrayList<>(valueFilter);
+            return this;
+        }
+
+        /**
          * Specifies a maximum number of results that are required (uses the _count search parameter).
          * 
          * @param limit
@@ -665,6 +728,7 @@ public class DataRequirement extends Element {
             ValidationSupport.checkList(dataRequirement.mustSupport, "mustSupport", String.class);
             ValidationSupport.checkList(dataRequirement.codeFilter, "codeFilter", CodeFilter.class);
             ValidationSupport.checkList(dataRequirement.dateFilter, "dateFilter", DateFilter.class);
+            ValidationSupport.checkList(dataRequirement.valueFilter, "valueFilter", ValueFilter.class);
             ValidationSupport.checkList(dataRequirement.sort, "sort", Sort.class);
             ValidationSupport.checkReferenceType(dataRequirement.subject, "subject", "Group");
             ValidationSupport.requireValueOrChildren(dataRequirement);
@@ -678,6 +742,7 @@ public class DataRequirement extends Element {
             mustSupport.addAll(dataRequirement.mustSupport);
             codeFilter.addAll(dataRequirement.codeFilter);
             dateFilter.addAll(dataRequirement.dateFilter);
+            valueFilter.addAll(dataRequirement.valueFilter);
             limit = dataRequirement.limit;
             sort.addAll(dataRequirement.sort);
             return this;
@@ -707,7 +772,7 @@ public class DataRequirement extends Element {
         }
 
         /**
-         * The code-valued attribute of the filter. The specified path SHALL be a FHIRPath resolveable on the specified type of 
+         * The code-valued attribute of the filter. The specified path SHALL be a FHIRPath resolvable on the specified type of 
          * the DataRequirement, and SHALL consist only of identifiers, constant indexers, and .resolve(). The path is allowed to 
          * contain qualifiers (.) to traverse sub-elements, as well as indexers ([x]) to traverse multiple-cardinality sub-
          * elements (see the [Simple FHIRPath Profile](fhirpath.html#simple) for full details). Note that the index must be an 
@@ -856,7 +921,7 @@ public class DataRequirement extends Element {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -876,7 +941,7 @@ public class DataRequirement extends Element {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -965,7 +1030,7 @@ public class DataRequirement extends Element {
             }
 
             /**
-             * The code-valued attribute of the filter. The specified path SHALL be a FHIRPath resolveable on the specified type of 
+             * The code-valued attribute of the filter. The specified path SHALL be a FHIRPath resolvable on the specified type of 
              * the DataRequirement, and SHALL consist only of identifiers, constant indexers, and .resolve(). The path is allowed to 
              * contain qualifiers (.) to traverse sub-elements, as well as indexers ([x]) to traverse multiple-cardinality sub-
              * elements (see the [Simple FHIRPath Profile](fhirpath.html#simple) for full details). Note that the index must be an 
@@ -1019,7 +1084,7 @@ public class DataRequirement extends Element {
              * the specified valueset.
              * 
              * @param valueSet
-             *     Valueset for the filter
+             *     ValueSet for the filter
              * 
              * @return
              *     A reference to this Builder instance
@@ -1117,7 +1182,7 @@ public class DataRequirement extends Element {
         private final String searchParam;
         @Summary
         @Choice({ DateTime.class, Period.class, Duration.class })
-        private final Element value;
+        private final org.linuxforhealth.fhir.model.type.Element value;
 
         private DateFilter(Builder builder) {
             super(builder);
@@ -1127,7 +1192,7 @@ public class DataRequirement extends Element {
         }
 
         /**
-         * The date-valued attribute of the filter. The specified path SHALL be a FHIRPath resolveable on the specified type of 
+         * The date-valued attribute of the filter. The specified path SHALL be a FHIRPath resolvable on the specified type of 
          * the DataRequirement, and SHALL consist only of identifiers, constant indexers, and .resolve(). The path is allowed to 
          * contain qualifiers (.) to traverse sub-elements, as well as indexers ([x]) to traverse multiple-cardinality sub-
          * elements (see the [Simple FHIRPath Profile](fhirpath.html#simple) for full details). Note that the index must be an 
@@ -1160,7 +1225,7 @@ public class DataRequirement extends Element {
          * @return
          *     An immutable object of type {@link DateTime}, {@link Period} or {@link Duration} that may be null.
          */
-        public Element getValue() {
+        public org.linuxforhealth.fhir.model.type.Element getValue() {
             return value;
         }
 
@@ -1237,7 +1302,7 @@ public class DataRequirement extends Element {
         public static class Builder extends BackboneElement.Builder {
             private String path;
             private String searchParam;
-            private Element value;
+            private org.linuxforhealth.fhir.model.type.Element value;
 
             private Builder() {
                 super();
@@ -1260,7 +1325,7 @@ public class DataRequirement extends Element {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1280,7 +1345,7 @@ public class DataRequirement extends Element {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1369,7 +1434,7 @@ public class DataRequirement extends Element {
             }
 
             /**
-             * The date-valued attribute of the filter. The specified path SHALL be a FHIRPath resolveable on the specified type of 
+             * The date-valued attribute of the filter. The specified path SHALL be a FHIRPath resolvable on the specified type of 
              * the DataRequirement, and SHALL consist only of identifiers, constant indexers, and .resolve(). The path is allowed to 
              * contain qualifiers (.) to traverse sub-elements, as well as indexers ([x]) to traverse multiple-cardinality sub-
              * elements (see the [Simple FHIRPath Profile](fhirpath.html#simple) for full details). Note that the index must be an 
@@ -1436,7 +1501,7 @@ public class DataRequirement extends Element {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder value(Element value) {
+            public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                 this.value = value;
                 return this;
             }
@@ -1475,6 +1540,355 @@ public class DataRequirement extends Element {
     }
 
     /**
+     * Value filters specify additional constraints on the data for elements other than code-valued or date-valued. Each 
+     * value filter specifies an additional constraint on the data (i.e. valueFilters are AND'ed, not OR'ed).
+     */
+    public static class ValueFilter extends BackboneElement {
+        @Summary
+        private final String path;
+        @Summary
+        private final String searchParam;
+        @Summary
+        @Binding(
+            bindingName = "ValueFilterComparator",
+            strength = BindingStrength.Value.REQUIRED,
+            description = "Possible comparators for the valueFilter element.",
+            valueSet = "http://hl7.org/fhir/ValueSet/value-filter-comparator|5.0.0"
+        )
+        private final ValueFilterComparator comparator;
+        @Summary
+        @Choice({ DateTime.class, Period.class, Duration.class })
+        private final org.linuxforhealth.fhir.model.type.Element value;
+
+        private ValueFilter(Builder builder) {
+            super(builder);
+            path = builder.path;
+            searchParam = builder.searchParam;
+            comparator = builder.comparator;
+            value = builder.value;
+        }
+
+        /**
+         * The attribute of the filter. The specified path SHALL be a FHIRPath resolvable on the specified type of the 
+         * DataRequirement, and SHALL consist only of identifiers, constant indexers, and .resolve(). The path is allowed to 
+         * contain qualifiers (.) to traverse sub-elements, as well as indexers ([x]) to traverse multiple-cardinality sub-
+         * elements (see the [Simple FHIRPath Profile](fhirpath.html#simple) for full details). Note that the index must be an 
+         * integer constant. The path must resolve to an element of a type that is comparable to the valueFilter.value[x] element 
+         * for the filter.
+         * 
+         * @return
+         *     An immutable object of type {@link String} that may be null.
+         */
+        public String getPath() {
+            return path;
+        }
+
+        /**
+         * A search parameter defined on the specified type of the DataRequirement, and which searches on elements of a type 
+         * compatible with the type of the valueFilter.value[x] for the filter.
+         * 
+         * @return
+         *     An immutable object of type {@link String} that may be null.
+         */
+        public String getSearchParam() {
+            return searchParam;
+        }
+
+        /**
+         * The comparator to be used to determine whether the value is matching.
+         * 
+         * @return
+         *     An immutable object of type {@link ValueFilterComparator} that may be null.
+         */
+        public ValueFilterComparator getComparator() {
+            return comparator;
+        }
+
+        /**
+         * The value of the filter.
+         * 
+         * @return
+         *     An immutable object of type {@link DateTime}, {@link Period} or {@link Duration} that may be null.
+         */
+        public org.linuxforhealth.fhir.model.type.Element getValue() {
+            return value;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (path != null) || 
+                (searchParam != null) || 
+                (comparator != null) || 
+                (value != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(path, "path", visitor);
+                    accept(searchParam, "searchParam", visitor);
+                    accept(comparator, "comparator", visitor);
+                    accept(value, "value", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            ValueFilter other = (ValueFilter) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(path, other.path) && 
+                Objects.equals(searchParam, other.searchParam) && 
+                Objects.equals(comparator, other.comparator) && 
+                Objects.equals(value, other.value);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    path, 
+                    searchParam, 
+                    comparator, 
+                    value);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private String path;
+            private String searchParam;
+            private ValueFilterComparator comparator;
+            private org.linuxforhealth.fhir.model.type.Element value;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * Convenience method for setting {@code path}.
+             * 
+             * @param path
+             *     An attribute to filter on
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #path(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder path(java.lang.String path) {
+                this.path = (path == null) ? null : String.of(path);
+                return this;
+            }
+
+            /**
+             * The attribute of the filter. The specified path SHALL be a FHIRPath resolvable on the specified type of the 
+             * DataRequirement, and SHALL consist only of identifiers, constant indexers, and .resolve(). The path is allowed to 
+             * contain qualifiers (.) to traverse sub-elements, as well as indexers ([x]) to traverse multiple-cardinality sub-
+             * elements (see the [Simple FHIRPath Profile](fhirpath.html#simple) for full details). Note that the index must be an 
+             * integer constant. The path must resolve to an element of a type that is comparable to the valueFilter.value[x] element 
+             * for the filter.
+             * 
+             * @param path
+             *     An attribute to filter on
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder path(String path) {
+                this.path = path;
+                return this;
+            }
+
+            /**
+             * Convenience method for setting {@code searchParam}.
+             * 
+             * @param searchParam
+             *     A parameter to search on
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #searchParam(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder searchParam(java.lang.String searchParam) {
+                this.searchParam = (searchParam == null) ? null : String.of(searchParam);
+                return this;
+            }
+
+            /**
+             * A search parameter defined on the specified type of the DataRequirement, and which searches on elements of a type 
+             * compatible with the type of the valueFilter.value[x] for the filter.
+             * 
+             * @param searchParam
+             *     A parameter to search on
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder searchParam(String searchParam) {
+                this.searchParam = searchParam;
+                return this;
+            }
+
+            /**
+             * The comparator to be used to determine whether the value is matching.
+             * 
+             * @param comparator
+             *     eq | gt | lt | ge | le | sa | eb
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder comparator(ValueFilterComparator comparator) {
+                this.comparator = comparator;
+                return this;
+            }
+
+            /**
+             * The value of the filter.
+             * 
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link DateTime}</li>
+             * <li>{@link Period}</li>
+             * <li>{@link Duration}</li>
+             * </ul>
+             * 
+             * @param value
+             *     The value of the filter, as a Period, DateTime, or Duration value
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
+                this.value = value;
+                return this;
+            }
+
+            /**
+             * Build the {@link ValueFilter}
+             * 
+             * @return
+             *     An immutable object of type {@link ValueFilter}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid ValueFilter per the base specification
+             */
+            @Override
+            public ValueFilter build() {
+                ValueFilter valueFilter = new ValueFilter(this);
+                if (validating) {
+                    validate(valueFilter);
+                }
+                return valueFilter;
+            }
+
+            protected void validate(ValueFilter valueFilter) {
+                super.validate(valueFilter);
+                ValidationSupport.choiceElement(valueFilter.value, "value", DateTime.class, Period.class, Duration.class);
+                ValidationSupport.requireValueOrChildren(valueFilter);
+            }
+
+            protected Builder from(ValueFilter valueFilter) {
+                super.from(valueFilter);
+                path = valueFilter.path;
+                searchParam = valueFilter.searchParam;
+                comparator = valueFilter.comparator;
+                value = valueFilter.value;
+                return this;
+            }
+        }
+    }
+
+    /**
      * Specifies the order of the results to be returned.
      */
     public static class Sort extends BackboneElement {
@@ -1485,7 +1899,8 @@ public class DataRequirement extends Element {
         @Binding(
             bindingName = "SortDirection",
             strength = BindingStrength.Value.REQUIRED,
-            valueSet = "http://hl7.org/fhir/ValueSet/sort-direction|4.3.0"
+            description = "The possible sort directions, ascending or descending.",
+            valueSet = "http://hl7.org/fhir/ValueSet/sort-direction|5.0.0"
         )
         @Required
         private final SortDirection direction;
@@ -1609,7 +2024,7 @@ public class DataRequirement extends Element {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1629,7 +2044,7 @@ public class DataRequirement extends Element {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 

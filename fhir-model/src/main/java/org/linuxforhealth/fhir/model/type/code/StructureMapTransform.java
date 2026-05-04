@@ -51,8 +51,9 @@ public class StructureMapTransform extends Code {
     /**
      * cast
      * 
-     * <p>cast(source, type?) - case source from one type to another. target type can be left as implicit if there is one and 
-     * only one target type known.
+     * <p>cast(source, type?) - cast (convert) source from one type to another. Target type can be left as implicit if there 
+     * is one and only one target type known. The default namespace for the type is 'FHIR' (see [FHIRPath type specifiers]
+     * (http://hl7.org/fhirpath/N1/#is-type-specifier))
      */
     public static final StructureMapTransform CAST = StructureMapTransform.builder().value(Value.CAST).build();
 
@@ -358,8 +359,9 @@ public class StructureMapTransform extends Code {
         /**
          * cast
          * 
-         * <p>cast(source, type?) - case source from one type to another. target type can be left as implicit if there is one and 
-         * only one target type known.
+         * <p>cast(source, type?) - cast (convert) source from one type to another. Target type can be left as implicit if there 
+         * is one and only one target type known. The default namespace for the type is 'FHIR' (see [FHIRPath type specifiers]
+         * (http://hl7.org/fhirpath/N1/#is-type-specifier))
          */
         CAST("cast"),
 

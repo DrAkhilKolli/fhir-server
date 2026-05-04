@@ -50,10 +50,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * in the form of an CoverageEligibilityResponse, with information regarding whether the stated coverage is valid and in-
  * force and optionally to provide the insurance details of the policy.
  * 
- * <p>Maturity level: FMM2 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 2,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
@@ -64,7 +64,7 @@ public class CoverageEligibilityRequest extends DomainResource {
         bindingName = "EligibilityRequestStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "A code specifying the state of the resource instance.",
-        valueSet = "http://hl7.org/fhir/ValueSet/fm-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/fm-status|5.0.0"
     )
     @Required
     private final EligibilityRequestStatus status;
@@ -80,7 +80,7 @@ public class CoverageEligibilityRequest extends DomainResource {
         bindingName = "EligibilityRequestPurpose",
         strength = BindingStrength.Value.REQUIRED,
         description = "A code specifying the types of information being requested.",
-        valueSet = "http://hl7.org/fhir/ValueSet/eligibilityrequest-purpose|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/eligibilityrequest-purpose|5.0.0"
     )
     @Required
     private final List<EligibilityRequestPurpose> purpose;
@@ -88,8 +88,9 @@ public class CoverageEligibilityRequest extends DomainResource {
     @ReferenceTarget({ "Patient" })
     @Required
     private final Reference patient;
+    private final List<Event> event;
     @Choice({ Date.class, Period.class })
-    private final Element serviced;
+    private final org.linuxforhealth.fhir.model.type.Element serviced;
     @Summary
     @Required
     private final DateTime created;
@@ -114,6 +115,7 @@ public class CoverageEligibilityRequest extends DomainResource {
         priority = builder.priority;
         purpose = Collections.unmodifiableList(builder.purpose);
         patient = builder.patient;
+        event = Collections.unmodifiableList(builder.event);
         serviced = builder.serviced;
         created = builder.created;
         enterer = builder.enterer;
@@ -178,12 +180,22 @@ public class CoverageEligibilityRequest extends DomainResource {
     }
 
     /**
+     * Information code for an event with a corresponding date or period.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Event} that may be empty.
+     */
+    public List<Event> getEvent() {
+        return event;
+    }
+
+    /**
      * The date or dates when the enclosed suite of services were performed or completed.
      * 
      * @return
      *     An immutable object of type {@link Date} or {@link Period} that may be null.
      */
-    public Element getServiced() {
+    public org.linuxforhealth.fhir.model.type.Element getServiced() {
         return serviced;
     }
 
@@ -277,6 +289,7 @@ public class CoverageEligibilityRequest extends DomainResource {
             (priority != null) || 
             !purpose.isEmpty() || 
             (patient != null) || 
+            !event.isEmpty() || 
             (serviced != null) || 
             (created != null) || 
             (enterer != null) || 
@@ -307,6 +320,7 @@ public class CoverageEligibilityRequest extends DomainResource {
                 accept(priority, "priority", visitor);
                 accept(purpose, "purpose", visitor, EligibilityRequestPurpose.class);
                 accept(patient, "patient", visitor);
+                accept(event, "event", visitor, Event.class);
                 accept(serviced, "serviced", visitor);
                 accept(created, "created", visitor);
                 accept(enterer, "enterer", visitor);
@@ -347,6 +361,7 @@ public class CoverageEligibilityRequest extends DomainResource {
             Objects.equals(priority, other.priority) && 
             Objects.equals(purpose, other.purpose) && 
             Objects.equals(patient, other.patient) && 
+            Objects.equals(event, other.event) && 
             Objects.equals(serviced, other.serviced) && 
             Objects.equals(created, other.created) && 
             Objects.equals(enterer, other.enterer) && 
@@ -375,6 +390,7 @@ public class CoverageEligibilityRequest extends DomainResource {
                 priority, 
                 purpose, 
                 patient, 
+                event, 
                 serviced, 
                 created, 
                 enterer, 
@@ -404,7 +420,8 @@ public class CoverageEligibilityRequest extends DomainResource {
         private CodeableConcept priority;
         private List<EligibilityRequestPurpose> purpose = new ArrayList<>();
         private Reference patient;
-        private Element serviced;
+        private List<Event> event = new ArrayList<>();
+        private org.linuxforhealth.fhir.model.type.Element serviced;
         private DateTime created;
         private Reference enterer;
         private Reference provider;
@@ -496,7 +513,8 @@ public class CoverageEligibilityRequest extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -514,7 +532,8 @@ public class CoverageEligibilityRequest extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -535,7 +554,7 @@ public class CoverageEligibilityRequest extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -555,7 +574,7 @@ public class CoverageEligibilityRequest extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -580,9 +599,9 @@ public class CoverageEligibilityRequest extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -605,9 +624,9 @@ public class CoverageEligibilityRequest extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -767,6 +786,45 @@ public class CoverageEligibilityRequest extends DomainResource {
         }
 
         /**
+         * Information code for an event with a corresponding date or period.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param event
+         *     Event information
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder event(Event... event) {
+            for (Event value : event) {
+                this.event.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Information code for an event with a corresponding date or period.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param event
+         *     Event information
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder event(Collection<Event> event) {
+            this.event = new ArrayList<>(event);
+            return this;
+        }
+
+        /**
          * Convenience method for setting {@code serviced} with choice type Date.
          * 
          * @param serviced
@@ -797,7 +855,7 @@ public class CoverageEligibilityRequest extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder serviced(Element serviced) {
+        public Builder serviced(org.linuxforhealth.fhir.model.type.Element serviced) {
             this.serviced = serviced;
             return this;
         }
@@ -1052,6 +1110,7 @@ public class CoverageEligibilityRequest extends DomainResource {
             ValidationSupport.requireNonNull(coverageEligibilityRequest.status, "status");
             ValidationSupport.checkNonEmptyList(coverageEligibilityRequest.purpose, "purpose", EligibilityRequestPurpose.class);
             ValidationSupport.requireNonNull(coverageEligibilityRequest.patient, "patient");
+            ValidationSupport.checkList(coverageEligibilityRequest.event, "event", Event.class);
             ValidationSupport.choiceElement(coverageEligibilityRequest.serviced, "serviced", Date.class, Period.class);
             ValidationSupport.requireNonNull(coverageEligibilityRequest.created, "created");
             ValidationSupport.requireNonNull(coverageEligibilityRequest.insurer, "insurer");
@@ -1072,6 +1131,7 @@ public class CoverageEligibilityRequest extends DomainResource {
             priority = coverageEligibilityRequest.priority;
             purpose.addAll(coverageEligibilityRequest.purpose);
             patient = coverageEligibilityRequest.patient;
+            event.addAll(coverageEligibilityRequest.event);
             serviced = coverageEligibilityRequest.serviced;
             created = coverageEligibilityRequest.created;
             enterer = coverageEligibilityRequest.enterer;
@@ -1082,6 +1142,309 @@ public class CoverageEligibilityRequest extends DomainResource {
             insurance.addAll(coverageEligibilityRequest.insurance);
             item.addAll(coverageEligibilityRequest.item);
             return this;
+        }
+    }
+
+    /**
+     * Information code for an event with a corresponding date or period.
+     */
+    public static class Event extends BackboneElement {
+        @Binding(
+            bindingName = "DatesType",
+            strength = BindingStrength.Value.EXAMPLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/datestype"
+        )
+        @Required
+        private final CodeableConcept type;
+        @Choice({ DateTime.class, Period.class })
+        @Required
+        private final org.linuxforhealth.fhir.model.type.Element when;
+
+        private Event(Builder builder) {
+            super(builder);
+            type = builder.type;
+            when = builder.when;
+        }
+
+        /**
+         * A coded event such as when a service is expected or a card printed.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that is non-null.
+         */
+        public CodeableConcept getType() {
+            return type;
+        }
+
+        /**
+         * A date or period in the past or future indicating when the event occurred or is expectd to occur.
+         * 
+         * @return
+         *     An immutable object of type {@link DateTime} or {@link Period} that is non-null.
+         */
+        public org.linuxforhealth.fhir.model.type.Element getWhen() {
+            return when;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (type != null) || 
+                (when != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(type, "type", visitor);
+                    accept(when, "when", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Event other = (Event) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(type, other.type) && 
+                Objects.equals(when, other.when);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    type, 
+                    when);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private CodeableConcept type;
+            private org.linuxforhealth.fhir.model.type.Element when;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * A coded event such as when a service is expected or a card printed.
+             * 
+             * <p>This element is required.
+             * 
+             * @param type
+             *     Specific event
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder type(CodeableConcept type) {
+                this.type = type;
+                return this;
+            }
+
+            /**
+             * A date or period in the past or future indicating when the event occurred or is expectd to occur.
+             * 
+             * <p>This element is required.
+             * 
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link DateTime}</li>
+             * <li>{@link Period}</li>
+             * </ul>
+             * 
+             * @param when
+             *     Occurance date or period
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder when(org.linuxforhealth.fhir.model.type.Element when) {
+                this.when = when;
+                return this;
+            }
+
+            /**
+             * Build the {@link Event}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>type</li>
+             * <li>when</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link Event}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Event per the base specification
+             */
+            @Override
+            public Event build() {
+                Event event = new Event(this);
+                if (validating) {
+                    validate(event);
+                }
+                return event;
+            }
+
+            protected void validate(Event event) {
+                super.validate(event);
+                ValidationSupport.requireNonNull(event.type, "type");
+                ValidationSupport.requireChoiceElement(event.when, "when", DateTime.class, Period.class);
+                ValidationSupport.requireValueOrChildren(event);
+            }
+
+            protected Builder from(Event event) {
+                super.from(event);
+                type = event.type;
+                when = event.when;
+                return this;
+            }
         }
     }
 
@@ -1230,7 +1593,7 @@ public class CoverageEligibilityRequest extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1250,7 +1613,7 @@ public class CoverageEligibilityRequest extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1275,7 +1638,7 @@ public class CoverageEligibilityRequest extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1300,7 +1663,7 @@ public class CoverageEligibilityRequest extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1571,7 +1934,7 @@ public class CoverageEligibilityRequest extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1591,7 +1954,7 @@ public class CoverageEligibilityRequest extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1616,7 +1979,7 @@ public class CoverageEligibilityRequest extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1641,7 +2004,7 @@ public class CoverageEligibilityRequest extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2067,7 +2430,7 @@ public class CoverageEligibilityRequest extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2087,7 +2450,7 @@ public class CoverageEligibilityRequest extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2112,7 +2475,7 @@ public class CoverageEligibilityRequest extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2137,7 +2500,7 @@ public class CoverageEligibilityRequest extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2469,7 +2832,7 @@ public class CoverageEligibilityRequest extends DomainResource {
                 description = "ICD10 Diagnostic codes.",
                 valueSet = "http://hl7.org/fhir/ValueSet/icd-10"
             )
-            private final Element diagnosis;
+            private final org.linuxforhealth.fhir.model.type.Element diagnosis;
 
             private Diagnosis(Builder builder) {
                 super(builder);
@@ -2482,7 +2845,7 @@ public class CoverageEligibilityRequest extends DomainResource {
              * @return
              *     An immutable object of type {@link CodeableConcept} or {@link Reference} that may be null.
              */
-            public Element getDiagnosis() {
+            public org.linuxforhealth.fhir.model.type.Element getDiagnosis() {
                 return diagnosis;
             }
 
@@ -2549,7 +2912,7 @@ public class CoverageEligibilityRequest extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private Element diagnosis;
+                private org.linuxforhealth.fhir.model.type.Element diagnosis;
 
                 private Builder() {
                     super();
@@ -2572,7 +2935,7 @@ public class CoverageEligibilityRequest extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2592,7 +2955,7 @@ public class CoverageEligibilityRequest extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2617,7 +2980,7 @@ public class CoverageEligibilityRequest extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2642,7 +3005,7 @@ public class CoverageEligibilityRequest extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2686,7 +3049,7 @@ public class CoverageEligibilityRequest extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder diagnosis(Element diagnosis) {
+                public Builder diagnosis(org.linuxforhealth.fhir.model.type.Element diagnosis) {
                     this.diagnosis = diagnosis;
                     return this;
                 }

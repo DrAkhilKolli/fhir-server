@@ -48,18 +48,46 @@ public class GroupType extends Code {
     public static final GroupType DEVICE = GroupType.builder().value(Value.DEVICE).build();
 
     /**
-     * Medication
+     * CareTeam
      * 
-     * <p>Group contains Medication resources.
+     * <p>Group contains CareTeam resources.
      */
-    public static final GroupType MEDICATION = GroupType.builder().value(Value.MEDICATION).build();
+    public static final GroupType CARETEAM = GroupType.builder().value(Value.CARETEAM).build();
 
     /**
-     * Substance
+     * HealthcareService
      * 
-     * <p>Group contains Substance resources.
+     * <p>Group contains HealthcareService resources.
      */
-    public static final GroupType SUBSTANCE = GroupType.builder().value(Value.SUBSTANCE).build();
+    public static final GroupType HEALTHCARESERVICE = GroupType.builder().value(Value.HEALTHCARESERVICE).build();
+
+    /**
+     * Location
+     * 
+     * <p>Group contains Location resources.
+     */
+    public static final GroupType LOCATION = GroupType.builder().value(Value.LOCATION).build();
+
+    /**
+     * Organization
+     * 
+     * <p>Group contains Organization resources.
+     */
+    public static final GroupType ORGANIZATION = GroupType.builder().value(Value.ORGANIZATION).build();
+
+    /**
+     * RelatedPerson
+     * 
+     * <p>Group contains RelatedPerson resources.
+     */
+    public static final GroupType RELATEDPERSON = GroupType.builder().value(Value.RELATEDPERSON).build();
+
+    /**
+     * Specimen
+     * 
+     * <p>Group contains Specimen resources.
+     */
+    public static final GroupType SPECIMEN = GroupType.builder().value(Value.SPECIMEN).build();
 
     private volatile int hashCode;
 
@@ -87,10 +115,18 @@ public class GroupType extends Code {
             return PRACTITIONER;
         case DEVICE:
             return DEVICE;
-        case MEDICATION:
-            return MEDICATION;
-        case SUBSTANCE:
-            return SUBSTANCE;
+        case CARETEAM:
+            return CARETEAM;
+        case HEALTHCARESERVICE:
+            return HEALTHCARESERVICE;
+        case LOCATION:
+            return LOCATION;
+        case ORGANIZATION:
+            return ORGANIZATION;
+        case RELATEDPERSON:
+            return RELATEDPERSON;
+        case SPECIMEN:
+            return SPECIMEN;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -252,18 +288,46 @@ public class GroupType extends Code {
         DEVICE("device"),
 
         /**
-         * Medication
+         * CareTeam
          * 
-         * <p>Group contains Medication resources.
+         * <p>Group contains CareTeam resources.
          */
-        MEDICATION("medication"),
+        CARETEAM("careteam"),
 
         /**
-         * Substance
+         * HealthcareService
          * 
-         * <p>Group contains Substance resources.
+         * <p>Group contains HealthcareService resources.
          */
-        SUBSTANCE("substance");
+        HEALTHCARESERVICE("healthcareservice"),
+
+        /**
+         * Location
+         * 
+         * <p>Group contains Location resources.
+         */
+        LOCATION("location"),
+
+        /**
+         * Organization
+         * 
+         * <p>Group contains Organization resources.
+         */
+        ORGANIZATION("organization"),
+
+        /**
+         * RelatedPerson
+         * 
+         * <p>Group contains RelatedPerson resources.
+         */
+        RELATEDPERSON("relatedperson"),
+
+        /**
+         * Specimen
+         * 
+         * <p>Group contains Specimen resources.
+         */
+        SPECIMEN("specimen");
 
         private final java.lang.String value;
 
@@ -302,10 +366,18 @@ public class GroupType extends Code {
                 return PRACTITIONER;
             case "device":
                 return DEVICE;
-            case "medication":
-                return MEDICATION;
-            case "substance":
-                return SUBSTANCE;
+            case "careteam":
+                return CARETEAM;
+            case "healthcareservice":
+                return HEALTHCARESERVICE;
+            case "location":
+                return LOCATION;
+            case "organization":
+                return ORGANIZATION;
+            case "relatedperson":
+                return RELATEDPERSON;
+            case "specimen":
+                return SPECIMEN;
             default:
                 throw new IllegalArgumentException(value);
             }

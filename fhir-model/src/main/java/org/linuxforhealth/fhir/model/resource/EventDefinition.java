@@ -24,6 +24,7 @@ import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
 import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.DateTime;
@@ -56,24 +57,41 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "evd-0",
+    id = "cnl-0",
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
     source = "http://hl7.org/fhir/StructureDefinition/EventDefinition"
 )
 @Constraint(
-    id = "eventDefinition-1",
+    id = "cnl-1",
+    level = "Warning",
+    location = "EventDefinition.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
+    source = "http://hl7.org/fhir/StructureDefinition/EventDefinition"
+)
+@Constraint(
+    id = "eventDefinition-2",
     level = "Warning",
     location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/subject-type",
-    expression = "subject.as(CodeableConcept).exists() implies (subject.as(CodeableConcept).memberOf('http://hl7.org/fhir/ValueSet/subject-type', 'extensible'))",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
     source = "http://hl7.org/fhir/StructureDefinition/EventDefinition",
     generated = true
 )
 @Constraint(
-    id = "eventDefinition-2",
+    id = "eventDefinition-3",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/participant-resource-types",
+    expression = "subject.as(CodeableConcept).exists() implies (subject.as(CodeableConcept).memberOf('http://hl7.org/fhir/ValueSet/participant-resource-types', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/EventDefinition",
+    generated = true
+)
+@Constraint(
+    id = "eventDefinition-4",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
@@ -90,6 +108,13 @@ public class EventDefinition extends DomainResource {
     @Summary
     private final String version;
     @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+    @Summary
     private final String name;
     @Summary
     private final String title;
@@ -99,7 +124,7 @@ public class EventDefinition extends DomainResource {
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -111,9 +136,9 @@ public class EventDefinition extends DomainResource {
         bindingName = "SubjectType",
         strength = BindingStrength.Value.EXTENSIBLE,
         description = "The possible types of subjects for an event (E.g. Patient, Practitioner, Organization, Location, etc.).",
-        valueSet = "http://hl7.org/fhir/ValueSet/subject-type"
+        valueSet = "http://hl7.org/fhir/ValueSet/participant-resource-types"
     )
-    private final Element subject;
+    private final org.linuxforhealth.fhir.model.type.Element subject;
     @Summary
     private final DateTime date;
     @Summary
@@ -132,8 +157,9 @@ public class EventDefinition extends DomainResource {
     )
     private final List<CodeableConcept> jurisdiction;
     private final Markdown purpose;
-    private final String usage;
+    private final Markdown usage;
     private final Markdown copyright;
+    private final String copyrightLabel;
     @Summary
     private final Date approvalDate;
     @Summary
@@ -161,6 +187,7 @@ public class EventDefinition extends DomainResource {
         url = builder.url;
         identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
         title = builder.title;
         subtitle = builder.subtitle;
@@ -176,6 +203,7 @@ public class EventDefinition extends DomainResource {
         purpose = builder.purpose;
         usage = builder.usage;
         copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
         approvalDate = builder.approvalDate;
         lastReviewDate = builder.lastReviewDate;
         effectivePeriod = builder.effectivePeriod;
@@ -191,8 +219,8 @@ public class EventDefinition extends DomainResource {
     /**
      * An absolute URI that is used to identify this event definition when it is referenced in a specification, model, design 
      * or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address 
-     * at which at which an authoritative instance of this event definition is (or will be) published. This URL can be the 
-     * target of a canonical reference. It SHALL remain the same when the event definition is stored on different servers.
+     * at which an authoritative instance of this event definition is (or will be) published. This URL can be the target of a 
+     * canonical reference. It SHALL remain the same when the event definition is stored on different servers.
      * 
      * @return
      *     An immutable object of type {@link Uri} that may be null.
@@ -223,6 +251,16 @@ public class EventDefinition extends DomainResource {
      */
     public String getVersion() {
         return version;
+    }
+
+    /**
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
     }
 
     /**
@@ -283,14 +321,14 @@ public class EventDefinition extends DomainResource {
      * @return
      *     An immutable object of type {@link CodeableConcept} or {@link Reference} that may be null.
      */
-    public Element getSubject() {
+    public org.linuxforhealth.fhir.model.type.Element getSubject() {
         return subject;
     }
 
     /**
-     * The date (and optionally time) when the event definition was published. The date must change when the business version 
-     * changes and it must change if the status code changes. In addition, it should change when the substantive content of 
-     * the event definition changes.
+     * The date (and optionally time) when the event definition was last significantly changed. The date must change when the 
+     * business version changes and it must change if the status code changes. In addition, it should change when the 
+     * substantive content of the event definition changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -300,7 +338,7 @@ public class EventDefinition extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the event definition.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the event definition.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -365,9 +403,9 @@ public class EventDefinition extends DomainResource {
      * A detailed description of how the event definition is used from a clinical perspective.
      * 
      * @return
-     *     An immutable object of type {@link String} that may be null.
+     *     An immutable object of type {@link Markdown} that may be null.
      */
-    public String getUsage() {
+    public Markdown getUsage() {
         return usage;
     }
 
@@ -380,6 +418,17 @@ public class EventDefinition extends DomainResource {
      */
     public Markdown getCopyright() {
         return copyright;
+    }
+
+    /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
     }
 
     /**
@@ -446,7 +495,8 @@ public class EventDefinition extends DomainResource {
     }
 
     /**
-     * An individual or organization primarily responsible for review of some aspect of the content.
+     * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+     * content.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
@@ -456,7 +506,8 @@ public class EventDefinition extends DomainResource {
     }
 
     /**
-     * An individual or organization responsible for officially endorsing the content for use in some setting.
+     * An individual or organization asserted by the publisher to be responsible for officially endorsing the content for use 
+     * in some setting.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
@@ -492,6 +543,7 @@ public class EventDefinition extends DomainResource {
             (url != null) || 
             !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
             (title != null) || 
             (subtitle != null) || 
@@ -507,6 +559,7 @@ public class EventDefinition extends DomainResource {
             (purpose != null) || 
             (usage != null) || 
             (copyright != null) || 
+            (copyrightLabel != null) || 
             (approvalDate != null) || 
             (lastReviewDate != null) || 
             (effectivePeriod != null) || 
@@ -536,6 +589,7 @@ public class EventDefinition extends DomainResource {
                 accept(url, "url", visitor);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(subtitle, "subtitle", visitor);
@@ -551,6 +605,7 @@ public class EventDefinition extends DomainResource {
                 accept(purpose, "purpose", visitor);
                 accept(usage, "usage", visitor);
                 accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
                 accept(approvalDate, "approvalDate", visitor);
                 accept(lastReviewDate, "lastReviewDate", visitor);
                 accept(effectivePeriod, "effectivePeriod", visitor);
@@ -590,6 +645,7 @@ public class EventDefinition extends DomainResource {
             Objects.equals(url, other.url) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(subtitle, other.subtitle) && 
@@ -605,6 +661,7 @@ public class EventDefinition extends DomainResource {
             Objects.equals(purpose, other.purpose) && 
             Objects.equals(usage, other.usage) && 
             Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
             Objects.equals(approvalDate, other.approvalDate) && 
             Objects.equals(lastReviewDate, other.lastReviewDate) && 
             Objects.equals(effectivePeriod, other.effectivePeriod) && 
@@ -632,6 +689,7 @@ public class EventDefinition extends DomainResource {
                 url, 
                 identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
                 title, 
                 subtitle, 
@@ -647,6 +705,7 @@ public class EventDefinition extends DomainResource {
                 purpose, 
                 usage, 
                 copyright, 
+                copyrightLabel, 
                 approvalDate, 
                 lastReviewDate, 
                 effectivePeriod, 
@@ -675,12 +734,13 @@ public class EventDefinition extends DomainResource {
         private Uri url;
         private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
         private String title;
         private String subtitle;
         private PublicationStatus status;
         private Boolean experimental;
-        private Element subject;
+        private org.linuxforhealth.fhir.model.type.Element subject;
         private DateTime date;
         private String publisher;
         private List<ContactDetail> contact = new ArrayList<>();
@@ -688,8 +748,9 @@ public class EventDefinition extends DomainResource {
         private List<UsageContext> useContext = new ArrayList<>();
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
         private Markdown purpose;
-        private String usage;
+        private Markdown usage;
         private Markdown copyright;
+        private String copyrightLabel;
         private Date approvalDate;
         private Date lastReviewDate;
         private Period effectivePeriod;
@@ -783,7 +844,8 @@ public class EventDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -801,7 +863,8 @@ public class EventDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -822,7 +885,7 @@ public class EventDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -842,7 +905,7 @@ public class EventDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -867,9 +930,9 @@ public class EventDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -892,9 +955,9 @@ public class EventDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -919,8 +982,8 @@ public class EventDefinition extends DomainResource {
         /**
          * An absolute URI that is used to identify this event definition when it is referenced in a specification, model, design 
          * or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address 
-         * at which at which an authoritative instance of this event definition is (or will be) published. This URL can be the 
-         * target of a canonical reference. It SHALL remain the same when the event definition is stored on different servers.
+         * at which an authoritative instance of this event definition is (or will be) published. This URL can be the target of a 
+         * canonical reference. It SHALL remain the same when the event definition is stored on different servers.
          * 
          * @param url
          *     Canonical identifier for this event definition, represented as a URI (globally unique)
@@ -1004,6 +1067,42 @@ public class EventDefinition extends DomainResource {
          */
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
             return this;
         }
 
@@ -1165,15 +1264,15 @@ public class EventDefinition extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder subject(Element subject) {
+        public Builder subject(org.linuxforhealth.fhir.model.type.Element subject) {
             this.subject = subject;
             return this;
         }
 
         /**
-         * The date (and optionally time) when the event definition was published. The date must change when the business version 
-         * changes and it must change if the status code changes. In addition, it should change when the substantive content of 
-         * the event definition changes.
+         * The date (and optionally time) when the event definition was last significantly changed. The date must change when the 
+         * business version changes and it must change if the status code changes. In addition, it should change when the 
+         * substantive content of the event definition changes.
          * 
          * @param date
          *     Date last changed
@@ -1190,7 +1289,7 @@ public class EventDefinition extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1203,10 +1302,10 @@ public class EventDefinition extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the event definition.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the event definition.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1366,22 +1465,6 @@ public class EventDefinition extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code usage}.
-         * 
-         * @param usage
-         *     Describes the clinical usage of the event definition
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #usage(org.linuxforhealth.fhir.model.type.String)
-         */
-        public Builder usage(java.lang.String usage) {
-            this.usage = (usage == null) ? null : String.of(usage);
-            return this;
-        }
-
-        /**
          * A detailed description of how the event definition is used from a clinical perspective.
          * 
          * @param usage
@@ -1390,7 +1473,7 @@ public class EventDefinition extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder usage(String usage) {
+        public Builder usage(Markdown usage) {
             this.usage = usage;
             return this;
         }
@@ -1407,6 +1490,37 @@ public class EventDefinition extends DomainResource {
          */
         public Builder copyright(Markdown copyright) {
             this.copyright = copyright;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
             return this;
         }
 
@@ -1445,7 +1559,7 @@ public class EventDefinition extends DomainResource {
          * Convenience method for setting {@code lastReviewDate}.
          * 
          * @param lastReviewDate
-         *     When the event definition was last reviewed
+         *     When the event definition was last reviewed by the publisher
          * 
          * @return
          *     A reference to this Builder instance
@@ -1462,7 +1576,7 @@ public class EventDefinition extends DomainResource {
          * change the original approval date.
          * 
          * @param lastReviewDate
-         *     When the event definition was last reviewed
+         *     When the event definition was last reviewed by the publisher
          * 
          * @return
          *     A reference to this Builder instance
@@ -1494,7 +1608,7 @@ public class EventDefinition extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param topic
-         *     E.g. Education, Treatment, Assessment, etc.
+         *     E.g. Education, Treatment, Assessment, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -1514,7 +1628,7 @@ public class EventDefinition extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param topic
-         *     E.g. Education, Treatment, Assessment, etc.
+         *     E.g. Education, Treatment, Assessment, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -1606,7 +1720,8 @@ public class EventDefinition extends DomainResource {
         }
 
         /**
-         * An individual or organization primarily responsible for review of some aspect of the content.
+         * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+         * content.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1625,7 +1740,8 @@ public class EventDefinition extends DomainResource {
         }
 
         /**
-         * An individual or organization primarily responsible for review of some aspect of the content.
+         * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+         * content.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1645,7 +1761,8 @@ public class EventDefinition extends DomainResource {
         }
 
         /**
-         * An individual or organization responsible for officially endorsing the content for use in some setting.
+         * An individual or organization asserted by the publisher to be responsible for officially endorsing the content for use 
+         * in some setting.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1664,7 +1781,8 @@ public class EventDefinition extends DomainResource {
         }
 
         /**
-         * An individual or organization responsible for officially endorsing the content for use in some setting.
+         * An individual or organization asserted by the publisher to be responsible for officially endorsing the content for use 
+         * in some setting.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1690,7 +1808,7 @@ public class EventDefinition extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param relatedArtifact
-         *     Additional documentation, citations, etc.
+         *     Additional documentation, citations, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -1709,7 +1827,7 @@ public class EventDefinition extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param relatedArtifact
-         *     Additional documentation, citations, etc.
+         *     Additional documentation, citations, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -1793,6 +1911,7 @@ public class EventDefinition extends DomainResource {
         protected void validate(EventDefinition eventDefinition) {
             super.validate(eventDefinition);
             ValidationSupport.checkList(eventDefinition.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(eventDefinition.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.requireNonNull(eventDefinition.status, "status");
             ValidationSupport.choiceElement(eventDefinition.subject, "subject", CodeableConcept.class, Reference.class);
             ValidationSupport.checkList(eventDefinition.contact, "contact", ContactDetail.class);
@@ -1813,6 +1932,7 @@ public class EventDefinition extends DomainResource {
             url = eventDefinition.url;
             identifier.addAll(eventDefinition.identifier);
             version = eventDefinition.version;
+            versionAlgorithm = eventDefinition.versionAlgorithm;
             name = eventDefinition.name;
             title = eventDefinition.title;
             subtitle = eventDefinition.subtitle;
@@ -1828,6 +1948,7 @@ public class EventDefinition extends DomainResource {
             purpose = eventDefinition.purpose;
             usage = eventDefinition.usage;
             copyright = eventDefinition.copyright;
+            copyrightLabel = eventDefinition.copyrightLabel;
             approvalDate = eventDefinition.approvalDate;
             lastReviewDate = eventDefinition.lastReviewDate;
             effectivePeriod = eventDefinition.effectivePeriod;

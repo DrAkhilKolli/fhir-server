@@ -320,7 +320,7 @@ public class DavinciHealthRecordExchangeTest extends ProfilesTestBaseV2 {
 
                     Coverage.Class.Builder b = Coverage.Class.builder();
                     b.setValidating(false);
-                    Coverage.Class clz = b.value("test").build();
+                    Coverage.Class clz = b.value(Identifier.builder().value(org.linuxforhealth.fhir.model.type.String.of("test")).build()).build();
 
                     coverageParameterBuilder = coverageParameterBuilder.name("CoverageToLink").resource(coverage.toBuilder().clazz(Arrays.asList(clz)).build());
                     Parameters.Parameter coverageParameter = coverageParameterBuilder.build();

@@ -27,137 +27,62 @@ import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
 import org.linuxforhealth.fhir.model.type.Coding;
+import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Instant;
+import org.linuxforhealth.fhir.model.type.Integer;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
+import org.linuxforhealth.fhir.model.type.Quantity;
+import org.linuxforhealth.fhir.model.type.Range;
+import org.linuxforhealth.fhir.model.type.Ratio;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.String;
+import org.linuxforhealth.fhir.model.type.Time;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.AuditEventAction;
-import org.linuxforhealth.fhir.model.type.code.AuditEventAgentNetworkType;
-import org.linuxforhealth.fhir.model.type.code.AuditEventOutcome;
+import org.linuxforhealth.fhir.model.type.code.AuditEventSeverity;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
- * A record of an event made for purposes of maintaining a security log. Typical uses include detection of intrusion 
- * attempts and monitoring for inappropriate usage.
+ * A record of an event relevant for purposes such as operations, privacy, security, maintenance, and performance 
+ * analysis.
  * 
- * <p>Maturity level: FMM3 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 3,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "sev-1",
-    level = "Rule",
-    location = "AuditEvent.entity",
-    description = "Either a name or a query (NOT both)",
-    expression = "name.empty() or query.empty()",
-    source = "http://hl7.org/fhir/StructureDefinition/AuditEvent"
+    id = "auditEvent-0",
+    level = "Warning",
+    location = "outcome.code",
+    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/audit-event-outcome",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/audit-event-outcome', 'preferred')",
+    source = "http://hl7.org/fhir/StructureDefinition/AuditEvent",
+    generated = true
+)
+@Constraint(
+    id = "auditEvent-1",
+    level = "Warning",
+    location = "agent.type",
+    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/participation-role-type",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/participation-role-type', 'preferred')",
+    source = "http://hl7.org/fhir/StructureDefinition/AuditEvent",
+    generated = true
 )
 @Constraint(
     id = "auditEvent-2",
     level = "Warning",
-    location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/audit-event-type",
-    expression = "type.exists() and type.memberOf('http://hl7.org/fhir/ValueSet/audit-event-type', 'extensible')",
-    source = "http://hl7.org/fhir/StructureDefinition/AuditEvent",
-    generated = true
-)
-@Constraint(
-    id = "auditEvent-3",
-    level = "Warning",
-    location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/audit-event-sub-type",
-    expression = "subtype.exists() implies (subtype.all(memberOf('http://hl7.org/fhir/ValueSet/audit-event-sub-type', 'extensible')))",
-    source = "http://hl7.org/fhir/StructureDefinition/AuditEvent",
-    generated = true
-)
-@Constraint(
-    id = "auditEvent-4",
-    level = "Warning",
-    location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://terminology.hl7.org/ValueSet/v3-PurposeOfUse",
-    expression = "purposeOfEvent.exists() implies (purposeOfEvent.all(memberOf('http://terminology.hl7.org/ValueSet/v3-PurposeOfUse', 'extensible')))",
-    source = "http://hl7.org/fhir/StructureDefinition/AuditEvent",
-    generated = true
-)
-@Constraint(
-    id = "auditEvent-5",
-    level = "Warning",
-    location = "agent.type",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/participation-role-type",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/participation-role-type', 'extensible')",
-    source = "http://hl7.org/fhir/StructureDefinition/AuditEvent",
-    generated = true
-)
-@Constraint(
-    id = "auditEvent-6",
-    level = "Warning",
-    location = "agent.media",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/dicm-405-mediatype",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/dicm-405-mediatype', 'extensible')",
-    source = "http://hl7.org/fhir/StructureDefinition/AuditEvent",
-    generated = true
-)
-@Constraint(
-    id = "auditEvent-7",
-    level = "Warning",
-    location = "agent.purposeOfUse",
-    description = "SHALL, if possible, contain a code from value set http://terminology.hl7.org/ValueSet/v3-PurposeOfUse",
-    expression = "$this.memberOf('http://terminology.hl7.org/ValueSet/v3-PurposeOfUse', 'extensible')",
-    source = "http://hl7.org/fhir/StructureDefinition/AuditEvent",
-    generated = true
-)
-@Constraint(
-    id = "auditEvent-8",
-    level = "Warning",
     location = "source.type",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/audit-source-type",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/audit-source-type', 'extensible')",
-    source = "http://hl7.org/fhir/StructureDefinition/AuditEvent",
-    generated = true
-)
-@Constraint(
-    id = "auditEvent-9",
-    level = "Warning",
-    location = "entity.type",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/audit-entity-type",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/audit-entity-type', 'extensible')",
-    source = "http://hl7.org/fhir/StructureDefinition/AuditEvent",
-    generated = true
-)
-@Constraint(
-    id = "auditEvent-10",
-    level = "Warning",
-    location = "entity.role",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/object-role",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/object-role', 'extensible')",
-    source = "http://hl7.org/fhir/StructureDefinition/AuditEvent",
-    generated = true
-)
-@Constraint(
-    id = "auditEvent-11",
-    level = "Warning",
-    location = "entity.lifecycle",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/object-lifecycle-events",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/object-lifecycle-events', 'extensible')",
-    source = "http://hl7.org/fhir/StructureDefinition/AuditEvent",
-    generated = true
-)
-@Constraint(
-    id = "auditEvent-12",
-    level = "Warning",
-    location = "entity.securityLabel",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/security-labels",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/security-labels', 'extensible')",
+    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/security-source-type",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/security-source-type', 'preferred')",
     source = "http://hl7.org/fhir/StructureDefinition/AuditEvent",
     generated = true
 )
@@ -166,90 +91,102 @@ public class AuditEvent extends DomainResource {
     @Summary
     @Binding(
         bindingName = "AuditEventType",
-        strength = BindingStrength.Value.EXTENSIBLE,
+        strength = BindingStrength.Value.EXAMPLE,
         description = "Type of event.",
         valueSet = "http://hl7.org/fhir/ValueSet/audit-event-type"
     )
-    @Required
-    private final Coding type;
+    private final List<CodeableConcept> category;
     @Summary
     @Binding(
         bindingName = "AuditEventSubType",
-        strength = BindingStrength.Value.EXTENSIBLE,
-        description = "Sub-type of event.",
+        strength = BindingStrength.Value.EXAMPLE,
+        description = "Specific type of event.",
         valueSet = "http://hl7.org/fhir/ValueSet/audit-event-sub-type"
     )
-    private final List<Coding> subtype;
+    @Required
+    private final CodeableConcept code;
     @Summary
     @Binding(
         bindingName = "AuditEventAction",
         strength = BindingStrength.Value.REQUIRED,
         description = "DICOM Audit Event Action",
-        valueSet = "http://hl7.org/fhir/ValueSet/audit-event-action|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/audit-event-action|5.0.0"
     )
     private final AuditEventAction action;
-    private final Period period;
+    @Summary
+    @Binding(
+        bindingName = "AuditEventSeverity",
+        strength = BindingStrength.Value.REQUIRED,
+        description = "This is in the SysLog header, PRI. http://tools.ietf.org/html/rfc5424#appendix-A.3",
+        valueSet = "http://hl7.org/fhir/ValueSet/audit-event-severity|5.0.0"
+    )
+    private final AuditEventSeverity severity;
+    @Choice({ Period.class, DateTime.class })
+    private final org.linuxforhealth.fhir.model.type.Element occurred;
     @Summary
     @Required
     private final Instant recorded;
     @Summary
-    @Binding(
-        bindingName = "AuditEventOutcome",
-        strength = BindingStrength.Value.REQUIRED,
-        description = "DICOM Audit Event Outcome",
-        valueSet = "http://hl7.org/fhir/ValueSet/audit-event-outcome|4.3.0"
-    )
-    private final AuditEventOutcome outcome;
-    @Summary
-    private final String outcomeDesc;
+    private final Outcome outcome;
     @Summary
     @Binding(
         bindingName = "AuditPurposeOfUse",
-        strength = BindingStrength.Value.EXTENSIBLE,
-        description = "The reason the activity took place.",
+        strength = BindingStrength.Value.EXAMPLE,
+        description = "The authorized purposeOfUse for the activity.",
         valueSet = "http://terminology.hl7.org/ValueSet/v3-PurposeOfUse"
     )
-    private final List<CodeableConcept> purposeOfEvent;
+    private final List<CodeableConcept> authorization;
+    @ReferenceTarget({ "CarePlan", "DeviceRequest", "ImmunizationRecommendation", "MedicationRequest", "NutritionOrder", "ServiceRequest", "Task" })
+    private final List<Reference> basedOn;
+    @ReferenceTarget({ "Patient" })
+    private final Reference patient;
+    @ReferenceTarget({ "Encounter" })
+    private final Reference encounter;
+    @Summary
     @Required
     private final List<Agent> agent;
+    @Summary
     @Required
     private final Source source;
+    @Summary
     private final List<Entity> entity;
 
     private AuditEvent(Builder builder) {
         super(builder);
-        type = builder.type;
-        subtype = Collections.unmodifiableList(builder.subtype);
+        category = Collections.unmodifiableList(builder.category);
+        code = builder.code;
         action = builder.action;
-        period = builder.period;
+        severity = builder.severity;
+        occurred = builder.occurred;
         recorded = builder.recorded;
         outcome = builder.outcome;
-        outcomeDesc = builder.outcomeDesc;
-        purposeOfEvent = Collections.unmodifiableList(builder.purposeOfEvent);
+        authorization = Collections.unmodifiableList(builder.authorization);
+        basedOn = Collections.unmodifiableList(builder.basedOn);
+        patient = builder.patient;
+        encounter = builder.encounter;
         agent = Collections.unmodifiableList(builder.agent);
         source = builder.source;
         entity = Collections.unmodifiableList(builder.entity);
     }
 
     /**
-     * Identifier for a family of the event. For example, a menu item, program, rule, policy, function code, application name 
-     * or URL. It identifies the performed function.
+     * Classification of the type of event.
      * 
      * @return
-     *     An immutable object of type {@link Coding} that is non-null.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
      */
-    public Coding getType() {
-        return type;
+    public List<CodeableConcept> getCategory() {
+        return category;
     }
 
     /**
-     * Identifier for the category of event.
+     * Describes what happened. The most specific code for the event.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Coding} that may be empty.
+     *     An immutable object of type {@link CodeableConcept} that is non-null.
      */
-    public List<Coding> getSubtype() {
-        return subtype;
+    public CodeableConcept getCode() {
+        return code;
     }
 
     /**
@@ -263,13 +200,23 @@ public class AuditEvent extends DomainResource {
     }
 
     /**
-     * The period during which the activity occurred.
+     * Indicates and enables segmentation of various severity including debugging from critical.
      * 
      * @return
-     *     An immutable object of type {@link Period} that may be null.
+     *     An immutable object of type {@link AuditEventSeverity} that may be null.
      */
-    public Period getPeriod() {
-        return period;
+    public AuditEventSeverity getSeverity() {
+        return severity;
+    }
+
+    /**
+     * The time or period during which the activity occurred.
+     * 
+     * @return
+     *     An immutable object of type {@link Period} or {@link DateTime} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getOccurred() {
+        return occurred;
     }
 
     /**
@@ -283,33 +230,55 @@ public class AuditEvent extends DomainResource {
     }
 
     /**
-     * Indicates whether the event succeeded or failed.
+     * Indicates whether the event succeeded or failed. A free text descripiton can be given in outcome.text.
      * 
      * @return
-     *     An immutable object of type {@link AuditEventOutcome} that may be null.
+     *     An immutable object of type {@link Outcome} that may be null.
      */
-    public AuditEventOutcome getOutcome() {
+    public Outcome getOutcome() {
         return outcome;
     }
 
     /**
-     * A free text description of the outcome of the event.
-     * 
-     * @return
-     *     An immutable object of type {@link String} that may be null.
-     */
-    public String getOutcomeDesc() {
-        return outcomeDesc;
-    }
-
-    /**
-     * The purposeOfUse (reason) that was used during the event being recorded.
+     * The authorization (e.g., PurposeOfUse) that was used during the event being recorded.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
      */
-    public List<CodeableConcept> getPurposeOfEvent() {
-        return purposeOfEvent;
+    public List<CodeableConcept> getAuthorization() {
+        return authorization;
+    }
+
+    /**
+     * Allows tracing of authorizatino for the events and tracking whether proposals/recommendations were acted upon.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getBasedOn() {
+        return basedOn;
+    }
+
+    /**
+     * The patient element is available to enable deterministic tracking of activities that involve the patient as the 
+     * subject of the data used in an activity.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getPatient() {
+        return patient;
+    }
+
+    /**
+     * This will typically be the encounter the event occurred, but some events may be initiated prior to or after the 
+     * official completion of an encounter but still be tied to the context of the encounter (e.g. pre-admission lab tests).
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getEncounter() {
+        return encounter;
     }
 
     /**
@@ -323,7 +292,7 @@ public class AuditEvent extends DomainResource {
     }
 
     /**
-     * The system that is reporting the event.
+     * The actor that is reporting the event.
      * 
      * @return
      *     An immutable object of type {@link Source} that is non-null.
@@ -345,14 +314,17 @@ public class AuditEvent extends DomainResource {
     @Override
     public boolean hasChildren() {
         return super.hasChildren() || 
-            (type != null) || 
-            !subtype.isEmpty() || 
+            !category.isEmpty() || 
+            (code != null) || 
             (action != null) || 
-            (period != null) || 
+            (severity != null) || 
+            (occurred != null) || 
             (recorded != null) || 
             (outcome != null) || 
-            (outcomeDesc != null) || 
-            !purposeOfEvent.isEmpty() || 
+            !authorization.isEmpty() || 
+            !basedOn.isEmpty() || 
+            (patient != null) || 
+            (encounter != null) || 
             !agent.isEmpty() || 
             (source != null) || 
             !entity.isEmpty();
@@ -372,14 +344,17 @@ public class AuditEvent extends DomainResource {
                 accept(contained, "contained", visitor, Resource.class);
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                accept(type, "type", visitor);
-                accept(subtype, "subtype", visitor, Coding.class);
+                accept(category, "category", visitor, CodeableConcept.class);
+                accept(code, "code", visitor);
                 accept(action, "action", visitor);
-                accept(period, "period", visitor);
+                accept(severity, "severity", visitor);
+                accept(occurred, "occurred", visitor);
                 accept(recorded, "recorded", visitor);
                 accept(outcome, "outcome", visitor);
-                accept(outcomeDesc, "outcomeDesc", visitor);
-                accept(purposeOfEvent, "purposeOfEvent", visitor, CodeableConcept.class);
+                accept(authorization, "authorization", visitor, CodeableConcept.class);
+                accept(basedOn, "basedOn", visitor, Reference.class);
+                accept(patient, "patient", visitor);
+                accept(encounter, "encounter", visitor);
                 accept(agent, "agent", visitor, Agent.class);
                 accept(source, "source", visitor);
                 accept(entity, "entity", visitor, Entity.class);
@@ -409,14 +384,17 @@ public class AuditEvent extends DomainResource {
             Objects.equals(contained, other.contained) && 
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
-            Objects.equals(type, other.type) && 
-            Objects.equals(subtype, other.subtype) && 
+            Objects.equals(category, other.category) && 
+            Objects.equals(code, other.code) && 
             Objects.equals(action, other.action) && 
-            Objects.equals(period, other.period) && 
+            Objects.equals(severity, other.severity) && 
+            Objects.equals(occurred, other.occurred) && 
             Objects.equals(recorded, other.recorded) && 
             Objects.equals(outcome, other.outcome) && 
-            Objects.equals(outcomeDesc, other.outcomeDesc) && 
-            Objects.equals(purposeOfEvent, other.purposeOfEvent) && 
+            Objects.equals(authorization, other.authorization) && 
+            Objects.equals(basedOn, other.basedOn) && 
+            Objects.equals(patient, other.patient) && 
+            Objects.equals(encounter, other.encounter) && 
             Objects.equals(agent, other.agent) && 
             Objects.equals(source, other.source) && 
             Objects.equals(entity, other.entity);
@@ -434,14 +412,17 @@ public class AuditEvent extends DomainResource {
                 contained, 
                 extension, 
                 modifierExtension, 
-                type, 
-                subtype, 
+                category, 
+                code, 
                 action, 
-                period, 
+                severity, 
+                occurred, 
                 recorded, 
                 outcome, 
-                outcomeDesc, 
-                purposeOfEvent, 
+                authorization, 
+                basedOn, 
+                patient, 
+                encounter, 
                 agent, 
                 source, 
                 entity);
@@ -460,14 +441,17 @@ public class AuditEvent extends DomainResource {
     }
 
     public static class Builder extends DomainResource.Builder {
-        private Coding type;
-        private List<Coding> subtype = new ArrayList<>();
+        private List<CodeableConcept> category = new ArrayList<>();
+        private CodeableConcept code;
         private AuditEventAction action;
-        private Period period;
+        private AuditEventSeverity severity;
+        private org.linuxforhealth.fhir.model.type.Element occurred;
         private Instant recorded;
-        private AuditEventOutcome outcome;
-        private String outcomeDesc;
-        private List<CodeableConcept> purposeOfEvent = new ArrayList<>();
+        private Outcome outcome;
+        private List<CodeableConcept> authorization = new ArrayList<>();
+        private List<Reference> basedOn = new ArrayList<>();
+        private Reference patient;
+        private Reference encounter;
         private List<Agent> agent = new ArrayList<>();
         private Source source;
         private List<Entity> entity = new ArrayList<>();
@@ -554,7 +538,8 @@ public class AuditEvent extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -572,7 +557,8 @@ public class AuditEvent extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -593,7 +579,7 @@ public class AuditEvent extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -613,7 +599,7 @@ public class AuditEvent extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -638,9 +624,9 @@ public class AuditEvent extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -663,9 +649,9 @@ public class AuditEvent extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -688,49 +674,32 @@ public class AuditEvent extends DomainResource {
         }
 
         /**
-         * Identifier for a family of the event. For example, a menu item, program, rule, policy, function code, application name 
-         * or URL. It identifies the performed function.
+         * Classification of the type of event.
          * 
-         * <p>This element is required.
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param type
+         * @param category
          *     Type/identifier of event
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder type(Coding type) {
-            this.type = type;
-            return this;
-        }
-
-        /**
-         * Identifier for the category of event.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param subtype
-         *     More specific type/id for the event
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder subtype(Coding... subtype) {
-            for (Coding value : subtype) {
-                this.subtype.add(value);
+        public Builder category(CodeableConcept... category) {
+            for (CodeableConcept value : category) {
+                this.category.add(value);
             }
             return this;
         }
 
         /**
-         * Identifier for the category of event.
+         * Classification of the type of event.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param subtype
-         *     More specific type/id for the event
+         * @param category
+         *     Type/identifier of event
          * 
          * @return
          *     A reference to this Builder instance
@@ -738,8 +707,24 @@ public class AuditEvent extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder subtype(Collection<Coding> subtype) {
-            this.subtype = new ArrayList<>(subtype);
+        public Builder category(Collection<CodeableConcept> category) {
+            this.category = new ArrayList<>(category);
+            return this;
+        }
+
+        /**
+         * Describes what happened. The most specific code for the event.
+         * 
+         * <p>This element is required.
+         * 
+         * @param code
+         *     Specific type of event
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder code(CodeableConcept code) {
+            this.code = code;
             return this;
         }
 
@@ -758,16 +743,36 @@ public class AuditEvent extends DomainResource {
         }
 
         /**
-         * The period during which the activity occurred.
+         * Indicates and enables segmentation of various severity including debugging from critical.
          * 
-         * @param period
+         * @param severity
+         *     emergency | alert | critical | error | warning | notice | informational | debug
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder severity(AuditEventSeverity severity) {
+            this.severity = severity;
+            return this;
+        }
+
+        /**
+         * The time or period during which the activity occurred.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link Period}</li>
+         * <li>{@link DateTime}</li>
+         * </ul>
+         * 
+         * @param occurred
          *     When the activity occurred
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder period(Period period) {
-            this.period = period;
+        public Builder occurred(org.linuxforhealth.fhir.model.type.Element occurred) {
+            this.occurred = occurred;
             return this;
         }
 
@@ -806,7 +811,7 @@ public class AuditEvent extends DomainResource {
         }
 
         /**
-         * Indicates whether the event succeeded or failed.
+         * Indicates whether the event succeeded or failed. A free text descripiton can be given in outcome.text.
          * 
          * @param outcome
          *     Whether the event succeeded or failed
@@ -814,68 +819,38 @@ public class AuditEvent extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder outcome(AuditEventOutcome outcome) {
+        public Builder outcome(Outcome outcome) {
             this.outcome = outcome;
             return this;
         }
 
         /**
-         * Convenience method for setting {@code outcomeDesc}.
-         * 
-         * @param outcomeDesc
-         *     Description of the event outcome
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #outcomeDesc(org.linuxforhealth.fhir.model.type.String)
-         */
-        public Builder outcomeDesc(java.lang.String outcomeDesc) {
-            this.outcomeDesc = (outcomeDesc == null) ? null : String.of(outcomeDesc);
-            return this;
-        }
-
-        /**
-         * A free text description of the outcome of the event.
-         * 
-         * @param outcomeDesc
-         *     Description of the event outcome
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder outcomeDesc(String outcomeDesc) {
-            this.outcomeDesc = outcomeDesc;
-            return this;
-        }
-
-        /**
-         * The purposeOfUse (reason) that was used during the event being recorded.
+         * The authorization (e.g., PurposeOfUse) that was used during the event being recorded.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param purposeOfEvent
-         *     The purposeOfUse of the event
+         * @param authorization
+         *     Authorization related to the event
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder purposeOfEvent(CodeableConcept... purposeOfEvent) {
-            for (CodeableConcept value : purposeOfEvent) {
-                this.purposeOfEvent.add(value);
+        public Builder authorization(CodeableConcept... authorization) {
+            for (CodeableConcept value : authorization) {
+                this.authorization.add(value);
             }
             return this;
         }
 
         /**
-         * The purposeOfUse (reason) that was used during the event being recorded.
+         * The authorization (e.g., PurposeOfUse) that was used during the event being recorded.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param purposeOfEvent
-         *     The purposeOfUse of the event
+         * @param authorization
+         *     Authorization related to the event
          * 
          * @return
          *     A reference to this Builder instance
@@ -883,8 +858,109 @@ public class AuditEvent extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder purposeOfEvent(Collection<CodeableConcept> purposeOfEvent) {
-            this.purposeOfEvent = new ArrayList<>(purposeOfEvent);
+        public Builder authorization(Collection<CodeableConcept> authorization) {
+            this.authorization = new ArrayList<>(authorization);
+            return this;
+        }
+
+        /**
+         * Allows tracing of authorizatino for the events and tracking whether proposals/recommendations were acted upon.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link CarePlan}</li>
+         * <li>{@link DeviceRequest}</li>
+         * <li>{@link ImmunizationRecommendation}</li>
+         * <li>{@link MedicationRequest}</li>
+         * <li>{@link NutritionOrder}</li>
+         * <li>{@link ServiceRequest}</li>
+         * <li>{@link Task}</li>
+         * </ul>
+         * 
+         * @param basedOn
+         *     Workflow authorization within which this event occurred
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder basedOn(Reference... basedOn) {
+            for (Reference value : basedOn) {
+                this.basedOn.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Allows tracing of authorizatino for the events and tracking whether proposals/recommendations were acted upon.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link CarePlan}</li>
+         * <li>{@link DeviceRequest}</li>
+         * <li>{@link ImmunizationRecommendation}</li>
+         * <li>{@link MedicationRequest}</li>
+         * <li>{@link NutritionOrder}</li>
+         * <li>{@link ServiceRequest}</li>
+         * <li>{@link Task}</li>
+         * </ul>
+         * 
+         * @param basedOn
+         *     Workflow authorization within which this event occurred
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder basedOn(Collection<Reference> basedOn) {
+            this.basedOn = new ArrayList<>(basedOn);
+            return this;
+        }
+
+        /**
+         * The patient element is available to enable deterministic tracking of activities that involve the patient as the 
+         * subject of the data used in an activity.
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link Patient}</li>
+         * </ul>
+         * 
+         * @param patient
+         *     The patient is the subject of the data used/created/updated/deleted during the activity
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder patient(Reference patient) {
+            this.patient = patient;
+            return this;
+        }
+
+        /**
+         * This will typically be the encounter the event occurred, but some events may be initiated prior to or after the 
+         * official completion of an encounter but still be tied to the context of the encounter (e.g. pre-admission lab tests).
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link Encounter}</li>
+         * </ul>
+         * 
+         * @param encounter
+         *     Encounter within which this event occurred or which the event is tightly associated
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder encounter(Reference encounter) {
+            this.encounter = encounter;
             return this;
         }
 
@@ -932,7 +1008,7 @@ public class AuditEvent extends DomainResource {
         }
 
         /**
-         * The system that is reporting the event.
+         * The actor that is reporting the event.
          * 
          * <p>This element is required.
          * 
@@ -991,7 +1067,7 @@ public class AuditEvent extends DomainResource {
          * 
          * <p>Required elements:
          * <ul>
-         * <li>type</li>
+         * <li>code</li>
          * <li>recorded</li>
          * <li>agent</li>
          * <li>source</li>
@@ -1013,25 +1089,33 @@ public class AuditEvent extends DomainResource {
 
         protected void validate(AuditEvent auditEvent) {
             super.validate(auditEvent);
-            ValidationSupport.requireNonNull(auditEvent.type, "type");
-            ValidationSupport.checkList(auditEvent.subtype, "subtype", Coding.class);
+            ValidationSupport.checkList(auditEvent.category, "category", CodeableConcept.class);
+            ValidationSupport.requireNonNull(auditEvent.code, "code");
+            ValidationSupport.choiceElement(auditEvent.occurred, "occurred", Period.class, DateTime.class);
             ValidationSupport.requireNonNull(auditEvent.recorded, "recorded");
-            ValidationSupport.checkList(auditEvent.purposeOfEvent, "purposeOfEvent", CodeableConcept.class);
+            ValidationSupport.checkList(auditEvent.authorization, "authorization", CodeableConcept.class);
+            ValidationSupport.checkList(auditEvent.basedOn, "basedOn", Reference.class);
             ValidationSupport.checkNonEmptyList(auditEvent.agent, "agent", Agent.class);
             ValidationSupport.requireNonNull(auditEvent.source, "source");
             ValidationSupport.checkList(auditEvent.entity, "entity", Entity.class);
+            ValidationSupport.checkReferenceType(auditEvent.basedOn, "basedOn", "CarePlan", "DeviceRequest", "ImmunizationRecommendation", "MedicationRequest", "NutritionOrder", "ServiceRequest", "Task");
+            ValidationSupport.checkReferenceType(auditEvent.patient, "patient", "Patient");
+            ValidationSupport.checkReferenceType(auditEvent.encounter, "encounter", "Encounter");
         }
 
         protected Builder from(AuditEvent auditEvent) {
             super.from(auditEvent);
-            type = auditEvent.type;
-            subtype.addAll(auditEvent.subtype);
+            category.addAll(auditEvent.category);
+            code = auditEvent.code;
             action = auditEvent.action;
-            period = auditEvent.period;
+            severity = auditEvent.severity;
+            occurred = auditEvent.occurred;
             recorded = auditEvent.recorded;
             outcome = auditEvent.outcome;
-            outcomeDesc = auditEvent.outcomeDesc;
-            purposeOfEvent.addAll(auditEvent.purposeOfEvent);
+            authorization.addAll(auditEvent.authorization);
+            basedOn.addAll(auditEvent.basedOn);
+            patient = auditEvent.patient;
+            encounter = auditEvent.encounter;
             agent.addAll(auditEvent.agent);
             source = auditEvent.source;
             entity.addAll(auditEvent.entity);
@@ -1040,193 +1124,59 @@ public class AuditEvent extends DomainResource {
     }
 
     /**
-     * An actor taking an active role in the event or activity that is logged.
+     * Indicates whether the event succeeded or failed. A free text descripiton can be given in outcome.text.
      */
-    public static class Agent extends BackboneElement {
-        @Binding(
-            bindingName = "AuditAgentType",
-            strength = BindingStrength.Value.EXTENSIBLE,
-            description = "The Participation type of the agent to the event.",
-            valueSet = "http://hl7.org/fhir/ValueSet/participation-role-type"
-        )
-        private final CodeableConcept type;
-        @Binding(
-            bindingName = "AuditAgentRole",
-            strength = BindingStrength.Value.EXAMPLE,
-            description = "What security role enabled the agent to participate in the event.",
-            valueSet = "http://hl7.org/fhir/ValueSet/security-role-type"
-        )
-        private final List<CodeableConcept> role;
+    public static class Outcome extends BackboneElement {
         @Summary
-        @ReferenceTarget({ "PractitionerRole", "Practitioner", "Organization", "Device", "Patient", "RelatedPerson" })
-        private final Reference who;
-        private final String altId;
-        private final String name;
-        @Summary
+        @Binding(
+            bindingName = "AuditEventOutcome",
+            strength = BindingStrength.Value.PREFERRED,
+            description = "DICOM Audit Event Outcome",
+            valueSet = "http://hl7.org/fhir/ValueSet/audit-event-outcome"
+        )
         @Required
-        private final Boolean requestor;
-        @ReferenceTarget({ "Location" })
-        private final Reference location;
-        private final List<Uri> policy;
+        private final Coding code;
+        @Summary
         @Binding(
-            bindingName = "DICOMMediaType",
-            strength = BindingStrength.Value.EXTENSIBLE,
-            description = "Used when the event is about exporting/importing onto media.",
-            valueSet = "http://hl7.org/fhir/ValueSet/dicm-405-mediatype"
+            bindingName = "AuditEventOutcomeDetail",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "A code that provides details as the exact issue.",
+            valueSet = "http://hl7.org/fhir/ValueSet/audit-event-outcome-detail"
         )
-        private final Coding media;
-        private final Network network;
-        @Binding(
-            bindingName = "AuditPurposeOfUse",
-            strength = BindingStrength.Value.EXTENSIBLE,
-            description = "The reason the activity took place.",
-            valueSet = "http://terminology.hl7.org/ValueSet/v3-PurposeOfUse"
-        )
-        private final List<CodeableConcept> purposeOfUse;
+        private final List<CodeableConcept> detail;
 
-        private Agent(Builder builder) {
+        private Outcome(Builder builder) {
             super(builder);
-            type = builder.type;
-            role = Collections.unmodifiableList(builder.role);
-            who = builder.who;
-            altId = builder.altId;
-            name = builder.name;
-            requestor = builder.requestor;
-            location = builder.location;
-            policy = Collections.unmodifiableList(builder.policy);
-            media = builder.media;
-            network = builder.network;
-            purposeOfUse = Collections.unmodifiableList(builder.purposeOfUse);
+            code = builder.code;
+            detail = Collections.unmodifiableList(builder.detail);
         }
 
         /**
-         * Specification of the participation type the user plays when performing the event.
+         * Indicates whether the event succeeded or failed.
          * 
          * @return
-         *     An immutable object of type {@link CodeableConcept} that may be null.
+         *     An immutable object of type {@link Coding} that is non-null.
          */
-        public CodeableConcept getType() {
-            return type;
+        public Coding getCode() {
+            return code;
         }
 
         /**
-         * The security role that the user was acting under, that come from local codes defined by the access control security 
-         * system (e.g. RBAC, ABAC) used in the local context.
+         * Additional details about the error. This may be a text description of the error or a system code that identifies the 
+         * error.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
          */
-        public List<CodeableConcept> getRole() {
-            return role;
-        }
-
-        /**
-         * Reference to who this agent is that was involved in the event.
-         * 
-         * @return
-         *     An immutable object of type {@link Reference} that may be null.
-         */
-        public Reference getWho() {
-            return who;
-        }
-
-        /**
-         * Alternative agent Identifier. For a human, this should be a user identifier text string from authentication system. 
-         * This identifier would be one known to a common authentication system (e.g. single sign-on), if available.
-         * 
-         * @return
-         *     An immutable object of type {@link String} that may be null.
-         */
-        public String getAltId() {
-            return altId;
-        }
-
-        /**
-         * Human-meaningful name for the agent.
-         * 
-         * @return
-         *     An immutable object of type {@link String} that may be null.
-         */
-        public String getName() {
-            return name;
-        }
-
-        /**
-         * Indicator that the user is or is not the requestor, or initiator, for the event being audited.
-         * 
-         * @return
-         *     An immutable object of type {@link Boolean} that is non-null.
-         */
-        public Boolean getRequestor() {
-            return requestor;
-        }
-
-        /**
-         * Where the event occurred.
-         * 
-         * @return
-         *     An immutable object of type {@link Reference} that may be null.
-         */
-        public Reference getLocation() {
-            return location;
-        }
-
-        /**
-         * The policy or plan that authorized the activity being recorded. Typically, a single activity may have multiple 
-         * applicable policies, such as patient consent, guarantor funding, etc. The policy would also indicate the security 
-         * token used.
-         * 
-         * @return
-         *     An unmodifiable list containing immutable objects of type {@link Uri} that may be empty.
-         */
-        public List<Uri> getPolicy() {
-            return policy;
-        }
-
-        /**
-         * Type of media involved. Used when the event is about exporting/importing onto media.
-         * 
-         * @return
-         *     An immutable object of type {@link Coding} that may be null.
-         */
-        public Coding getMedia() {
-            return media;
-        }
-
-        /**
-         * Logical network location for application activity, if the activity has a network location.
-         * 
-         * @return
-         *     An immutable object of type {@link Network} that may be null.
-         */
-        public Network getNetwork() {
-            return network;
-        }
-
-        /**
-         * The reason (purpose of use), specific to this agent, that was used during the event being recorded.
-         * 
-         * @return
-         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
-         */
-        public List<CodeableConcept> getPurposeOfUse() {
-            return purposeOfUse;
+        public List<CodeableConcept> getDetail() {
+            return detail;
         }
 
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                (type != null) || 
-                !role.isEmpty() || 
-                (who != null) || 
-                (altId != null) || 
-                (name != null) || 
-                (requestor != null) || 
-                (location != null) || 
-                !policy.isEmpty() || 
-                (media != null) || 
-                (network != null) || 
-                !purposeOfUse.isEmpty();
+                (code != null) || 
+                !detail.isEmpty();
         }
 
         @Override
@@ -1238,17 +1188,8 @@ public class AuditEvent extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(type, "type", visitor);
-                    accept(role, "role", visitor, CodeableConcept.class);
-                    accept(who, "who", visitor);
-                    accept(altId, "altId", visitor);
-                    accept(name, "name", visitor);
-                    accept(requestor, "requestor", visitor);
-                    accept(location, "location", visitor);
-                    accept(policy, "policy", visitor, Uri.class);
-                    accept(media, "media", visitor);
-                    accept(network, "network", visitor);
-                    accept(purposeOfUse, "purposeOfUse", visitor, CodeableConcept.class);
+                    accept(code, "code", visitor);
+                    accept(detail, "detail", visitor, CodeableConcept.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -1266,21 +1207,12 @@ public class AuditEvent extends DomainResource {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            Agent other = (Agent) obj;
+            Outcome other = (Outcome) obj;
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(type, other.type) && 
-                Objects.equals(role, other.role) && 
-                Objects.equals(who, other.who) && 
-                Objects.equals(altId, other.altId) && 
-                Objects.equals(name, other.name) && 
-                Objects.equals(requestor, other.requestor) && 
-                Objects.equals(location, other.location) && 
-                Objects.equals(policy, other.policy) && 
-                Objects.equals(media, other.media) && 
-                Objects.equals(network, other.network) && 
-                Objects.equals(purposeOfUse, other.purposeOfUse);
+                Objects.equals(code, other.code) && 
+                Objects.equals(detail, other.detail);
         }
 
         @Override
@@ -1290,17 +1222,8 @@ public class AuditEvent extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    type, 
-                    role, 
-                    who, 
-                    altId, 
-                    name, 
-                    requestor, 
-                    location, 
-                    policy, 
-                    media, 
-                    network, 
-                    purposeOfUse);
+                    code, 
+                    detail);
                 hashCode = result;
             }
             return result;
@@ -1316,17 +1239,8 @@ public class AuditEvent extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private CodeableConcept type;
-            private List<CodeableConcept> role = new ArrayList<>();
-            private Reference who;
-            private String altId;
-            private String name;
-            private Boolean requestor;
-            private Reference location;
-            private List<Uri> policy = new ArrayList<>();
-            private Coding media;
-            private Network network;
-            private List<CodeableConcept> purposeOfUse = new ArrayList<>();
+            private Coding code;
+            private List<CodeableConcept> detail = new ArrayList<>();
 
             private Builder() {
                 super();
@@ -1349,7 +1263,7 @@ public class AuditEvent extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1369,7 +1283,7 @@ public class AuditEvent extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1394,7 +1308,7 @@ public class AuditEvent extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1419,7 +1333,7 @@ public class AuditEvent extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1444,7 +1358,451 @@ public class AuditEvent extends DomainResource {
             }
 
             /**
-             * Specification of the participation type the user plays when performing the event.
+             * Indicates whether the event succeeded or failed.
+             * 
+             * <p>This element is required.
+             * 
+             * @param code
+             *     Whether the event succeeded or failed
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder code(Coding code) {
+                this.code = code;
+                return this;
+            }
+
+            /**
+             * Additional details about the error. This may be a text description of the error or a system code that identifies the 
+             * error.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param detail
+             *     Additional outcome detail
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder detail(CodeableConcept... detail) {
+                for (CodeableConcept value : detail) {
+                    this.detail.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * Additional details about the error. This may be a text description of the error or a system code that identifies the 
+             * error.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param detail
+             *     Additional outcome detail
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder detail(Collection<CodeableConcept> detail) {
+                this.detail = new ArrayList<>(detail);
+                return this;
+            }
+
+            /**
+             * Build the {@link Outcome}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>code</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link Outcome}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Outcome per the base specification
+             */
+            @Override
+            public Outcome build() {
+                Outcome outcome = new Outcome(this);
+                if (validating) {
+                    validate(outcome);
+                }
+                return outcome;
+            }
+
+            protected void validate(Outcome outcome) {
+                super.validate(outcome);
+                ValidationSupport.requireNonNull(outcome.code, "code");
+                ValidationSupport.checkList(outcome.detail, "detail", CodeableConcept.class);
+                ValidationSupport.requireValueOrChildren(outcome);
+            }
+
+            protected Builder from(Outcome outcome) {
+                super.from(outcome);
+                code = outcome.code;
+                detail.addAll(outcome.detail);
+                return this;
+            }
+        }
+    }
+
+    /**
+     * An actor taking an active role in the event or activity that is logged.
+     */
+    public static class Agent extends BackboneElement {
+        @Binding(
+            bindingName = "AuditAgentType",
+            strength = BindingStrength.Value.PREFERRED,
+            description = "The Participation type of the agent to the event.",
+            valueSet = "http://hl7.org/fhir/ValueSet/participation-role-type"
+        )
+        private final CodeableConcept type;
+        @Binding(
+            bindingName = "AuditAgentRole",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "What security role enabled the agent to participate in the event.",
+            valueSet = "http://hl7.org/fhir/ValueSet/security-role-type"
+        )
+        private final List<CodeableConcept> role;
+        @Summary
+        @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient", "Device", "RelatedPerson" })
+        @Required
+        private final Reference who;
+        @Summary
+        private final Boolean requestor;
+        @ReferenceTarget({ "Location" })
+        private final Reference location;
+        private final List<Uri> policy;
+        @ReferenceTarget({ "Endpoint" })
+        @Choice({ Reference.class, Uri.class, String.class })
+        private final org.linuxforhealth.fhir.model.type.Element network;
+        @Binding(
+            bindingName = "AuditPurposeOfUse",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "The reason the activity took place.",
+            valueSet = "http://terminology.hl7.org/ValueSet/v3-PurposeOfUse"
+        )
+        private final List<CodeableConcept> authorization;
+
+        private Agent(Builder builder) {
+            super(builder);
+            type = builder.type;
+            role = Collections.unmodifiableList(builder.role);
+            who = builder.who;
+            requestor = builder.requestor;
+            location = builder.location;
+            policy = Collections.unmodifiableList(builder.policy);
+            network = builder.network;
+            authorization = Collections.unmodifiableList(builder.authorization);
+        }
+
+        /**
+         * The Functional Role of the user when performing the event.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getType() {
+            return type;
+        }
+
+        /**
+         * The structural roles of the agent indicating the agent's competency. The security role enabling the agent with respect 
+         * to the activity.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+         */
+        public List<CodeableConcept> getRole() {
+            return role;
+        }
+
+        /**
+         * Reference to who this agent is that was involved in the event.
+         * 
+         * @return
+         *     An immutable object of type {@link Reference} that is non-null.
+         */
+        public Reference getWho() {
+            return who;
+        }
+
+        /**
+         * Indicator that the user is or is not the requestor, or initiator, for the event being audited.
+         * 
+         * @return
+         *     An immutable object of type {@link Boolean} that may be null.
+         */
+        public Boolean getRequestor() {
+            return requestor;
+        }
+
+        /**
+         * Where the agent location is known, the agent location when the event occurred.
+         * 
+         * @return
+         *     An immutable object of type {@link Reference} that may be null.
+         */
+        public Reference getLocation() {
+            return location;
+        }
+
+        /**
+         * Where the policy(ies) are known that authorized the agent participation in the event. Typically, a single activity may 
+         * have multiple applicable policies, such as patient consent, guarantor funding, etc. The policy would also indicate the 
+         * security token used.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link Uri} that may be empty.
+         */
+        public List<Uri> getPolicy() {
+            return policy;
+        }
+
+        /**
+         * When the event utilizes a network there should be an agent describing the local system, and an agent describing remote 
+         * system, with the network interface details.
+         * 
+         * @return
+         *     An immutable object of type {@link Reference}, {@link Uri} or {@link String} that may be null.
+         */
+        public org.linuxforhealth.fhir.model.type.Element getNetwork() {
+            return network;
+        }
+
+        /**
+         * The authorization (e.g., PurposeOfUse) that was used during the event being recorded.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+         */
+        public List<CodeableConcept> getAuthorization() {
+            return authorization;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (type != null) || 
+                !role.isEmpty() || 
+                (who != null) || 
+                (requestor != null) || 
+                (location != null) || 
+                !policy.isEmpty() || 
+                (network != null) || 
+                !authorization.isEmpty();
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(type, "type", visitor);
+                    accept(role, "role", visitor, CodeableConcept.class);
+                    accept(who, "who", visitor);
+                    accept(requestor, "requestor", visitor);
+                    accept(location, "location", visitor);
+                    accept(policy, "policy", visitor, Uri.class);
+                    accept(network, "network", visitor);
+                    accept(authorization, "authorization", visitor, CodeableConcept.class);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Agent other = (Agent) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(type, other.type) && 
+                Objects.equals(role, other.role) && 
+                Objects.equals(who, other.who) && 
+                Objects.equals(requestor, other.requestor) && 
+                Objects.equals(location, other.location) && 
+                Objects.equals(policy, other.policy) && 
+                Objects.equals(network, other.network) && 
+                Objects.equals(authorization, other.authorization);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    type, 
+                    role, 
+                    who, 
+                    requestor, 
+                    location, 
+                    policy, 
+                    network, 
+                    authorization);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private CodeableConcept type;
+            private List<CodeableConcept> role = new ArrayList<>();
+            private Reference who;
+            private Boolean requestor;
+            private Reference location;
+            private List<Uri> policy = new ArrayList<>();
+            private org.linuxforhealth.fhir.model.type.Element network;
+            private List<CodeableConcept> authorization = new ArrayList<>();
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * The Functional Role of the user when performing the event.
              * 
              * @param type
              *     How agent participated
@@ -1458,8 +1816,8 @@ public class AuditEvent extends DomainResource {
             }
 
             /**
-             * The security role that the user was acting under, that come from local codes defined by the access control security 
-             * system (e.g. RBAC, ABAC) used in the local context.
+             * The structural roles of the agent indicating the agent's competency. The security role enabling the agent with respect 
+             * to the activity.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -1478,8 +1836,8 @@ public class AuditEvent extends DomainResource {
             }
 
             /**
-             * The security role that the user was acting under, that come from local codes defined by the access control security 
-             * system (e.g. RBAC, ABAC) used in the local context.
+             * The structural roles of the agent indicating the agent's competency. The security role enabling the agent with respect 
+             * to the activity.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -1501,13 +1859,16 @@ public class AuditEvent extends DomainResource {
             /**
              * Reference to who this agent is that was involved in the event.
              * 
+             * <p>This element is required.
+             * 
              * <p>Allowed resource types for this reference:
              * <ul>
-             * <li>{@link PractitionerRole}</li>
              * <li>{@link Practitioner}</li>
+             * <li>{@link PractitionerRole}</li>
              * <li>{@link Organization}</li>
-             * <li>{@link Device}</li>
+             * <li>{@link CareTeam}</li>
              * <li>{@link Patient}</li>
+             * <li>{@link Device}</li>
              * <li>{@link RelatedPerson}</li>
              * </ul>
              * 
@@ -1523,70 +1884,7 @@ public class AuditEvent extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code altId}.
-             * 
-             * @param altId
-             *     Alternative User identity
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #altId(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder altId(java.lang.String altId) {
-                this.altId = (altId == null) ? null : String.of(altId);
-                return this;
-            }
-
-            /**
-             * Alternative agent Identifier. For a human, this should be a user identifier text string from authentication system. 
-             * This identifier would be one known to a common authentication system (e.g. single sign-on), if available.
-             * 
-             * @param altId
-             *     Alternative User identity
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder altId(String altId) {
-                this.altId = altId;
-                return this;
-            }
-
-            /**
-             * Convenience method for setting {@code name}.
-             * 
-             * @param name
-             *     Human friendly name for the agent
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #name(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder name(java.lang.String name) {
-                this.name = (name == null) ? null : String.of(name);
-                return this;
-            }
-
-            /**
-             * Human-meaningful name for the agent.
-             * 
-             * @param name
-             *     Human friendly name for the agent
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder name(String name) {
-                this.name = name;
-                return this;
-            }
-
-            /**
              * Convenience method for setting {@code requestor}.
-             * 
-             * <p>This element is required.
              * 
              * @param requestor
              *     Whether user is initiator
@@ -1604,8 +1902,6 @@ public class AuditEvent extends DomainResource {
             /**
              * Indicator that the user is or is not the requestor, or initiator, for the event being audited.
              * 
-             * <p>This element is required.
-             * 
              * @param requestor
              *     Whether user is initiator
              * 
@@ -1618,7 +1914,7 @@ public class AuditEvent extends DomainResource {
             }
 
             /**
-             * Where the event occurred.
+             * Where the agent location is known, the agent location when the event occurred.
              * 
              * <p>Allowed resource types for this reference:
              * <ul>
@@ -1626,7 +1922,7 @@ public class AuditEvent extends DomainResource {
              * </ul>
              * 
              * @param location
-             *     Where
+             *     The agent location when the event occurred
              * 
              * @return
              *     A reference to this Builder instance
@@ -1637,15 +1933,15 @@ public class AuditEvent extends DomainResource {
             }
 
             /**
-             * The policy or plan that authorized the activity being recorded. Typically, a single activity may have multiple 
-             * applicable policies, such as patient consent, guarantor funding, etc. The policy would also indicate the security 
-             * token used.
+             * Where the policy(ies) are known that authorized the agent participation in the event. Typically, a single activity may 
+             * have multiple applicable policies, such as patient consent, guarantor funding, etc. The policy would also indicate the 
+             * security token used.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param policy
-             *     Policy that authorized event
+             *     Policy that authorized the agent participation in the event
              * 
              * @return
              *     A reference to this Builder instance
@@ -1658,15 +1954,15 @@ public class AuditEvent extends DomainResource {
             }
 
             /**
-             * The policy or plan that authorized the activity being recorded. Typically, a single activity may have multiple 
-             * applicable policies, such as patient consent, guarantor funding, etc. The policy would also indicate the security 
-             * token used.
+             * Where the policy(ies) are known that authorized the agent participation in the event. Typically, a single activity may 
+             * have multiple applicable policies, such as patient consent, guarantor funding, etc. The policy would also indicate the 
+             * security token used.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param policy
-             *     Policy that authorized event
+             *     Policy that authorized the agent participation in the event
              * 
              * @return
              *     A reference to this Builder instance
@@ -1680,60 +1976,75 @@ public class AuditEvent extends DomainResource {
             }
 
             /**
-             * Type of media involved. Used when the event is about exporting/importing onto media.
+             * Convenience method for setting {@code network} with choice type String.
              * 
-             * @param media
-             *     Type of media
+             * @param network
+             *     This agent network location for the activity
              * 
              * @return
              *     A reference to this Builder instance
+             * 
+             * @see #network(Element)
              */
-            public Builder media(Coding media) {
-                this.media = media;
+            public Builder network(java.lang.String network) {
+                this.network = (network == null) ? null : String.of(network);
                 return this;
             }
 
             /**
-             * Logical network location for application activity, if the activity has a network location.
+             * When the event utilizes a network there should be an agent describing the local system, and an agent describing remote 
+             * system, with the network interface details.
+             * 
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link Reference}</li>
+             * <li>{@link Uri}</li>
+             * <li>{@link String}</li>
+             * </ul>
+             * 
+             * When of type {@link Reference}, the allowed resource types for this reference are:
+             * <ul>
+             * <li>{@link Endpoint}</li>
+             * </ul>
              * 
              * @param network
-             *     Logical network location for application activity
+             *     This agent network location for the activity
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder network(Network network) {
+            public Builder network(org.linuxforhealth.fhir.model.type.Element network) {
                 this.network = network;
                 return this;
             }
 
             /**
-             * The reason (purpose of use), specific to this agent, that was used during the event being recorded.
+             * The authorization (e.g., PurposeOfUse) that was used during the event being recorded.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * @param purposeOfUse
-             *     Reason given for this user
+             * @param authorization
+             *     Allowable authorization for this agent
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder purposeOfUse(CodeableConcept... purposeOfUse) {
-                for (CodeableConcept value : purposeOfUse) {
-                    this.purposeOfUse.add(value);
+            public Builder authorization(CodeableConcept... authorization) {
+                for (CodeableConcept value : authorization) {
+                    this.authorization.add(value);
                 }
                 return this;
             }
 
             /**
-             * The reason (purpose of use), specific to this agent, that was used during the event being recorded.
+             * The authorization (e.g., PurposeOfUse) that was used during the event being recorded.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * @param purposeOfUse
-             *     Reason given for this user
+             * @param authorization
+             *     Allowable authorization for this agent
              * 
              * @return
              *     A reference to this Builder instance
@@ -1741,8 +2052,8 @@ public class AuditEvent extends DomainResource {
              * @throws NullPointerException
              *     If the passed collection is null
              */
-            public Builder purposeOfUse(Collection<CodeableConcept> purposeOfUse) {
-                this.purposeOfUse = new ArrayList<>(purposeOfUse);
+            public Builder authorization(Collection<CodeableConcept> authorization) {
+                this.authorization = new ArrayList<>(authorization);
                 return this;
             }
 
@@ -1751,7 +2062,7 @@ public class AuditEvent extends DomainResource {
              * 
              * <p>Required elements:
              * <ul>
-             * <li>requestor</li>
+             * <li>who</li>
              * </ul>
              * 
              * @return
@@ -1771,11 +2082,13 @@ public class AuditEvent extends DomainResource {
             protected void validate(Agent agent) {
                 super.validate(agent);
                 ValidationSupport.checkList(agent.role, "role", CodeableConcept.class);
-                ValidationSupport.requireNonNull(agent.requestor, "requestor");
+                ValidationSupport.requireNonNull(agent.who, "who");
                 ValidationSupport.checkList(agent.policy, "policy", Uri.class);
-                ValidationSupport.checkList(agent.purposeOfUse, "purposeOfUse", CodeableConcept.class);
-                ValidationSupport.checkReferenceType(agent.who, "who", "PractitionerRole", "Practitioner", "Organization", "Device", "Patient", "RelatedPerson");
+                ValidationSupport.choiceElement(agent.network, "network", Reference.class, Uri.class, String.class);
+                ValidationSupport.checkList(agent.authorization, "authorization", CodeableConcept.class);
+                ValidationSupport.checkReferenceType(agent.who, "who", "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient", "Device", "RelatedPerson");
                 ValidationSupport.checkReferenceType(agent.location, "location", "Location");
+                ValidationSupport.checkReferenceType(agent.network, "network", "Endpoint");
                 ValidationSupport.requireValueOrChildren(agent);
             }
 
@@ -1784,334 +2097,33 @@ public class AuditEvent extends DomainResource {
                 type = agent.type;
                 role.addAll(agent.role);
                 who = agent.who;
-                altId = agent.altId;
-                name = agent.name;
                 requestor = agent.requestor;
                 location = agent.location;
                 policy.addAll(agent.policy);
-                media = agent.media;
                 network = agent.network;
-                purposeOfUse.addAll(agent.purposeOfUse);
+                authorization.addAll(agent.authorization);
                 return this;
-            }
-        }
-
-        /**
-         * Logical network location for application activity, if the activity has a network location.
-         */
-        public static class Network extends BackboneElement {
-            private final String address;
-            @Binding(
-                bindingName = "AuditEventAgentNetworkType",
-                strength = BindingStrength.Value.REQUIRED,
-                description = "DICOM Audit Event Network Type",
-                valueSet = "http://hl7.org/fhir/ValueSet/network-type|4.3.0"
-            )
-            private final AuditEventAgentNetworkType type;
-
-            private Network(Builder builder) {
-                super(builder);
-                address = builder.address;
-                type = builder.type;
-            }
-
-            /**
-             * An identifier for the network access point of the user device for the audit event.
-             * 
-             * @return
-             *     An immutable object of type {@link String} that may be null.
-             */
-            public String getAddress() {
-                return address;
-            }
-
-            /**
-             * An identifier for the type of network access point that originated the audit event.
-             * 
-             * @return
-             *     An immutable object of type {@link AuditEventAgentNetworkType} that may be null.
-             */
-            public AuditEventAgentNetworkType getType() {
-                return type;
-            }
-
-            @Override
-            public boolean hasChildren() {
-                return super.hasChildren() || 
-                    (address != null) || 
-                    (type != null);
-            }
-
-            @Override
-            public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-                if (visitor.preVisit(this)) {
-                    visitor.visitStart(elementName, elementIndex, this);
-                    if (visitor.visit(elementName, elementIndex, this)) {
-                        // visit children
-                        accept(id, "id", visitor);
-                        accept(extension, "extension", visitor, Extension.class);
-                        accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                        accept(address, "address", visitor);
-                        accept(type, "type", visitor);
-                    }
-                    visitor.visitEnd(elementName, elementIndex, this);
-                    visitor.postVisit(this);
-                }
-            }
-
-            @Override
-            public boolean equals(Object obj) {
-                if (this == obj) {
-                    return true;
-                }
-                if (obj == null) {
-                    return false;
-                }
-                if (getClass() != obj.getClass()) {
-                    return false;
-                }
-                Network other = (Network) obj;
-                return Objects.equals(id, other.id) && 
-                    Objects.equals(extension, other.extension) && 
-                    Objects.equals(modifierExtension, other.modifierExtension) && 
-                    Objects.equals(address, other.address) && 
-                    Objects.equals(type, other.type);
-            }
-
-            @Override
-            public int hashCode() {
-                int result = hashCode;
-                if (result == 0) {
-                    result = Objects.hash(id, 
-                        extension, 
-                        modifierExtension, 
-                        address, 
-                        type);
-                    hashCode = result;
-                }
-                return result;
-            }
-
-            @Override
-            public Builder toBuilder() {
-                return new Builder().from(this);
-            }
-
-            public static Builder builder() {
-                return new Builder();
-            }
-
-            public static class Builder extends BackboneElement.Builder {
-                private String address;
-                private AuditEventAgentNetworkType type;
-
-                private Builder() {
-                    super();
-                }
-
-                /**
-                 * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-                 * contain spaces.
-                 * 
-                 * @param id
-                 *     Unique id for inter-element referencing
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                @Override
-                public Builder id(java.lang.String id) {
-                    return (Builder) super.id(id);
-                }
-
-                /**
-                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-                 * of the definition of the extension.
-                 * 
-                 * <p>Adds new element(s) to the existing list.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param extension
-                 *     Additional content defined by implementations
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                @Override
-                public Builder extension(Extension... extension) {
-                    return (Builder) super.extension(extension);
-                }
-
-                /**
-                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-                 * of the definition of the extension.
-                 * 
-                 * <p>Replaces the existing list with a new one containing elements from the Collection.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param extension
-                 *     Additional content defined by implementations
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @throws NullPointerException
-                 *     If the passed collection is null
-                 */
-                @Override
-                public Builder extension(Collection<Extension> extension) {
-                    return (Builder) super.extension(extension);
-                }
-
-                /**
-                 * May be used to represent additional information that is not part of the basic definition of the element and that 
-                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-                 * extension. Applications processing a resource are required to check for modifier extensions.
-                 * 
-                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-                 * change the meaning of modifierExtension itself).
-                 * 
-                 * <p>Adds new element(s) to the existing list.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param modifierExtension
-                 *     Extensions that cannot be ignored even if unrecognized
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                @Override
-                public Builder modifierExtension(Extension... modifierExtension) {
-                    return (Builder) super.modifierExtension(modifierExtension);
-                }
-
-                /**
-                 * May be used to represent additional information that is not part of the basic definition of the element and that 
-                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-                 * extension. Applications processing a resource are required to check for modifier extensions.
-                 * 
-                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-                 * change the meaning of modifierExtension itself).
-                 * 
-                 * <p>Replaces the existing list with a new one containing elements from the Collection.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param modifierExtension
-                 *     Extensions that cannot be ignored even if unrecognized
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @throws NullPointerException
-                 *     If the passed collection is null
-                 */
-                @Override
-                public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                    return (Builder) super.modifierExtension(modifierExtension);
-                }
-
-                /**
-                 * Convenience method for setting {@code address}.
-                 * 
-                 * @param address
-                 *     Identifier for the network access point of the user device
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @see #address(org.linuxforhealth.fhir.model.type.String)
-                 */
-                public Builder address(java.lang.String address) {
-                    this.address = (address == null) ? null : String.of(address);
-                    return this;
-                }
-
-                /**
-                 * An identifier for the network access point of the user device for the audit event.
-                 * 
-                 * @param address
-                 *     Identifier for the network access point of the user device
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder address(String address) {
-                    this.address = address;
-                    return this;
-                }
-
-                /**
-                 * An identifier for the type of network access point that originated the audit event.
-                 * 
-                 * @param type
-                 *     The type of network access point
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder type(AuditEventAgentNetworkType type) {
-                    this.type = type;
-                    return this;
-                }
-
-                /**
-                 * Build the {@link Network}
-                 * 
-                 * @return
-                 *     An immutable object of type {@link Network}
-                 * @throws IllegalStateException
-                 *     if the current state cannot be built into a valid Network per the base specification
-                 */
-                @Override
-                public Network build() {
-                    Network network = new Network(this);
-                    if (validating) {
-                        validate(network);
-                    }
-                    return network;
-                }
-
-                protected void validate(Network network) {
-                    super.validate(network);
-                    ValidationSupport.requireValueOrChildren(network);
-                }
-
-                protected Builder from(Network network) {
-                    super.from(network);
-                    address = network.address;
-                    type = network.type;
-                    return this;
-                }
             }
         }
     }
 
     /**
-     * The system that is reporting the event.
+     * The actor that is reporting the event.
      */
     public static class Source extends BackboneElement {
-        private final String site;
+        @ReferenceTarget({ "Location" })
+        private final Reference site;
         @Summary
-        @ReferenceTarget({ "PractitionerRole", "Practitioner", "Organization", "Device", "Patient", "RelatedPerson" })
+        @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient", "Device", "RelatedPerson" })
         @Required
         private final Reference observer;
         @Binding(
             bindingName = "AuditEventSourceType",
-            strength = BindingStrength.Value.EXTENSIBLE,
-            description = "Code specifying the type of system that detected and recorded the event.",
-            valueSet = "http://hl7.org/fhir/ValueSet/audit-source-type"
+            strength = BindingStrength.Value.PREFERRED,
+            description = "Code specifying the type of system that detected and recorded the event. Use of these codes is not required but is encouraged to maintain translation with DICOM AuditMessage schema.",
+            valueSet = "http://hl7.org/fhir/ValueSet/security-source-type"
         )
-        private final List<Coding> type;
+        private final List<CodeableConcept> type;
 
         private Source(Builder builder) {
             super(builder);
@@ -2125,9 +2137,9 @@ public class AuditEvent extends DomainResource {
          * within a multi-entity provider group.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link Reference} that may be null.
          */
-        public String getSite() {
+        public Reference getSite() {
             return site;
         }
 
@@ -2145,9 +2157,9 @@ public class AuditEvent extends DomainResource {
          * Code specifying the type of source where event originated.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link Coding} that may be empty.
+         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
          */
-        public List<Coding> getType() {
+        public List<CodeableConcept> getType() {
             return type;
         }
 
@@ -2170,7 +2182,7 @@ public class AuditEvent extends DomainResource {
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(site, "site", visitor);
                     accept(observer, "observer", visitor);
-                    accept(type, "type", visitor, Coding.class);
+                    accept(type, "type", visitor, CodeableConcept.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -2222,9 +2234,9 @@ public class AuditEvent extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private String site;
+            private Reference site;
             private Reference observer;
-            private List<Coding> type = new ArrayList<>();
+            private List<CodeableConcept> type = new ArrayList<>();
 
             private Builder() {
                 super();
@@ -2247,7 +2259,7 @@ public class AuditEvent extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2267,7 +2279,7 @@ public class AuditEvent extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2292,7 +2304,7 @@ public class AuditEvent extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2317,7 +2329,7 @@ public class AuditEvent extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2342,32 +2354,21 @@ public class AuditEvent extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code site}.
-             * 
-             * @param site
-             *     Logical source location within the enterprise
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #site(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder site(java.lang.String site) {
-                this.site = (site == null) ? null : String.of(site);
-                return this;
-            }
-
-            /**
              * Logical source location within the healthcare enterprise network. For example, a hospital or other provider location 
              * within a multi-entity provider group.
              * 
+             * <p>Allowed resource types for this reference:
+             * <ul>
+             * <li>{@link Location}</li>
+             * </ul>
+             * 
              * @param site
              *     Logical source location within the enterprise
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder site(String site) {
+            public Builder site(Reference site) {
                 this.site = site;
                 return this;
             }
@@ -2379,11 +2380,12 @@ public class AuditEvent extends DomainResource {
              * 
              * <p>Allowed resource types for this reference:
              * <ul>
-             * <li>{@link PractitionerRole}</li>
              * <li>{@link Practitioner}</li>
+             * <li>{@link PractitionerRole}</li>
              * <li>{@link Organization}</li>
-             * <li>{@link Device}</li>
+             * <li>{@link CareTeam}</li>
              * <li>{@link Patient}</li>
+             * <li>{@link Device}</li>
              * <li>{@link RelatedPerson}</li>
              * </ul>
              * 
@@ -2410,8 +2412,8 @@ public class AuditEvent extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder type(Coding... type) {
-                for (Coding value : type) {
+            public Builder type(CodeableConcept... type) {
+                for (CodeableConcept value : type) {
                     this.type.add(value);
                 }
                 return this;
@@ -2432,7 +2434,7 @@ public class AuditEvent extends DomainResource {
              * @throws NullPointerException
              *     If the passed collection is null
              */
-            public Builder type(Collection<Coding> type) {
+            public Builder type(Collection<CodeableConcept> type) {
                 this.type = new ArrayList<>(type);
                 return this;
             }
@@ -2462,8 +2464,9 @@ public class AuditEvent extends DomainResource {
             protected void validate(Source source) {
                 super.validate(source);
                 ValidationSupport.requireNonNull(source.observer, "observer");
-                ValidationSupport.checkList(source.type, "type", Coding.class);
-                ValidationSupport.checkReferenceType(source.observer, "observer", "PractitionerRole", "Practitioner", "Organization", "Device", "Patient", "RelatedPerson");
+                ValidationSupport.checkList(source.type, "type", CodeableConcept.class);
+                ValidationSupport.checkReferenceType(source.site, "site", "Location");
+                ValidationSupport.checkReferenceType(source.observer, "observer", "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient", "Device", "RelatedPerson");
                 ValidationSupport.requireValueOrChildren(source);
             }
 
@@ -2484,55 +2487,37 @@ public class AuditEvent extends DomainResource {
         @Summary
         private final Reference what;
         @Binding(
-            bindingName = "AuditEventEntityType",
-            strength = BindingStrength.Value.EXTENSIBLE,
-            description = "DICOM Audit Event Entity Type",
-            valueSet = "http://hl7.org/fhir/ValueSet/audit-entity-type"
-        )
-        private final Coding type;
-        @Binding(
             bindingName = "AuditEventEntityRole",
-            strength = BindingStrength.Value.EXTENSIBLE,
+            strength = BindingStrength.Value.EXAMPLE,
             description = "DICOM Audit Event Entity Role",
             valueSet = "http://hl7.org/fhir/ValueSet/object-role"
         )
-        private final Coding role;
-        @Binding(
-            bindingName = "AuditEventEntityLifecycle",
-            strength = BindingStrength.Value.EXTENSIBLE,
-            description = "Identifier for the data life-cycle stage for the entity.",
-            valueSet = "http://hl7.org/fhir/ValueSet/object-lifecycle-events"
-        )
-        private final Coding lifecycle;
+        private final CodeableConcept role;
         @Binding(
             bindingName = "SecurityLabels",
-            strength = BindingStrength.Value.EXTENSIBLE,
-            description = "Security Labels from the Healthcare Privacy and Security Classification System.",
-            valueSet = "http://hl7.org/fhir/ValueSet/security-labels"
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "Example Security Labels from the Healthcare Privacy and Security Classification System.",
+            valueSet = "http://hl7.org/fhir/ValueSet/security-label-examples"
         )
-        private final List<Coding> securityLabel;
-        @Summary
-        private final String name;
-        private final String description;
+        private final List<CodeableConcept> securityLabel;
         @Summary
         private final Base64Binary query;
         private final List<Detail> detail;
+        private final List<AuditEvent.Agent> agent;
 
         private Entity(Builder builder) {
             super(builder);
             what = builder.what;
-            type = builder.type;
             role = builder.role;
-            lifecycle = builder.lifecycle;
             securityLabel = Collections.unmodifiableList(builder.securityLabel);
-            name = builder.name;
-            description = builder.description;
             query = builder.query;
             detail = Collections.unmodifiableList(builder.detail);
+            agent = Collections.unmodifiableList(builder.agent);
         }
 
         /**
-         * Identifies a specific instance of the entity. The reference should be version specific.
+         * Identifies a specific instance of the entity. The reference should be version specific. This is allowed to be a 
+         * Parameters resource.
          * 
          * @return
          *     An immutable object of type {@link Reference} that may be null.
@@ -2542,63 +2527,23 @@ public class AuditEvent extends DomainResource {
         }
 
         /**
-         * The type of the object that was involved in this audit event.
-         * 
-         * @return
-         *     An immutable object of type {@link Coding} that may be null.
-         */
-        public Coding getType() {
-            return type;
-        }
-
-        /**
          * Code representing the role the entity played in the event being audited.
          * 
          * @return
-         *     An immutable object of type {@link Coding} that may be null.
+         *     An immutable object of type {@link CodeableConcept} that may be null.
          */
-        public Coding getRole() {
+        public CodeableConcept getRole() {
             return role;
-        }
-
-        /**
-         * Identifier for the data life-cycle stage for the entity.
-         * 
-         * @return
-         *     An immutable object of type {@link Coding} that may be null.
-         */
-        public Coding getLifecycle() {
-            return lifecycle;
         }
 
         /**
          * Security labels for the identified entity.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link Coding} that may be empty.
+         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
          */
-        public List<Coding> getSecurityLabel() {
+        public List<CodeableConcept> getSecurityLabel() {
             return securityLabel;
-        }
-
-        /**
-         * A name of the entity in the audit event.
-         * 
-         * @return
-         *     An immutable object of type {@link String} that may be null.
-         */
-        public String getName() {
-            return name;
-        }
-
-        /**
-         * Text that describes the entity in more detail.
-         * 
-         * @return
-         *     An immutable object of type {@link String} that may be null.
-         */
-        public String getDescription() {
-            return description;
         }
 
         /**
@@ -2621,18 +2566,28 @@ public class AuditEvent extends DomainResource {
             return detail;
         }
 
+        /**
+         * The entity is attributed to an agent to express the agent's responsibility for that entity in the activity. This is 
+         * most used to indicate when persistence media (the entity) are used by an agent. For example when importing data from a 
+         * device, the device would be described in an entity, and the user importing data from that media would be indicated as 
+         * the entity.agent.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link Agent} that may be empty.
+         */
+        public List<AuditEvent.Agent> getAgent() {
+            return agent;
+        }
+
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
                 (what != null) || 
-                (type != null) || 
                 (role != null) || 
-                (lifecycle != null) || 
                 !securityLabel.isEmpty() || 
-                (name != null) || 
-                (description != null) || 
                 (query != null) || 
-                !detail.isEmpty();
+                !detail.isEmpty() || 
+                !agent.isEmpty();
         }
 
         @Override
@@ -2645,14 +2600,11 @@ public class AuditEvent extends DomainResource {
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(what, "what", visitor);
-                    accept(type, "type", visitor);
                     accept(role, "role", visitor);
-                    accept(lifecycle, "lifecycle", visitor);
-                    accept(securityLabel, "securityLabel", visitor, Coding.class);
-                    accept(name, "name", visitor);
-                    accept(description, "description", visitor);
+                    accept(securityLabel, "securityLabel", visitor, CodeableConcept.class);
                     accept(query, "query", visitor);
                     accept(detail, "detail", visitor, Detail.class);
+                    accept(agent, "agent", visitor, AuditEvent.Agent.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -2675,14 +2627,11 @@ public class AuditEvent extends DomainResource {
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(what, other.what) && 
-                Objects.equals(type, other.type) && 
                 Objects.equals(role, other.role) && 
-                Objects.equals(lifecycle, other.lifecycle) && 
                 Objects.equals(securityLabel, other.securityLabel) && 
-                Objects.equals(name, other.name) && 
-                Objects.equals(description, other.description) && 
                 Objects.equals(query, other.query) && 
-                Objects.equals(detail, other.detail);
+                Objects.equals(detail, other.detail) && 
+                Objects.equals(agent, other.agent);
         }
 
         @Override
@@ -2693,14 +2642,11 @@ public class AuditEvent extends DomainResource {
                     extension, 
                     modifierExtension, 
                     what, 
-                    type, 
                     role, 
-                    lifecycle, 
                     securityLabel, 
-                    name, 
-                    description, 
                     query, 
-                    detail);
+                    detail, 
+                    agent);
                 hashCode = result;
             }
             return result;
@@ -2717,14 +2663,11 @@ public class AuditEvent extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private Reference what;
-            private Coding type;
-            private Coding role;
-            private Coding lifecycle;
-            private List<Coding> securityLabel = new ArrayList<>();
-            private String name;
-            private String description;
+            private CodeableConcept role;
+            private List<CodeableConcept> securityLabel = new ArrayList<>();
             private Base64Binary query;
             private List<Detail> detail = new ArrayList<>();
+            private List<AuditEvent.Agent> agent = new ArrayList<>();
 
             private Builder() {
                 super();
@@ -2747,7 +2690,7 @@ public class AuditEvent extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2767,7 +2710,7 @@ public class AuditEvent extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2792,7 +2735,7 @@ public class AuditEvent extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2817,7 +2760,7 @@ public class AuditEvent extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2842,7 +2785,8 @@ public class AuditEvent extends DomainResource {
             }
 
             /**
-             * Identifies a specific instance of the entity. The reference should be version specific.
+             * Identifies a specific instance of the entity. The reference should be version specific. This is allowed to be a 
+             * Parameters resource.
              * 
              * @param what
              *     Specific instance of resource
@@ -2856,20 +2800,6 @@ public class AuditEvent extends DomainResource {
             }
 
             /**
-             * The type of the object that was involved in this audit event.
-             * 
-             * @param type
-             *     Type of entity involved
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder type(Coding type) {
-                this.type = type;
-                return this;
-            }
-
-            /**
              * Code representing the role the entity played in the event being audited.
              * 
              * @param role
@@ -2878,22 +2808,8 @@ public class AuditEvent extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder role(Coding role) {
+            public Builder role(CodeableConcept role) {
                 this.role = role;
-                return this;
-            }
-
-            /**
-             * Identifier for the data life-cycle stage for the entity.
-             * 
-             * @param lifecycle
-             *     Life-cycle stage for the entity
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder lifecycle(Coding lifecycle) {
-                this.lifecycle = lifecycle;
                 return this;
             }
 
@@ -2909,8 +2825,8 @@ public class AuditEvent extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder securityLabel(Coding... securityLabel) {
-                for (Coding value : securityLabel) {
+            public Builder securityLabel(CodeableConcept... securityLabel) {
+                for (CodeableConcept value : securityLabel) {
                     this.securityLabel.add(value);
                 }
                 return this;
@@ -2931,68 +2847,8 @@ public class AuditEvent extends DomainResource {
              * @throws NullPointerException
              *     If the passed collection is null
              */
-            public Builder securityLabel(Collection<Coding> securityLabel) {
+            public Builder securityLabel(Collection<CodeableConcept> securityLabel) {
                 this.securityLabel = new ArrayList<>(securityLabel);
-                return this;
-            }
-
-            /**
-             * Convenience method for setting {@code name}.
-             * 
-             * @param name
-             *     Descriptor for entity
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #name(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder name(java.lang.String name) {
-                this.name = (name == null) ? null : String.of(name);
-                return this;
-            }
-
-            /**
-             * A name of the entity in the audit event.
-             * 
-             * @param name
-             *     Descriptor for entity
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder name(String name) {
-                this.name = name;
-                return this;
-            }
-
-            /**
-             * Convenience method for setting {@code description}.
-             * 
-             * @param description
-             *     Descriptive text
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #description(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder description(java.lang.String description) {
-                this.description = (description == null) ? null : String.of(description);
-                return this;
-            }
-
-            /**
-             * Text that describes the entity in more detail.
-             * 
-             * @param description
-             *     Descriptive text
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder description(String description) {
-                this.description = description;
                 return this;
             }
 
@@ -3050,6 +2906,51 @@ public class AuditEvent extends DomainResource {
             }
 
             /**
+             * The entity is attributed to an agent to express the agent's responsibility for that entity in the activity. This is 
+             * most used to indicate when persistence media (the entity) are used by an agent. For example when importing data from a 
+             * device, the device would be described in an entity, and the user importing data from that media would be indicated as 
+             * the entity.agent.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param agent
+             *     Entity is attributed to this agent
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder agent(AuditEvent.Agent... agent) {
+                for (AuditEvent.Agent value : agent) {
+                    this.agent.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * The entity is attributed to an agent to express the agent's responsibility for that entity in the activity. This is 
+             * most used to indicate when persistence media (the entity) are used by an agent. For example when importing data from a 
+             * device, the device would be described in an entity, and the user importing data from that media would be indicated as 
+             * the entity.agent.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param agent
+             *     Entity is attributed to this agent
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder agent(Collection<AuditEvent.Agent> agent) {
+                this.agent = new ArrayList<>(agent);
+                return this;
+            }
+
+            /**
              * Build the {@link Entity}
              * 
              * @return
@@ -3068,22 +2969,20 @@ public class AuditEvent extends DomainResource {
 
             protected void validate(Entity entity) {
                 super.validate(entity);
-                ValidationSupport.checkList(entity.securityLabel, "securityLabel", Coding.class);
+                ValidationSupport.checkList(entity.securityLabel, "securityLabel", CodeableConcept.class);
                 ValidationSupport.checkList(entity.detail, "detail", Detail.class);
+                ValidationSupport.checkList(entity.agent, "agent", AuditEvent.Agent.class);
                 ValidationSupport.requireValueOrChildren(entity);
             }
 
             protected Builder from(Entity entity) {
                 super.from(entity);
                 what = entity.what;
-                type = entity.type;
                 role = entity.role;
-                lifecycle = entity.lifecycle;
                 securityLabel.addAll(entity.securityLabel);
-                name = entity.name;
-                description = entity.description;
                 query = entity.query;
                 detail.addAll(entity.detail);
+                agent.addAll(entity.agent);
                 return this;
             }
         }
@@ -3092,11 +2991,17 @@ public class AuditEvent extends DomainResource {
          * Tagged value pairs for conveying additional information about the entity.
          */
         public static class Detail extends BackboneElement {
+            @Binding(
+                bindingName = "AuditEventDetailType",
+                strength = BindingStrength.Value.EXAMPLE,
+                description = "Additional detail about an entity used in an event.",
+                valueSet = "http://hl7.org/fhir/ValueSet/audit-event-type"
+            )
             @Required
-            private final String type;
-            @Choice({ String.class, Base64Binary.class })
+            private final CodeableConcept type;
+            @Choice({ Quantity.class, CodeableConcept.class, String.class, Boolean.class, Integer.class, Range.class, Ratio.class, Time.class, DateTime.class, Period.class, Base64Binary.class })
             @Required
-            private final Element value;
+            private final org.linuxforhealth.fhir.model.type.Element value;
 
             private Detail(Builder builder) {
                 super(builder);
@@ -3108,9 +3013,9 @@ public class AuditEvent extends DomainResource {
              * The type of extra detail provided in the value.
              * 
              * @return
-             *     An immutable object of type {@link String} that is non-null.
+             *     An immutable object of type {@link CodeableConcept} that is non-null.
              */
-            public String getType() {
+            public CodeableConcept getType() {
                 return type;
             }
 
@@ -3118,9 +3023,11 @@ public class AuditEvent extends DomainResource {
              * The value of the extra detail.
              * 
              * @return
-             *     An immutable object of type {@link String} or {@link Base64Binary} that is non-null.
+             *     An immutable object of type {@link Quantity}, {@link CodeableConcept}, {@link String}, {@link Boolean}, {@link 
+             *     Integer}, {@link Range}, {@link Ratio}, {@link Time}, {@link DateTime}, {@link Period} or {@link Base64Binary} that is 
+             *     non-null.
              */
-            public Element getValue() {
+            public org.linuxforhealth.fhir.model.type.Element getValue() {
                 return value;
             }
 
@@ -3191,8 +3098,8 @@ public class AuditEvent extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private String type;
-                private Element value;
+                private CodeableConcept type;
+                private org.linuxforhealth.fhir.model.type.Element value;
 
                 private Builder() {
                     super();
@@ -3215,7 +3122,7 @@ public class AuditEvent extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3235,7 +3142,7 @@ public class AuditEvent extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3260,7 +3167,7 @@ public class AuditEvent extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3285,7 +3192,7 @@ public class AuditEvent extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3310,24 +3217,6 @@ public class AuditEvent extends DomainResource {
                 }
 
                 /**
-                 * Convenience method for setting {@code type}.
-                 * 
-                 * <p>This element is required.
-                 * 
-                 * @param type
-                 *     Name of the property
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @see #type(org.linuxforhealth.fhir.model.type.String)
-                 */
-                public Builder type(java.lang.String type) {
-                    this.type = (type == null) ? null : String.of(type);
-                    return this;
-                }
-
-                /**
                  * The type of extra detail provided in the value.
                  * 
                  * <p>This element is required.
@@ -3338,7 +3227,7 @@ public class AuditEvent extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder type(String type) {
+                public Builder type(CodeableConcept type) {
                     this.type = type;
                     return this;
                 }
@@ -3362,13 +3251,76 @@ public class AuditEvent extends DomainResource {
                 }
 
                 /**
+                 * Convenience method for setting {@code value} with choice type Boolean.
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * @param value
+                 *     Property value
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #value(Element)
+                 */
+                public Builder value(java.lang.Boolean value) {
+                    this.value = (value == null) ? null : Boolean.of(value);
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code value} with choice type Integer.
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * @param value
+                 *     Property value
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #value(Element)
+                 */
+                public Builder value(java.lang.Integer value) {
+                    this.value = (value == null) ? null : Integer.of(value);
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code value} with choice type Time.
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * @param value
+                 *     Property value
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #value(Element)
+                 */
+                public Builder value(java.time.LocalTime value) {
+                    this.value = (value == null) ? null : Time.of(value);
+                    return this;
+                }
+
+                /**
                  * The value of the extra detail.
                  * 
                  * <p>This element is required.
                  * 
                  * <p>This is a choice element with the following allowed types:
                  * <ul>
+                 * <li>{@link Quantity}</li>
+                 * <li>{@link CodeableConcept}</li>
                  * <li>{@link String}</li>
+                 * <li>{@link Boolean}</li>
+                 * <li>{@link Integer}</li>
+                 * <li>{@link Range}</li>
+                 * <li>{@link Ratio}</li>
+                 * <li>{@link Time}</li>
+                 * <li>{@link DateTime}</li>
+                 * <li>{@link Period}</li>
                  * <li>{@link Base64Binary}</li>
                  * </ul>
                  * 
@@ -3378,7 +3330,7 @@ public class AuditEvent extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder value(Element value) {
+                public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                     this.value = value;
                     return this;
                 }
@@ -3409,7 +3361,7 @@ public class AuditEvent extends DomainResource {
                 protected void validate(Detail detail) {
                     super.validate(detail);
                     ValidationSupport.requireNonNull(detail.type, "type");
-                    ValidationSupport.requireChoiceElement(detail.value, "value", String.class, Base64Binary.class);
+                    ValidationSupport.requireChoiceElement(detail.value, "value", Quantity.class, CodeableConcept.class, String.class, Boolean.class, Integer.class, Range.class, Ratio.class, Time.class, DateTime.class, Period.class, Base64Binary.class);
                     ValidationSupport.requireValueOrChildren(detail);
                 }
 

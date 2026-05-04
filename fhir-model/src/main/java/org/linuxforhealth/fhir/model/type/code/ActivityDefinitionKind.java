@@ -16,113 +16,41 @@ import java.util.Objects;
 
 import javax.annotation.Generated;
 
-@System("http://hl7.org/fhir/request-resource-types")
+@System("http://hl7.org/fhir/fhir-types")
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class ActivityDefinitionKind extends Code {
-    /**
-     * Appointment
-     * 
-     * <p>A booking of a healthcare event among patient(s), practitioner(s), related person(s) and/or device(s) for a 
-     * specific date/time. This may result in one or more Encounter(s).
-     */
     public static final ActivityDefinitionKind APPOINTMENT = ActivityDefinitionKind.builder().value(Value.APPOINTMENT).build();
 
-    /**
-     * AppointmentResponse
-     * 
-     * <p>A reply to an appointment request for a patient and/or practitioner(s), such as a confirmation or rejection.
-     */
     public static final ActivityDefinitionKind APPOINTMENT_RESPONSE = ActivityDefinitionKind.builder().value(Value.APPOINTMENT_RESPONSE).build();
 
-    /**
-     * CarePlan
-     * 
-     * <p>Healthcare plan for patient or group.
-     */
     public static final ActivityDefinitionKind CARE_PLAN = ActivityDefinitionKind.builder().value(Value.CARE_PLAN).build();
 
-    /**
-     * Claim
-     * 
-     * <p>Claim, Pre-determination or Pre-authorization.
-     */
     public static final ActivityDefinitionKind CLAIM = ActivityDefinitionKind.builder().value(Value.CLAIM).build();
 
-    /**
-     * CommunicationRequest
-     * 
-     * <p>A request for information to be sent to a receiver.
-     */
     public static final ActivityDefinitionKind COMMUNICATION_REQUEST = ActivityDefinitionKind.builder().value(Value.COMMUNICATION_REQUEST).build();
 
-    /**
-     * Contract
-     * 
-     * <p>Legal Agreement.
-     */
-    public static final ActivityDefinitionKind CONTRACT = ActivityDefinitionKind.builder().value(Value.CONTRACT).build();
+    public static final ActivityDefinitionKind COVERAGE_ELIGIBILITY_REQUEST = ActivityDefinitionKind.builder().value(Value.COVERAGE_ELIGIBILITY_REQUEST).build();
 
-    /**
-     * DeviceRequest
-     * 
-     * <p>Medical device request.
-     */
     public static final ActivityDefinitionKind DEVICE_REQUEST = ActivityDefinitionKind.builder().value(Value.DEVICE_REQUEST).build();
 
-    /**
-     * EnrollmentRequest
-     * 
-     * <p>Enrollment request.
-     */
     public static final ActivityDefinitionKind ENROLLMENT_REQUEST = ActivityDefinitionKind.builder().value(Value.ENROLLMENT_REQUEST).build();
 
-    /**
-     * ImmunizationRecommendation
-     * 
-     * <p>Guidance or advice relating to an immunization.
-     */
     public static final ActivityDefinitionKind IMMUNIZATION_RECOMMENDATION = ActivityDefinitionKind.builder().value(Value.IMMUNIZATION_RECOMMENDATION).build();
 
-    /**
-     * MedicationRequest
-     * 
-     * <p>Ordering of medication for patient or group.
-     */
     public static final ActivityDefinitionKind MEDICATION_REQUEST = ActivityDefinitionKind.builder().value(Value.MEDICATION_REQUEST).build();
 
-    /**
-     * NutritionOrder
-     * 
-     * <p>Diet, formula or nutritional supplement request.
-     */
     public static final ActivityDefinitionKind NUTRITION_ORDER = ActivityDefinitionKind.builder().value(Value.NUTRITION_ORDER).build();
 
-    /**
-     * ServiceRequest
-     * 
-     * <p>A record of a request for service such as diagnostic investigations, treatments, or operations to be performed.
-     */
+    public static final ActivityDefinitionKind REQUEST_ORCHESTRATION = ActivityDefinitionKind.builder().value(Value.REQUEST_ORCHESTRATION).build();
+
     public static final ActivityDefinitionKind SERVICE_REQUEST = ActivityDefinitionKind.builder().value(Value.SERVICE_REQUEST).build();
 
-    /**
-     * SupplyRequest
-     * 
-     * <p>Request for a medication, substance or device.
-     */
     public static final ActivityDefinitionKind SUPPLY_REQUEST = ActivityDefinitionKind.builder().value(Value.SUPPLY_REQUEST).build();
 
-    /**
-     * Task
-     * 
-     * <p>A task to be performed.
-     */
     public static final ActivityDefinitionKind TASK = ActivityDefinitionKind.builder().value(Value.TASK).build();
 
-    /**
-     * VisionPrescription
-     * 
-     * <p>Prescription for vision correction products for a patient.
-     */
+    public static final ActivityDefinitionKind TRANSPORT = ActivityDefinitionKind.builder().value(Value.TRANSPORT).build();
+
     public static final ActivityDefinitionKind VISION_PRESCRIPTION = ActivityDefinitionKind.builder().value(Value.VISION_PRESCRIPTION).build();
 
     private volatile int hashCode;
@@ -153,8 +81,8 @@ public class ActivityDefinitionKind extends Code {
             return CLAIM;
         case COMMUNICATION_REQUEST:
             return COMMUNICATION_REQUEST;
-        case CONTRACT:
-            return CONTRACT;
+        case COVERAGE_ELIGIBILITY_REQUEST:
+            return COVERAGE_ELIGIBILITY_REQUEST;
         case DEVICE_REQUEST:
             return DEVICE_REQUEST;
         case ENROLLMENT_REQUEST:
@@ -165,12 +93,16 @@ public class ActivityDefinitionKind extends Code {
             return MEDICATION_REQUEST;
         case NUTRITION_ORDER:
             return NUTRITION_ORDER;
+        case REQUEST_ORCHESTRATION:
+            return REQUEST_ORCHESTRATION;
         case SERVICE_REQUEST:
             return SERVICE_REQUEST;
         case SUPPLY_REQUEST:
             return SUPPLY_REQUEST;
         case TASK:
             return TASK;
+        case TRANSPORT:
+            return TRANSPORT;
         case VISION_PRESCRIPTION:
             return VISION_PRESCRIPTION;
         default:
@@ -305,110 +237,38 @@ public class ActivityDefinitionKind extends Code {
     }
 
     public enum Value {
-        /**
-         * Appointment
-         * 
-         * <p>A booking of a healthcare event among patient(s), practitioner(s), related person(s) and/or device(s) for a 
-         * specific date/time. This may result in one or more Encounter(s).
-         */
         APPOINTMENT("Appointment"),
 
-        /**
-         * AppointmentResponse
-         * 
-         * <p>A reply to an appointment request for a patient and/or practitioner(s), such as a confirmation or rejection.
-         */
         APPOINTMENT_RESPONSE("AppointmentResponse"),
 
-        /**
-         * CarePlan
-         * 
-         * <p>Healthcare plan for patient or group.
-         */
         CARE_PLAN("CarePlan"),
 
-        /**
-         * Claim
-         * 
-         * <p>Claim, Pre-determination or Pre-authorization.
-         */
         CLAIM("Claim"),
 
-        /**
-         * CommunicationRequest
-         * 
-         * <p>A request for information to be sent to a receiver.
-         */
         COMMUNICATION_REQUEST("CommunicationRequest"),
 
-        /**
-         * Contract
-         * 
-         * <p>Legal Agreement.
-         */
-        CONTRACT("Contract"),
+        COVERAGE_ELIGIBILITY_REQUEST("CoverageEligibilityRequest"),
 
-        /**
-         * DeviceRequest
-         * 
-         * <p>Medical device request.
-         */
         DEVICE_REQUEST("DeviceRequest"),
 
-        /**
-         * EnrollmentRequest
-         * 
-         * <p>Enrollment request.
-         */
         ENROLLMENT_REQUEST("EnrollmentRequest"),
 
-        /**
-         * ImmunizationRecommendation
-         * 
-         * <p>Guidance or advice relating to an immunization.
-         */
         IMMUNIZATION_RECOMMENDATION("ImmunizationRecommendation"),
 
-        /**
-         * MedicationRequest
-         * 
-         * <p>Ordering of medication for patient or group.
-         */
         MEDICATION_REQUEST("MedicationRequest"),
 
-        /**
-         * NutritionOrder
-         * 
-         * <p>Diet, formula or nutritional supplement request.
-         */
         NUTRITION_ORDER("NutritionOrder"),
 
-        /**
-         * ServiceRequest
-         * 
-         * <p>A record of a request for service such as diagnostic investigations, treatments, or operations to be performed.
-         */
+        REQUEST_ORCHESTRATION("RequestOrchestration"),
+
         SERVICE_REQUEST("ServiceRequest"),
 
-        /**
-         * SupplyRequest
-         * 
-         * <p>Request for a medication, substance or device.
-         */
         SUPPLY_REQUEST("SupplyRequest"),
 
-        /**
-         * Task
-         * 
-         * <p>A task to be performed.
-         */
         TASK("Task"),
 
-        /**
-         * VisionPrescription
-         * 
-         * <p>Prescription for vision correction products for a patient.
-         */
+        TRANSPORT("Transport"),
+
         VISION_PRESCRIPTION("VisionPrescription");
 
         private final java.lang.String value;
@@ -450,8 +310,8 @@ public class ActivityDefinitionKind extends Code {
                 return CLAIM;
             case "CommunicationRequest":
                 return COMMUNICATION_REQUEST;
-            case "Contract":
-                return CONTRACT;
+            case "CoverageEligibilityRequest":
+                return COVERAGE_ELIGIBILITY_REQUEST;
             case "DeviceRequest":
                 return DEVICE_REQUEST;
             case "EnrollmentRequest":
@@ -462,12 +322,16 @@ public class ActivityDefinitionKind extends Code {
                 return MEDICATION_REQUEST;
             case "NutritionOrder":
                 return NUTRITION_ORDER;
+            case "RequestOrchestration":
+                return REQUEST_ORCHESTRATION;
             case "ServiceRequest":
                 return SERVICE_REQUEST;
             case "SupplyRequest":
                 return SUPPLY_REQUEST;
             case "Task":
                 return TASK;
+            case "Transport":
+                return TRANSPORT;
             case "VisionPrescription":
                 return VISION_PRESCRIPTION;
             default:

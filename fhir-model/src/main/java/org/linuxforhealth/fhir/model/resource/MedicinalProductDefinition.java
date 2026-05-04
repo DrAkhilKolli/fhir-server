@@ -33,6 +33,7 @@ import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
+import org.linuxforhealth.fhir.model.type.Integer;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.MarketingStatus;
 import org.linuxforhealth.fhir.model.type.Meta;
@@ -53,10 +54,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * metabolic action. This resource is intended to define and detail such products and their properties, for uses other 
  * than direct patient care (e.g. regulatory use, or drug catalogs).
  * 
- * <p>Maturity level: FMM1 (Trial Use)
+ * <p>Maturity level: FMM3 (Trial Use)
  */
 @Maturity(
-    level = 1,
+    level = 3,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
@@ -65,15 +66,6 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     location = "(base)",
     description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/publication-status",
     expression = "status.exists() implies (status.memberOf('http://hl7.org/fhir/ValueSet/publication-status', 'preferred'))",
-    source = "http://hl7.org/fhir/StructureDefinition/MedicinalProductDefinition",
-    generated = true
-)
-@Constraint(
-    id = "medicinalProductDefinition-1",
-    level = "Warning",
-    location = "name.countryLanguage.language",
-    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/languages",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/languages', 'preferred')",
     source = "http://hl7.org/fhir/StructureDefinition/MedicinalProductDefinition",
     generated = true
 )
@@ -149,7 +141,7 @@ public class MedicinalProductDefinition extends DomainResource {
     @Binding(
         bindingName = "SpecialMeasures",
         strength = BindingStrength.Value.EXAMPLE,
-        description = "Extra measures defined for a Medicinal Product, such as a requirement to conduct post-authorisation studies.",
+        description = "Extra measures defined for a Medicinal Product, such as a requirement to conduct post-authorization studies.",
         valueSet = "http://hl7.org/fhir/ValueSet/medicinal-product-special-measures"
     )
     private final List<CodeableConcept> specialMeasures;
@@ -166,7 +158,7 @@ public class MedicinalProductDefinition extends DomainResource {
         bindingName = "ProductClassification",
         strength = BindingStrength.Value.EXAMPLE,
         description = "This value set includes codes from the Anatomical Therapeutic Chemical Classification System - provided as an exemplar value set.",
-        valueSet = "http://hl7.org/fhir/ValueSet/product-classification-codes"
+        valueSet = "http://hl7.org/fhir/ValueSet/medicinal-product-classification"
     )
     private final List<CodeableConcept> classification;
     @Summary
@@ -179,6 +171,9 @@ public class MedicinalProductDefinition extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/medicinal-product-package-type"
     )
     private final List<CodeableConcept> packagedMedicinalProduct;
+    @Summary
+    @ReferenceTarget({ "ManufacturedItemDefinition", "DeviceDefinition" })
+    private final List<Reference> comprisedOf;
     @Summary
     @Binding(
         bindingName = "SNOMEDCTSubstanceCodes",
@@ -243,6 +238,7 @@ public class MedicinalProductDefinition extends DomainResource {
         classification = Collections.unmodifiableList(builder.classification);
         marketingStatus = Collections.unmodifiableList(builder.marketingStatus);
         packagedMedicinalProduct = Collections.unmodifiableList(builder.packagedMedicinalProduct);
+        comprisedOf = Collections.unmodifiableList(builder.comprisedOf);
         ingredient = Collections.unmodifiableList(builder.ingredient);
         impurity = Collections.unmodifiableList(builder.impurity);
         attachedDocument = Collections.unmodifiableList(builder.attachedDocument);
@@ -389,7 +385,7 @@ public class MedicinalProductDefinition extends DomainResource {
 
     /**
      * Whether the Medicinal Product is subject to special measures for regulatory reasons, such as a requirement to conduct 
-     * post-authorisation studies.
+     * post-authorization studies.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
@@ -437,6 +433,18 @@ public class MedicinalProductDefinition extends DomainResource {
      */
     public List<CodeableConcept> getPackagedMedicinalProduct() {
         return packagedMedicinalProduct;
+    }
+
+    /**
+     * Types of medicinal manufactured items and/or devices that this product consists of, such as tablets, capsule, or 
+     * syringes. Used as a direct link when the item's packaging is not being recorded (see also PackagedProductDefinition.
+     * package.containedItem.item).
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getComprisedOf() {
+        return comprisedOf;
     }
 
     /**
@@ -579,6 +587,7 @@ public class MedicinalProductDefinition extends DomainResource {
             !classification.isEmpty() || 
             !marketingStatus.isEmpty() || 
             !packagedMedicinalProduct.isEmpty() || 
+            !comprisedOf.isEmpty() || 
             !ingredient.isEmpty() || 
             !impurity.isEmpty() || 
             !attachedDocument.isEmpty() || 
@@ -623,6 +632,7 @@ public class MedicinalProductDefinition extends DomainResource {
                 accept(classification, "classification", visitor, CodeableConcept.class);
                 accept(marketingStatus, "marketingStatus", visitor, MarketingStatus.class);
                 accept(packagedMedicinalProduct, "packagedMedicinalProduct", visitor, CodeableConcept.class);
+                accept(comprisedOf, "comprisedOf", visitor, Reference.class);
                 accept(ingredient, "ingredient", visitor, CodeableConcept.class);
                 accept(impurity, "impurity", visitor, CodeableReference.class);
                 accept(attachedDocument, "attachedDocument", visitor, Reference.class);
@@ -677,6 +687,7 @@ public class MedicinalProductDefinition extends DomainResource {
             Objects.equals(classification, other.classification) && 
             Objects.equals(marketingStatus, other.marketingStatus) && 
             Objects.equals(packagedMedicinalProduct, other.packagedMedicinalProduct) && 
+            Objects.equals(comprisedOf, other.comprisedOf) && 
             Objects.equals(ingredient, other.ingredient) && 
             Objects.equals(impurity, other.impurity) && 
             Objects.equals(attachedDocument, other.attachedDocument) && 
@@ -719,6 +730,7 @@ public class MedicinalProductDefinition extends DomainResource {
                 classification, 
                 marketingStatus, 
                 packagedMedicinalProduct, 
+                comprisedOf, 
                 ingredient, 
                 impurity, 
                 attachedDocument, 
@@ -762,6 +774,7 @@ public class MedicinalProductDefinition extends DomainResource {
         private List<CodeableConcept> classification = new ArrayList<>();
         private List<MarketingStatus> marketingStatus = new ArrayList<>();
         private List<CodeableConcept> packagedMedicinalProduct = new ArrayList<>();
+        private List<Reference> comprisedOf = new ArrayList<>();
         private List<CodeableConcept> ingredient = new ArrayList<>();
         private List<CodeableReference> impurity = new ArrayList<>();
         private List<Reference> attachedDocument = new ArrayList<>();
@@ -856,7 +869,8 @@ public class MedicinalProductDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -874,7 +888,8 @@ public class MedicinalProductDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -895,7 +910,7 @@ public class MedicinalProductDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -915,7 +930,7 @@ public class MedicinalProductDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -940,9 +955,9 @@ public class MedicinalProductDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -965,9 +980,9 @@ public class MedicinalProductDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1240,7 +1255,7 @@ public class MedicinalProductDefinition extends DomainResource {
 
         /**
          * Whether the Medicinal Product is subject to special measures for regulatory reasons, such as a requirement to conduct 
-         * post-authorisation studies.
+         * post-authorization studies.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1260,7 +1275,7 @@ public class MedicinalProductDefinition extends DomainResource {
 
         /**
          * Whether the Medicinal Product is subject to special measures for regulatory reasons, such as a requirement to conduct 
-         * post-authorisation studies.
+         * post-authorization studies.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1409,6 +1424,63 @@ public class MedicinalProductDefinition extends DomainResource {
          */
         public Builder packagedMedicinalProduct(Collection<CodeableConcept> packagedMedicinalProduct) {
             this.packagedMedicinalProduct = new ArrayList<>(packagedMedicinalProduct);
+            return this;
+        }
+
+        /**
+         * Types of medicinal manufactured items and/or devices that this product consists of, such as tablets, capsule, or 
+         * syringes. Used as a direct link when the item's packaging is not being recorded (see also PackagedProductDefinition.
+         * package.containedItem.item).
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link ManufacturedItemDefinition}</li>
+         * <li>{@link DeviceDefinition}</li>
+         * </ul>
+         * 
+         * @param comprisedOf
+         *     Types of medicinal manufactured items and/or devices that this product consists of, such as tablets, capsule, or 
+         *     syringes
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder comprisedOf(Reference... comprisedOf) {
+            for (Reference value : comprisedOf) {
+                this.comprisedOf.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Types of medicinal manufactured items and/or devices that this product consists of, such as tablets, capsule, or 
+         * syringes. Used as a direct link when the item's packaging is not being recorded (see also PackagedProductDefinition.
+         * package.containedItem.item).
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link ManufacturedItemDefinition}</li>
+         * <li>{@link DeviceDefinition}</li>
+         * </ul>
+         * 
+         * @param comprisedOf
+         *     Types of medicinal manufactured items and/or devices that this product consists of, such as tablets, capsule, or 
+         *     syringes
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder comprisedOf(Collection<Reference> comprisedOf) {
+            this.comprisedOf = new ArrayList<>(comprisedOf);
             return this;
         }
 
@@ -1927,6 +1999,7 @@ public class MedicinalProductDefinition extends DomainResource {
             ValidationSupport.checkList(medicinalProductDefinition.classification, "classification", CodeableConcept.class);
             ValidationSupport.checkList(medicinalProductDefinition.marketingStatus, "marketingStatus", MarketingStatus.class);
             ValidationSupport.checkList(medicinalProductDefinition.packagedMedicinalProduct, "packagedMedicinalProduct", CodeableConcept.class);
+            ValidationSupport.checkList(medicinalProductDefinition.comprisedOf, "comprisedOf", Reference.class);
             ValidationSupport.checkList(medicinalProductDefinition.ingredient, "ingredient", CodeableConcept.class);
             ValidationSupport.checkList(medicinalProductDefinition.impurity, "impurity", CodeableReference.class);
             ValidationSupport.checkList(medicinalProductDefinition.attachedDocument, "attachedDocument", Reference.class);
@@ -1938,6 +2011,7 @@ public class MedicinalProductDefinition extends DomainResource {
             ValidationSupport.checkList(medicinalProductDefinition.crossReference, "crossReference", CrossReference.class);
             ValidationSupport.checkList(medicinalProductDefinition.operation, "operation", Operation.class);
             ValidationSupport.checkList(medicinalProductDefinition.characteristic, "characteristic", Characteristic.class);
+            ValidationSupport.checkReferenceType(medicinalProductDefinition.comprisedOf, "comprisedOf", "ManufacturedItemDefinition", "DeviceDefinition");
             ValidationSupport.checkReferenceType(medicinalProductDefinition.attachedDocument, "attachedDocument", "DocumentReference");
             ValidationSupport.checkReferenceType(medicinalProductDefinition.masterFile, "masterFile", "DocumentReference");
             ValidationSupport.checkReferenceType(medicinalProductDefinition.clinicalTrial, "clinicalTrial", "ResearchStudy");
@@ -1962,6 +2036,7 @@ public class MedicinalProductDefinition extends DomainResource {
             classification.addAll(medicinalProductDefinition.classification);
             marketingStatus.addAll(medicinalProductDefinition.marketingStatus);
             packagedMedicinalProduct.addAll(medicinalProductDefinition.packagedMedicinalProduct);
+            comprisedOf.addAll(medicinalProductDefinition.comprisedOf);
             ingredient.addAll(medicinalProductDefinition.ingredient);
             impurity.addAll(medicinalProductDefinition.impurity);
             attachedDocument.addAll(medicinalProductDefinition.attachedDocument);
@@ -2111,7 +2186,7 @@ public class MedicinalProductDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2131,7 +2206,7 @@ public class MedicinalProductDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2156,7 +2231,7 @@ public class MedicinalProductDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2181,7 +2256,7 @@ public class MedicinalProductDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2295,16 +2370,16 @@ public class MedicinalProductDefinition extends DomainResource {
         )
         private final CodeableConcept type;
         @Summary
-        private final List<NamePart> namePart;
+        private final List<Part> part;
         @Summary
-        private final List<CountryLanguage> countryLanguage;
+        private final List<Usage> usage;
 
         private Name(Builder builder) {
             super(builder);
             productName = builder.productName;
             type = builder.type;
-            namePart = Collections.unmodifiableList(builder.namePart);
-            countryLanguage = Collections.unmodifiableList(builder.countryLanguage);
+            part = Collections.unmodifiableList(builder.part);
+            usage = Collections.unmodifiableList(builder.usage);
         }
 
         /**
@@ -2331,20 +2406,20 @@ public class MedicinalProductDefinition extends DomainResource {
          * Coding words or phrases of the name.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link NamePart} that may be empty.
+         *     An unmodifiable list containing immutable objects of type {@link Part} that may be empty.
          */
-        public List<NamePart> getNamePart() {
-            return namePart;
+        public List<Part> getPart() {
+            return part;
         }
 
         /**
          * Country and jurisdiction where the name applies, and associated language.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link CountryLanguage} that may be empty.
+         *     An unmodifiable list containing immutable objects of type {@link Usage} that may be empty.
          */
-        public List<CountryLanguage> getCountryLanguage() {
-            return countryLanguage;
+        public List<Usage> getUsage() {
+            return usage;
         }
 
         @Override
@@ -2352,8 +2427,8 @@ public class MedicinalProductDefinition extends DomainResource {
             return super.hasChildren() || 
                 (productName != null) || 
                 (type != null) || 
-                !namePart.isEmpty() || 
-                !countryLanguage.isEmpty();
+                !part.isEmpty() || 
+                !usage.isEmpty();
         }
 
         @Override
@@ -2367,8 +2442,8 @@ public class MedicinalProductDefinition extends DomainResource {
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(productName, "productName", visitor);
                     accept(type, "type", visitor);
-                    accept(namePart, "namePart", visitor, NamePart.class);
-                    accept(countryLanguage, "countryLanguage", visitor, CountryLanguage.class);
+                    accept(part, "part", visitor, Part.class);
+                    accept(usage, "usage", visitor, Usage.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -2392,8 +2467,8 @@ public class MedicinalProductDefinition extends DomainResource {
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(productName, other.productName) && 
                 Objects.equals(type, other.type) && 
-                Objects.equals(namePart, other.namePart) && 
-                Objects.equals(countryLanguage, other.countryLanguage);
+                Objects.equals(part, other.part) && 
+                Objects.equals(usage, other.usage);
         }
 
         @Override
@@ -2405,8 +2480,8 @@ public class MedicinalProductDefinition extends DomainResource {
                     modifierExtension, 
                     productName, 
                     type, 
-                    namePart, 
-                    countryLanguage);
+                    part, 
+                    usage);
                 hashCode = result;
             }
             return result;
@@ -2424,8 +2499,8 @@ public class MedicinalProductDefinition extends DomainResource {
         public static class Builder extends BackboneElement.Builder {
             private String productName;
             private CodeableConcept type;
-            private List<NamePart> namePart = new ArrayList<>();
-            private List<CountryLanguage> countryLanguage = new ArrayList<>();
+            private List<Part> part = new ArrayList<>();
+            private List<Usage> usage = new ArrayList<>();
 
             private Builder() {
                 super();
@@ -2448,7 +2523,7 @@ public class MedicinalProductDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2468,7 +2543,7 @@ public class MedicinalProductDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2493,7 +2568,7 @@ public class MedicinalProductDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2518,7 +2593,7 @@ public class MedicinalProductDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2596,15 +2671,15 @@ public class MedicinalProductDefinition extends DomainResource {
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * @param namePart
+             * @param part
              *     Coding words or phrases of the name
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder namePart(NamePart... namePart) {
-                for (NamePart value : namePart) {
-                    this.namePart.add(value);
+            public Builder part(Part... part) {
+                for (Part value : part) {
+                    this.part.add(value);
                 }
                 return this;
             }
@@ -2615,7 +2690,7 @@ public class MedicinalProductDefinition extends DomainResource {
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * @param namePart
+             * @param part
              *     Coding words or phrases of the name
              * 
              * @return
@@ -2624,8 +2699,8 @@ public class MedicinalProductDefinition extends DomainResource {
              * @throws NullPointerException
              *     If the passed collection is null
              */
-            public Builder namePart(Collection<NamePart> namePart) {
-                this.namePart = new ArrayList<>(namePart);
+            public Builder part(Collection<Part> part) {
+                this.part = new ArrayList<>(part);
                 return this;
             }
 
@@ -2635,15 +2710,15 @@ public class MedicinalProductDefinition extends DomainResource {
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * @param countryLanguage
+             * @param usage
              *     Country and jurisdiction where the name applies
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder countryLanguage(CountryLanguage... countryLanguage) {
-                for (CountryLanguage value : countryLanguage) {
-                    this.countryLanguage.add(value);
+            public Builder usage(Usage... usage) {
+                for (Usage value : usage) {
+                    this.usage.add(value);
                 }
                 return this;
             }
@@ -2654,7 +2729,7 @@ public class MedicinalProductDefinition extends DomainResource {
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * @param countryLanguage
+             * @param usage
              *     Country and jurisdiction where the name applies
              * 
              * @return
@@ -2663,8 +2738,8 @@ public class MedicinalProductDefinition extends DomainResource {
              * @throws NullPointerException
              *     If the passed collection is null
              */
-            public Builder countryLanguage(Collection<CountryLanguage> countryLanguage) {
-                this.countryLanguage = new ArrayList<>(countryLanguage);
+            public Builder usage(Collection<Usage> usage) {
+                this.usage = new ArrayList<>(usage);
                 return this;
             }
 
@@ -2693,8 +2768,8 @@ public class MedicinalProductDefinition extends DomainResource {
             protected void validate(Name name) {
                 super.validate(name);
                 ValidationSupport.requireNonNull(name.productName, "productName");
-                ValidationSupport.checkList(name.namePart, "namePart", NamePart.class);
-                ValidationSupport.checkList(name.countryLanguage, "countryLanguage", CountryLanguage.class);
+                ValidationSupport.checkList(name.part, "part", Part.class);
+                ValidationSupport.checkList(name.usage, "usage", Usage.class);
                 ValidationSupport.requireValueOrChildren(name);
             }
 
@@ -2702,8 +2777,8 @@ public class MedicinalProductDefinition extends DomainResource {
                 super.from(name);
                 productName = name.productName;
                 type = name.type;
-                namePart.addAll(name.namePart);
-                countryLanguage.addAll(name.countryLanguage);
+                part.addAll(name.part);
+                usage.addAll(name.usage);
                 return this;
             }
         }
@@ -2711,7 +2786,7 @@ public class MedicinalProductDefinition extends DomainResource {
         /**
          * Coding words or phrases of the name.
          */
-        public static class NamePart extends BackboneElement {
+        public static class Part extends BackboneElement {
             @Summary
             @Required
             private final String part;
@@ -2725,7 +2800,7 @@ public class MedicinalProductDefinition extends DomainResource {
             @Required
             private final CodeableConcept type;
 
-            private NamePart(Builder builder) {
+            private Part(Builder builder) {
                 super(builder);
                 part = builder.part;
                 type = builder.type;
@@ -2786,7 +2861,7 @@ public class MedicinalProductDefinition extends DomainResource {
                 if (getClass() != obj.getClass()) {
                     return false;
                 }
-                NamePart other = (NamePart) obj;
+                Part other = (Part) obj;
                 return Objects.equals(id, other.id) && 
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
@@ -2842,7 +2917,7 @@ public class MedicinalProductDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2862,7 +2937,7 @@ public class MedicinalProductDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2887,7 +2962,7 @@ public class MedicinalProductDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2912,7 +2987,7 @@ public class MedicinalProductDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2987,7 +3062,7 @@ public class MedicinalProductDefinition extends DomainResource {
                 }
 
                 /**
-                 * Build the {@link NamePart}
+                 * Build the {@link Part}
                  * 
                  * <p>Required elements:
                  * <ul>
@@ -2996,30 +3071,30 @@ public class MedicinalProductDefinition extends DomainResource {
                  * </ul>
                  * 
                  * @return
-                 *     An immutable object of type {@link NamePart}
+                 *     An immutable object of type {@link Part}
                  * @throws IllegalStateException
-                 *     if the current state cannot be built into a valid NamePart per the base specification
+                 *     if the current state cannot be built into a valid Part per the base specification
                  */
                 @Override
-                public NamePart build() {
-                    NamePart namePart = new NamePart(this);
+                public Part build() {
+                    Part part = new Part(this);
                     if (validating) {
-                        validate(namePart);
+                        validate(part);
                     }
-                    return namePart;
+                    return part;
                 }
 
-                protected void validate(NamePart namePart) {
-                    super.validate(namePart);
-                    ValidationSupport.requireNonNull(namePart.part, "part");
-                    ValidationSupport.requireNonNull(namePart.type, "type");
-                    ValidationSupport.requireValueOrChildren(namePart);
+                protected void validate(Part part) {
+                    super.validate(part);
+                    ValidationSupport.requireNonNull(part.part, "part");
+                    ValidationSupport.requireNonNull(part.type, "type");
+                    ValidationSupport.requireValueOrChildren(part);
                 }
 
-                protected Builder from(NamePart namePart) {
-                    super.from(namePart);
-                    part = namePart.part;
-                    type = namePart.type;
+                protected Builder from(Part part) {
+                    super.from(part);
+                    this.part = part.part;
+                    type = part.type;
                     return this;
                 }
             }
@@ -3028,7 +3103,7 @@ public class MedicinalProductDefinition extends DomainResource {
         /**
          * Country and jurisdiction where the name applies, and associated language.
          */
-        public static class CountryLanguage extends BackboneElement {
+        public static class Usage extends BackboneElement {
             @Summary
             @Binding(
                 bindingName = "Country",
@@ -3049,15 +3124,14 @@ public class MedicinalProductDefinition extends DomainResource {
             @Summary
             @Binding(
                 bindingName = "Language",
-                strength = BindingStrength.Value.PREFERRED,
-                description = "IETF language tag",
-                valueSet = "http://hl7.org/fhir/ValueSet/languages",
-                maxValueSet = "http://hl7.org/fhir/ValueSet/all-languages"
+                strength = BindingStrength.Value.REQUIRED,
+                description = "IETF language tag for a human language",
+                valueSet = "http://hl7.org/fhir/ValueSet/all-languages|5.0.0"
             )
             @Required
             private final CodeableConcept language;
 
-            private CountryLanguage(Builder builder) {
+            private Usage(Builder builder) {
                 super(builder);
                 country = builder.country;
                 jurisdiction = builder.jurisdiction;
@@ -3132,7 +3206,7 @@ public class MedicinalProductDefinition extends DomainResource {
                 if (getClass() != obj.getClass()) {
                     return false;
                 }
-                CountryLanguage other = (CountryLanguage) obj;
+                Usage other = (Usage) obj;
                 return Objects.equals(id, other.id) && 
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
@@ -3191,7 +3265,7 @@ public class MedicinalProductDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3211,7 +3285,7 @@ public class MedicinalProductDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3236,7 +3310,7 @@ public class MedicinalProductDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3261,7 +3335,7 @@ public class MedicinalProductDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3333,7 +3407,7 @@ public class MedicinalProductDefinition extends DomainResource {
                 }
 
                 /**
-                 * Build the {@link CountryLanguage}
+                 * Build the {@link Usage}
                  * 
                  * <p>Required elements:
                  * <ul>
@@ -3342,32 +3416,32 @@ public class MedicinalProductDefinition extends DomainResource {
                  * </ul>
                  * 
                  * @return
-                 *     An immutable object of type {@link CountryLanguage}
+                 *     An immutable object of type {@link Usage}
                  * @throws IllegalStateException
-                 *     if the current state cannot be built into a valid CountryLanguage per the base specification
+                 *     if the current state cannot be built into a valid Usage per the base specification
                  */
                 @Override
-                public CountryLanguage build() {
-                    CountryLanguage countryLanguage = new CountryLanguage(this);
+                public Usage build() {
+                    Usage usage = new Usage(this);
                     if (validating) {
-                        validate(countryLanguage);
+                        validate(usage);
                     }
-                    return countryLanguage;
+                    return usage;
                 }
 
-                protected void validate(CountryLanguage countryLanguage) {
-                    super.validate(countryLanguage);
-                    ValidationSupport.requireNonNull(countryLanguage.country, "country");
-                    ValidationSupport.requireNonNull(countryLanguage.language, "language");
-                    ValidationSupport.checkValueSetBinding(countryLanguage.language, "language", "http://hl7.org/fhir/ValueSet/all-languages", "urn:ietf:bcp:47");
-                    ValidationSupport.requireValueOrChildren(countryLanguage);
+                protected void validate(Usage usage) {
+                    super.validate(usage);
+                    ValidationSupport.requireNonNull(usage.country, "country");
+                    ValidationSupport.requireNonNull(usage.language, "language");
+                    ValidationSupport.checkValueSetBinding(usage.language, "language", "http://hl7.org/fhir/ValueSet/all-languages", "urn:ietf:bcp:47");
+                    ValidationSupport.requireValueOrChildren(usage);
                 }
 
-                protected Builder from(CountryLanguage countryLanguage) {
-                    super.from(countryLanguage);
-                    country = countryLanguage.country;
-                    jurisdiction = countryLanguage.jurisdiction;
-                    language = countryLanguage.language;
+                protected Builder from(Usage usage) {
+                    super.from(usage);
+                    country = usage.country;
+                    jurisdiction = usage.jurisdiction;
+                    language = usage.language;
                     return this;
                 }
             }
@@ -3508,7 +3582,7 @@ public class MedicinalProductDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3528,7 +3602,7 @@ public class MedicinalProductDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3553,7 +3627,7 @@ public class MedicinalProductDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3578,7 +3652,7 @@ public class MedicinalProductDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3841,7 +3915,7 @@ public class MedicinalProductDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3861,7 +3935,7 @@ public class MedicinalProductDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3886,7 +3960,7 @@ public class MedicinalProductDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3911,7 +3985,7 @@ public class MedicinalProductDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4078,8 +4152,8 @@ public class MedicinalProductDefinition extends DomainResource {
         @Required
         private final CodeableConcept type;
         @Summary
-        @Choice({ CodeableConcept.class, Quantity.class, Date.class, Boolean.class, Attachment.class })
-        private final Element value;
+        @Choice({ CodeableConcept.class, Markdown.class, Quantity.class, Integer.class, Date.class, Boolean.class, Attachment.class })
+        private final org.linuxforhealth.fhir.model.type.Element value;
 
         private Characteristic(Builder builder) {
             super(builder);
@@ -4098,13 +4172,13 @@ public class MedicinalProductDefinition extends DomainResource {
         }
 
         /**
-         * A value for the characteristic.
+         * A value for the characteristic.text.
          * 
          * @return
-         *     An immutable object of type {@link CodeableConcept}, {@link Quantity}, {@link Date}, {@link Boolean} or {@link 
-         *     Attachment} that may be null.
+         *     An immutable object of type {@link CodeableConcept}, {@link Markdown}, {@link Quantity}, {@link Integer}, {@link 
+         *     Date}, {@link Boolean} or {@link Attachment} that may be null.
          */
-        public Element getValue() {
+        public org.linuxforhealth.fhir.model.type.Element getValue() {
             return value;
         }
 
@@ -4176,7 +4250,7 @@ public class MedicinalProductDefinition extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private CodeableConcept type;
-            private Element value;
+            private org.linuxforhealth.fhir.model.type.Element value;
 
             private Builder() {
                 super();
@@ -4199,7 +4273,7 @@ public class MedicinalProductDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4219,7 +4293,7 @@ public class MedicinalProductDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4244,7 +4318,7 @@ public class MedicinalProductDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4269,7 +4343,7 @@ public class MedicinalProductDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4310,6 +4384,22 @@ public class MedicinalProductDefinition extends DomainResource {
             }
 
             /**
+             * Convenience method for setting {@code value} with choice type Integer.
+             * 
+             * @param value
+             *     A value for the characteristic
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #value(Element)
+             */
+            public Builder value(java.lang.Integer value) {
+                this.value = (value == null) ? null : Integer.of(value);
+                return this;
+            }
+
+            /**
              * Convenience method for setting {@code value} with choice type Date.
              * 
              * @param value
@@ -4342,12 +4432,14 @@ public class MedicinalProductDefinition extends DomainResource {
             }
 
             /**
-             * A value for the characteristic.
+             * A value for the characteristic.text.
              * 
              * <p>This is a choice element with the following allowed types:
              * <ul>
              * <li>{@link CodeableConcept}</li>
+             * <li>{@link Markdown}</li>
              * <li>{@link Quantity}</li>
+             * <li>{@link Integer}</li>
              * <li>{@link Date}</li>
              * <li>{@link Boolean}</li>
              * <li>{@link Attachment}</li>
@@ -4359,7 +4451,7 @@ public class MedicinalProductDefinition extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder value(Element value) {
+            public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                 this.value = value;
                 return this;
             }
@@ -4389,7 +4481,7 @@ public class MedicinalProductDefinition extends DomainResource {
             protected void validate(Characteristic characteristic) {
                 super.validate(characteristic);
                 ValidationSupport.requireNonNull(characteristic.type, "type");
-                ValidationSupport.choiceElement(characteristic.value, "value", CodeableConcept.class, Quantity.class, Date.class, Boolean.class, Attachment.class);
+                ValidationSupport.choiceElement(characteristic.value, "value", CodeableConcept.class, Markdown.class, Quantity.class, Integer.class, Date.class, Boolean.class, Attachment.class);
                 ValidationSupport.requireValueOrChildren(characteristic);
             }
 

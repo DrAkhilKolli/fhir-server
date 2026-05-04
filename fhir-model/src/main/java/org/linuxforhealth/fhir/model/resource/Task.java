@@ -25,16 +25,17 @@ import org.linuxforhealth.fhir.model.type.Address;
 import org.linuxforhealth.fhir.model.type.Age;
 import org.linuxforhealth.fhir.model.type.Annotation;
 import org.linuxforhealth.fhir.model.type.Attachment;
+import org.linuxforhealth.fhir.model.type.Availability;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Base64Binary;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
 import org.linuxforhealth.fhir.model.type.ContactPoint;
-import org.linuxforhealth.fhir.model.type.Contributor;
 import org.linuxforhealth.fhir.model.type.Count;
 import org.linuxforhealth.fhir.model.type.DataRequirement;
 import org.linuxforhealth.fhir.model.type.Date;
@@ -45,12 +46,14 @@ import org.linuxforhealth.fhir.model.type.Dosage;
 import org.linuxforhealth.fhir.model.type.Duration;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Expression;
+import org.linuxforhealth.fhir.model.type.ExtendedContactDetail;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.HumanName;
 import org.linuxforhealth.fhir.model.type.Id;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Instant;
 import org.linuxforhealth.fhir.model.type.Integer;
+import org.linuxforhealth.fhir.model.type.Integer64;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Money;
@@ -62,6 +65,7 @@ import org.linuxforhealth.fhir.model.type.PositiveInt;
 import org.linuxforhealth.fhir.model.type.Quantity;
 import org.linuxforhealth.fhir.model.type.Range;
 import org.linuxforhealth.fhir.model.type.Ratio;
+import org.linuxforhealth.fhir.model.type.RatioRange;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.RelatedArtifact;
 import org.linuxforhealth.fhir.model.type.SampledData;
@@ -86,11 +90,19 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 /**
  * A task to be performed.
  * 
- * <p>Maturity level: FMM2 (Trial Use)
+ * <p>Maturity level: FMM3 (Trial Use)
  */
 @Maturity(
-    level = 2,
+    level = 3,
     status = StandardsStatus.Value.TRIAL_USE
+)
+@Constraint(
+    id = "tsk-1",
+    level = "Rule",
+    location = "(base)",
+    description = "Task.restriction is only allowed if the Task is seeking fulfillment and a focus is specified.",
+    expression = "restriction.exists() implies code.coding.where(code='fulfill' and system='http://hl7.org/fhir/CodeSystem/task-code').exists() and focus.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/Task"
 )
 @Constraint(
     id = "inv-1",
@@ -105,7 +117,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Warning",
     location = "(base)",
     description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/performer-role",
-    expression = "performerType.exists() implies (performerType.all(memberOf('http://hl7.org/fhir/ValueSet/performer-role', 'preferred')))",
+    expression = "requestedPerformer.exists() implies (requestedPerformer.all(memberOf('http://hl7.org/fhir/ValueSet/performer-role', 'preferred')))",
     source = "http://hl7.org/fhir/StructureDefinition/Task",
     generated = true
 )
@@ -128,7 +140,7 @@ public class Task extends DomainResource {
         bindingName = "TaskStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The current status of the task.",
-        valueSet = "http://hl7.org/fhir/ValueSet/task-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/task-status|5.0.0"
     )
     @Required
     private final TaskStatus status;
@@ -136,9 +148,10 @@ public class Task extends DomainResource {
     @Binding(
         bindingName = "TaskStatusReason",
         strength = BindingStrength.Value.EXAMPLE,
-        description = "Codes to identify the reason for current status.  These will typically be specific to a particular workflow."
+        description = "Codes to identify the reason for current status.  These will typically be specific to a particular workflow.",
+        valueSet = "http://hl7.org/fhir/ValueSet/task-status-reason"
     )
-    private final CodeableConcept statusReason;
+    private final CodeableReference statusReason;
     @Summary
     @Binding(
         bindingName = "TaskBusinessStatus",
@@ -151,7 +164,7 @@ public class Task extends DomainResource {
         bindingName = "TaskIntent",
         strength = BindingStrength.Value.REQUIRED,
         description = "Distinguishes whether the task is a proposal, plan or full order.",
-        valueSet = "http://hl7.org/fhir/ValueSet/task-intent|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/task-intent|5.0.0"
     )
     @Required
     private final TaskIntent intent;
@@ -159,9 +172,11 @@ public class Task extends DomainResource {
         bindingName = "TaskPriority",
         strength = BindingStrength.Value.REQUIRED,
         description = "The priority of a task (may affect service level applied to the task).",
-        valueSet = "http://hl7.org/fhir/ValueSet/request-priority|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/request-priority|5.0.0"
     )
     private final TaskPriority priority;
+    @Summary
+    private final Boolean doNotPerform;
     @Summary
     @Binding(
         bindingName = "TaskCode",
@@ -180,6 +195,8 @@ public class Task extends DomainResource {
     @ReferenceTarget({ "Encounter" })
     private final Reference encounter;
     @Summary
+    private final Period requestedPeriod;
+    @Summary
     private final Period executionPeriod;
     private final DateTime authoredOn;
     @Summary
@@ -193,10 +210,12 @@ public class Task extends DomainResource {
         description = "The type(s) of task performers allowed.",
         valueSet = "http://hl7.org/fhir/ValueSet/performer-role"
     )
-    private final List<CodeableConcept> performerType;
+    private final List<CodeableReference> requestedPerformer;
     @Summary
-    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "CareTeam", "HealthcareService", "Patient", "Device", "RelatedPerson" })
+    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient", "RelatedPerson" })
     private final Reference owner;
+    @Summary
+    private final List<Performer> performer;
     @Summary
     @ReferenceTarget({ "Location" })
     private final Reference location;
@@ -205,8 +224,7 @@ public class Task extends DomainResource {
         strength = BindingStrength.Value.EXAMPLE,
         description = "Indicates why the task is needed.  E.g. Suspended because patient admitted to hospital."
     )
-    private final CodeableConcept reasonCode;
-    private final Reference reasonReference;
+    private final List<CodeableReference> reason;
     @ReferenceTarget({ "Coverage", "ClaimResponse" })
     private final List<Reference> insurance;
     private final List<Annotation> note;
@@ -229,20 +247,22 @@ public class Task extends DomainResource {
         businessStatus = builder.businessStatus;
         intent = builder.intent;
         priority = builder.priority;
+        doNotPerform = builder.doNotPerform;
         code = builder.code;
         description = builder.description;
         focus = builder.focus;
         _for = builder._for;
         encounter = builder.encounter;
+        requestedPeriod = builder.requestedPeriod;
         executionPeriod = builder.executionPeriod;
         authoredOn = builder.authoredOn;
         lastModified = builder.lastModified;
         requester = builder.requester;
-        performerType = Collections.unmodifiableList(builder.performerType);
+        requestedPerformer = Collections.unmodifiableList(builder.requestedPerformer);
         owner = builder.owner;
+        performer = Collections.unmodifiableList(builder.performer);
         location = builder.location;
-        reasonCode = builder.reasonCode;
-        reasonReference = builder.reasonReference;
+        reason = Collections.unmodifiableList(builder.reason);
         insurance = Collections.unmodifiableList(builder.insurance);
         note = Collections.unmodifiableList(builder.note);
         relevantHistory = Collections.unmodifiableList(builder.relevantHistory);
@@ -285,10 +305,9 @@ public class Task extends DomainResource {
 
     /**
      * BasedOn refers to a higher-level authorization that triggered the creation of the task. It references a "request" 
-     * resource such as a ServiceRequest, MedicationRequest, ServiceRequest, CarePlan, etc. which is distinct from the 
-     * "request" resource the task is seeking to fulfill. This latter resource is referenced by FocusOn. For example, based 
-     * on a ServiceRequest (= BasedOn), a task is created to fulfill a procedureRequest ( = FocusOn ) to collect a specimen 
-     * from a patient.
+     * resource such as a ServiceRequest, MedicationRequest, CarePlan, etc. which is distinct from the "request" resource the 
+     * task is seeking to fulfill. This latter resource is referenced by focus. For example, based on a CarePlan (= basedOn), 
+     * a task is created to fulfill a ServiceRequest ( = focus ) to collect a specimen from a patient.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
@@ -298,7 +317,10 @@ public class Task extends DomainResource {
     }
 
     /**
-     * An identifier that links together multiple tasks and other requests that were created in the same context.
+     * A shared identifier common to multiple independent Task and Request instances that were activated/authorized more or 
+     * less simultaneously by a single author. The presence of the same identifier on each request ties those requests 
+     * together and may have business ramifications in terms of reporting of results, billing, etc. E.g. a requisition number 
+     * shared by a set of lab tests ordered together, or a prescription number shared by all meds ordered at one time.
      * 
      * @return
      *     An immutable object of type {@link Identifier} that may be null.
@@ -331,9 +353,9 @@ public class Task extends DomainResource {
      * An explanation as to why this task is held, failed, was refused, etc.
      * 
      * @return
-     *     An immutable object of type {@link CodeableConcept} that may be null.
+     *     An immutable object of type {@link CodeableReference} that may be null.
      */
-    public CodeableConcept getStatusReason() {
+    public CodeableReference getStatusReason() {
         return statusReason;
     }
 
@@ -369,6 +391,16 @@ public class Task extends DomainResource {
     }
 
     /**
+     * If true indicates that the Task is asking for the specified action to *not* occur.
+     * 
+     * @return
+     *     An immutable object of type {@link Boolean} that may be null.
+     */
+    public Boolean getDoNotPerform() {
+        return doNotPerform;
+    }
+
+    /**
      * A name or code (or both) briefly describing what the task involves.
      * 
      * @return
@@ -389,7 +421,7 @@ public class Task extends DomainResource {
     }
 
     /**
-     * The request being actioned or the resource being manipulated by this task.
+     * The request being fulfilled or the resource being manipulated (changed, suspended, etc.) by this task.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
@@ -416,6 +448,16 @@ public class Task extends DomainResource {
      */
     public Reference getEncounter() {
         return encounter;
+    }
+
+    /**
+     * Indicates the start and/or end of the period of time when completion of the task is desired to take place.
+     * 
+     * @return
+     *     An immutable object of type {@link Period} that may be null.
+     */
+    public Period getRequestedPeriod() {
+        return requestedPeriod;
     }
 
     /**
@@ -460,17 +502,17 @@ public class Task extends DomainResource {
     }
 
     /**
-     * The kind of participant that should perform the task.
+     * The kind of participant or specific participant that should perform the task.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<CodeableConcept> getPerformerType() {
-        return performerType;
+    public List<CodeableReference> getRequestedPerformer() {
+        return requestedPerformer;
     }
 
     /**
-     * Individual organization or Device currently responsible for task execution.
+     * Party responsible for managing task execution.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
@@ -480,7 +522,17 @@ public class Task extends DomainResource {
     }
 
     /**
-     * Principal physical location where the this task is performed.
+     * The entity who performed the requested task.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Performer} that may be empty.
+     */
+    public List<Performer> getPerformer() {
+        return performer;
+    }
+
+    /**
+     * Principal physical location where this task is performed.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
@@ -490,23 +542,13 @@ public class Task extends DomainResource {
     }
 
     /**
-     * A description or code indicating why this task needs to be performed.
+     * A description, code, or reference indicating why this task needs to be performed.
      * 
      * @return
-     *     An immutable object of type {@link CodeableConcept} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public CodeableConcept getReasonCode() {
-        return reasonCode;
-    }
-
-    /**
-     * A resource reference indicating why this task needs to be performed.
-     * 
-     * @return
-     *     An immutable object of type {@link Reference} that may be null.
-     */
-    public Reference getReasonReference() {
-        return reasonReference;
+    public List<CodeableReference> getReason() {
+        return reason;
     }
 
     /**
@@ -585,20 +627,22 @@ public class Task extends DomainResource {
             (businessStatus != null) || 
             (intent != null) || 
             (priority != null) || 
+            (doNotPerform != null) || 
             (code != null) || 
             (description != null) || 
             (focus != null) || 
             (_for != null) || 
             (encounter != null) || 
+            (requestedPeriod != null) || 
             (executionPeriod != null) || 
             (authoredOn != null) || 
             (lastModified != null) || 
             (requester != null) || 
-            !performerType.isEmpty() || 
+            !requestedPerformer.isEmpty() || 
             (owner != null) || 
+            !performer.isEmpty() || 
             (location != null) || 
-            (reasonCode != null) || 
-            (reasonReference != null) || 
+            !reason.isEmpty() || 
             !insurance.isEmpty() || 
             !note.isEmpty() || 
             !relevantHistory.isEmpty() || 
@@ -632,20 +676,22 @@ public class Task extends DomainResource {
                 accept(businessStatus, "businessStatus", visitor);
                 accept(intent, "intent", visitor);
                 accept(priority, "priority", visitor);
+                accept(doNotPerform, "doNotPerform", visitor);
                 accept(code, "code", visitor);
                 accept(description, "description", visitor);
                 accept(focus, "focus", visitor);
                 accept(_for, "for", visitor);
                 accept(encounter, "encounter", visitor);
+                accept(requestedPeriod, "requestedPeriod", visitor);
                 accept(executionPeriod, "executionPeriod", visitor);
                 accept(authoredOn, "authoredOn", visitor);
                 accept(lastModified, "lastModified", visitor);
                 accept(requester, "requester", visitor);
-                accept(performerType, "performerType", visitor, CodeableConcept.class);
+                accept(requestedPerformer, "requestedPerformer", visitor, CodeableReference.class);
                 accept(owner, "owner", visitor);
+                accept(performer, "performer", visitor, Performer.class);
                 accept(location, "location", visitor);
-                accept(reasonCode, "reasonCode", visitor);
-                accept(reasonReference, "reasonReference", visitor);
+                accept(reason, "reason", visitor, CodeableReference.class);
                 accept(insurance, "insurance", visitor, Reference.class);
                 accept(note, "note", visitor, Annotation.class);
                 accept(relevantHistory, "relevantHistory", visitor, Reference.class);
@@ -689,20 +735,22 @@ public class Task extends DomainResource {
             Objects.equals(businessStatus, other.businessStatus) && 
             Objects.equals(intent, other.intent) && 
             Objects.equals(priority, other.priority) && 
+            Objects.equals(doNotPerform, other.doNotPerform) && 
             Objects.equals(code, other.code) && 
             Objects.equals(description, other.description) && 
             Objects.equals(focus, other.focus) && 
             Objects.equals(_for, other._for) && 
             Objects.equals(encounter, other.encounter) && 
+            Objects.equals(requestedPeriod, other.requestedPeriod) && 
             Objects.equals(executionPeriod, other.executionPeriod) && 
             Objects.equals(authoredOn, other.authoredOn) && 
             Objects.equals(lastModified, other.lastModified) && 
             Objects.equals(requester, other.requester) && 
-            Objects.equals(performerType, other.performerType) && 
+            Objects.equals(requestedPerformer, other.requestedPerformer) && 
             Objects.equals(owner, other.owner) && 
+            Objects.equals(performer, other.performer) && 
             Objects.equals(location, other.location) && 
-            Objects.equals(reasonCode, other.reasonCode) && 
-            Objects.equals(reasonReference, other.reasonReference) && 
+            Objects.equals(reason, other.reason) && 
             Objects.equals(insurance, other.insurance) && 
             Objects.equals(note, other.note) && 
             Objects.equals(relevantHistory, other.relevantHistory) && 
@@ -734,20 +782,22 @@ public class Task extends DomainResource {
                 businessStatus, 
                 intent, 
                 priority, 
+                doNotPerform, 
                 code, 
                 description, 
                 focus, 
                 _for, 
                 encounter, 
+                requestedPeriod, 
                 executionPeriod, 
                 authoredOn, 
                 lastModified, 
                 requester, 
-                performerType, 
+                requestedPerformer, 
                 owner, 
+                performer, 
                 location, 
-                reasonCode, 
-                reasonReference, 
+                reason, 
                 insurance, 
                 note, 
                 relevantHistory, 
@@ -776,24 +826,26 @@ public class Task extends DomainResource {
         private Identifier groupIdentifier;
         private List<Reference> partOf = new ArrayList<>();
         private TaskStatus status;
-        private CodeableConcept statusReason;
+        private CodeableReference statusReason;
         private CodeableConcept businessStatus;
         private TaskIntent intent;
         private TaskPriority priority;
+        private Boolean doNotPerform;
         private CodeableConcept code;
         private String description;
         private Reference focus;
         private Reference _for;
         private Reference encounter;
+        private Period requestedPeriod;
         private Period executionPeriod;
         private DateTime authoredOn;
         private DateTime lastModified;
         private Reference requester;
-        private List<CodeableConcept> performerType = new ArrayList<>();
+        private List<CodeableReference> requestedPerformer = new ArrayList<>();
         private Reference owner;
+        private List<Performer> performer = new ArrayList<>();
         private Reference location;
-        private CodeableConcept reasonCode;
-        private Reference reasonReference;
+        private List<CodeableReference> reason = new ArrayList<>();
         private List<Reference> insurance = new ArrayList<>();
         private List<Annotation> note = new ArrayList<>();
         private List<Reference> relevantHistory = new ArrayList<>();
@@ -883,7 +935,8 @@ public class Task extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -901,7 +954,8 @@ public class Task extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -922,7 +976,7 @@ public class Task extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -942,7 +996,7 @@ public class Task extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -967,9 +1021,9 @@ public class Task extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -992,9 +1046,9 @@ public class Task extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1087,10 +1141,9 @@ public class Task extends DomainResource {
 
         /**
          * BasedOn refers to a higher-level authorization that triggered the creation of the task. It references a "request" 
-         * resource such as a ServiceRequest, MedicationRequest, ServiceRequest, CarePlan, etc. which is distinct from the 
-         * "request" resource the task is seeking to fulfill. This latter resource is referenced by FocusOn. For example, based 
-         * on a ServiceRequest (= BasedOn), a task is created to fulfill a procedureRequest ( = FocusOn ) to collect a specimen 
-         * from a patient.
+         * resource such as a ServiceRequest, MedicationRequest, CarePlan, etc. which is distinct from the "request" resource the 
+         * task is seeking to fulfill. This latter resource is referenced by focus. For example, based on a CarePlan (= basedOn), 
+         * a task is created to fulfill a ServiceRequest ( = focus ) to collect a specimen from a patient.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1110,10 +1163,9 @@ public class Task extends DomainResource {
 
         /**
          * BasedOn refers to a higher-level authorization that triggered the creation of the task. It references a "request" 
-         * resource such as a ServiceRequest, MedicationRequest, ServiceRequest, CarePlan, etc. which is distinct from the 
-         * "request" resource the task is seeking to fulfill. This latter resource is referenced by FocusOn. For example, based 
-         * on a ServiceRequest (= BasedOn), a task is created to fulfill a procedureRequest ( = FocusOn ) to collect a specimen 
-         * from a patient.
+         * resource such as a ServiceRequest, MedicationRequest, CarePlan, etc. which is distinct from the "request" resource the 
+         * task is seeking to fulfill. This latter resource is referenced by focus. For example, based on a CarePlan (= basedOn), 
+         * a task is created to fulfill a ServiceRequest ( = focus ) to collect a specimen from a patient.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1133,7 +1185,10 @@ public class Task extends DomainResource {
         }
 
         /**
-         * An identifier that links together multiple tasks and other requests that were created in the same context.
+         * A shared identifier common to multiple independent Task and Request instances that were activated/authorized more or 
+         * less simultaneously by a single author. The presence of the same identifier on each request ties those requests 
+         * together and may have business ramifications in terms of reporting of results, billing, etc. E.g. a requisition number 
+         * shared by a set of lab tests ordered together, or a prescription number shared by all meds ordered at one time.
          * 
          * @param groupIdentifier
          *     Requisition or grouper id
@@ -1220,7 +1275,7 @@ public class Task extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder statusReason(CodeableConcept statusReason) {
+        public Builder statusReason(CodeableReference statusReason) {
             this.statusReason = statusReason;
             return this;
         }
@@ -1271,6 +1326,36 @@ public class Task extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code doNotPerform}.
+         * 
+         * @param doNotPerform
+         *     True if Task is prohibiting action
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #doNotPerform(org.linuxforhealth.fhir.model.type.Boolean)
+         */
+        public Builder doNotPerform(java.lang.Boolean doNotPerform) {
+            this.doNotPerform = (doNotPerform == null) ? null : Boolean.of(doNotPerform);
+            return this;
+        }
+
+        /**
+         * If true indicates that the Task is asking for the specified action to *not* occur.
+         * 
+         * @param doNotPerform
+         *     True if Task is prohibiting action
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder doNotPerform(Boolean doNotPerform) {
+            this.doNotPerform = doNotPerform;
+            return this;
+        }
+
+        /**
          * A name or code (or both) briefly describing what the task involves.
          * 
          * @param code
@@ -1315,7 +1400,7 @@ public class Task extends DomainResource {
         }
 
         /**
-         * The request being actioned or the resource being manipulated by this task.
+         * The request being fulfilled or the resource being manipulated (changed, suspended, etc.) by this task.
          * 
          * @param focus
          *     What task is acting on
@@ -1358,6 +1443,20 @@ public class Task extends DomainResource {
          */
         public Builder encounter(Reference encounter) {
             this.encounter = encounter;
+            return this;
+        }
+
+        /**
+         * Indicates the start and/or end of the period of time when completion of the task is desired to take place.
+         * 
+         * @param requestedPeriod
+         *     When the task should be performed
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder requestedPeriod(Period requestedPeriod) {
+            this.requestedPeriod = requestedPeriod;
             return this;
         }
 
@@ -1429,32 +1528,32 @@ public class Task extends DomainResource {
         }
 
         /**
-         * The kind of participant that should perform the task.
+         * The kind of participant or specific participant that should perform the task.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param performerType
-         *     Requested performer
+         * @param requestedPerformer
+         *     Who should perform Task
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder performerType(CodeableConcept... performerType) {
-            for (CodeableConcept value : performerType) {
-                this.performerType.add(value);
+        public Builder requestedPerformer(CodeableReference... requestedPerformer) {
+            for (CodeableReference value : requestedPerformer) {
+                this.requestedPerformer.add(value);
             }
             return this;
         }
 
         /**
-         * The kind of participant that should perform the task.
+         * The kind of participant or specific participant that should perform the task.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param performerType
-         *     Requested performer
+         * @param requestedPerformer
+         *     Who should perform Task
          * 
          * @return
          *     A reference to this Builder instance
@@ -1462,13 +1561,13 @@ public class Task extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder performerType(Collection<CodeableConcept> performerType) {
-            this.performerType = new ArrayList<>(performerType);
+        public Builder requestedPerformer(Collection<CodeableReference> requestedPerformer) {
+            this.requestedPerformer = new ArrayList<>(requestedPerformer);
             return this;
         }
 
         /**
-         * Individual organization or Device currently responsible for task execution.
+         * Party responsible for managing task execution.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
@@ -1476,9 +1575,7 @@ public class Task extends DomainResource {
          * <li>{@link PractitionerRole}</li>
          * <li>{@link Organization}</li>
          * <li>{@link CareTeam}</li>
-         * <li>{@link HealthcareService}</li>
          * <li>{@link Patient}</li>
-         * <li>{@link Device}</li>
          * <li>{@link RelatedPerson}</li>
          * </ul>
          * 
@@ -1494,7 +1591,46 @@ public class Task extends DomainResource {
         }
 
         /**
-         * Principal physical location where the this task is performed.
+         * The entity who performed the requested task.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param performer
+         *     Who or what performed the task
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder performer(Performer... performer) {
+            for (Performer value : performer) {
+                this.performer.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The entity who performed the requested task.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param performer
+         *     Who or what performed the task
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder performer(Collection<Performer> performer) {
+            this.performer = new ArrayList<>(performer);
+            return this;
+        }
+
+        /**
+         * Principal physical location where this task is performed.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
@@ -1513,30 +1649,41 @@ public class Task extends DomainResource {
         }
 
         /**
-         * A description or code indicating why this task needs to be performed.
+         * A description, code, or reference indicating why this task needs to be performed.
          * 
-         * @param reasonCode
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param reason
          *     Why task is needed
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder reasonCode(CodeableConcept reasonCode) {
-            this.reasonCode = reasonCode;
+        public Builder reason(CodeableReference... reason) {
+            for (CodeableReference value : reason) {
+                this.reason.add(value);
+            }
             return this;
         }
 
         /**
-         * A resource reference indicating why this task needs to be performed.
+         * A description, code, or reference indicating why this task needs to be performed.
          * 
-         * @param reasonReference
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param reason
          *     Why task is needed
          * 
          * @return
          *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
          */
-        public Builder reasonReference(Reference reasonReference) {
-            this.reasonReference = reasonReference;
+        public Builder reason(Collection<CodeableReference> reason) {
+            this.reason = new ArrayList<>(reason);
             return this;
         }
 
@@ -1804,7 +1951,9 @@ public class Task extends DomainResource {
             ValidationSupport.checkList(task.partOf, "partOf", Reference.class);
             ValidationSupport.requireNonNull(task.status, "status");
             ValidationSupport.requireNonNull(task.intent, "intent");
-            ValidationSupport.checkList(task.performerType, "performerType", CodeableConcept.class);
+            ValidationSupport.checkList(task.requestedPerformer, "requestedPerformer", CodeableReference.class);
+            ValidationSupport.checkList(task.performer, "performer", Performer.class);
+            ValidationSupport.checkList(task.reason, "reason", CodeableReference.class);
             ValidationSupport.checkList(task.insurance, "insurance", Reference.class);
             ValidationSupport.checkList(task.note, "note", Annotation.class);
             ValidationSupport.checkList(task.relevantHistory, "relevantHistory", Reference.class);
@@ -1813,7 +1962,7 @@ public class Task extends DomainResource {
             ValidationSupport.checkReferenceType(task.partOf, "partOf", "Task");
             ValidationSupport.checkReferenceType(task.encounter, "encounter", "Encounter");
             ValidationSupport.checkReferenceType(task.requester, "requester", "Device", "Organization", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson");
-            ValidationSupport.checkReferenceType(task.owner, "owner", "Practitioner", "PractitionerRole", "Organization", "CareTeam", "HealthcareService", "Patient", "Device", "RelatedPerson");
+            ValidationSupport.checkReferenceType(task.owner, "owner", "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient", "RelatedPerson");
             ValidationSupport.checkReferenceType(task.location, "location", "Location");
             ValidationSupport.checkReferenceType(task.insurance, "insurance", "Coverage", "ClaimResponse");
             ValidationSupport.checkReferenceType(task.relevantHistory, "relevantHistory", "Provenance");
@@ -1832,20 +1981,22 @@ public class Task extends DomainResource {
             businessStatus = task.businessStatus;
             intent = task.intent;
             priority = task.priority;
+            doNotPerform = task.doNotPerform;
             code = task.code;
             description = task.description;
             focus = task.focus;
             _for = task._for;
             encounter = task.encounter;
+            requestedPeriod = task.requestedPeriod;
             executionPeriod = task.executionPeriod;
             authoredOn = task.authoredOn;
             lastModified = task.lastModified;
             requester = task.requester;
-            performerType.addAll(task.performerType);
+            requestedPerformer.addAll(task.requestedPerformer);
             owner = task.owner;
+            performer.addAll(task.performer);
             location = task.location;
-            reasonCode = task.reasonCode;
-            reasonReference = task.reasonReference;
+            reason.addAll(task.reason);
             insurance.addAll(task.insurance);
             note.addAll(task.note);
             relevantHistory.addAll(task.relevantHistory);
@@ -1853,6 +2004,311 @@ public class Task extends DomainResource {
             input.addAll(task.input);
             output.addAll(task.output);
             return this;
+        }
+    }
+
+    /**
+     * The entity who performed the requested task.
+     */
+    public static class Performer extends BackboneElement {
+        @Summary
+        @Binding(
+            bindingName = "TaskPerformerFunctionCode",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "Codes to identify types of task performers."
+        )
+        private final CodeableConcept function;
+        @Summary
+        @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient", "RelatedPerson" })
+        @Required
+        private final Reference actor;
+
+        private Performer(Builder builder) {
+            super(builder);
+            function = builder.function;
+            actor = builder.actor;
+        }
+
+        /**
+         * A code or description of the performer of the task.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getFunction() {
+            return function;
+        }
+
+        /**
+         * The actor or entity who performed the task.
+         * 
+         * @return
+         *     An immutable object of type {@link Reference} that is non-null.
+         */
+        public Reference getActor() {
+            return actor;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (function != null) || 
+                (actor != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(function, "function", visitor);
+                    accept(actor, "actor", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Performer other = (Performer) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(function, other.function) && 
+                Objects.equals(actor, other.actor);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    function, 
+                    actor);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private CodeableConcept function;
+            private Reference actor;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * A code or description of the performer of the task.
+             * 
+             * @param function
+             *     Type of performance
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder function(CodeableConcept function) {
+                this.function = function;
+                return this;
+            }
+
+            /**
+             * The actor or entity who performed the task.
+             * 
+             * <p>This element is required.
+             * 
+             * <p>Allowed resource types for this reference:
+             * <ul>
+             * <li>{@link Practitioner}</li>
+             * <li>{@link PractitionerRole}</li>
+             * <li>{@link Organization}</li>
+             * <li>{@link CareTeam}</li>
+             * <li>{@link Patient}</li>
+             * <li>{@link RelatedPerson}</li>
+             * </ul>
+             * 
+             * @param actor
+             *     Who performed the task
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder actor(Reference actor) {
+                this.actor = actor;
+                return this;
+            }
+
+            /**
+             * Build the {@link Performer}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>actor</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link Performer}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Performer per the base specification
+             */
+            @Override
+            public Performer build() {
+                Performer performer = new Performer(this);
+                if (validating) {
+                    validate(performer);
+                }
+                return performer;
+            }
+
+            protected void validate(Performer performer) {
+                super.validate(performer);
+                ValidationSupport.requireNonNull(performer.actor, "actor");
+                ValidationSupport.checkReferenceType(performer.actor, "actor", "Practitioner", "PractitionerRole", "Organization", "CareTeam", "Patient", "RelatedPerson");
+                ValidationSupport.requireValueOrChildren(performer);
+            }
+
+            protected Builder from(Performer performer) {
+                super.from(performer);
+                function = performer.function;
+                actor = performer.actor;
+                return this;
+            }
         }
     }
 
@@ -1884,7 +2340,8 @@ public class Task extends DomainResource {
         }
 
         /**
-         * Over what time-period is fulfillment sought.
+         * The time-period for which fulfillment is sought. This must fall within the overall time period authorized in the 
+         * referenced request. E.g. ServiceRequest.occurance[x].
          * 
          * @return
          *     An immutable object of type {@link Period} that may be null.
@@ -1894,7 +2351,8 @@ public class Task extends DomainResource {
         }
 
         /**
-         * For requests that are targeted to more than on potential recipient/target, for whom is fulfillment sought?
+         * For requests that are targeted to more than one potential recipient/target, to identify who is fulfillment is sought 
+         * for.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
@@ -1999,7 +2457,7 @@ public class Task extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2019,7 +2477,7 @@ public class Task extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2044,7 +2502,7 @@ public class Task extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2069,7 +2527,7 @@ public class Task extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2108,10 +2566,11 @@ public class Task extends DomainResource {
             }
 
             /**
-             * Over what time-period is fulfillment sought.
+             * The time-period for which fulfillment is sought. This must fall within the overall time period authorized in the 
+             * referenced request. E.g. ServiceRequest.occurance[x].
              * 
              * @param period
-             *     When fulfillment sought
+             *     When fulfillment is sought
              * 
              * @return
              *     A reference to this Builder instance
@@ -2122,7 +2581,8 @@ public class Task extends DomainResource {
             }
 
             /**
-             * For requests that are targeted to more than on potential recipient/target, for whom is fulfillment sought?
+             * For requests that are targeted to more than one potential recipient/target, to identify who is fulfillment is sought 
+             * for.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -2151,7 +2611,8 @@ public class Task extends DomainResource {
             }
 
             /**
-             * For requests that are targeted to more than on potential recipient/target, for whom is fulfillment sought?
+             * For requests that are targeted to more than one potential recipient/target, to identify who is fulfillment is sought 
+             * for.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -2225,9 +2686,9 @@ public class Task extends DomainResource {
         )
         @Required
         private final CodeableConcept type;
-        @Choice({ Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, Contributor.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Dosage.class, Meta.class })
+        @Choice({ Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Integer64.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Availability.class, ExtendedContactDetail.class, Dosage.class, Meta.class })
         @Required
-        private final Element value;
+        private final org.linuxforhealth.fhir.model.type.Element value;
 
         private Input(Builder builder) {
             super(builder);
@@ -2250,16 +2711,17 @@ public class Task extends DomainResource {
          * 
          * @return
          *     An immutable object of type {@link Base64Binary}, {@link Boolean}, {@link Canonical}, {@link Code}, {@link Date}, 
-         *     {@link DateTime}, {@link Decimal}, {@link Id}, {@link Instant}, {@link Integer}, {@link Markdown}, {@link Oid}, {@link 
-         *     PositiveInt}, {@link String}, {@link Time}, {@link UnsignedInt}, {@link Uri}, {@link Url}, {@link Uuid}, {@link 
-         *     Address}, {@link Age}, {@link Annotation}, {@link Attachment}, {@link CodeableConcept}, {@link Coding}, {@link 
-         *     ContactPoint}, {@link Count}, {@link Distance}, {@link Duration}, {@link HumanName}, {@link Identifier}, {@link 
-         *     Money}, {@link Period}, {@link Quantity}, {@link Range}, {@link Ratio}, {@link Reference}, {@link SampledData}, {@link 
-         *     Signature}, {@link Timing}, {@link ContactDetail}, {@link Contributor}, {@link DataRequirement}, {@link Expression}, 
-         *     {@link ParameterDefinition}, {@link RelatedArtifact}, {@link TriggerDefinition}, {@link UsageContext}, {@link Dosage} 
-         *     or {@link Meta} that is non-null.
+         *     {@link DateTime}, {@link Decimal}, {@link Id}, {@link Instant}, {@link Integer}, {@link Integer64}, {@link Markdown}, 
+         *     {@link Oid}, {@link PositiveInt}, {@link String}, {@link Time}, {@link UnsignedInt}, {@link Uri}, {@link Url}, {@link 
+         *     Uuid}, {@link Address}, {@link Age}, {@link Annotation}, {@link Attachment}, {@link CodeableConcept}, {@link 
+         *     CodeableReference}, {@link Coding}, {@link ContactPoint}, {@link Count}, {@link Distance}, {@link Duration}, {@link 
+         *     HumanName}, {@link Identifier}, {@link Money}, {@link Period}, {@link Quantity}, {@link Range}, {@link Ratio}, {@link 
+         *     RatioRange}, {@link Reference}, {@link SampledData}, {@link Signature}, {@link Timing}, {@link ContactDetail}, {@link 
+         *     DataRequirement}, {@link Expression}, {@link ParameterDefinition}, {@link RelatedArtifact}, {@link TriggerDefinition}, 
+         *     {@link UsageContext}, {@link Availability}, {@link ExtendedContactDetail}, {@link Dosage} or {@link Meta} that is non-
+         *     null.
          */
-        public Element getValue() {
+        public org.linuxforhealth.fhir.model.type.Element getValue() {
             return value;
         }
 
@@ -2331,7 +2793,7 @@ public class Task extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private CodeableConcept type;
-            private Element value;
+            private org.linuxforhealth.fhir.model.type.Element value;
 
             private Builder() {
                 super();
@@ -2354,7 +2816,7 @@ public class Task extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2374,7 +2836,7 @@ public class Task extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2399,7 +2861,7 @@ public class Task extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2424,7 +2886,7 @@ public class Task extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2589,6 +3051,7 @@ public class Task extends DomainResource {
              * <li>{@link Id}</li>
              * <li>{@link Instant}</li>
              * <li>{@link Integer}</li>
+             * <li>{@link Integer64}</li>
              * <li>{@link Markdown}</li>
              * <li>{@link Oid}</li>
              * <li>{@link PositiveInt}</li>
@@ -2603,6 +3066,7 @@ public class Task extends DomainResource {
              * <li>{@link Annotation}</li>
              * <li>{@link Attachment}</li>
              * <li>{@link CodeableConcept}</li>
+             * <li>{@link CodeableReference}</li>
              * <li>{@link Coding}</li>
              * <li>{@link ContactPoint}</li>
              * <li>{@link Count}</li>
@@ -2615,18 +3079,20 @@ public class Task extends DomainResource {
              * <li>{@link Quantity}</li>
              * <li>{@link Range}</li>
              * <li>{@link Ratio}</li>
+             * <li>{@link RatioRange}</li>
              * <li>{@link Reference}</li>
              * <li>{@link SampledData}</li>
              * <li>{@link Signature}</li>
              * <li>{@link Timing}</li>
              * <li>{@link ContactDetail}</li>
-             * <li>{@link Contributor}</li>
              * <li>{@link DataRequirement}</li>
              * <li>{@link Expression}</li>
              * <li>{@link ParameterDefinition}</li>
              * <li>{@link RelatedArtifact}</li>
              * <li>{@link TriggerDefinition}</li>
              * <li>{@link UsageContext}</li>
+             * <li>{@link Availability}</li>
+             * <li>{@link ExtendedContactDetail}</li>
              * <li>{@link Dosage}</li>
              * <li>{@link Meta}</li>
              * </ul>
@@ -2637,7 +3103,7 @@ public class Task extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder value(Element value) {
+            public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                 this.value = value;
                 return this;
             }
@@ -2668,7 +3134,7 @@ public class Task extends DomainResource {
             protected void validate(Input input) {
                 super.validate(input);
                 ValidationSupport.requireNonNull(input.type, "type");
-                ValidationSupport.requireChoiceElement(input.value, "value", Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, Contributor.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Dosage.class, Meta.class);
+                ValidationSupport.requireChoiceElement(input.value, "value", Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Integer64.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Availability.class, ExtendedContactDetail.class, Dosage.class, Meta.class);
                 ValidationSupport.requireValueOrChildren(input);
             }
 
@@ -2692,9 +3158,9 @@ public class Task extends DomainResource {
         )
         @Required
         private final CodeableConcept type;
-        @Choice({ Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, Contributor.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Dosage.class, Meta.class })
+        @Choice({ Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Integer64.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Availability.class, ExtendedContactDetail.class, Dosage.class, Meta.class })
         @Required
-        private final Element value;
+        private final org.linuxforhealth.fhir.model.type.Element value;
 
         private Output(Builder builder) {
             super(builder);
@@ -2717,16 +3183,17 @@ public class Task extends DomainResource {
          * 
          * @return
          *     An immutable object of type {@link Base64Binary}, {@link Boolean}, {@link Canonical}, {@link Code}, {@link Date}, 
-         *     {@link DateTime}, {@link Decimal}, {@link Id}, {@link Instant}, {@link Integer}, {@link Markdown}, {@link Oid}, {@link 
-         *     PositiveInt}, {@link String}, {@link Time}, {@link UnsignedInt}, {@link Uri}, {@link Url}, {@link Uuid}, {@link 
-         *     Address}, {@link Age}, {@link Annotation}, {@link Attachment}, {@link CodeableConcept}, {@link Coding}, {@link 
-         *     ContactPoint}, {@link Count}, {@link Distance}, {@link Duration}, {@link HumanName}, {@link Identifier}, {@link 
-         *     Money}, {@link Period}, {@link Quantity}, {@link Range}, {@link Ratio}, {@link Reference}, {@link SampledData}, {@link 
-         *     Signature}, {@link Timing}, {@link ContactDetail}, {@link Contributor}, {@link DataRequirement}, {@link Expression}, 
-         *     {@link ParameterDefinition}, {@link RelatedArtifact}, {@link TriggerDefinition}, {@link UsageContext}, {@link Dosage} 
-         *     or {@link Meta} that is non-null.
+         *     {@link DateTime}, {@link Decimal}, {@link Id}, {@link Instant}, {@link Integer}, {@link Integer64}, {@link Markdown}, 
+         *     {@link Oid}, {@link PositiveInt}, {@link String}, {@link Time}, {@link UnsignedInt}, {@link Uri}, {@link Url}, {@link 
+         *     Uuid}, {@link Address}, {@link Age}, {@link Annotation}, {@link Attachment}, {@link CodeableConcept}, {@link 
+         *     CodeableReference}, {@link Coding}, {@link ContactPoint}, {@link Count}, {@link Distance}, {@link Duration}, {@link 
+         *     HumanName}, {@link Identifier}, {@link Money}, {@link Period}, {@link Quantity}, {@link Range}, {@link Ratio}, {@link 
+         *     RatioRange}, {@link Reference}, {@link SampledData}, {@link Signature}, {@link Timing}, {@link ContactDetail}, {@link 
+         *     DataRequirement}, {@link Expression}, {@link ParameterDefinition}, {@link RelatedArtifact}, {@link TriggerDefinition}, 
+         *     {@link UsageContext}, {@link Availability}, {@link ExtendedContactDetail}, {@link Dosage} or {@link Meta} that is non-
+         *     null.
          */
-        public Element getValue() {
+        public org.linuxforhealth.fhir.model.type.Element getValue() {
             return value;
         }
 
@@ -2798,7 +3265,7 @@ public class Task extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private CodeableConcept type;
-            private Element value;
+            private org.linuxforhealth.fhir.model.type.Element value;
 
             private Builder() {
                 super();
@@ -2821,7 +3288,7 @@ public class Task extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2841,7 +3308,7 @@ public class Task extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2866,7 +3333,7 @@ public class Task extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2891,7 +3358,7 @@ public class Task extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3056,6 +3523,7 @@ public class Task extends DomainResource {
              * <li>{@link Id}</li>
              * <li>{@link Instant}</li>
              * <li>{@link Integer}</li>
+             * <li>{@link Integer64}</li>
              * <li>{@link Markdown}</li>
              * <li>{@link Oid}</li>
              * <li>{@link PositiveInt}</li>
@@ -3070,6 +3538,7 @@ public class Task extends DomainResource {
              * <li>{@link Annotation}</li>
              * <li>{@link Attachment}</li>
              * <li>{@link CodeableConcept}</li>
+             * <li>{@link CodeableReference}</li>
              * <li>{@link Coding}</li>
              * <li>{@link ContactPoint}</li>
              * <li>{@link Count}</li>
@@ -3082,18 +3551,20 @@ public class Task extends DomainResource {
              * <li>{@link Quantity}</li>
              * <li>{@link Range}</li>
              * <li>{@link Ratio}</li>
+             * <li>{@link RatioRange}</li>
              * <li>{@link Reference}</li>
              * <li>{@link SampledData}</li>
              * <li>{@link Signature}</li>
              * <li>{@link Timing}</li>
              * <li>{@link ContactDetail}</li>
-             * <li>{@link Contributor}</li>
              * <li>{@link DataRequirement}</li>
              * <li>{@link Expression}</li>
              * <li>{@link ParameterDefinition}</li>
              * <li>{@link RelatedArtifact}</li>
              * <li>{@link TriggerDefinition}</li>
              * <li>{@link UsageContext}</li>
+             * <li>{@link Availability}</li>
+             * <li>{@link ExtendedContactDetail}</li>
              * <li>{@link Dosage}</li>
              * <li>{@link Meta}</li>
              * </ul>
@@ -3104,7 +3575,7 @@ public class Task extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder value(Element value) {
+            public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                 this.value = value;
                 return this;
             }
@@ -3135,7 +3606,7 @@ public class Task extends DomainResource {
             protected void validate(Output output) {
                 super.validate(output);
                 ValidationSupport.requireNonNull(output.type, "type");
-                ValidationSupport.requireChoiceElement(output.value, "value", Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, Contributor.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Dosage.class, Meta.class);
+                ValidationSupport.requireChoiceElement(output.value, "value", Base64Binary.class, Boolean.class, Canonical.class, Code.class, Date.class, DateTime.class, Decimal.class, Id.class, Instant.class, Integer.class, Integer64.class, Markdown.class, Oid.class, PositiveInt.class, String.class, Time.class, UnsignedInt.class, Uri.class, Url.class, Uuid.class, Address.class, Age.class, Annotation.class, Attachment.class, CodeableConcept.class, CodeableReference.class, Coding.class, ContactPoint.class, Count.class, Distance.class, Duration.class, HumanName.class, Identifier.class, Money.class, Period.class, Quantity.class, Range.class, Ratio.class, RatioRange.class, Reference.class, SampledData.class, Signature.class, Timing.class, ContactDetail.class, DataRequirement.class, Expression.class, ParameterDefinition.class, RelatedArtifact.class, TriggerDefinition.class, UsageContext.class, Availability.class, ExtendedContactDetail.class, Dosage.class, Meta.class);
                 ValidationSupport.requireValueOrChildren(output);
             }
 

@@ -33,8 +33,7 @@ public class CodeSystemHierarchyMeaning extends Code {
      * 
      * <p>A hierarchy where the child concepts have an IS-A relationship with the parents - that is, all the properties of 
      * the parent are also true for its child concepts. Not that is-a is a property of the concepts, so additional 
-     * subsumption relationships may be defined using properties or the [subsumes](extension-codesystem-subsumes.html) 
-     * extension.
+     * subsumption relationships may be defined using properties.
      */
     public static final CodeSystemHierarchyMeaning IS_A = CodeSystemHierarchyMeaning.builder().value(Value.IS_A).build();
 
@@ -226,8 +225,7 @@ public class CodeSystemHierarchyMeaning extends Code {
          * 
          * <p>A hierarchy where the child concepts have an IS-A relationship with the parents - that is, all the properties of 
          * the parent are also true for its child concepts. Not that is-a is a property of the concepts, so additional 
-         * subsumption relationships may be defined using properties or the [subsumes](extension-codesystem-subsumes.html) 
-         * extension.
+         * subsumption relationships may be defined using properties.
          */
         IS_A("is-a"),
 

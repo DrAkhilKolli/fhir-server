@@ -26,6 +26,7 @@ import org.linuxforhealth.fhir.model.type.Annotation;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
@@ -46,10 +47,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * A clinical condition, problem, diagnosis, or other event, situation, issue, or clinical concept that has risen to a 
  * level of concern.
  * 
- * <p>Maturity level: FMM3 (Trial Use)
+ * <p>Maturity level: FMM5 (Trial Use)
  */
 @Maturity(
-    level = 3,
+    level = 5,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
@@ -62,51 +63,44 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 )
 @Constraint(
     id = "con-2",
-    level = "Rule",
-    location = "Condition.evidence",
-    description = "evidence SHALL have code or details",
-    expression = "code.exists() or detail.exists()",
+    level = "Warning",
+    location = "(base)",
+    description = "If category is problems list item, the clinicalStatus should not be unknown",
+    expression = "category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and code='unknown').exists().not()",
     source = "http://hl7.org/fhir/StructureDefinition/Condition"
 )
 @Constraint(
     id = "con-3",
-    level = "Warning",
-    location = "(base)",
-    description = "Condition.clinicalStatus SHOULD be present if verificationStatus is not entered-in-error and category is problem-list-item",
-    expression = "verificationStatus.empty().not() and verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').exists().not() and category.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-category' and code='problem-list-item').exists() implies clinicalStatus.empty().not()",
-    source = "http://hl7.org/fhir/StructureDefinition/Condition"
-)
-@Constraint(
-    id = "con-4",
     level = "Rule",
     location = "(base)",
-    description = "If condition is abated, then clinicalStatus must be either inactive, resolved, or remission",
-    expression = "abatement.empty() or clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='resolved' or code='remission' or code='inactive')).exists()",
+    description = "If condition is abated, then clinicalStatus must be either inactive, resolved, or remission.",
+    expression = "abatement.exists() implies (clinicalStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-clinical' and (code='inactive' or code='resolved' or code='remission')).exists())",
     source = "http://hl7.org/fhir/StructureDefinition/Condition"
 )
 @Constraint(
-    id = "con-5",
-    level = "Rule",
-    location = "(base)",
-    description = "Condition.clinicalStatus SHALL NOT be present if verification Status is entered-in-error",
-    expression = "verificationStatus.coding.where(system='http://terminology.hl7.org/CodeSystem/condition-ver-status' and code='entered-in-error').empty() or clinicalStatus.empty()",
-    source = "http://hl7.org/fhir/StructureDefinition/Condition"
-)
-@Constraint(
-    id = "condition-6",
+    id = "condition-4",
     level = "Warning",
     location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/condition-category",
-    expression = "category.exists() implies (category.all(memberOf('http://hl7.org/fhir/ValueSet/condition-category', 'extensible')))",
+    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/condition-category",
+    expression = "category.exists() implies (category.all(memberOf('http://hl7.org/fhir/ValueSet/condition-category', 'preferred')))",
     source = "http://hl7.org/fhir/StructureDefinition/Condition",
     generated = true
 )
 @Constraint(
-    id = "condition-7",
+    id = "condition-5",
     level = "Warning",
     location = "(base)",
     description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/condition-severity",
     expression = "severity.exists() implies (severity.memberOf('http://hl7.org/fhir/ValueSet/condition-severity', 'preferred'))",
+    source = "http://hl7.org/fhir/StructureDefinition/Condition",
+    generated = true
+)
+@Constraint(
+    id = "condition-6",
+    level = "Warning",
+    location = "participant.function",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/participation-role-type",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/participation-role-type', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/Condition",
     generated = true
 )
@@ -119,20 +113,21 @@ public class Condition extends DomainResource {
         bindingName = "ConditionClinicalStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The clinical status of the condition or diagnosis.",
-        valueSet = "http://hl7.org/fhir/ValueSet/condition-clinical|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/condition-clinical|5.0.0"
     )
+    @Required
     private final CodeableConcept clinicalStatus;
     @Summary
     @Binding(
         bindingName = "ConditionVerificationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The verification status to support or decline the clinical status of the condition or diagnosis.",
-        valueSet = "http://hl7.org/fhir/ValueSet/condition-ver-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/condition-ver-status|5.0.0"
     )
     private final CodeableConcept verificationStatus;
     @Binding(
         bindingName = "ConditionCategory",
-        strength = BindingStrength.Value.EXTENSIBLE,
+        strength = BindingStrength.Value.PREFERRED,
         description = "A category assigned to the condition.",
         valueSet = "http://hl7.org/fhir/ValueSet/condition-category"
     )
@@ -169,19 +164,21 @@ public class Condition extends DomainResource {
     private final Reference encounter;
     @Summary
     @Choice({ DateTime.class, Age.class, Period.class, Range.class, String.class })
-    private final Element onset;
+    private final org.linuxforhealth.fhir.model.type.Element onset;
     @Choice({ DateTime.class, Age.class, Period.class, Range.class, String.class })
-    private final Element abatement;
+    private final org.linuxforhealth.fhir.model.type.Element abatement;
     @Summary
     private final DateTime recordedDate;
     @Summary
-    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Patient", "RelatedPerson" })
-    private final Reference recorder;
-    @Summary
-    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Patient", "RelatedPerson" })
-    private final Reference asserter;
+    private final List<Participant> participant;
     private final List<Stage> stage;
-    private final List<Evidence> evidence;
+    @Summary
+    @Binding(
+        bindingName = "ManifestationOrSymptom",
+        strength = BindingStrength.Value.EXAMPLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/clinical-findings"
+    )
+    private final List<CodeableReference> evidence;
     private final List<Annotation> note;
 
     private Condition(Builder builder) {
@@ -198,8 +195,7 @@ public class Condition extends DomainResource {
         onset = builder.onset;
         abatement = builder.abatement;
         recordedDate = builder.recordedDate;
-        recorder = builder.recorder;
-        asserter = builder.asserter;
+        participant = Collections.unmodifiableList(builder.participant);
         stage = Collections.unmodifiableList(builder.stage);
         evidence = Collections.unmodifiableList(builder.evidence);
         note = Collections.unmodifiableList(builder.note);
@@ -220,14 +216,15 @@ public class Condition extends DomainResource {
      * The clinical status of the condition.
      * 
      * @return
-     *     An immutable object of type {@link CodeableConcept} that may be null.
+     *     An immutable object of type {@link CodeableConcept} that is non-null.
      */
     public CodeableConcept getClinicalStatus() {
         return clinicalStatus;
     }
 
     /**
-     * The verification status to support the clinical status of the condition.
+     * The verification status to support the clinical status of the condition. The verification status pertains to the 
+     * condition, itself, not to any specific condition attribute.
      * 
      * @return
      *     An immutable object of type {@link CodeableConcept} that may be null.
@@ -303,20 +300,20 @@ public class Condition extends DomainResource {
      *     An immutable object of type {@link DateTime}, {@link Age}, {@link Period}, {@link Range} or {@link String} that may be 
      *     null.
      */
-    public Element getOnset() {
+    public org.linuxforhealth.fhir.model.type.Element getOnset() {
         return onset;
     }
 
     /**
      * The date or estimated date that the condition resolved or went into remission. This is called "abatement" because of 
-     * the many overloaded connotations associated with "remission" or "resolution" - Conditions are never really resolved, 
-     * but they can abate.
+     * the many overloaded connotations associated with "remission" or "resolution" - Some conditions, such as chronic 
+     * conditions, are never really resolved, but they can abate.
      * 
      * @return
      *     An immutable object of type {@link DateTime}, {@link Age}, {@link Period}, {@link Range} or {@link String} that may be 
      *     null.
      */
-    public Element getAbatement() {
+    public org.linuxforhealth.fhir.model.type.Element getAbatement() {
         return abatement;
     }
 
@@ -332,27 +329,18 @@ public class Condition extends DomainResource {
     }
 
     /**
-     * Individual who recorded the record and takes responsibility for its content.
+     * Indicates who or what participated in the activities related to the condition and how they were involved.
      * 
      * @return
-     *     An immutable object of type {@link Reference} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Participant} that may be empty.
      */
-    public Reference getRecorder() {
-        return recorder;
+    public List<Participant> getParticipant() {
+        return participant;
     }
 
     /**
-     * Individual who is making the condition statement.
-     * 
-     * @return
-     *     An immutable object of type {@link Reference} that may be null.
-     */
-    public Reference getAsserter() {
-        return asserter;
-    }
-
-    /**
-     * Clinical stage or grade of a condition. May include formal severity assessments.
+     * A simple summary of the stage such as "Stage 3" or "Early Onset". The determination of the stage is disease-specific, 
+     * such as cancer, retinopathy of prematurity, kidney diseases, Alzheimer's, or Parkinson disease.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Stage} that may be empty.
@@ -366,9 +354,9 @@ public class Condition extends DomainResource {
      * confirmed or refuted the condition.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Evidence} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<Evidence> getEvidence() {
+    public List<CodeableReference> getEvidence() {
         return evidence;
     }
 
@@ -398,8 +386,7 @@ public class Condition extends DomainResource {
             (onset != null) || 
             (abatement != null) || 
             (recordedDate != null) || 
-            (recorder != null) || 
-            (asserter != null) || 
+            !participant.isEmpty() || 
             !stage.isEmpty() || 
             !evidence.isEmpty() || 
             !note.isEmpty();
@@ -431,10 +418,9 @@ public class Condition extends DomainResource {
                 accept(onset, "onset", visitor);
                 accept(abatement, "abatement", visitor);
                 accept(recordedDate, "recordedDate", visitor);
-                accept(recorder, "recorder", visitor);
-                accept(asserter, "asserter", visitor);
+                accept(participant, "participant", visitor, Participant.class);
                 accept(stage, "stage", visitor, Stage.class);
-                accept(evidence, "evidence", visitor, Evidence.class);
+                accept(evidence, "evidence", visitor, CodeableReference.class);
                 accept(note, "note", visitor, Annotation.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
@@ -474,8 +460,7 @@ public class Condition extends DomainResource {
             Objects.equals(onset, other.onset) && 
             Objects.equals(abatement, other.abatement) && 
             Objects.equals(recordedDate, other.recordedDate) && 
-            Objects.equals(recorder, other.recorder) && 
-            Objects.equals(asserter, other.asserter) && 
+            Objects.equals(participant, other.participant) && 
             Objects.equals(stage, other.stage) && 
             Objects.equals(evidence, other.evidence) && 
             Objects.equals(note, other.note);
@@ -505,8 +490,7 @@ public class Condition extends DomainResource {
                 onset, 
                 abatement, 
                 recordedDate, 
-                recorder, 
-                asserter, 
+                participant, 
                 stage, 
                 evidence, 
                 note);
@@ -534,13 +518,12 @@ public class Condition extends DomainResource {
         private List<CodeableConcept> bodySite = new ArrayList<>();
         private Reference subject;
         private Reference encounter;
-        private Element onset;
-        private Element abatement;
+        private org.linuxforhealth.fhir.model.type.Element onset;
+        private org.linuxforhealth.fhir.model.type.Element abatement;
         private DateTime recordedDate;
-        private Reference recorder;
-        private Reference asserter;
+        private List<Participant> participant = new ArrayList<>();
         private List<Stage> stage = new ArrayList<>();
-        private List<Evidence> evidence = new ArrayList<>();
+        private List<CodeableReference> evidence = new ArrayList<>();
         private List<Annotation> note = new ArrayList<>();
 
         private Builder() {
@@ -625,7 +608,8 @@ public class Condition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -643,7 +627,8 @@ public class Condition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -664,7 +649,7 @@ public class Condition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -684,7 +669,7 @@ public class Condition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -709,9 +694,9 @@ public class Condition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -734,9 +719,9 @@ public class Condition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -802,8 +787,10 @@ public class Condition extends DomainResource {
         /**
          * The clinical status of the condition.
          * 
+         * <p>This element is required.
+         * 
          * @param clinicalStatus
-         *     active | recurrence | relapse | inactive | remission | resolved
+         *     active | recurrence | relapse | inactive | remission | resolved | unknown
          * 
          * @return
          *     A reference to this Builder instance
@@ -814,7 +801,8 @@ public class Condition extends DomainResource {
         }
 
         /**
-         * The verification status to support the clinical status of the condition.
+         * The verification status to support the clinical status of the condition. The verification status pertains to the 
+         * condition, itself, not to any specific condition attribute.
          * 
          * @param verificationStatus
          *     unconfirmed | provisional | differential | confirmed | refuted | entered-in-error
@@ -964,7 +952,7 @@ public class Condition extends DomainResource {
          * </ul>
          * 
          * @param encounter
-         *     Encounter created as part of
+         *     The Encounter during which this Condition was created
          * 
          * @return
          *     A reference to this Builder instance
@@ -1008,7 +996,7 @@ public class Condition extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder onset(Element onset) {
+        public Builder onset(org.linuxforhealth.fhir.model.type.Element onset) {
             this.onset = onset;
             return this;
         }
@@ -1031,8 +1019,8 @@ public class Condition extends DomainResource {
 
         /**
          * The date or estimated date that the condition resolved or went into remission. This is called "abatement" because of 
-         * the many overloaded connotations associated with "remission" or "resolution" - Conditions are never really resolved, 
-         * but they can abate.
+         * the many overloaded connotations associated with "remission" or "resolution" - Some conditions, such as chronic 
+         * conditions, are never really resolved, but they can abate.
          * 
          * <p>This is a choice element with the following allowed types:
          * <ul>
@@ -1049,7 +1037,7 @@ public class Condition extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder abatement(Element abatement) {
+        public Builder abatement(org.linuxforhealth.fhir.model.type.Element abatement) {
             this.abatement = abatement;
             return this;
         }
@@ -1059,7 +1047,7 @@ public class Condition extends DomainResource {
          * generated date.
          * 
          * @param recordedDate
-         *     Date record was first recorded
+         *     Date condition was first recorded
          * 
          * @return
          *     A reference to this Builder instance
@@ -1070,51 +1058,47 @@ public class Condition extends DomainResource {
         }
 
         /**
-         * Individual who recorded the record and takes responsibility for its content.
+         * Indicates who or what participated in the activities related to the condition and how they were involved.
          * 
-         * <p>Allowed resource types for this reference:
-         * <ul>
-         * <li>{@link Practitioner}</li>
-         * <li>{@link PractitionerRole}</li>
-         * <li>{@link Patient}</li>
-         * <li>{@link RelatedPerson}</li>
-         * </ul>
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param recorder
-         *     Who recorded the condition
+         * @param participant
+         *     Who or what participated in the activities related to the condition and how they were involved
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder recorder(Reference recorder) {
-            this.recorder = recorder;
+        public Builder participant(Participant... participant) {
+            for (Participant value : participant) {
+                this.participant.add(value);
+            }
             return this;
         }
 
         /**
-         * Individual who is making the condition statement.
+         * Indicates who or what participated in the activities related to the condition and how they were involved.
          * 
-         * <p>Allowed resource types for this reference:
-         * <ul>
-         * <li>{@link Practitioner}</li>
-         * <li>{@link PractitionerRole}</li>
-         * <li>{@link Patient}</li>
-         * <li>{@link RelatedPerson}</li>
-         * </ul>
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param asserter
-         *     Person who asserts this condition
+         * @param participant
+         *     Who or what participated in the activities related to the condition and how they were involved
          * 
          * @return
          *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
          */
-        public Builder asserter(Reference asserter) {
-            this.asserter = asserter;
+        public Builder participant(Collection<Participant> participant) {
+            this.participant = new ArrayList<>(participant);
             return this;
         }
 
         /**
-         * Clinical stage or grade of a condition. May include formal severity assessments.
+         * A simple summary of the stage such as "Stage 3" or "Early Onset". The determination of the stage is disease-specific, 
+         * such as cancer, retinopathy of prematurity, kidney diseases, Alzheimer's, or Parkinson disease.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1133,7 +1117,8 @@ public class Condition extends DomainResource {
         }
 
         /**
-         * Clinical stage or grade of a condition. May include formal severity assessments.
+         * A simple summary of the stage such as "Stage 3" or "Early Onset". The determination of the stage is disease-specific, 
+         * such as cancer, retinopathy of prematurity, kidney diseases, Alzheimer's, or Parkinson disease.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1160,13 +1145,13 @@ public class Condition extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param evidence
-         *     Supporting evidence
+         *     Supporting evidence for the verification status
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder evidence(Evidence... evidence) {
-            for (Evidence value : evidence) {
+        public Builder evidence(CodeableReference... evidence) {
+            for (CodeableReference value : evidence) {
                 this.evidence.add(value);
             }
             return this;
@@ -1180,7 +1165,7 @@ public class Condition extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param evidence
-         *     Supporting evidence
+         *     Supporting evidence for the verification status
          * 
          * @return
          *     A reference to this Builder instance
@@ -1188,7 +1173,7 @@ public class Condition extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder evidence(Collection<Evidence> evidence) {
+        public Builder evidence(Collection<CodeableReference> evidence) {
             this.evidence = new ArrayList<>(evidence);
             return this;
         }
@@ -1239,6 +1224,7 @@ public class Condition extends DomainResource {
          * 
          * <p>Required elements:
          * <ul>
+         * <li>clinicalStatus</li>
          * <li>subject</li>
          * </ul>
          * 
@@ -1259,20 +1245,18 @@ public class Condition extends DomainResource {
         protected void validate(Condition condition) {
             super.validate(condition);
             ValidationSupport.checkList(condition.identifier, "identifier", Identifier.class);
+            ValidationSupport.requireNonNull(condition.clinicalStatus, "clinicalStatus");
             ValidationSupport.checkList(condition.category, "category", CodeableConcept.class);
             ValidationSupport.checkList(condition.bodySite, "bodySite", CodeableConcept.class);
             ValidationSupport.requireNonNull(condition.subject, "subject");
             ValidationSupport.choiceElement(condition.onset, "onset", DateTime.class, Age.class, Period.class, Range.class, String.class);
             ValidationSupport.choiceElement(condition.abatement, "abatement", DateTime.class, Age.class, Period.class, Range.class, String.class);
+            ValidationSupport.checkList(condition.participant, "participant", Participant.class);
             ValidationSupport.checkList(condition.stage, "stage", Stage.class);
-            ValidationSupport.checkList(condition.evidence, "evidence", Evidence.class);
+            ValidationSupport.checkList(condition.evidence, "evidence", CodeableReference.class);
             ValidationSupport.checkList(condition.note, "note", Annotation.class);
-            ValidationSupport.checkValueSetBinding(condition.clinicalStatus, "clinicalStatus", "http://hl7.org/fhir/ValueSet/condition-clinical", "http://terminology.hl7.org/CodeSystem/condition-clinical", "active", "recurrence", "relapse", "inactive", "remission", "resolved");
-            ValidationSupport.checkValueSetBinding(condition.verificationStatus, "verificationStatus", "http://hl7.org/fhir/ValueSet/condition-ver-status", "http://terminology.hl7.org/CodeSystem/condition-ver-status", "unconfirmed", "provisional", "differential", "confirmed", "refuted", "entered-in-error");
             ValidationSupport.checkReferenceType(condition.subject, "subject", "Patient", "Group");
             ValidationSupport.checkReferenceType(condition.encounter, "encounter", "Encounter");
-            ValidationSupport.checkReferenceType(condition.recorder, "recorder", "Practitioner", "PractitionerRole", "Patient", "RelatedPerson");
-            ValidationSupport.checkReferenceType(condition.asserter, "asserter", "Practitioner", "PractitionerRole", "Patient", "RelatedPerson");
         }
 
         protected Builder from(Condition condition) {
@@ -1289,8 +1273,7 @@ public class Condition extends DomainResource {
             onset = condition.onset;
             abatement = condition.abatement;
             recordedDate = condition.recordedDate;
-            recorder = condition.recorder;
-            asserter = condition.asserter;
+            participant.addAll(condition.participant);
             stage.addAll(condition.stage);
             evidence.addAll(condition.evidence);
             note.addAll(condition.note);
@@ -1299,7 +1282,314 @@ public class Condition extends DomainResource {
     }
 
     /**
-     * Clinical stage or grade of a condition. May include formal severity assessments.
+     * Indicates who or what participated in the activities related to the condition and how they were involved.
+     */
+    public static class Participant extends BackboneElement {
+        @Summary
+        @Binding(
+            bindingName = "ConditionParticipantFunction",
+            strength = BindingStrength.Value.EXTENSIBLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/participation-role-type"
+        )
+        private final CodeableConcept function;
+        @Summary
+        @ReferenceTarget({ "Practitioner", "PractitionerRole", "Patient", "RelatedPerson", "Device", "Organization", "CareTeam" })
+        @Required
+        private final Reference actor;
+
+        private Participant(Builder builder) {
+            super(builder);
+            function = builder.function;
+            actor = builder.actor;
+        }
+
+        /**
+         * Distinguishes the type of involvement of the actor in the activities related to the condition.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getFunction() {
+            return function;
+        }
+
+        /**
+         * Indicates who or what participated in the activities related to the condition.
+         * 
+         * @return
+         *     An immutable object of type {@link Reference} that is non-null.
+         */
+        public Reference getActor() {
+            return actor;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (function != null) || 
+                (actor != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(function, "function", visitor);
+                    accept(actor, "actor", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Participant other = (Participant) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(function, other.function) && 
+                Objects.equals(actor, other.actor);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    function, 
+                    actor);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private CodeableConcept function;
+            private Reference actor;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * Distinguishes the type of involvement of the actor in the activities related to the condition.
+             * 
+             * @param function
+             *     Type of involvement
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder function(CodeableConcept function) {
+                this.function = function;
+                return this;
+            }
+
+            /**
+             * Indicates who or what participated in the activities related to the condition.
+             * 
+             * <p>This element is required.
+             * 
+             * <p>Allowed resource types for this reference:
+             * <ul>
+             * <li>{@link Practitioner}</li>
+             * <li>{@link PractitionerRole}</li>
+             * <li>{@link Patient}</li>
+             * <li>{@link RelatedPerson}</li>
+             * <li>{@link Device}</li>
+             * <li>{@link Organization}</li>
+             * <li>{@link CareTeam}</li>
+             * </ul>
+             * 
+             * @param actor
+             *     Who or what participated in the activities related to the condition
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder actor(Reference actor) {
+                this.actor = actor;
+                return this;
+            }
+
+            /**
+             * Build the {@link Participant}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>actor</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link Participant}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Participant per the base specification
+             */
+            @Override
+            public Participant build() {
+                Participant participant = new Participant(this);
+                if (validating) {
+                    validate(participant);
+                }
+                return participant;
+            }
+
+            protected void validate(Participant participant) {
+                super.validate(participant);
+                ValidationSupport.requireNonNull(participant.actor, "actor");
+                ValidationSupport.checkReferenceType(participant.actor, "actor", "Practitioner", "PractitionerRole", "Patient", "RelatedPerson", "Device", "Organization", "CareTeam");
+                ValidationSupport.requireValueOrChildren(participant);
+            }
+
+            protected Builder from(Participant participant) {
+                super.from(participant);
+                function = participant.function;
+                actor = participant.actor;
+                return this;
+            }
+        }
+    }
+
+    /**
+     * A simple summary of the stage such as "Stage 3" or "Early Onset". The determination of the stage is disease-specific, 
+     * such as cancer, retinopathy of prematurity, kidney diseases, Alzheimer's, or Parkinson disease.
      */
     public static class Stage extends BackboneElement {
         @Binding(
@@ -1327,7 +1617,8 @@ public class Condition extends DomainResource {
         }
 
         /**
-         * A simple summary of the stage such as "Stage 3". The determination of the stage is disease-specific.
+         * A simple summary of the stage such as "Stage 3" or "Early Onset". The determination of the stage is disease-specific, 
+         * such as cancer, retinopathy of prematurity, kidney diseases, Alzheimer's, or Parkinson disease.
          * 
          * @return
          *     An immutable object of type {@link CodeableConcept} that may be null.
@@ -1452,7 +1743,7 @@ public class Condition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1472,7 +1763,7 @@ public class Condition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1497,7 +1788,7 @@ public class Condition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1522,7 +1813,7 @@ public class Condition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1547,7 +1838,8 @@ public class Condition extends DomainResource {
             }
 
             /**
-             * A simple summary of the stage such as "Stage 3". The determination of the stage is disease-specific.
+             * A simple summary of the stage such as "Stage 3" or "Early Onset". The determination of the stage is disease-specific, 
+             * such as cancer, retinopathy of prematurity, kidney diseases, Alzheimer's, or Parkinson disease.
              * 
              * @param summary
              *     Simple summary (disease specific)
@@ -1656,344 +1948,6 @@ public class Condition extends DomainResource {
                 summary = stage.summary;
                 assessment.addAll(stage.assessment);
                 type = stage.type;
-                return this;
-            }
-        }
-    }
-
-    /**
-     * Supporting evidence / manifestations that are the basis of the Condition's verification status, such as evidence that 
-     * confirmed or refuted the condition.
-     */
-    public static class Evidence extends BackboneElement {
-        @Summary
-        @Binding(
-            bindingName = "ManifestationOrSymptom",
-            strength = BindingStrength.Value.EXAMPLE,
-            description = "Codes that describe the manifestation or symptoms of a condition.",
-            valueSet = "http://hl7.org/fhir/ValueSet/manifestation-or-symptom"
-        )
-        private final List<CodeableConcept> code;
-        @Summary
-        private final List<Reference> detail;
-
-        private Evidence(Builder builder) {
-            super(builder);
-            code = Collections.unmodifiableList(builder.code);
-            detail = Collections.unmodifiableList(builder.detail);
-        }
-
-        /**
-         * A manifestation or symptom that led to the recording of this condition.
-         * 
-         * @return
-         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
-         */
-        public List<CodeableConcept> getCode() {
-            return code;
-        }
-
-        /**
-         * Links to other relevant information, including pathology reports.
-         * 
-         * @return
-         *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-         */
-        public List<Reference> getDetail() {
-            return detail;
-        }
-
-        @Override
-        public boolean hasChildren() {
-            return super.hasChildren() || 
-                !code.isEmpty() || 
-                !detail.isEmpty();
-        }
-
-        @Override
-        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-            if (visitor.preVisit(this)) {
-                visitor.visitStart(elementName, elementIndex, this);
-                if (visitor.visit(elementName, elementIndex, this)) {
-                    // visit children
-                    accept(id, "id", visitor);
-                    accept(extension, "extension", visitor, Extension.class);
-                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(code, "code", visitor, CodeableConcept.class);
-                    accept(detail, "detail", visitor, Reference.class);
-                }
-                visitor.visitEnd(elementName, elementIndex, this);
-                visitor.postVisit(this);
-            }
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            Evidence other = (Evidence) obj;
-            return Objects.equals(id, other.id) && 
-                Objects.equals(extension, other.extension) && 
-                Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(code, other.code) && 
-                Objects.equals(detail, other.detail);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = hashCode;
-            if (result == 0) {
-                result = Objects.hash(id, 
-                    extension, 
-                    modifierExtension, 
-                    code, 
-                    detail);
-                hashCode = result;
-            }
-            return result;
-        }
-
-        @Override
-        public Builder toBuilder() {
-            return new Builder().from(this);
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public static class Builder extends BackboneElement.Builder {
-            private List<CodeableConcept> code = new ArrayList<>();
-            private List<Reference> detail = new ArrayList<>();
-
-            private Builder() {
-                super();
-            }
-
-            /**
-             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-             * contain spaces.
-             * 
-             * @param id
-             *     Unique id for inter-element referencing
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder id(java.lang.String id) {
-                return (Builder) super.id(id);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder extension(Extension... extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder extension(Collection<Extension> extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder modifierExtension(Extension... modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * A manifestation or symptom that led to the recording of this condition.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param code
-             *     Manifestation/symptom
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder code(CodeableConcept... code) {
-                for (CodeableConcept value : code) {
-                    this.code.add(value);
-                }
-                return this;
-            }
-
-            /**
-             * A manifestation or symptom that led to the recording of this condition.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param code
-             *     Manifestation/symptom
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            public Builder code(Collection<CodeableConcept> code) {
-                this.code = new ArrayList<>(code);
-                return this;
-            }
-
-            /**
-             * Links to other relevant information, including pathology reports.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param detail
-             *     Supporting information found elsewhere
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder detail(Reference... detail) {
-                for (Reference value : detail) {
-                    this.detail.add(value);
-                }
-                return this;
-            }
-
-            /**
-             * Links to other relevant information, including pathology reports.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param detail
-             *     Supporting information found elsewhere
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            public Builder detail(Collection<Reference> detail) {
-                this.detail = new ArrayList<>(detail);
-                return this;
-            }
-
-            /**
-             * Build the {@link Evidence}
-             * 
-             * @return
-             *     An immutable object of type {@link Evidence}
-             * @throws IllegalStateException
-             *     if the current state cannot be built into a valid Evidence per the base specification
-             */
-            @Override
-            public Evidence build() {
-                Evidence evidence = new Evidence(this);
-                if (validating) {
-                    validate(evidence);
-                }
-                return evidence;
-            }
-
-            protected void validate(Evidence evidence) {
-                super.validate(evidence);
-                ValidationSupport.checkList(evidence.code, "code", CodeableConcept.class);
-                ValidationSupport.checkList(evidence.detail, "detail", Reference.class);
-                ValidationSupport.requireValueOrChildren(evidence);
-            }
-
-            protected Builder from(Evidence evidence) {
-                super.from(evidence);
-                code.addAll(evidence.code);
-                detail.addAll(evidence.detail);
                 return this;
             }
         }

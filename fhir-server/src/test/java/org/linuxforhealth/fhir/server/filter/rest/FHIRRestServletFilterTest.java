@@ -36,6 +36,18 @@ public class FHIRRestServletFilterTest {
     }
 
     @Test
+    void testCheckFhirVersionParameter_validR5() throws Exception {
+        Map<String, List<String>> requestHeaders = new HashMap<>();
+        requestHeaders.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList("application/fhir+json;fhirVersion=5.0"));
+        requestHeaders.put(HttpHeaders.ACCEPT, Collections.singletonList("application/fhir+json;fhirVersion=5.0"));
+        FHIRRequestContext context = new FHIRRequestContext();
+        context.setHttpHeaders(requestHeaders);
+
+        FHIRRestServletFilter servletFilter = new FHIRRestServletFilter();
+        servletFilter.checkFhirVersionParameter(context);
+    }
+
+    @Test
     void testCheckFhirVersionParameter_contentType_invalidFhirVersion() throws Exception {
         Map<String, List<String>> requestHeaders = new HashMap<>();
         requestHeaders.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList("application/fhir+json;fhirVersion=3.0.1"));

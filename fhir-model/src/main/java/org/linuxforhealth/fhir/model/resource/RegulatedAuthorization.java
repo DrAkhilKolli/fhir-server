@@ -44,10 +44,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * cited in a guidance, regulation, rule or legislative act. An example is Market Authorization relating to a Medicinal 
  * Product.
  * 
- * <p>Maturity level: FMM1 (Trial Use)
+ * <p>Maturity level: FMM2 (Trial Use)
  */
 @Maturity(
-    level = 1,
+    level = 2,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
@@ -82,7 +82,7 @@ public class RegulatedAuthorization extends DomainResource {
     @Summary
     private final List<Identifier> identifier;
     @Summary
-    @ReferenceTarget({ "MedicinalProductDefinition", "BiologicallyDerivedProduct", "NutritionProduct", "PackagedProductDefinition", "SubstanceDefinition", "DeviceDefinition", "ResearchStudy", "ActivityDefinition", "PlanDefinition", "ObservationDefinition", "Practitioner", "Organization", "Location" })
+    @ReferenceTarget({ "MedicinalProductDefinition", "BiologicallyDerivedProduct", "NutritionProduct", "PackagedProductDefinition", "ManufacturedItemDefinition", "Ingredient", "SubstanceDefinition", "DeviceDefinition", "ResearchStudy", "ActivityDefinition", "PlanDefinition", "ObservationDefinition", "Practitioner", "Organization", "Location" })
     private final List<Reference> subject;
     @Summary
     @Binding(
@@ -115,7 +115,7 @@ public class RegulatedAuthorization extends DomainResource {
     @Summary
     private final Period validityPeriod;
     @Summary
-    private final CodeableReference indication;
+    private final List<CodeableReference> indication;
     @Summary
     @Binding(
         bindingName = "ProductIntendedUse",
@@ -139,6 +139,9 @@ public class RegulatedAuthorization extends DomainResource {
     @ReferenceTarget({ "Organization" })
     private final Reference regulator;
     @Summary
+    @ReferenceTarget({ "DocumentReference" })
+    private final List<Reference> attachedDocument;
+    @Summary
     private final Case _case;
 
     private RegulatedAuthorization(Builder builder) {
@@ -151,11 +154,12 @@ public class RegulatedAuthorization extends DomainResource {
         status = builder.status;
         statusDate = builder.statusDate;
         validityPeriod = builder.validityPeriod;
-        indication = builder.indication;
+        indication = Collections.unmodifiableList(builder.indication);
         intendedUse = builder.intendedUse;
         basis = Collections.unmodifiableList(builder.basis);
         holder = builder.holder;
         regulator = builder.regulator;
+        attachedDocument = Collections.unmodifiableList(builder.attachedDocument);
         _case = builder._case;
     }
 
@@ -245,9 +249,9 @@ public class RegulatedAuthorization extends DomainResource {
      * Condition for which the use of the regulated product applies.
      * 
      * @return
-     *     An immutable object of type {@link CodeableReference} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public CodeableReference getIndication() {
+    public List<CodeableReference> getIndication() {
         return indication;
     }
 
@@ -293,6 +297,16 @@ public class RegulatedAuthorization extends DomainResource {
     }
 
     /**
+     * Additional information or supporting documentation about the authorization.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getAttachedDocument() {
+        return attachedDocument;
+    }
+
+    /**
      * The case or regulatory procedure for granting or amending a regulated authorization. An authorization is granted in 
      * response to submissions/applications by those seeking authorization. A case is the administrative process that deals 
      * with the application(s) that relate to this and assesses them. Note: This area is subject to ongoing review and the 
@@ -316,11 +330,12 @@ public class RegulatedAuthorization extends DomainResource {
             (status != null) || 
             (statusDate != null) || 
             (validityPeriod != null) || 
-            (indication != null) || 
+            !indication.isEmpty() || 
             (intendedUse != null) || 
             !basis.isEmpty() || 
             (holder != null) || 
             (regulator != null) || 
+            !attachedDocument.isEmpty() || 
             (_case != null);
     }
 
@@ -346,11 +361,12 @@ public class RegulatedAuthorization extends DomainResource {
                 accept(status, "status", visitor);
                 accept(statusDate, "statusDate", visitor);
                 accept(validityPeriod, "validityPeriod", visitor);
-                accept(indication, "indication", visitor);
+                accept(indication, "indication", visitor, CodeableReference.class);
                 accept(intendedUse, "intendedUse", visitor);
                 accept(basis, "basis", visitor, CodeableConcept.class);
                 accept(holder, "holder", visitor);
                 accept(regulator, "regulator", visitor);
+                accept(attachedDocument, "attachedDocument", visitor, Reference.class);
                 accept(_case, "case", visitor);
             }
             visitor.visitEnd(elementName, elementIndex, this);
@@ -391,6 +407,7 @@ public class RegulatedAuthorization extends DomainResource {
             Objects.equals(basis, other.basis) && 
             Objects.equals(holder, other.holder) && 
             Objects.equals(regulator, other.regulator) && 
+            Objects.equals(attachedDocument, other.attachedDocument) && 
             Objects.equals(_case, other._case);
     }
 
@@ -419,6 +436,7 @@ public class RegulatedAuthorization extends DomainResource {
                 basis, 
                 holder, 
                 regulator, 
+                attachedDocument, 
                 _case);
             hashCode = result;
         }
@@ -443,11 +461,12 @@ public class RegulatedAuthorization extends DomainResource {
         private CodeableConcept status;
         private DateTime statusDate;
         private Period validityPeriod;
-        private CodeableReference indication;
+        private List<CodeableReference> indication = new ArrayList<>();
         private CodeableConcept intendedUse;
         private List<CodeableConcept> basis = new ArrayList<>();
         private Reference holder;
         private Reference regulator;
+        private List<Reference> attachedDocument = new ArrayList<>();
         private Case _case;
 
         private Builder() {
@@ -532,7 +551,8 @@ public class RegulatedAuthorization extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -550,7 +570,8 @@ public class RegulatedAuthorization extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -571,7 +592,7 @@ public class RegulatedAuthorization extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -591,7 +612,7 @@ public class RegulatedAuthorization extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -616,9 +637,9 @@ public class RegulatedAuthorization extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -641,9 +662,9 @@ public class RegulatedAuthorization extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -716,6 +737,8 @@ public class RegulatedAuthorization extends DomainResource {
          * <li>{@link BiologicallyDerivedProduct}</li>
          * <li>{@link NutritionProduct}</li>
          * <li>{@link PackagedProductDefinition}</li>
+         * <li>{@link ManufacturedItemDefinition}</li>
+         * <li>{@link Ingredient}</li>
          * <li>{@link SubstanceDefinition}</li>
          * <li>{@link DeviceDefinition}</li>
          * <li>{@link ResearchStudy}</li>
@@ -752,6 +775,8 @@ public class RegulatedAuthorization extends DomainResource {
          * <li>{@link BiologicallyDerivedProduct}</li>
          * <li>{@link NutritionProduct}</li>
          * <li>{@link PackagedProductDefinition}</li>
+         * <li>{@link ManufacturedItemDefinition}</li>
+         * <li>{@link Ingredient}</li>
          * <li>{@link SubstanceDefinition}</li>
          * <li>{@link DeviceDefinition}</li>
          * <li>{@link ResearchStudy}</li>
@@ -892,14 +917,39 @@ public class RegulatedAuthorization extends DomainResource {
         /**
          * Condition for which the use of the regulated product applies.
          * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
          * @param indication
          *     Condition for which the use of the regulated product applies
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder indication(CodeableReference indication) {
-            this.indication = indication;
+        public Builder indication(CodeableReference... indication) {
+            for (CodeableReference value : indication) {
+                this.indication.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Condition for which the use of the regulated product applies.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param indication
+         *     Condition for which the use of the regulated product applies
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder indication(Collection<CodeableReference> indication) {
+            this.indication = new ArrayList<>(indication);
             return this;
         }
 
@@ -996,6 +1046,55 @@ public class RegulatedAuthorization extends DomainResource {
         }
 
         /**
+         * Additional information or supporting documentation about the authorization.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link DocumentReference}</li>
+         * </ul>
+         * 
+         * @param attachedDocument
+         *     Additional information or supporting documentation about the authorization
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder attachedDocument(Reference... attachedDocument) {
+            for (Reference value : attachedDocument) {
+                this.attachedDocument.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Additional information or supporting documentation about the authorization.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link DocumentReference}</li>
+         * </ul>
+         * 
+         * @param attachedDocument
+         *     Additional information or supporting documentation about the authorization
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder attachedDocument(Collection<Reference> attachedDocument) {
+            this.attachedDocument = new ArrayList<>(attachedDocument);
+            return this;
+        }
+
+        /**
          * The case or regulatory procedure for granting or amending a regulated authorization. An authorization is granted in 
          * response to submissions/applications by those seeking authorization. A case is the administrative process that deals 
          * with the application(s) that relate to this and assesses them. Note: This area is subject to ongoing review and the 
@@ -1035,10 +1134,13 @@ public class RegulatedAuthorization extends DomainResource {
             ValidationSupport.checkList(regulatedAuthorization.identifier, "identifier", Identifier.class);
             ValidationSupport.checkList(regulatedAuthorization.subject, "subject", Reference.class);
             ValidationSupport.checkList(regulatedAuthorization.region, "region", CodeableConcept.class);
+            ValidationSupport.checkList(regulatedAuthorization.indication, "indication", CodeableReference.class);
             ValidationSupport.checkList(regulatedAuthorization.basis, "basis", CodeableConcept.class);
-            ValidationSupport.checkReferenceType(regulatedAuthorization.subject, "subject", "MedicinalProductDefinition", "BiologicallyDerivedProduct", "NutritionProduct", "PackagedProductDefinition", "SubstanceDefinition", "DeviceDefinition", "ResearchStudy", "ActivityDefinition", "PlanDefinition", "ObservationDefinition", "Practitioner", "Organization", "Location");
+            ValidationSupport.checkList(regulatedAuthorization.attachedDocument, "attachedDocument", Reference.class);
+            ValidationSupport.checkReferenceType(regulatedAuthorization.subject, "subject", "MedicinalProductDefinition", "BiologicallyDerivedProduct", "NutritionProduct", "PackagedProductDefinition", "ManufacturedItemDefinition", "Ingredient", "SubstanceDefinition", "DeviceDefinition", "ResearchStudy", "ActivityDefinition", "PlanDefinition", "ObservationDefinition", "Practitioner", "Organization", "Location");
             ValidationSupport.checkReferenceType(regulatedAuthorization.holder, "holder", "Organization");
             ValidationSupport.checkReferenceType(regulatedAuthorization.regulator, "regulator", "Organization");
+            ValidationSupport.checkReferenceType(regulatedAuthorization.attachedDocument, "attachedDocument", "DocumentReference");
         }
 
         protected Builder from(RegulatedAuthorization regulatedAuthorization) {
@@ -1051,11 +1153,12 @@ public class RegulatedAuthorization extends DomainResource {
             status = regulatedAuthorization.status;
             statusDate = regulatedAuthorization.statusDate;
             validityPeriod = regulatedAuthorization.validityPeriod;
-            indication = regulatedAuthorization.indication;
+            indication.addAll(regulatedAuthorization.indication);
             intendedUse = regulatedAuthorization.intendedUse;
             basis.addAll(regulatedAuthorization.basis);
             holder = regulatedAuthorization.holder;
             regulator = regulatedAuthorization.regulator;
+            attachedDocument.addAll(regulatedAuthorization.attachedDocument);
             _case = regulatedAuthorization._case;
             return this;
         }
@@ -1088,7 +1191,7 @@ public class RegulatedAuthorization extends DomainResource {
         private final CodeableConcept status;
         @Summary
         @Choice({ Period.class, DateTime.class })
-        private final Element date;
+        private final org.linuxforhealth.fhir.model.type.Element date;
         @Summary
         private final List<RegulatedAuthorization.Case> application;
 
@@ -1137,7 +1240,7 @@ public class RegulatedAuthorization extends DomainResource {
          * @return
          *     An immutable object of type {@link Period} or {@link DateTime} that may be null.
          */
-        public Element getDate() {
+        public org.linuxforhealth.fhir.model.type.Element getDate() {
             return date;
         }
 
@@ -1235,7 +1338,7 @@ public class RegulatedAuthorization extends DomainResource {
             private Identifier identifier;
             private CodeableConcept type;
             private CodeableConcept status;
-            private Element date;
+            private org.linuxforhealth.fhir.model.type.Element date;
             private List<RegulatedAuthorization.Case> application = new ArrayList<>();
 
             private Builder() {
@@ -1259,7 +1362,7 @@ public class RegulatedAuthorization extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1279,7 +1382,7 @@ public class RegulatedAuthorization extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1304,7 +1407,7 @@ public class RegulatedAuthorization extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1329,7 +1432,7 @@ public class RegulatedAuthorization extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1410,7 +1513,7 @@ public class RegulatedAuthorization extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder date(Element date) {
+            public Builder date(org.linuxforhealth.fhir.model.type.Element date) {
                 this.date = date;
                 return this;
             }

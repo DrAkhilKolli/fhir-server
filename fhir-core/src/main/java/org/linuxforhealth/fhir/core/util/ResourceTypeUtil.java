@@ -21,6 +21,7 @@ import org.linuxforhealth.fhir.core.ResourceType;
 public class ResourceTypeUtil {
     private static final Set<ResourceType> R4_ENUMS = collectResourceTypesFor(FHIRVersionParam.VERSION_40);
     private static final Set<ResourceType> R4B_ENUMS = collectResourceTypesFor(FHIRVersionParam.VERSION_43);
+    private static final Set<ResourceType> R5_ENUMS = collectResourceTypesFor(FHIRVersionParam.VERSION_50);
     private static final Set<ResourceType> R4B_ONLY_RESOURCE_ENUMS = collectR4bOnlyResourceTypes();
     private static final Set<ResourceType> ABSTRACT_TYPE_ENUMS = Set.of(
                 ResourceType.RESOURCE,
@@ -51,6 +52,12 @@ public class ResourceTypeUtil {
 
     private static final Set<String> R4B_COMPATIBLE_RESOURCES = Collections.unmodifiableSet(new LinkedHashSet<>(
             R4B_ENUMS.stream()
+                .filter(rtn -> !ABSTRACT_TYPE_ENUMS.contains(rtn))
+                .map(ResourceType::value)
+                .collect(Collectors.toList())));
+
+    private static final Set<String> R5_COMPATIBLE_RESOURCES = Collections.unmodifiableSet(new LinkedHashSet<>(
+            R5_ENUMS.stream()
                 .filter(rtn -> !ABSTRACT_TYPE_ENUMS.contains(rtn))
                 .map(ResourceType::value)
                 .collect(Collectors.toList())));
@@ -112,20 +119,42 @@ public class ResourceTypeUtil {
             case VERSION_40:
                 return R4_COMPATIBLE_RESOURCES;
             case VERSION_43:
+            case VERSION_50:
                 return R4_AND_R4B_COMPATIBLE_RESOURCES;
             }
         }
 
-        // sourceFhirVersion is 4.3
-        if (targetFhirVersion == FHIRVersionParam.VERSION_40) {
-            return new LinkedHashSet<>(R4B_ENUMS.stream()
-                    .filter(rtn -> !R4B_ONLY_RESOURCE_ENUMS.contains(rtn))
-                    .filter(rtn -> !FORWARD_BREAKING_R4B_ENUMS.contains(rtn))
-                    .filter(rtn -> !ABSTRACT_TYPE_ENUMS.contains(rtn))
-                    .map(ResourceType::value)
-                    .collect(Collectors.toList()));
+        if (sourceFhirVersion == FHIRVersionParam.VERSION_43) {
+            if (targetFhirVersion == FHIRVersionParam.VERSION_40) {
+                return new LinkedHashSet<>(R4B_ENUMS.stream()
+                        .filter(rtn -> !R4B_ONLY_RESOURCE_ENUMS.contains(rtn))
+                        .filter(rtn -> !FORWARD_BREAKING_R4B_ENUMS.contains(rtn))
+                        .filter(rtn -> !ABSTRACT_TYPE_ENUMS.contains(rtn))
+                        .map(ResourceType::value)
+                        .collect(Collectors.toList()));
+            }
+            return R4B_COMPATIBLE_RESOURCES;
         }
-        return R4B_COMPATIBLE_RESOURCES;
+
+        // sourceFhirVersion is 5.0
+        if (sourceFhirVersion == FHIRVersionParam.VERSION_50) {
+            if (targetFhirVersion == FHIRVersionParam.VERSION_40) {
+                return new LinkedHashSet<>(R4B_ENUMS.stream()
+                        .filter(rtn -> !R4B_ONLY_RESOURCE_ENUMS.contains(rtn))
+                        .filter(rtn -> !FORWARD_BREAKING_R4B_ENUMS.contains(rtn))
+                        .filter(rtn -> !ABSTRACT_TYPE_ENUMS.contains(rtn))
+                        .map(ResourceType::value)
+                        .collect(Collectors.toList()));
+            }
+            if (targetFhirVersion == FHIRVersionParam.VERSION_43) {
+                return R4B_COMPATIBLE_RESOURCES;
+            }
+            if (targetFhirVersion == FHIRVersionParam.VERSION_50) {
+                return R5_COMPATIBLE_RESOURCES;
+            }
+        }
+
+        throw new IllegalArgumentException("unexpected fhirVersion pair " + sourceFhirVersion.value() + " -> " + targetFhirVersion.value());
     }
 
     /**
@@ -168,16 +197,7 @@ public class ResourceTypeUtil {
             return false;
         }
 
-        switch (knownValidFhirVersion) {
-        case VERSION_40:
-            // is a valid 4.3 instance of this resourceType expected to be valid in 4.0?
-            return !BACKWARD_BREAKING_R4B_RESOURCES.contains(resourceType);
-        case VERSION_43:
-            // is a valid 4.0 instance of this resourceType expected to be valid in 4.3?
-            return !FORWARD_BREAKING_R4B_RESOURCES.contains(resourceType);
-        default:
-            throw new IllegalArgumentException("unexpected fhirVersion " + knownValidFhirVersion.value());
-        }
+        return getCompatibleResourceTypes(knownValidFhirVersion, fhirVersionUnderTest).contains(resourceType);
     }
 
     /**
@@ -192,6 +212,8 @@ public class ResourceTypeUtil {
             return R4_COMPATIBLE_RESOURCES;
         case VERSION_43:
             return R4B_COMPATIBLE_RESOURCES;
+        case VERSION_50:
+            return R5_COMPATIBLE_RESOURCES;
         default:
             throw new IllegalArgumentException("unexpected fhirVersion " + fhirVersion.value());
         }

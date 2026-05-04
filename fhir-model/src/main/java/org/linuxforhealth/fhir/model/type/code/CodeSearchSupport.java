@@ -20,18 +20,27 @@ import javax.annotation.Generated;
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class CodeSearchSupport extends Code {
     /**
-     * Explicit Codes
+     * In Compose
      * 
-     * <p>The search for code on ValueSet only includes codes explicitly detailed on includes or expansions.
+     * <p>The search for code on ValueSet returns ValueSet resources where the code is included in the extensional definition 
+     * of the ValueSet.
      */
-    public static final CodeSearchSupport EXPLICIT = CodeSearchSupport.builder().value(Value.EXPLICIT).build();
+    public static final CodeSearchSupport IN_COMPOSE = CodeSearchSupport.builder().value(Value.IN_COMPOSE).build();
 
     /**
-     * Implicit Codes
+     * In Expansion
      * 
-     * <p>The search for code on ValueSet only includes all codes based on the expansion of the value set.
+     * <p>The search for code on ValueSet returns ValueSet resources where the code is contained in the ValueSet expansion.
      */
-    public static final CodeSearchSupport ALL = CodeSearchSupport.builder().value(Value.ALL).build();
+    public static final CodeSearchSupport IN_EXPANSION = CodeSearchSupport.builder().value(Value.IN_EXPANSION).build();
+
+    /**
+     * In Compose Or Expansion
+     * 
+     * <p>The search for code on ValueSet returns ValueSet resources where the code is included in the extensional definition 
+     * or contained in the ValueSet expansion.
+     */
+    public static final CodeSearchSupport IN_COMPOSE_OR_EXPANSION = CodeSearchSupport.builder().value(Value.IN_COMPOSE_OR_EXPANSION).build();
 
     private volatile int hashCode;
 
@@ -51,10 +60,12 @@ public class CodeSearchSupport extends Code {
      */
     public static CodeSearchSupport of(Value value) {
         switch (value) {
-        case EXPLICIT:
-            return EXPLICIT;
-        case ALL:
-            return ALL;
+        case IN_COMPOSE:
+            return IN_COMPOSE;
+        case IN_EXPANSION:
+            return IN_EXPANSION;
+        case IN_COMPOSE_OR_EXPANSION:
+            return IN_COMPOSE_OR_EXPANSION;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -188,18 +199,27 @@ public class CodeSearchSupport extends Code {
 
     public enum Value {
         /**
-         * Explicit Codes
+         * In Compose
          * 
-         * <p>The search for code on ValueSet only includes codes explicitly detailed on includes or expansions.
+         * <p>The search for code on ValueSet returns ValueSet resources where the code is included in the extensional definition 
+         * of the ValueSet.
          */
-        EXPLICIT("explicit"),
+        IN_COMPOSE("in-compose"),
 
         /**
-         * Implicit Codes
+         * In Expansion
          * 
-         * <p>The search for code on ValueSet only includes all codes based on the expansion of the value set.
+         * <p>The search for code on ValueSet returns ValueSet resources where the code is contained in the ValueSet expansion.
          */
-        ALL("all");
+        IN_EXPANSION("in-expansion"),
+
+        /**
+         * In Compose Or Expansion
+         * 
+         * <p>The search for code on ValueSet returns ValueSet resources where the code is included in the extensional definition 
+         * or contained in the ValueSet expansion.
+         */
+        IN_COMPOSE_OR_EXPANSION("in-compose-or-expansion");
 
         private final java.lang.String value;
 
@@ -230,10 +250,12 @@ public class CodeSearchSupport extends Code {
                 return null;
             }
             switch (value) {
-            case "explicit":
-                return EXPLICIT;
-            case "all":
-                return ALL;
+            case "in-compose":
+                return IN_COMPOSE;
+            case "in-expansion":
+                return IN_EXPANSION;
+            case "in-compose-or-expansion":
+                return IN_COMPOSE_OR_EXPANSION;
             default:
                 throw new IllegalArgumentException(value);
             }

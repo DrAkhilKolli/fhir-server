@@ -26,11 +26,19 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Rule",
     location = "(base)",
     description = "SHALL have a contained resource if a local reference is provided",
-    expression = "reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource)",
+    expression = "reference.exists()  implies (reference.startsWith('#').not() or (reference.substring(1).trace('url') in %rootResource.contained.id.trace('ids')) or (reference='#' and %rootResource!=%resource))",
     source = "http://hl7.org/fhir/StructureDefinition/Reference"
 )
 @Constraint(
-    id = "reference-2",
+    id = "ref-2",
+    level = "Rule",
+    location = "(base)",
+    description = "At least one of reference, identifier and display SHALL be present (unless an extension is provided).",
+    expression = "reference.exists() or identifier.exists() or display.exists() or extension.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/Reference"
+)
+@Constraint(
+    id = "reference-3",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/resource-types",
@@ -39,13 +47,14 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Reference extends Element {
+public class Reference extends DataType {
     @Summary
     private final String reference;
     @Summary
     @Binding(
         bindingName = "FHIRResourceTypeExt",
         strength = BindingStrength.Value.EXTENSIBLE,
+        description = "Aa resource (or, for logical models, the URI of the logical model).",
         valueSet = "http://hl7.org/fhir/ValueSet/resource-types"
     )
     private final Uri type;
@@ -187,7 +196,7 @@ public class Reference extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private String reference;
         private Uri type;
         private Identifier identifier;
@@ -214,7 +223,7 @@ public class Reference extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -234,7 +243,7 @@ public class Reference extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -298,7 +307,7 @@ public class Reference extends Element {
          * references in logical models, not resources).
          * 
          * @param type
-         *     Type the reference refers to (e.g. "Patient")
+         *     Type the reference refers to (e.g. "Patient") - must be a resource in resources
          * 
          * @return
          *     A reference to this Builder instance

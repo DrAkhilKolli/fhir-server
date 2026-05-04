@@ -13,7 +13,6 @@ import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
-import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
@@ -32,28 +31,35 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     source = "http://hl7.org/fhir/StructureDefinition/Expression"
 )
 @Constraint(
-    id = "expression-2",
+    id = "exp-2",
+    level = "Rule",
+    location = "(base)",
+    description = "The name must be a valid variable name in most computer languages",
+    expression = "name.hasValue() implies name.matches('[A-Za-z][A-Za-z0-9\\_]{0,63}')",
+    source = "http://hl7.org/fhir/StructureDefinition/Expression"
+)
+@Constraint(
+    id = "expression-3",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/expression-language",
-    expression = "language.exists() and language.memberOf('http://hl7.org/fhir/ValueSet/expression-language', 'extensible')",
+    expression = "language.exists() implies (language.memberOf('http://hl7.org/fhir/ValueSet/expression-language', 'extensible'))",
     source = "http://hl7.org/fhir/StructureDefinition/Expression",
     generated = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Expression extends Element {
+public class Expression extends DataType {
     @Summary
     private final String description;
     @Summary
-    private final Id name;
+    private final Code name;
     @Summary
     @Binding(
         bindingName = "ExpressionLanguage",
         strength = BindingStrength.Value.EXTENSIBLE,
-        valueSet = "http://hl7.org/fhir/ValueSet/expression-language",
-        maxValueSet = "http://hl7.org/fhir/ValueSet/mimetypes"
+        description = "The media type of the expression language.",
+        valueSet = "http://hl7.org/fhir/ValueSet/expression-language"
     )
-    @Required
     private final Code language;
     @Summary
     private final String expression;
@@ -84,9 +90,9 @@ public class Expression extends Element {
      * defined.
      * 
      * @return
-     *     An immutable object of type {@link Id} that may be null.
+     *     An immutable object of type {@link Code} that may be null.
      */
-    public Id getName() {
+    public Code getName() {
         return name;
     }
 
@@ -94,7 +100,7 @@ public class Expression extends Element {
      * The media type of the language for the expression.
      * 
      * @return
-     *     An immutable object of type {@link Code} that is non-null.
+     *     An immutable object of type {@link Code} that may be null.
      */
     public Code getLanguage() {
         return language;
@@ -195,9 +201,9 @@ public class Expression extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private String description;
-        private Id name;
+        private Code name;
         private Code language;
         private String expression;
         private Uri reference;
@@ -223,7 +229,7 @@ public class Expression extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -243,7 +249,7 @@ public class Expression extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -304,7 +310,7 @@ public class Expression extends Element {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder name(Id name) {
+        public Builder name(Code name) {
             this.name = name;
             return this;
         }
@@ -312,10 +318,8 @@ public class Expression extends Element {
         /**
          * The media type of the language for the expression.
          * 
-         * <p>This element is required.
-         * 
          * @param language
-         *     text/cql | text/fhirpath | application/x-fhir-query | text/cql-identifier | text/cql-expression | etc.
+         *     text/cql | text/fhirpath | application/x-fhir-query | etc.
          * 
          * @return
          *     A reference to this Builder instance
@@ -372,11 +376,6 @@ public class Expression extends Element {
         /**
          * Build the {@link Expression}
          * 
-         * <p>Required elements:
-         * <ul>
-         * <li>language</li>
-         * </ul>
-         * 
          * @return
          *     An immutable object of type {@link Expression}
          * @throws IllegalStateException
@@ -393,7 +392,6 @@ public class Expression extends Element {
 
         protected void validate(Expression expression) {
             super.validate(expression);
-            ValidationSupport.requireNonNull(expression.language, "language");
             ValidationSupport.requireValueOrChildren(expression);
         }
 

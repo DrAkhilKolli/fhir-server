@@ -22,7 +22,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * Specifies contact information for a person or organization.
  */
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class ContactDetail extends Element {
+public class ContactDetail extends DataType {
     @Summary
     private final String name;
     @Summary
@@ -117,7 +117,7 @@ public class ContactDetail extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private String name;
         private List<ContactPoint> telecom = new ArrayList<>();
 
@@ -142,7 +142,7 @@ public class ContactDetail extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -162,7 +162,7 @@ public class ContactDetail extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 

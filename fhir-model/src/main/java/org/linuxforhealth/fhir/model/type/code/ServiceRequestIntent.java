@@ -44,7 +44,7 @@ public class ServiceRequestIntent extends Code {
     /**
      * Order
      * 
-     * <p>The request represents a request/demand and authorization for action by a Practitioner.
+     * <p>The request represents a request/demand and authorization for action by the requestor.
      */
     public static final ServiceRequestIntent ORDER = ServiceRequestIntent.builder().value(Value.ORDER).build();
 
@@ -82,9 +82,9 @@ public class ServiceRequestIntent extends Code {
     /**
      * Option
      * 
-     * <p>The request represents a component or option for a RequestGroup that establishes timing, conditionality and/or 
-     * other constraints among a set of requests. Refer to [[[RequestGroup]]] for additional information on how this status 
-     * is used.
+     * <p>The request represents a component or option for a RequestOrchestration that establishes timing, conditionality 
+     * and/or other constraints among a set of requests. Refer to [[[RequestOrchestration]]] for additional information on 
+     * how this status is used.
      */
     public static final ServiceRequestIntent OPTION = ServiceRequestIntent.builder().value(Value.OPTION).build();
 
@@ -281,7 +281,7 @@ public class ServiceRequestIntent extends Code {
         /**
          * Order
          * 
-         * <p>The request represents a request/demand and authorization for action by a Practitioner.
+         * <p>The request represents a request/demand and authorization for action by the requestor.
          */
         ORDER("order"),
 
@@ -319,9 +319,9 @@ public class ServiceRequestIntent extends Code {
         /**
          * Option
          * 
-         * <p>The request represents a component or option for a RequestGroup that establishes timing, conditionality and/or 
-         * other constraints among a set of requests. Refer to [[[RequestGroup]]] for additional information on how this status 
-         * is used.
+         * <p>The request represents a component or option for a RequestOrchestration that establishes timing, conditionality 
+         * and/or other constraints among a set of requests. Refer to [[[RequestOrchestration]]] for additional information on 
+         * how this status is used.
          */
         OPTION("option");
 

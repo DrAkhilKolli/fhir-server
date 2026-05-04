@@ -11,6 +11,7 @@ import java.util.Objects;
 
 import javax.annotation.Generated;
 
+import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
@@ -18,8 +19,16 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 /**
  * A reference to a code defined by a terminology system.
  */
+@Constraint(
+    id = "cod-1",
+    level = "Warning",
+    location = "(base)",
+    description = "A Coding SHOULD NOT have a display unless a code is also present.  Computation on Coding.display alone is generally unsafe.  Consider using CodeableConcept.text",
+    expression = "code.exists().not() implies display.exists().not()",
+    source = "http://hl7.org/fhir/StructureDefinition/Coding"
+)
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Coding extends Element {
+public class Coding extends DataType {
     @Summary
     private final Uri system;
     @Summary
@@ -168,7 +177,7 @@ public class Coding extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private Uri system;
         private String version;
         private Code code;
@@ -196,7 +205,7 @@ public class Coding extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -216,7 +225,7 @@ public class Coding extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 

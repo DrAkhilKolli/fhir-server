@@ -26,7 +26,7 @@ import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
- * A date, date-time or partial date (e.g. just year or year + month). If hours and minutes are specified, a time zone 
+ * A date, date-time or partial date (e.g. just year or year + month). If hours and minutes are specified, a UTC offset 
  * SHALL be populated. The format is a union of the schema types gYear, gYearMonth, date and dateTime. Seconds must be 
  * provided due to schema type constraints but may be zero-filled and may be ignored. Dates SHALL be valid dates.
  * 
@@ -35,7 +35,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * precision when stored.
  */
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class DateTime extends Element {
+public class DateTime extends PrimitiveType {
     public static final DateTimeFormatter PARSER_FORMATTER = new DateTimeFormatterBuilder().appendPattern("yyyy").optionalStart().appendPattern("-MM").optionalStart().appendPattern("-dd").optionalStart().appendPattern("'T'HH:mm:ss").optionalStart().appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true).optionalEnd().appendPattern("XXX").optionalEnd().optionalEnd().optionalEnd().toFormatter();
 
     private final TemporalAccessor value;
@@ -162,7 +162,7 @@ public class DateTime extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends PrimitiveType.Builder {
         private TemporalAccessor value;
 
         private Builder() {
@@ -185,7 +185,7 @@ public class DateTime extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -205,7 +205,7 @@ public class DateTime extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 

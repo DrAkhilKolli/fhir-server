@@ -15,6 +15,7 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
+import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.Required;
@@ -24,9 +25,12 @@ import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
 import org.linuxforhealth.fhir.model.type.DateTime;
+import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
+import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
@@ -34,39 +38,47 @@ import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.UsageContext;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
+import org.linuxforhealth.fhir.model.type.code.FHIRTypes;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
-import org.linuxforhealth.fhir.model.type.code.ResourceTypeCode;
 import org.linuxforhealth.fhir.model.type.code.SearchComparator;
 import org.linuxforhealth.fhir.model.type.code.SearchModifierCode;
 import org.linuxforhealth.fhir.model.type.code.SearchParamType;
+import org.linuxforhealth.fhir.model.type.code.SearchProcessingModeType;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
-import org.linuxforhealth.fhir.model.type.code.XPathUsageType;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
  * A search parameter that defines a named search item that can be used to search/filter on a resource.
  * 
- * <p>Maturity level: FMM3 (Trial Use)
+ * <p>Maturity level: FMM5 (Trial Use)
  */
 @Maturity(
-    level = 3,
+    level = 5,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "spd-0",
+    id = "cnl-0",
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
     source = "http://hl7.org/fhir/StructureDefinition/SearchParameter"
 )
 @Constraint(
     id = "spd-1",
     level = "Rule",
     location = "(base)",
-    description = "If an xpath is present, there SHALL be an xpathUsage",
-    expression = "xpath.empty() or xpathUsage.exists()",
+    description = "If an expression is present, there SHALL be a processingMode",
+    expression = "expression.empty() or processingMode.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/SearchParameter"
+)
+@Constraint(
+    id = "cnl-1",
+    level = "Warning",
+    location = "SearchParameter.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
     source = "http://hl7.org/fhir/StructureDefinition/SearchParameter"
 )
 @Constraint(
@@ -78,7 +90,24 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     source = "http://hl7.org/fhir/StructureDefinition/SearchParameter"
 )
 @Constraint(
-    id = "searchParameter-3",
+    id = "spd-3",
+    level = "Rule",
+    location = "(base)",
+    description = "Search parameters comparator can only be used on type 'number', 'date', 'quantity' or 'special'.",
+    expression = "comparator.empty() or (type in ('number' | 'date' | 'quantity' | 'special'))",
+    source = "http://hl7.org/fhir/StructureDefinition/SearchParameter"
+)
+@Constraint(
+    id = "searchParameter-4",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/SearchParameter",
+    generated = true
+)
+@Constraint(
+    id = "searchParameter-5",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
@@ -92,17 +121,28 @@ public class SearchParameter extends DomainResource {
     @Required
     private final Uri url;
     @Summary
+    private final List<Identifier> identifier;
+    @Summary
     private final String version;
+    @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
     @Summary
     @Required
     private final String name;
+    @Summary
+    private final String title;
     private final Canonical derivedFrom;
     @Summary
     @Binding(
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -128,57 +168,59 @@ public class SearchParameter extends DomainResource {
     )
     private final List<CodeableConcept> jurisdiction;
     private final Markdown purpose;
+    private final Markdown copyright;
+    private final String copyrightLabel;
     @Summary
     @Required
     private final Code code;
     @Summary
     @Binding(
-        bindingName = "ResourceType",
+        bindingName = "FHIRTypes",
         strength = BindingStrength.Value.REQUIRED,
-        description = "One of the resource types defined as part of this version of FHIR.",
-        valueSet = "http://hl7.org/fhir/ValueSet/resource-types|4.3.0"
+        description = "A type of resource, or a Reference (from all versions)",
+        valueSet = "http://hl7.org/fhir/ValueSet/version-independent-all-resource-types|5.0.0"
     )
     @Required
-    private final List<ResourceTypeCode> base;
+    private final List<FHIRTypes> base;
     @Summary
     @Binding(
         bindingName = "SearchParamType",
         strength = BindingStrength.Value.REQUIRED,
         description = "Data types allowed to be used for search parameters.",
-        valueSet = "http://hl7.org/fhir/ValueSet/search-param-type|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/search-param-type|5.0.0"
     )
     @Required
     private final SearchParamType type;
     private final String expression;
-    private final String xpath;
     @Binding(
-        bindingName = "XPathUsageType",
+        bindingName = "SearchProcessingModeType",
         strength = BindingStrength.Value.REQUIRED,
-        description = "How a search parameter relates to the set of elements returned by evaluating its xpath query.",
-        valueSet = "http://hl7.org/fhir/ValueSet/search-xpath-usage|4.3.0"
+        description = "How a search parameter relates to the set of elements returned by evaluating its expression query.",
+        valueSet = "http://hl7.org/fhir/ValueSet/search-processingmode|5.0.0"
     )
-    private final XPathUsageType xpathUsage;
+    private final SearchProcessingModeType processingMode;
+    private final String constraint;
     @Binding(
-        bindingName = "ResourceType",
+        bindingName = "FHIRTypes",
         strength = BindingStrength.Value.REQUIRED,
-        description = "One of the resource types defined as part of this version of FHIR.",
-        valueSet = "http://hl7.org/fhir/ValueSet/resource-types|4.3.0"
+        description = "A type of resource, or a Reference (from all versions)",
+        valueSet = "http://hl7.org/fhir/ValueSet/version-independent-all-resource-types|5.0.0"
     )
-    private final List<ResourceTypeCode> target;
+    private final List<FHIRTypes> target;
     private final Boolean multipleOr;
     private final Boolean multipleAnd;
     @Binding(
         bindingName = "SearchComparator",
         strength = BindingStrength.Value.REQUIRED,
         description = "What Search Comparator Codes are supported in search.",
-        valueSet = "http://hl7.org/fhir/ValueSet/search-comparator|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/search-comparator|5.0.0"
     )
     private final List<SearchComparator> comparator;
     @Binding(
         bindingName = "SearchModifierCode",
         strength = BindingStrength.Value.REQUIRED,
         description = "A supported modifier for a search parameter.",
-        valueSet = "http://hl7.org/fhir/ValueSet/search-modifier-code|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/search-modifier-code|5.0.0"
     )
     private final List<SearchModifierCode> modifier;
     private final List<String> chain;
@@ -187,8 +229,11 @@ public class SearchParameter extends DomainResource {
     private SearchParameter(Builder builder) {
         super(builder);
         url = builder.url;
+        identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
+        title = builder.title;
         derivedFrom = builder.derivedFrom;
         status = builder.status;
         experimental = builder.experimental;
@@ -199,12 +244,14 @@ public class SearchParameter extends DomainResource {
         useContext = Collections.unmodifiableList(builder.useContext);
         jurisdiction = Collections.unmodifiableList(builder.jurisdiction);
         purpose = builder.purpose;
+        copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
         code = builder.code;
         base = Collections.unmodifiableList(builder.base);
         type = builder.type;
         expression = builder.expression;
-        xpath = builder.xpath;
-        xpathUsage = builder.xpathUsage;
+        processingMode = builder.processingMode;
+        constraint = builder.constraint;
         target = Collections.unmodifiableList(builder.target);
         multipleOr = builder.multipleOr;
         multipleAnd = builder.multipleAnd;
@@ -217,14 +264,25 @@ public class SearchParameter extends DomainResource {
     /**
      * An absolute URI that is used to identify this search parameter when it is referenced in a specification, model, design 
      * or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address 
-     * at which at which an authoritative instance of this search parameter is (or will be) published. This URL can be the 
-     * target of a canonical reference. It SHALL remain the same when the search parameter is stored on different servers.
+     * at which an authoritative instance of this search parameter is (or will be) published. This URL can be the target of a 
+     * canonical reference. It SHALL remain the same when the search parameter is stored on different servers.
      * 
      * @return
      *     An immutable object of type {@link Uri} that is non-null.
      */
     public Uri getUrl() {
         return url;
+    }
+
+    /**
+     * A formal identifier that is used to identify this search parameter when it is represented in other formats, or 
+     * referenced in a specification, model, design or an instance.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
+     */
+    public List<Identifier> getIdentifier() {
+        return identifier;
     }
 
     /**
@@ -241,6 +299,16 @@ public class SearchParameter extends DomainResource {
     }
 
     /**
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
+    }
+
+    /**
      * A natural language name identifying the search parameter. This name should be usable as an identifier for the module 
      * by machine processing applications such as code generation.
      * 
@@ -249,6 +317,16 @@ public class SearchParameter extends DomainResource {
      */
     public String getName() {
         return name;
+    }
+
+    /**
+     * A short, descriptive, user-friendly title for the search parameter.
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getTitle() {
+        return title;
     }
 
     /**
@@ -285,9 +363,9 @@ public class SearchParameter extends DomainResource {
     }
 
     /**
-     * The date (and optionally time) when the search parameter was published. The date must change when the business version 
-     * changes and it must change if the status code changes. In addition, it should change when the substantive content of 
-     * the search parameter changes.
+     * The date (and optionally time) when the search parameter was last significantly changed. The date must change when the 
+     * business version changes and it must change if the status code changes. In addition, it should change when the 
+     * substantive content of the search parameter changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -297,7 +375,8 @@ public class SearchParameter extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the search parameter.
+     * The name of the organization or individual tresponsible for the release and ongoing maintenance of the search 
+     * parameter.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -359,7 +438,31 @@ public class SearchParameter extends DomainResource {
     }
 
     /**
-     * The code used in the URL or the parameter name in a parameters resource for this search parameter.
+     * A copyright statement relating to the search parameter and/or its contents. Copyright statements are generally legal 
+     * restrictions on the use and publishing of the search parameter.
+     * 
+     * @return
+     *     An immutable object of type {@link Markdown} that may be null.
+     */
+    public Markdown getCopyright() {
+        return copyright;
+    }
+
+    /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
+    }
+
+    /**
+     * The label that is recommended to be used in the URL or the parameter name in a parameters resource for this search 
+     * parameter. In some cases, servers may need to use a different CapabilityStatement searchParam.name to differentiate 
+     * between multiple SearchParameters that happen to have the same code.
      * 
      * @return
      *     An immutable object of type {@link Code} that is non-null.
@@ -372,9 +475,9 @@ public class SearchParameter extends DomainResource {
      * The base resource type(s) that this search parameter can be used against.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link ResourceTypeCode} that is non-empty.
+     *     An unmodifiable list containing immutable objects of type {@link FHIRTypes} that is non-empty.
      */
-    public List<ResourceTypeCode> getBase() {
+    public List<FHIRTypes> getBase() {
         return base;
     }
 
@@ -399,32 +502,32 @@ public class SearchParameter extends DomainResource {
     }
 
     /**
-     * An XPath expression that returns a set of elements for the search parameter.
+     * How the search parameter relates to the set of elements returned by evaluating the expression query.
+     * 
+     * @return
+     *     An immutable object of type {@link SearchProcessingModeType} that may be null.
+     */
+    public SearchProcessingModeType getProcessingMode() {
+        return processingMode;
+    }
+
+    /**
+     * FHIRPath expression that defines/sets a complex constraint for when this SearchParameter is applicable.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
      */
-    public String getXpath() {
-        return xpath;
-    }
-
-    /**
-     * How the search parameter relates to the set of elements returned by evaluating the xpath query.
-     * 
-     * @return
-     *     An immutable object of type {@link XPathUsageType} that may be null.
-     */
-    public XPathUsageType getXpathUsage() {
-        return xpathUsage;
+    public String getConstraint() {
+        return constraint;
     }
 
     /**
      * Types of resource (if a resource is referenced).
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link ResourceTypeCode} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link FHIRTypes} that may be empty.
      */
-    public List<ResourceTypeCode> getTarget() {
+    public List<FHIRTypes> getTarget() {
         return target;
     }
 
@@ -497,8 +600,11 @@ public class SearchParameter extends DomainResource {
     public boolean hasChildren() {
         return super.hasChildren() || 
             (url != null) || 
+            !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
+            (title != null) || 
             (derivedFrom != null) || 
             (status != null) || 
             (experimental != null) || 
@@ -509,12 +615,14 @@ public class SearchParameter extends DomainResource {
             !useContext.isEmpty() || 
             !jurisdiction.isEmpty() || 
             (purpose != null) || 
+            (copyright != null) || 
+            (copyrightLabel != null) || 
             (code != null) || 
             !base.isEmpty() || 
             (type != null) || 
             (expression != null) || 
-            (xpath != null) || 
-            (xpathUsage != null) || 
+            (processingMode != null) || 
+            (constraint != null) || 
             !target.isEmpty() || 
             (multipleOr != null) || 
             (multipleAnd != null) || 
@@ -539,8 +647,11 @@ public class SearchParameter extends DomainResource {
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(url, "url", visitor);
+                accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
+                accept(title, "title", visitor);
                 accept(derivedFrom, "derivedFrom", visitor);
                 accept(status, "status", visitor);
                 accept(experimental, "experimental", visitor);
@@ -551,13 +662,15 @@ public class SearchParameter extends DomainResource {
                 accept(useContext, "useContext", visitor, UsageContext.class);
                 accept(jurisdiction, "jurisdiction", visitor, CodeableConcept.class);
                 accept(purpose, "purpose", visitor);
+                accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
                 accept(code, "code", visitor);
-                accept(base, "base", visitor, ResourceTypeCode.class);
+                accept(base, "base", visitor, FHIRTypes.class);
                 accept(type, "type", visitor);
                 accept(expression, "expression", visitor);
-                accept(xpath, "xpath", visitor);
-                accept(xpathUsage, "xpathUsage", visitor);
-                accept(target, "target", visitor, ResourceTypeCode.class);
+                accept(processingMode, "processingMode", visitor);
+                accept(constraint, "constraint", visitor);
+                accept(target, "target", visitor, FHIRTypes.class);
                 accept(multipleOr, "multipleOr", visitor);
                 accept(multipleAnd, "multipleAnd", visitor);
                 accept(comparator, "comparator", visitor, SearchComparator.class);
@@ -591,8 +704,11 @@ public class SearchParameter extends DomainResource {
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(url, other.url) && 
+            Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
+            Objects.equals(title, other.title) && 
             Objects.equals(derivedFrom, other.derivedFrom) && 
             Objects.equals(status, other.status) && 
             Objects.equals(experimental, other.experimental) && 
@@ -603,12 +719,14 @@ public class SearchParameter extends DomainResource {
             Objects.equals(useContext, other.useContext) && 
             Objects.equals(jurisdiction, other.jurisdiction) && 
             Objects.equals(purpose, other.purpose) && 
+            Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
             Objects.equals(code, other.code) && 
             Objects.equals(base, other.base) && 
             Objects.equals(type, other.type) && 
             Objects.equals(expression, other.expression) && 
-            Objects.equals(xpath, other.xpath) && 
-            Objects.equals(xpathUsage, other.xpathUsage) && 
+            Objects.equals(processingMode, other.processingMode) && 
+            Objects.equals(constraint, other.constraint) && 
             Objects.equals(target, other.target) && 
             Objects.equals(multipleOr, other.multipleOr) && 
             Objects.equals(multipleAnd, other.multipleAnd) && 
@@ -631,8 +749,11 @@ public class SearchParameter extends DomainResource {
                 extension, 
                 modifierExtension, 
                 url, 
+                identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
+                title, 
                 derivedFrom, 
                 status, 
                 experimental, 
@@ -643,12 +764,14 @@ public class SearchParameter extends DomainResource {
                 useContext, 
                 jurisdiction, 
                 purpose, 
+                copyright, 
+                copyrightLabel, 
                 code, 
                 base, 
                 type, 
                 expression, 
-                xpath, 
-                xpathUsage, 
+                processingMode, 
+                constraint, 
                 target, 
                 multipleOr, 
                 multipleAnd, 
@@ -672,8 +795,11 @@ public class SearchParameter extends DomainResource {
 
     public static class Builder extends DomainResource.Builder {
         private Uri url;
+        private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
+        private String title;
         private Canonical derivedFrom;
         private PublicationStatus status;
         private Boolean experimental;
@@ -684,13 +810,15 @@ public class SearchParameter extends DomainResource {
         private List<UsageContext> useContext = new ArrayList<>();
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
         private Markdown purpose;
+        private Markdown copyright;
+        private String copyrightLabel;
         private Code code;
-        private List<ResourceTypeCode> base = new ArrayList<>();
+        private List<FHIRTypes> base = new ArrayList<>();
         private SearchParamType type;
         private String expression;
-        private String xpath;
-        private XPathUsageType xpathUsage;
-        private List<ResourceTypeCode> target = new ArrayList<>();
+        private SearchProcessingModeType processingMode;
+        private String constraint;
+        private List<FHIRTypes> target = new ArrayList<>();
         private Boolean multipleOr;
         private Boolean multipleAnd;
         private List<SearchComparator> comparator = new ArrayList<>();
@@ -780,7 +908,8 @@ public class SearchParameter extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -798,7 +927,8 @@ public class SearchParameter extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -819,7 +949,7 @@ public class SearchParameter extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -839,7 +969,7 @@ public class SearchParameter extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -864,9 +994,9 @@ public class SearchParameter extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -889,9 +1019,9 @@ public class SearchParameter extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -916,8 +1046,8 @@ public class SearchParameter extends DomainResource {
         /**
          * An absolute URI that is used to identify this search parameter when it is referenced in a specification, model, design 
          * or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address 
-         * at which at which an authoritative instance of this search parameter is (or will be) published. This URL can be the 
-         * target of a canonical reference. It SHALL remain the same when the search parameter is stored on different servers.
+         * at which an authoritative instance of this search parameter is (or will be) published. This URL can be the target of a 
+         * canonical reference. It SHALL remain the same when the search parameter is stored on different servers.
          * 
          * <p>This element is required.
          * 
@@ -929,6 +1059,47 @@ public class SearchParameter extends DomainResource {
          */
         public Builder url(Uri url) {
             this.url = url;
+            return this;
+        }
+
+        /**
+         * A formal identifier that is used to identify this search parameter when it is represented in other formats, or 
+         * referenced in a specification, model, design or an instance.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param identifier
+         *     Additional identifier for the search parameter (business identifier)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder identifier(Identifier... identifier) {
+            for (Identifier value : identifier) {
+                this.identifier.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A formal identifier that is used to identify this search parameter when it is represented in other formats, or 
+         * referenced in a specification, model, design or an instance.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param identifier
+         *     Additional identifier for the search parameter (business identifier)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder identifier(Collection<Identifier> identifier) {
+            this.identifier = new ArrayList<>(identifier);
             return this;
         }
 
@@ -966,6 +1137,42 @@ public class SearchParameter extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
+            return this;
+        }
+
+        /**
          * Convenience method for setting {@code name}.
          * 
          * <p>This element is required.
@@ -997,6 +1204,36 @@ public class SearchParameter extends DomainResource {
          */
         public Builder name(String name) {
             this.name = name;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code title}.
+         * 
+         * @param title
+         *     Name for this search parameter (human friendly)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #title(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder title(java.lang.String title) {
+            this.title = (title == null) ? null : String.of(title);
+            return this;
+        }
+
+        /**
+         * A short, descriptive, user-friendly title for the search parameter.
+         * 
+         * @param title
+         *     Name for this search parameter (human friendly)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder title(String title) {
+            this.title = title;
             return this;
         }
 
@@ -1064,9 +1301,9 @@ public class SearchParameter extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the search parameter was published. The date must change when the business version 
-         * changes and it must change if the status code changes. In addition, it should change when the substantive content of 
-         * the search parameter changes.
+         * The date (and optionally time) when the search parameter was last significantly changed. The date must change when the 
+         * business version changes and it must change if the status code changes. In addition, it should change when the 
+         * substantive content of the search parameter changes.
          * 
          * @param date
          *     Date last changed
@@ -1083,7 +1320,7 @@ public class SearchParameter extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1096,10 +1333,11 @@ public class SearchParameter extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the search parameter.
+         * The name of the organization or individual tresponsible for the release and ongoing maintenance of the search 
+         * parameter.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1261,12 +1499,60 @@ public class SearchParameter extends DomainResource {
         }
 
         /**
-         * The code used in the URL or the parameter name in a parameters resource for this search parameter.
+         * A copyright statement relating to the search parameter and/or its contents. Copyright statements are generally legal 
+         * restrictions on the use and publishing of the search parameter.
+         * 
+         * @param copyright
+         *     Use and/or publishing restrictions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyright(Markdown copyright) {
+            this.copyright = copyright;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
+            return this;
+        }
+
+        /**
+         * The label that is recommended to be used in the URL or the parameter name in a parameters resource for this search 
+         * parameter. In some cases, servers may need to use a different CapabilityStatement searchParam.name to differentiate 
+         * between multiple SearchParameters that happen to have the same code.
          * 
          * <p>This element is required.
          * 
          * @param code
-         *     Code used in URL
+         *     Recommended name for parameter in search url
          * 
          * @return
          *     A reference to this Builder instance
@@ -1290,8 +1576,8 @@ public class SearchParameter extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder base(ResourceTypeCode... base) {
-            for (ResourceTypeCode value : base) {
+        public Builder base(FHIRTypes... base) {
+            for (FHIRTypes value : base) {
                 this.base.add(value);
             }
             return this;
@@ -1314,7 +1600,7 @@ public class SearchParameter extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder base(Collection<ResourceTypeCode> base) {
+        public Builder base(Collection<FHIRTypes> base) {
             this.base = new ArrayList<>(base);
             return this;
         }
@@ -1366,46 +1652,46 @@ public class SearchParameter extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code xpath}.
+         * How the search parameter relates to the set of elements returned by evaluating the expression query.
          * 
-         * @param xpath
-         *     XPath that extracts the values
+         * @param processingMode
+         *     normal | phonetic | other
          * 
          * @return
          *     A reference to this Builder instance
-         * 
-         * @see #xpath(org.linuxforhealth.fhir.model.type.String)
          */
-        public Builder xpath(java.lang.String xpath) {
-            this.xpath = (xpath == null) ? null : String.of(xpath);
+        public Builder processingMode(SearchProcessingModeType processingMode) {
+            this.processingMode = processingMode;
             return this;
         }
 
         /**
-         * An XPath expression that returns a set of elements for the search parameter.
+         * Convenience method for setting {@code constraint}.
          * 
-         * @param xpath
-         *     XPath that extracts the values
+         * @param constraint
+         *     FHIRPath expression that constraints the usage of this SearchParamete
          * 
          * @return
          *     A reference to this Builder instance
+         * 
+         * @see #constraint(org.linuxforhealth.fhir.model.type.String)
          */
-        public Builder xpath(String xpath) {
-            this.xpath = xpath;
+        public Builder constraint(java.lang.String constraint) {
+            this.constraint = (constraint == null) ? null : String.of(constraint);
             return this;
         }
 
         /**
-         * How the search parameter relates to the set of elements returned by evaluating the xpath query.
+         * FHIRPath expression that defines/sets a complex constraint for when this SearchParameter is applicable.
          * 
-         * @param xpathUsage
-         *     normal | phonetic | nearby | distance | other
+         * @param constraint
+         *     FHIRPath expression that constraints the usage of this SearchParamete
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder xpathUsage(XPathUsageType xpathUsage) {
-            this.xpathUsage = xpathUsage;
+        public Builder constraint(String constraint) {
+            this.constraint = constraint;
             return this;
         }
 
@@ -1421,8 +1707,8 @@ public class SearchParameter extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder target(ResourceTypeCode... target) {
-            for (ResourceTypeCode value : target) {
+        public Builder target(FHIRTypes... target) {
+            for (FHIRTypes value : target) {
                 this.target.add(value);
             }
             return this;
@@ -1443,7 +1729,7 @@ public class SearchParameter extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder target(Collection<ResourceTypeCode> target) {
+        public Builder target(Collection<FHIRTypes> target) {
             this.target = new ArrayList<>(target);
             return this;
         }
@@ -1556,7 +1842,8 @@ public class SearchParameter extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param modifier
-         *     missing | exact | contains | not | text | in | not-in | below | above | type | identifier | ofType
+         *     missing | exact | contains | not | text | in | not-in | below | above | type | identifier | of-type | code-text | text-
+         *     advanced | iterate
          * 
          * @return
          *     A reference to this Builder instance
@@ -1575,7 +1862,8 @@ public class SearchParameter extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param modifier
-         *     missing | exact | contains | not | text | in | not-in | below | above | type | identifier | ofType
+         *     missing | exact | contains | not | text | in | not-in | below | above | type | identifier | of-type | code-text | text-
+         *     advanced | iterate
          * 
          * @return
          *     A reference to this Builder instance
@@ -1724,6 +2012,8 @@ public class SearchParameter extends DomainResource {
         protected void validate(SearchParameter searchParameter) {
             super.validate(searchParameter);
             ValidationSupport.requireNonNull(searchParameter.url, "url");
+            ValidationSupport.checkList(searchParameter.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(searchParameter.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.requireNonNull(searchParameter.name, "name");
             ValidationSupport.requireNonNull(searchParameter.status, "status");
             ValidationSupport.checkList(searchParameter.contact, "contact", ContactDetail.class);
@@ -1731,9 +2021,9 @@ public class SearchParameter extends DomainResource {
             ValidationSupport.checkList(searchParameter.useContext, "useContext", UsageContext.class);
             ValidationSupport.checkList(searchParameter.jurisdiction, "jurisdiction", CodeableConcept.class);
             ValidationSupport.requireNonNull(searchParameter.code, "code");
-            ValidationSupport.checkNonEmptyList(searchParameter.base, "base", ResourceTypeCode.class);
+            ValidationSupport.checkNonEmptyList(searchParameter.base, "base", FHIRTypes.class);
             ValidationSupport.requireNonNull(searchParameter.type, "type");
-            ValidationSupport.checkList(searchParameter.target, "target", ResourceTypeCode.class);
+            ValidationSupport.checkList(searchParameter.target, "target", FHIRTypes.class);
             ValidationSupport.checkList(searchParameter.comparator, "comparator", SearchComparator.class);
             ValidationSupport.checkList(searchParameter.modifier, "modifier", SearchModifierCode.class);
             ValidationSupport.checkList(searchParameter.chain, "chain", String.class);
@@ -1743,8 +2033,11 @@ public class SearchParameter extends DomainResource {
         protected Builder from(SearchParameter searchParameter) {
             super.from(searchParameter);
             url = searchParameter.url;
+            identifier.addAll(searchParameter.identifier);
             version = searchParameter.version;
+            versionAlgorithm = searchParameter.versionAlgorithm;
             name = searchParameter.name;
+            title = searchParameter.title;
             derivedFrom = searchParameter.derivedFrom;
             status = searchParameter.status;
             experimental = searchParameter.experimental;
@@ -1755,12 +2048,14 @@ public class SearchParameter extends DomainResource {
             useContext.addAll(searchParameter.useContext);
             jurisdiction.addAll(searchParameter.jurisdiction);
             purpose = searchParameter.purpose;
+            copyright = searchParameter.copyright;
+            copyrightLabel = searchParameter.copyrightLabel;
             code = searchParameter.code;
             base.addAll(searchParameter.base);
             type = searchParameter.type;
             expression = searchParameter.expression;
-            xpath = searchParameter.xpath;
-            xpathUsage = searchParameter.xpathUsage;
+            processingMode = searchParameter.processingMode;
+            constraint = searchParameter.constraint;
             target.addAll(searchParameter.target);
             multipleOr = searchParameter.multipleOr;
             multipleAnd = searchParameter.multipleAnd;
@@ -1899,7 +2194,7 @@ public class SearchParameter extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1919,7 +2214,7 @@ public class SearchParameter extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1944,7 +2239,7 @@ public class SearchParameter extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1969,7 +2264,7 @@ public class SearchParameter extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 

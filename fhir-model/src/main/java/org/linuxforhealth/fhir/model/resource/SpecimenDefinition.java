@@ -16,26 +16,36 @@ import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
 import org.linuxforhealth.fhir.model.annotation.Choice;
+import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Boolean;
+import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.Coding;
+import org.linuxforhealth.fhir.model.type.ContactDetail;
+import org.linuxforhealth.fhir.model.type.Date;
+import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Duration;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
+import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
+import org.linuxforhealth.fhir.model.type.Period;
 import org.linuxforhealth.fhir.model.type.Range;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.SimpleQuantity;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
+import org.linuxforhealth.fhir.model.type.UsageContext;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
+import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
 import org.linuxforhealth.fhir.model.type.code.SpecimenContainedPreference;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
@@ -44,16 +54,91 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 /**
  * A kind of specimen with associated set of requirements.
  * 
- * <p>Maturity level: FMM0 (Trial Use)
+ * <p>Maturity level: FMM1 (Trial Use)
  */
 @Maturity(
-    level = 0,
+    level = 1,
     status = StandardsStatus.Value.TRIAL_USE
+)
+@Constraint(
+    id = "specimenDefinition-0",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/SpecimenDefinition",
+    generated = true
+)
+@Constraint(
+    id = "specimenDefinition-1",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
+    expression = "jurisdiction.exists() implies (jurisdiction.all(memberOf('http://hl7.org/fhir/ValueSet/jurisdiction', 'extensible')))",
+    source = "http://hl7.org/fhir/StructureDefinition/SpecimenDefinition",
+    generated = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class SpecimenDefinition extends DomainResource {
     @Summary
+    private final Uri url;
+    @Summary
     private final Identifier identifier;
+    @Summary
+    private final String version;
+    @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+    @Summary
+    private final String name;
+    @Summary
+    private final String title;
+    @Summary
+    private final List<Canonical> derivedFromCanonical;
+    @Summary
+    private final List<Uri> derivedFromUri;
+    @Summary
+    @Binding(
+        bindingName = "PublicationStatus",
+        strength = BindingStrength.Value.REQUIRED,
+        description = "Codes identifying the status of a SpecimenDefinition resource.",
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
+    )
+    @Required
+    private final PublicationStatus status;
+    @Summary
+    private final Boolean experimental;
+    @Summary
+    @ReferenceTarget({ "Group" })
+    @Choice({ CodeableConcept.class, Reference.class })
+    private final org.linuxforhealth.fhir.model.type.Element subject;
+    @Summary
+    private final DateTime date;
+    @Summary
+    private final String publisher;
+    @Summary
+    private final List<ContactDetail> contact;
+    private final Markdown description;
+    private final List<UsageContext> useContext;
+    @Summary
+    @Binding(
+        bindingName = "Jurisdiction",
+        strength = BindingStrength.Value.EXTENSIBLE,
+        description = "Codes for country, country subdivision and region for indicating where a resource is intended to be used.",
+        valueSet = "http://hl7.org/fhir/ValueSet/jurisdiction"
+    )
+    private final List<CodeableConcept> jurisdiction;
+    private final Markdown purpose;
+    private final Markdown copyright;
+    private final String copyrightLabel;
+    private final Date approvalDate;
+    private final Date lastReviewDate;
+    @Summary
+    private final Period effectivePeriod;
     @Summary
     @Binding(
         bindingName = "CollectedSpecimenType",
@@ -84,7 +169,29 @@ public class SpecimenDefinition extends DomainResource {
 
     private SpecimenDefinition(Builder builder) {
         super(builder);
+        url = builder.url;
         identifier = builder.identifier;
+        version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
+        name = builder.name;
+        title = builder.title;
+        derivedFromCanonical = Collections.unmodifiableList(builder.derivedFromCanonical);
+        derivedFromUri = Collections.unmodifiableList(builder.derivedFromUri);
+        status = builder.status;
+        experimental = builder.experimental;
+        subject = builder.subject;
+        date = builder.date;
+        publisher = builder.publisher;
+        contact = Collections.unmodifiableList(builder.contact);
+        description = builder.description;
+        useContext = Collections.unmodifiableList(builder.useContext);
+        jurisdiction = Collections.unmodifiableList(builder.jurisdiction);
+        purpose = builder.purpose;
+        copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
+        approvalDate = builder.approvalDate;
+        lastReviewDate = builder.lastReviewDate;
+        effectivePeriod = builder.effectivePeriod;
         typeCollected = builder.typeCollected;
         patientPreparation = Collections.unmodifiableList(builder.patientPreparation);
         timeAspect = builder.timeAspect;
@@ -93,13 +200,247 @@ public class SpecimenDefinition extends DomainResource {
     }
 
     /**
-     * A business identifier associated with the kind of specimen.
+     * An absolute URL that is used to identify this SpecimenDefinition when it is referenced in a specification, model, 
+     * design or an instance. This SHALL be a URL, SHOULD be globally unique, and SHOULD be an address at which this 
+     * SpecimenDefinition is (or will be) published. The URL SHOULD include the major version of the SpecimenDefinition. For 
+     * more information see Technical and Business Versions.
+     * 
+     * @return
+     *     An immutable object of type {@link Uri} that may be null.
+     */
+    public Uri getUrl() {
+        return url;
+    }
+
+    /**
+     * A business identifier assigned to this SpecimenDefinition.
      * 
      * @return
      *     An immutable object of type {@link Identifier} that may be null.
      */
     public Identifier getIdentifier() {
         return identifier;
+    }
+
+    /**
+     * The identifier that is used to identify this version of the SpecimenDefinition when it is referenced in a 
+     * specification, model, design or instance. This is an arbitrary value managed by the SpecimenDefinition author and is 
+     * not expected to be globally unique.
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getVersion() {
+        return version;
+    }
+
+    /**
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
+    }
+
+    /**
+     * A natural language name identifying the {{title}}. This name should be usable as an identifier for the module by 
+     * machine processing applications such as code generation.
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * A short, descriptive, user-friendly title for the SpecimenDefinition.
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getTitle() {
+        return title;
+    }
+
+    /**
+     * The canonical URL pointing to another FHIR-defined SpecimenDefinition that is adhered to in whole or in part by this 
+     * definition.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Canonical} that may be empty.
+     */
+    public List<Canonical> getDerivedFromCanonical() {
+        return derivedFromCanonical;
+    }
+
+    /**
+     * The URL pointing to an externally-defined type of specimen, guideline or other definition that is adhered to in whole 
+     * or in part by this definition.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Uri} that may be empty.
+     */
+    public List<Uri> getDerivedFromUri() {
+        return derivedFromUri;
+    }
+
+    /**
+     * The current state of theSpecimenDefinition.
+     * 
+     * @return
+     *     An immutable object of type {@link PublicationStatus} that is non-null.
+     */
+    public PublicationStatus getStatus() {
+        return status;
+    }
+
+    /**
+     * A flag to indicate that this SpecimenDefinition is not authored for genuine usage.
+     * 
+     * @return
+     *     An immutable object of type {@link Boolean} that may be null.
+     */
+    public Boolean getExperimental() {
+        return experimental;
+    }
+
+    /**
+     * A code or group definition that describes the intended subject from which this kind of specimen is to be collected.
+     * 
+     * @return
+     *     An immutable object of type {@link CodeableConcept} or {@link Reference} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getSubject() {
+        return subject;
+    }
+
+    /**
+     * For draft definitions, indicates the date of initial creation. For active definitions, represents the date of 
+     * activation. For withdrawn definitions, indicates the date of withdrawal.
+     * 
+     * @return
+     *     An immutable object of type {@link DateTime} that may be null.
+     */
+    public DateTime getDate() {
+        return date;
+    }
+
+    /**
+     * Helps establish the "authority/credibility" of the SpecimenDefinition. May also allow for contact.
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getPublisher() {
+        return publisher;
+    }
+
+    /**
+     * Contact details to assist a user in finding and communicating with the publisher.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
+     */
+    public List<ContactDetail> getContact() {
+        return contact;
+    }
+
+    /**
+     * A free text natural language description of the SpecimenDefinition from the consumer's perspective.
+     * 
+     * @return
+     *     An immutable object of type {@link Markdown} that may be null.
+     */
+    public Markdown getDescription() {
+        return description;
+    }
+
+    /**
+     * The content was developed with a focus and intent of supporting the contexts that are listed. These terms may be used 
+     * to assist with indexing and searching of specimen definitions.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link UsageContext} that may be empty.
+     */
+    public List<UsageContext> getUseContext() {
+        return useContext;
+    }
+
+    /**
+     * A jurisdiction in which the SpecimenDefinition is intended to be used.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     */
+    public List<CodeableConcept> getJurisdiction() {
+        return jurisdiction;
+    }
+
+    /**
+     * Explains why this SpecimeDefinition is needed and why it has been designed as it has.
+     * 
+     * @return
+     *     An immutable object of type {@link Markdown} that may be null.
+     */
+    public Markdown getPurpose() {
+        return purpose;
+    }
+
+    /**
+     * Copyright statement relating to the SpecimenDefinition and/or its contents. Copyright statements are generally legal 
+     * restrictions on the use and publishing of the SpecimenDefinition.
+     * 
+     * @return
+     *     An immutable object of type {@link Markdown} that may be null.
+     */
+    public Markdown getCopyright() {
+        return copyright;
+    }
+
+    /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
+    }
+
+    /**
+     * The date on which the asset content was approved by the publisher. Approval happens once when the content is 
+     * officially approved for usage.
+     * 
+     * @return
+     *     An immutable object of type {@link Date} that may be null.
+     */
+    public Date getApprovalDate() {
+        return approvalDate;
+    }
+
+    /**
+     * The date on which the asset content was last reviewed. Review happens periodically after that, but doesn't change the 
+     * original approval date.
+     * 
+     * @return
+     *     An immutable object of type {@link Date} that may be null.
+     */
+    public Date getLastReviewDate() {
+        return lastReviewDate;
+    }
+
+    /**
+     * The period during which the SpecimenDefinition content was or is planned to be effective.
+     * 
+     * @return
+     *     An immutable object of type {@link Period} that may be null.
+     */
+    public Period getEffectivePeriod() {
+        return effectivePeriod;
     }
 
     /**
@@ -155,7 +496,29 @@ public class SpecimenDefinition extends DomainResource {
     @Override
     public boolean hasChildren() {
         return super.hasChildren() || 
+            (url != null) || 
             (identifier != null) || 
+            (version != null) || 
+            (versionAlgorithm != null) || 
+            (name != null) || 
+            (title != null) || 
+            !derivedFromCanonical.isEmpty() || 
+            !derivedFromUri.isEmpty() || 
+            (status != null) || 
+            (experimental != null) || 
+            (subject != null) || 
+            (date != null) || 
+            (publisher != null) || 
+            !contact.isEmpty() || 
+            (description != null) || 
+            !useContext.isEmpty() || 
+            !jurisdiction.isEmpty() || 
+            (purpose != null) || 
+            (copyright != null) || 
+            (copyrightLabel != null) || 
+            (approvalDate != null) || 
+            (lastReviewDate != null) || 
+            (effectivePeriod != null) || 
             (typeCollected != null) || 
             !patientPreparation.isEmpty() || 
             (timeAspect != null) || 
@@ -177,7 +540,29 @@ public class SpecimenDefinition extends DomainResource {
                 accept(contained, "contained", visitor, Resource.class);
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                accept(url, "url", visitor);
                 accept(identifier, "identifier", visitor);
+                accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
+                accept(name, "name", visitor);
+                accept(title, "title", visitor);
+                accept(derivedFromCanonical, "derivedFromCanonical", visitor, Canonical.class);
+                accept(derivedFromUri, "derivedFromUri", visitor, Uri.class);
+                accept(status, "status", visitor);
+                accept(experimental, "experimental", visitor);
+                accept(subject, "subject", visitor);
+                accept(date, "date", visitor);
+                accept(publisher, "publisher", visitor);
+                accept(contact, "contact", visitor, ContactDetail.class);
+                accept(description, "description", visitor);
+                accept(useContext, "useContext", visitor, UsageContext.class);
+                accept(jurisdiction, "jurisdiction", visitor, CodeableConcept.class);
+                accept(purpose, "purpose", visitor);
+                accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
+                accept(approvalDate, "approvalDate", visitor);
+                accept(lastReviewDate, "lastReviewDate", visitor);
+                accept(effectivePeriod, "effectivePeriod", visitor);
                 accept(typeCollected, "typeCollected", visitor);
                 accept(patientPreparation, "patientPreparation", visitor, CodeableConcept.class);
                 accept(timeAspect, "timeAspect", visitor);
@@ -209,7 +594,29 @@ public class SpecimenDefinition extends DomainResource {
             Objects.equals(contained, other.contained) && 
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
+            Objects.equals(url, other.url) && 
             Objects.equals(identifier, other.identifier) && 
+            Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
+            Objects.equals(name, other.name) && 
+            Objects.equals(title, other.title) && 
+            Objects.equals(derivedFromCanonical, other.derivedFromCanonical) && 
+            Objects.equals(derivedFromUri, other.derivedFromUri) && 
+            Objects.equals(status, other.status) && 
+            Objects.equals(experimental, other.experimental) && 
+            Objects.equals(subject, other.subject) && 
+            Objects.equals(date, other.date) && 
+            Objects.equals(publisher, other.publisher) && 
+            Objects.equals(contact, other.contact) && 
+            Objects.equals(description, other.description) && 
+            Objects.equals(useContext, other.useContext) && 
+            Objects.equals(jurisdiction, other.jurisdiction) && 
+            Objects.equals(purpose, other.purpose) && 
+            Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
+            Objects.equals(approvalDate, other.approvalDate) && 
+            Objects.equals(lastReviewDate, other.lastReviewDate) && 
+            Objects.equals(effectivePeriod, other.effectivePeriod) && 
             Objects.equals(typeCollected, other.typeCollected) && 
             Objects.equals(patientPreparation, other.patientPreparation) && 
             Objects.equals(timeAspect, other.timeAspect) && 
@@ -229,7 +636,29 @@ public class SpecimenDefinition extends DomainResource {
                 contained, 
                 extension, 
                 modifierExtension, 
+                url, 
                 identifier, 
+                version, 
+                versionAlgorithm, 
+                name, 
+                title, 
+                derivedFromCanonical, 
+                derivedFromUri, 
+                status, 
+                experimental, 
+                subject, 
+                date, 
+                publisher, 
+                contact, 
+                description, 
+                useContext, 
+                jurisdiction, 
+                purpose, 
+                copyright, 
+                copyrightLabel, 
+                approvalDate, 
+                lastReviewDate, 
+                effectivePeriod, 
                 typeCollected, 
                 patientPreparation, 
                 timeAspect, 
@@ -250,7 +679,29 @@ public class SpecimenDefinition extends DomainResource {
     }
 
     public static class Builder extends DomainResource.Builder {
+        private Uri url;
         private Identifier identifier;
+        private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+        private String name;
+        private String title;
+        private List<Canonical> derivedFromCanonical = new ArrayList<>();
+        private List<Uri> derivedFromUri = new ArrayList<>();
+        private PublicationStatus status;
+        private Boolean experimental;
+        private org.linuxforhealth.fhir.model.type.Element subject;
+        private DateTime date;
+        private String publisher;
+        private List<ContactDetail> contact = new ArrayList<>();
+        private Markdown description;
+        private List<UsageContext> useContext = new ArrayList<>();
+        private List<CodeableConcept> jurisdiction = new ArrayList<>();
+        private Markdown purpose;
+        private Markdown copyright;
+        private String copyrightLabel;
+        private Date approvalDate;
+        private Date lastReviewDate;
+        private Period effectivePeriod;
         private CodeableConcept typeCollected;
         private List<CodeableConcept> patientPreparation = new ArrayList<>();
         private String timeAspect;
@@ -339,7 +790,8 @@ public class SpecimenDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -357,7 +809,8 @@ public class SpecimenDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -378,7 +831,7 @@ public class SpecimenDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -398,7 +851,7 @@ public class SpecimenDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -423,9 +876,9 @@ public class SpecimenDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -448,9 +901,9 @@ public class SpecimenDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -473,16 +926,629 @@ public class SpecimenDefinition extends DomainResource {
         }
 
         /**
-         * A business identifier associated with the kind of specimen.
+         * An absolute URL that is used to identify this SpecimenDefinition when it is referenced in a specification, model, 
+         * design or an instance. This SHALL be a URL, SHOULD be globally unique, and SHOULD be an address at which this 
+         * SpecimenDefinition is (or will be) published. The URL SHOULD include the major version of the SpecimenDefinition. For 
+         * more information see Technical and Business Versions.
+         * 
+         * @param url
+         *     Logical canonical URL to reference this SpecimenDefinition (globally unique)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder url(Uri url) {
+            this.url = url;
+            return this;
+        }
+
+        /**
+         * A business identifier assigned to this SpecimenDefinition.
          * 
          * @param identifier
-         *     Business identifier of a kind of specimen
+         *     Business identifier
          * 
          * @return
          *     A reference to this Builder instance
          */
         public Builder identifier(Identifier identifier) {
             this.identifier = identifier;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code version}.
+         * 
+         * @param version
+         *     Business version of the SpecimenDefinition
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #version(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder version(java.lang.String version) {
+            this.version = (version == null) ? null : String.of(version);
+            return this;
+        }
+
+        /**
+         * The identifier that is used to identify this version of the SpecimenDefinition when it is referenced in a 
+         * specification, model, design or instance. This is an arbitrary value managed by the SpecimenDefinition author and is 
+         * not expected to be globally unique.
+         * 
+         * @param version
+         *     Business version of the SpecimenDefinition
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder version(String version) {
+            this.version = version;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code name}.
+         * 
+         * @param name
+         *     Name for this {{title}} (computer friendly)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #name(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder name(java.lang.String name) {
+            this.name = (name == null) ? null : String.of(name);
+            return this;
+        }
+
+        /**
+         * A natural language name identifying the {{title}}. This name should be usable as an identifier for the module by 
+         * machine processing applications such as code generation.
+         * 
+         * @param name
+         *     Name for this {{title}} (computer friendly)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code title}.
+         * 
+         * @param title
+         *     Name for this SpecimenDefinition (Human friendly)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #title(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder title(java.lang.String title) {
+            this.title = (title == null) ? null : String.of(title);
+            return this;
+        }
+
+        /**
+         * A short, descriptive, user-friendly title for the SpecimenDefinition.
+         * 
+         * @param title
+         *     Name for this SpecimenDefinition (Human friendly)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder title(String title) {
+            this.title = title;
+            return this;
+        }
+
+        /**
+         * The canonical URL pointing to another FHIR-defined SpecimenDefinition that is adhered to in whole or in part by this 
+         * definition.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param derivedFromCanonical
+         *     Based on FHIR definition of another SpecimenDefinition
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder derivedFromCanonical(Canonical... derivedFromCanonical) {
+            for (Canonical value : derivedFromCanonical) {
+                this.derivedFromCanonical.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The canonical URL pointing to another FHIR-defined SpecimenDefinition that is adhered to in whole or in part by this 
+         * definition.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param derivedFromCanonical
+         *     Based on FHIR definition of another SpecimenDefinition
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder derivedFromCanonical(Collection<Canonical> derivedFromCanonical) {
+            this.derivedFromCanonical = new ArrayList<>(derivedFromCanonical);
+            return this;
+        }
+
+        /**
+         * The URL pointing to an externally-defined type of specimen, guideline or other definition that is adhered to in whole 
+         * or in part by this definition.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param derivedFromUri
+         *     Based on external definition
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder derivedFromUri(Uri... derivedFromUri) {
+            for (Uri value : derivedFromUri) {
+                this.derivedFromUri.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The URL pointing to an externally-defined type of specimen, guideline or other definition that is adhered to in whole 
+         * or in part by this definition.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param derivedFromUri
+         *     Based on external definition
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder derivedFromUri(Collection<Uri> derivedFromUri) {
+            this.derivedFromUri = new ArrayList<>(derivedFromUri);
+            return this;
+        }
+
+        /**
+         * The current state of theSpecimenDefinition.
+         * 
+         * <p>This element is required.
+         * 
+         * @param status
+         *     draft | active | retired | unknown
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder status(PublicationStatus status) {
+            this.status = status;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code experimental}.
+         * 
+         * @param experimental
+         *     If this SpecimenDefinition is not for real usage
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #experimental(org.linuxforhealth.fhir.model.type.Boolean)
+         */
+        public Builder experimental(java.lang.Boolean experimental) {
+            this.experimental = (experimental == null) ? null : Boolean.of(experimental);
+            return this;
+        }
+
+        /**
+         * A flag to indicate that this SpecimenDefinition is not authored for genuine usage.
+         * 
+         * @param experimental
+         *     If this SpecimenDefinition is not for real usage
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder experimental(Boolean experimental) {
+            this.experimental = experimental;
+            return this;
+        }
+
+        /**
+         * A code or group definition that describes the intended subject from which this kind of specimen is to be collected.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link CodeableConcept}</li>
+         * <li>{@link Reference}</li>
+         * </ul>
+         * 
+         * When of type {@link Reference}, the allowed resource types for this reference are:
+         * <ul>
+         * <li>{@link Group}</li>
+         * </ul>
+         * 
+         * @param subject
+         *     Type of subject for specimen collection
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder subject(org.linuxforhealth.fhir.model.type.Element subject) {
+            this.subject = subject;
+            return this;
+        }
+
+        /**
+         * For draft definitions, indicates the date of initial creation. For active definitions, represents the date of 
+         * activation. For withdrawn definitions, indicates the date of withdrawal.
+         * 
+         * @param date
+         *     Date status first applied
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder date(DateTime date) {
+            this.date = date;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code publisher}.
+         * 
+         * @param publisher
+         *     The name of the individual or organization that published the SpecimenDefinition
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #publisher(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder publisher(java.lang.String publisher) {
+            this.publisher = (publisher == null) ? null : String.of(publisher);
+            return this;
+        }
+
+        /**
+         * Helps establish the "authority/credibility" of the SpecimenDefinition. May also allow for contact.
+         * 
+         * @param publisher
+         *     The name of the individual or organization that published the SpecimenDefinition
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder publisher(String publisher) {
+            this.publisher = publisher;
+            return this;
+        }
+
+        /**
+         * Contact details to assist a user in finding and communicating with the publisher.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param contact
+         *     Contact details for the publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder contact(ContactDetail... contact) {
+            for (ContactDetail value : contact) {
+                this.contact.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Contact details to assist a user in finding and communicating with the publisher.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param contact
+         *     Contact details for the publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder contact(Collection<ContactDetail> contact) {
+            this.contact = new ArrayList<>(contact);
+            return this;
+        }
+
+        /**
+         * A free text natural language description of the SpecimenDefinition from the consumer's perspective.
+         * 
+         * @param description
+         *     Natural language description of the SpecimenDefinition
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder description(Markdown description) {
+            this.description = description;
+            return this;
+        }
+
+        /**
+         * The content was developed with a focus and intent of supporting the contexts that are listed. These terms may be used 
+         * to assist with indexing and searching of specimen definitions.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param useContext
+         *     Content intends to support these contexts
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder useContext(UsageContext... useContext) {
+            for (UsageContext value : useContext) {
+                this.useContext.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The content was developed with a focus and intent of supporting the contexts that are listed. These terms may be used 
+         * to assist with indexing and searching of specimen definitions.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param useContext
+         *     Content intends to support these contexts
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder useContext(Collection<UsageContext> useContext) {
+            this.useContext = new ArrayList<>(useContext);
+            return this;
+        }
+
+        /**
+         * A jurisdiction in which the SpecimenDefinition is intended to be used.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param jurisdiction
+         *     Intended jurisdiction for this SpecimenDefinition (if applicable)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder jurisdiction(CodeableConcept... jurisdiction) {
+            for (CodeableConcept value : jurisdiction) {
+                this.jurisdiction.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A jurisdiction in which the SpecimenDefinition is intended to be used.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param jurisdiction
+         *     Intended jurisdiction for this SpecimenDefinition (if applicable)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder jurisdiction(Collection<CodeableConcept> jurisdiction) {
+            this.jurisdiction = new ArrayList<>(jurisdiction);
+            return this;
+        }
+
+        /**
+         * Explains why this SpecimeDefinition is needed and why it has been designed as it has.
+         * 
+         * @param purpose
+         *     Why this SpecimenDefinition is defined
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder purpose(Markdown purpose) {
+            this.purpose = purpose;
+            return this;
+        }
+
+        /**
+         * Copyright statement relating to the SpecimenDefinition and/or its contents. Copyright statements are generally legal 
+         * restrictions on the use and publishing of the SpecimenDefinition.
+         * 
+         * @param copyright
+         *     Use and/or publishing restrictions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyright(Markdown copyright) {
+            this.copyright = copyright;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code approvalDate}.
+         * 
+         * @param approvalDate
+         *     When SpecimenDefinition was approved by publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #approvalDate(org.linuxforhealth.fhir.model.type.Date)
+         */
+        public Builder approvalDate(java.time.LocalDate approvalDate) {
+            this.approvalDate = (approvalDate == null) ? null : Date.of(approvalDate);
+            return this;
+        }
+
+        /**
+         * The date on which the asset content was approved by the publisher. Approval happens once when the content is 
+         * officially approved for usage.
+         * 
+         * @param approvalDate
+         *     When SpecimenDefinition was approved by publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder approvalDate(Date approvalDate) {
+            this.approvalDate = approvalDate;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code lastReviewDate}.
+         * 
+         * @param lastReviewDate
+         *     The date on which the asset content was last reviewed by the publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #lastReviewDate(org.linuxforhealth.fhir.model.type.Date)
+         */
+        public Builder lastReviewDate(java.time.LocalDate lastReviewDate) {
+            this.lastReviewDate = (lastReviewDate == null) ? null : Date.of(lastReviewDate);
+            return this;
+        }
+
+        /**
+         * The date on which the asset content was last reviewed. Review happens periodically after that, but doesn't change the 
+         * original approval date.
+         * 
+         * @param lastReviewDate
+         *     The date on which the asset content was last reviewed by the publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder lastReviewDate(Date lastReviewDate) {
+            this.lastReviewDate = lastReviewDate;
+            return this;
+        }
+
+        /**
+         * The period during which the SpecimenDefinition content was or is planned to be effective.
+         * 
+         * @param effectivePeriod
+         *     The effective date range for the SpecimenDefinition
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder effectivePeriod(Period effectivePeriod) {
+            this.effectivePeriod = effectivePeriod;
             return this;
         }
 
@@ -650,6 +1716,11 @@ public class SpecimenDefinition extends DomainResource {
         /**
          * Build the {@link SpecimenDefinition}
          * 
+         * <p>Required elements:
+         * <ul>
+         * <li>status</li>
+         * </ul>
+         * 
          * @return
          *     An immutable object of type {@link SpecimenDefinition}
          * @throws IllegalStateException
@@ -666,14 +1737,45 @@ public class SpecimenDefinition extends DomainResource {
 
         protected void validate(SpecimenDefinition specimenDefinition) {
             super.validate(specimenDefinition);
+            ValidationSupport.choiceElement(specimenDefinition.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
+            ValidationSupport.checkList(specimenDefinition.derivedFromCanonical, "derivedFromCanonical", Canonical.class);
+            ValidationSupport.checkList(specimenDefinition.derivedFromUri, "derivedFromUri", Uri.class);
+            ValidationSupport.requireNonNull(specimenDefinition.status, "status");
+            ValidationSupport.choiceElement(specimenDefinition.subject, "subject", CodeableConcept.class, Reference.class);
+            ValidationSupport.checkList(specimenDefinition.contact, "contact", ContactDetail.class);
+            ValidationSupport.checkList(specimenDefinition.useContext, "useContext", UsageContext.class);
+            ValidationSupport.checkList(specimenDefinition.jurisdiction, "jurisdiction", CodeableConcept.class);
             ValidationSupport.checkList(specimenDefinition.patientPreparation, "patientPreparation", CodeableConcept.class);
             ValidationSupport.checkList(specimenDefinition.collection, "collection", CodeableConcept.class);
             ValidationSupport.checkList(specimenDefinition.typeTested, "typeTested", TypeTested.class);
+            ValidationSupport.checkReferenceType(specimenDefinition.subject, "subject", "Group");
         }
 
         protected Builder from(SpecimenDefinition specimenDefinition) {
             super.from(specimenDefinition);
+            url = specimenDefinition.url;
             identifier = specimenDefinition.identifier;
+            version = specimenDefinition.version;
+            versionAlgorithm = specimenDefinition.versionAlgorithm;
+            name = specimenDefinition.name;
+            title = specimenDefinition.title;
+            derivedFromCanonical.addAll(specimenDefinition.derivedFromCanonical);
+            derivedFromUri.addAll(specimenDefinition.derivedFromUri);
+            status = specimenDefinition.status;
+            experimental = specimenDefinition.experimental;
+            subject = specimenDefinition.subject;
+            date = specimenDefinition.date;
+            publisher = specimenDefinition.publisher;
+            contact.addAll(specimenDefinition.contact);
+            description = specimenDefinition.description;
+            useContext.addAll(specimenDefinition.useContext);
+            jurisdiction.addAll(specimenDefinition.jurisdiction);
+            purpose = specimenDefinition.purpose;
+            copyright = specimenDefinition.copyright;
+            copyrightLabel = specimenDefinition.copyrightLabel;
+            approvalDate = specimenDefinition.approvalDate;
+            lastReviewDate = specimenDefinition.lastReviewDate;
+            effectivePeriod = specimenDefinition.effectivePeriod;
             typeCollected = specimenDefinition.typeCollected;
             patientPreparation.addAll(specimenDefinition.patientPreparation);
             timeAspect = specimenDefinition.timeAspect;
@@ -699,13 +1801,14 @@ public class SpecimenDefinition extends DomainResource {
             bindingName = "SpecimenContainedPreference",
             strength = BindingStrength.Value.REQUIRED,
             description = "Degree of preference of a type of conditioned specimen.",
-            valueSet = "http://hl7.org/fhir/ValueSet/specimen-contained-preference|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/specimen-contained-preference|5.0.0"
         )
         @Required
         private final SpecimenContainedPreference preference;
         private final Container container;
-        private final String requirement;
+        private final Markdown requirement;
         private final Duration retentionTime;
+        private final Boolean singleUse;
         @Binding(
             bindingName = "RejectionCriterion",
             strength = BindingStrength.Value.EXAMPLE,
@@ -714,6 +1817,13 @@ public class SpecimenDefinition extends DomainResource {
         )
         private final List<CodeableConcept> rejectionCriterion;
         private final List<Handling> handling;
+        @Binding(
+            bindingName = "TestingDestination",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "Codes specifying where the specimen will be tested.",
+            valueSet = "http://hl7.org/fhir/ValueSet/diagnostic-service-sections"
+        )
+        private final List<CodeableConcept> testingDestination;
 
         private TypeTested(Builder builder) {
             super(builder);
@@ -723,8 +1833,10 @@ public class SpecimenDefinition extends DomainResource {
             container = builder.container;
             requirement = builder.requirement;
             retentionTime = builder.retentionTime;
+            singleUse = builder.singleUse;
             rejectionCriterion = Collections.unmodifiableList(builder.rejectionCriterion);
             handling = Collections.unmodifiableList(builder.handling);
+            testingDestination = Collections.unmodifiableList(builder.testingDestination);
         }
 
         /**
@@ -771,9 +1883,9 @@ public class SpecimenDefinition extends DomainResource {
          * Requirements for delivery and special handling of this kind of conditioned specimen.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link Markdown} that may be null.
          */
-        public String getRequirement() {
+        public Markdown getRequirement() {
             return requirement;
         }
 
@@ -786,6 +1898,16 @@ public class SpecimenDefinition extends DomainResource {
          */
         public Duration getRetentionTime() {
             return retentionTime;
+        }
+
+        /**
+         * Specimen can be used by only one test or panel if the value is "true".
+         * 
+         * @return
+         *     An immutable object of type {@link Boolean} that may be null.
+         */
+        public Boolean getSingleUse() {
+            return singleUse;
         }
 
         /**
@@ -809,6 +1931,16 @@ public class SpecimenDefinition extends DomainResource {
             return handling;
         }
 
+        /**
+         * Where the specimen will be tested: e.g., lab, sector, device or any combination of these.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+         */
+        public List<CodeableConcept> getTestingDestination() {
+            return testingDestination;
+        }
+
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
@@ -818,8 +1950,10 @@ public class SpecimenDefinition extends DomainResource {
                 (container != null) || 
                 (requirement != null) || 
                 (retentionTime != null) || 
+                (singleUse != null) || 
                 !rejectionCriterion.isEmpty() || 
-                !handling.isEmpty();
+                !handling.isEmpty() || 
+                !testingDestination.isEmpty();
         }
 
         @Override
@@ -837,8 +1971,10 @@ public class SpecimenDefinition extends DomainResource {
                     accept(container, "container", visitor);
                     accept(requirement, "requirement", visitor);
                     accept(retentionTime, "retentionTime", visitor);
+                    accept(singleUse, "singleUse", visitor);
                     accept(rejectionCriterion, "rejectionCriterion", visitor, CodeableConcept.class);
                     accept(handling, "handling", visitor, Handling.class);
+                    accept(testingDestination, "testingDestination", visitor, CodeableConcept.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -866,8 +2002,10 @@ public class SpecimenDefinition extends DomainResource {
                 Objects.equals(container, other.container) && 
                 Objects.equals(requirement, other.requirement) && 
                 Objects.equals(retentionTime, other.retentionTime) && 
+                Objects.equals(singleUse, other.singleUse) && 
                 Objects.equals(rejectionCriterion, other.rejectionCriterion) && 
-                Objects.equals(handling, other.handling);
+                Objects.equals(handling, other.handling) && 
+                Objects.equals(testingDestination, other.testingDestination);
         }
 
         @Override
@@ -883,8 +2021,10 @@ public class SpecimenDefinition extends DomainResource {
                     container, 
                     requirement, 
                     retentionTime, 
+                    singleUse, 
                     rejectionCriterion, 
-                    handling);
+                    handling, 
+                    testingDestination);
                 hashCode = result;
             }
             return result;
@@ -904,10 +2044,12 @@ public class SpecimenDefinition extends DomainResource {
             private CodeableConcept type;
             private SpecimenContainedPreference preference;
             private Container container;
-            private String requirement;
+            private Markdown requirement;
             private Duration retentionTime;
+            private Boolean singleUse;
             private List<CodeableConcept> rejectionCriterion = new ArrayList<>();
             private List<Handling> handling = new ArrayList<>();
+            private List<CodeableConcept> testingDestination = new ArrayList<>();
 
             private Builder() {
                 super();
@@ -930,7 +2072,7 @@ public class SpecimenDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -950,7 +2092,7 @@ public class SpecimenDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -975,7 +2117,7 @@ public class SpecimenDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1000,7 +2142,7 @@ public class SpecimenDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1099,31 +2241,15 @@ public class SpecimenDefinition extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code requirement}.
-             * 
-             * @param requirement
-             *     Specimen requirements
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #requirement(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder requirement(java.lang.String requirement) {
-                this.requirement = (requirement == null) ? null : String.of(requirement);
-                return this;
-            }
-
-            /**
              * Requirements for delivery and special handling of this kind of conditioned specimen.
              * 
              * @param requirement
-             *     Specimen requirements
+             *     Requirements for specimen delivery and special handling
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder requirement(String requirement) {
+            public Builder requirement(Markdown requirement) {
                 this.requirement = requirement;
                 return this;
             }
@@ -1133,7 +2259,7 @@ public class SpecimenDefinition extends DomainResource {
              * additional testing.
              * 
              * @param retentionTime
-             *     Specimen retention time
+             *     The usual time for retaining this kind of specimen
              * 
              * @return
              *     A reference to this Builder instance
@@ -1144,13 +2270,43 @@ public class SpecimenDefinition extends DomainResource {
             }
 
             /**
+             * Convenience method for setting {@code singleUse}.
+             * 
+             * @param singleUse
+             *     Specimen for single use only
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #singleUse(org.linuxforhealth.fhir.model.type.Boolean)
+             */
+            public Builder singleUse(java.lang.Boolean singleUse) {
+                this.singleUse = (singleUse == null) ? null : Boolean.of(singleUse);
+                return this;
+            }
+
+            /**
+             * Specimen can be used by only one test or panel if the value is "true".
+             * 
+             * @param singleUse
+             *     Specimen for single use only
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder singleUse(Boolean singleUse) {
+                this.singleUse = singleUse;
+                return this;
+            }
+
+            /**
              * Criterion for rejection of the specimen in its container by the laboratory.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param rejectionCriterion
-             *     Rejection criterion
+             *     Criterion specified for specimen rejection
              * 
              * @return
              *     A reference to this Builder instance
@@ -1169,7 +2325,7 @@ public class SpecimenDefinition extends DomainResource {
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param rejectionCriterion
-             *     Rejection criterion
+             *     Criterion specified for specimen rejection
              * 
              * @return
              *     A reference to this Builder instance
@@ -1224,6 +2380,45 @@ public class SpecimenDefinition extends DomainResource {
             }
 
             /**
+             * Where the specimen will be tested: e.g., lab, sector, device or any combination of these.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param testingDestination
+             *     Where the specimen will be tested
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder testingDestination(CodeableConcept... testingDestination) {
+                for (CodeableConcept value : testingDestination) {
+                    this.testingDestination.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * Where the specimen will be tested: e.g., lab, sector, device or any combination of these.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param testingDestination
+             *     Where the specimen will be tested
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder testingDestination(Collection<CodeableConcept> testingDestination) {
+                this.testingDestination = new ArrayList<>(testingDestination);
+                return this;
+            }
+
+            /**
              * Build the {@link TypeTested}
              * 
              * <p>Required elements:
@@ -1250,6 +2445,7 @@ public class SpecimenDefinition extends DomainResource {
                 ValidationSupport.requireNonNull(typeTested.preference, "preference");
                 ValidationSupport.checkList(typeTested.rejectionCriterion, "rejectionCriterion", CodeableConcept.class);
                 ValidationSupport.checkList(typeTested.handling, "handling", Handling.class);
+                ValidationSupport.checkList(typeTested.testingDestination, "testingDestination", CodeableConcept.class);
                 ValidationSupport.requireValueOrChildren(typeTested);
             }
 
@@ -1261,8 +2457,10 @@ public class SpecimenDefinition extends DomainResource {
                 container = typeTested.container;
                 requirement = typeTested.requirement;
                 retentionTime = typeTested.retentionTime;
+                singleUse = typeTested.singleUse;
                 rejectionCriterion.addAll(typeTested.rejectionCriterion);
                 handling.addAll(typeTested.handling);
+                testingDestination.addAll(typeTested.testingDestination);
                 return this;
             }
         }
@@ -1292,12 +2490,12 @@ public class SpecimenDefinition extends DomainResource {
                 valueSet = "http://hl7.org/fhir/ValueSet/container-cap"
             )
             private final CodeableConcept cap;
-            private final String description;
+            private final Markdown description;
             private final SimpleQuantity capacity;
             @Choice({ SimpleQuantity.class, String.class })
-            private final Element minimumVolume;
+            private final org.linuxforhealth.fhir.model.type.Element minimumVolume;
             private final List<Additive> additive;
-            private final String preparation;
+            private final Markdown preparation;
 
             private Container(Builder builder) {
                 super(builder);
@@ -1345,9 +2543,9 @@ public class SpecimenDefinition extends DomainResource {
              * The textual description of the kind of container.
              * 
              * @return
-             *     An immutable object of type {@link String} that may be null.
+             *     An immutable object of type {@link Markdown} that may be null.
              */
-            public String getDescription() {
+            public Markdown getDescription() {
                 return description;
             }
 
@@ -1367,7 +2565,7 @@ public class SpecimenDefinition extends DomainResource {
              * @return
              *     An immutable object of type {@link SimpleQuantity} or {@link String} that may be null.
              */
-            public Element getMinimumVolume() {
+            public org.linuxforhealth.fhir.model.type.Element getMinimumVolume() {
                 return minimumVolume;
             }
 
@@ -1386,9 +2584,9 @@ public class SpecimenDefinition extends DomainResource {
              * Special processing that should be applied to the container for this kind of specimen.
              * 
              * @return
-             *     An immutable object of type {@link String} that may be null.
+             *     An immutable object of type {@link Markdown} that may be null.
              */
-            public String getPreparation() {
+            public Markdown getPreparation() {
                 return preparation;
             }
 
@@ -1486,11 +2684,11 @@ public class SpecimenDefinition extends DomainResource {
                 private CodeableConcept material;
                 private CodeableConcept type;
                 private CodeableConcept cap;
-                private String description;
+                private Markdown description;
                 private SimpleQuantity capacity;
-                private Element minimumVolume;
+                private org.linuxforhealth.fhir.model.type.Element minimumVolume;
                 private List<Additive> additive = new ArrayList<>();
-                private String preparation;
+                private Markdown preparation;
 
                 private Builder() {
                     super();
@@ -1513,7 +2711,7 @@ public class SpecimenDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1533,7 +2731,7 @@ public class SpecimenDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1558,7 +2756,7 @@ public class SpecimenDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -1583,7 +2781,7 @@ public class SpecimenDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -1611,7 +2809,7 @@ public class SpecimenDefinition extends DomainResource {
                  * The type of material of the container.
                  * 
                  * @param material
-                 *     Container material
+                 *     The material type used for the container
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -1650,31 +2848,15 @@ public class SpecimenDefinition extends DomainResource {
                 }
 
                 /**
-                 * Convenience method for setting {@code description}.
-                 * 
-                 * @param description
-                 *     Container description
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @see #description(org.linuxforhealth.fhir.model.type.String)
-                 */
-                public Builder description(java.lang.String description) {
-                    this.description = (description == null) ? null : String.of(description);
-                    return this;
-                }
-
-                /**
                  * The textual description of the kind of container.
                  * 
                  * @param description
-                 *     Container description
+                 *     The description of the kind of container
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder description(String description) {
+                public Builder description(Markdown description) {
                     this.description = description;
                     return this;
                 }
@@ -1683,7 +2865,7 @@ public class SpecimenDefinition extends DomainResource {
                  * The capacity (volume or other measure) of this kind of container.
                  * 
                  * @param capacity
-                 *     Container capacity
+                 *     The capacity of this kind of container
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -1724,7 +2906,7 @@ public class SpecimenDefinition extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder minimumVolume(Element minimumVolume) {
+                public Builder minimumVolume(org.linuxforhealth.fhir.model.type.Element minimumVolume) {
                     this.minimumVolume = minimumVolume;
                     return this;
                 }
@@ -1771,31 +2953,15 @@ public class SpecimenDefinition extends DomainResource {
                 }
 
                 /**
-                 * Convenience method for setting {@code preparation}.
-                 * 
-                 * @param preparation
-                 *     Specimen container preparation
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @see #preparation(org.linuxforhealth.fhir.model.type.String)
-                 */
-                public Builder preparation(java.lang.String preparation) {
-                    this.preparation = (preparation == null) ? null : String.of(preparation);
-                    return this;
-                }
-
-                /**
                  * Special processing that should be applied to the container for this kind of specimen.
                  * 
                  * @param preparation
-                 *     Specimen container preparation
+                 *     Special processing applied to the container for this specimen type
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder preparation(String preparation) {
+                public Builder preparation(Markdown preparation) {
                     this.preparation = preparation;
                     return this;
                 }
@@ -1843,7 +3009,7 @@ public class SpecimenDefinition extends DomainResource {
              * Citrate, EDTA.
              */
             public static class Additive extends BackboneElement {
-                @ReferenceTarget({ "Substance" })
+                @ReferenceTarget({ "SubstanceDefinition" })
                 @Choice({ CodeableConcept.class, Reference.class })
                 @Binding(
                     bindingName = "ContainerAdditive",
@@ -1852,7 +3018,7 @@ public class SpecimenDefinition extends DomainResource {
                     valueSet = "http://terminology.hl7.org/ValueSet/v2-0371"
                 )
                 @Required
-                private final Element additive;
+                private final org.linuxforhealth.fhir.model.type.Element additive;
 
                 private Additive(Builder builder) {
                     super(builder);
@@ -1866,7 +3032,7 @@ public class SpecimenDefinition extends DomainResource {
                  * @return
                  *     An immutable object of type {@link CodeableConcept} or {@link Reference} that is non-null.
                  */
-                public Element getAdditive() {
+                public org.linuxforhealth.fhir.model.type.Element getAdditive() {
                     return additive;
                 }
 
@@ -1933,7 +3099,7 @@ public class SpecimenDefinition extends DomainResource {
                 }
 
                 public static class Builder extends BackboneElement.Builder {
-                    private Element additive;
+                    private org.linuxforhealth.fhir.model.type.Element additive;
 
                     private Builder() {
                         super();
@@ -1956,7 +3122,7 @@ public class SpecimenDefinition extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -1976,7 +3142,7 @@ public class SpecimenDefinition extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -2001,7 +3167,7 @@ public class SpecimenDefinition extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -2026,7 +3192,7 @@ public class SpecimenDefinition extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -2064,7 +3230,7 @@ public class SpecimenDefinition extends DomainResource {
                      * 
                      * When of type {@link Reference}, the allowed resource types for this reference are:
                      * <ul>
-                     * <li>{@link Substance}</li>
+                     * <li>{@link SubstanceDefinition}</li>
                      * </ul>
                      * 
                      * @param additive
@@ -2073,7 +3239,7 @@ public class SpecimenDefinition extends DomainResource {
                      * @return
                      *     A reference to this Builder instance
                      */
-                    public Builder additive(Element additive) {
+                    public Builder additive(org.linuxforhealth.fhir.model.type.Element additive) {
                         this.additive = additive;
                         return this;
                     }
@@ -2103,7 +3269,7 @@ public class SpecimenDefinition extends DomainResource {
                     protected void validate(Additive additive) {
                         super.validate(additive);
                         ValidationSupport.requireChoiceElement(additive.additive, "additive", CodeableConcept.class, Reference.class);
-                        ValidationSupport.checkReferenceType(additive.additive, "additive", "Substance");
+                        ValidationSupport.checkReferenceType(additive.additive, "additive", "SubstanceDefinition");
                         ValidationSupport.requireValueOrChildren(additive);
                     }
 
@@ -2130,7 +3296,7 @@ public class SpecimenDefinition extends DomainResource {
             private final CodeableConcept temperatureQualifier;
             private final Range temperatureRange;
             private final Duration maxDuration;
-            private final String instruction;
+            private final Markdown instruction;
 
             private Handling(Builder builder) {
                 super(builder);
@@ -2176,9 +3342,9 @@ public class SpecimenDefinition extends DomainResource {
              * exposure'.
              * 
              * @return
-             *     An immutable object of type {@link String} that may be null.
+             *     An immutable object of type {@link Markdown} that may be null.
              */
-            public String getInstruction() {
+            public Markdown getInstruction() {
                 return instruction;
             }
 
@@ -2260,7 +3426,7 @@ public class SpecimenDefinition extends DomainResource {
                 private CodeableConcept temperatureQualifier;
                 private Range temperatureRange;
                 private Duration maxDuration;
-                private String instruction;
+                private Markdown instruction;
 
                 private Builder() {
                     super();
@@ -2283,7 +3449,7 @@ public class SpecimenDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2303,7 +3469,7 @@ public class SpecimenDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2328,7 +3494,7 @@ public class SpecimenDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2353,7 +3519,7 @@ public class SpecimenDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2382,7 +3548,7 @@ public class SpecimenDefinition extends DomainResource {
                  * related to temperature may be handled in the instruction element.
                  * 
                  * @param temperatureQualifier
-                 *     Temperature qualifier
+                 *     Qualifies the interval of temperature
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -2396,7 +3562,7 @@ public class SpecimenDefinition extends DomainResource {
                  * The temperature interval for this set of handling instructions.
                  * 
                  * @param temperatureRange
-                 *     Temperature range
+                 *     Temperature range for these handling instructions
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -2421,22 +3587,6 @@ public class SpecimenDefinition extends DomainResource {
                 }
 
                 /**
-                 * Convenience method for setting {@code instruction}.
-                 * 
-                 * @param instruction
-                 *     Preservation instruction
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @see #instruction(org.linuxforhealth.fhir.model.type.String)
-                 */
-                public Builder instruction(java.lang.String instruction) {
-                    this.instruction = (instruction == null) ? null : String.of(instruction);
-                    return this;
-                }
-
-                /**
                  * Additional textual instructions for the preservation or transport of the specimen. For instance, 'Protect from light 
                  * exposure'.
                  * 
@@ -2446,7 +3596,7 @@ public class SpecimenDefinition extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder instruction(String instruction) {
+                public Builder instruction(Markdown instruction) {
                     this.instruction = instruction;
                     return this;
                 }

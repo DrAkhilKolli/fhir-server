@@ -123,11 +123,11 @@ public class LocationGeneratorMain {
                 .identifier(identifier)
                 .status(LocationStatus.ACTIVE)
                 .name(string("Synthetic Mass - Location - " + countOfLocationType))
-                .description(string("A Synthetic Mass Location"))
+                .description(org.linuxforhealth.fhir.model.type.Markdown.of("A Synthetic Mass Location"))
                 .mode(LocationMode.INSTANCE)
                 .type(getLocationType())
                 .address(addr)
-                .physicalType(physicalType)
+                .form(physicalType)
                 .position(position)
                 .build();
     }

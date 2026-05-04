@@ -27,6 +27,7 @@ import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
 import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
+import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Decimal;
 import org.linuxforhealth.fhir.model.type.Element;
@@ -36,6 +37,8 @@ import org.linuxforhealth.fhir.model.type.Integer;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
+import org.linuxforhealth.fhir.model.type.Period;
+import org.linuxforhealth.fhir.model.type.RelatedArtifact;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.UnsignedInt;
 import org.linuxforhealth.fhir.model.type.Uri;
@@ -61,11 +64,11 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     status = StandardsStatus.Value.NORMATIVE
 )
 @Constraint(
-    id = "csd-0",
+    id = "cnl-0",
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
     source = "http://hl7.org/fhir/StructureDefinition/CodeSystem"
 )
 @Constraint(
@@ -73,11 +76,60 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Rule",
     location = "(base)",
     description = "Within a code system definition, all the codes SHALL be unique",
-    expression = "concept.code.combine($this.descendants().concept.code).isDistinct()",
+    expression = "concept.exists() implies concept.code.combine(%resource.concept.descendants().concept.code).isDistinct()",
     source = "http://hl7.org/fhir/StructureDefinition/CodeSystem"
 )
 @Constraint(
-    id = "codeSystem-2",
+    id = "cnl-1",
+    level = "Warning",
+    location = "CodeSystem.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
+    source = "http://hl7.org/fhir/StructureDefinition/CodeSystem"
+)
+@Constraint(
+    id = "csd-2",
+    level = "Warning",
+    location = "(base)",
+    description = "If there is an explicit hierarchy, a hierarchyMeaning should be provided",
+    expression = "concept.concept.exists() implies hierarchyMeaning.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/CodeSystem"
+)
+@Constraint(
+    id = "csd-3",
+    level = "Warning",
+    location = "(base)",
+    description = "If there is an implicit hierarchy, a hierarchyMeaning should be provided",
+    expression = "concept.where(property.code = 'parent' or property.code = 'child').exists() implies hierarchyMeaning.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/CodeSystem"
+)
+@Constraint(
+    id = "csd-4",
+    level = "Rule",
+    location = "(base)",
+    description = "If the code system content = supplement, it must nominate what it's a supplement for",
+    expression = "CodeSystem.content = 'supplement' implies CodeSystem.supplements.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/CodeSystem"
+)
+@Constraint(
+    id = "csd-5",
+    level = "Rule",
+    location = "CodeSystem.concept.designation",
+    description = "Must have a value for concept.designation.use if concept.designation.additionalUse is present",
+    expression = "additionalUse.exists() implies use.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/CodeSystem"
+)
+@Constraint(
+    id = "codeSystem-6",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/CodeSystem",
+    generated = true
+)
+@Constraint(
+    id = "codeSystem-7",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
@@ -86,18 +138,18 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "codeSystem-3",
+    id = "codeSystem-8",
     level = "Warning",
-    location = "concept.designation.language",
-    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/languages",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/languages', 'preferred')",
+    location = "concept.designation.use",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/designation-use",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/designation-use', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/CodeSystem",
     generated = true
 )
 @Constraint(
-    id = "codeSystem-4",
+    id = "codeSystem-9",
     level = "Warning",
-    location = "concept.designation.use",
+    location = "concept.designation.additionalUse",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/designation-use",
     expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/designation-use', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/CodeSystem",
@@ -112,6 +164,13 @@ public class CodeSystem extends DomainResource {
     @Summary
     private final String version;
     @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+    @Summary
     private final String name;
     @Summary
     private final String title;
@@ -120,7 +179,7 @@ public class CodeSystem extends DomainResource {
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -145,6 +204,22 @@ public class CodeSystem extends DomainResource {
     private final List<CodeableConcept> jurisdiction;
     private final Markdown purpose;
     private final Markdown copyright;
+    private final String copyrightLabel;
+    private final Date approvalDate;
+    private final Date lastReviewDate;
+    @Summary
+    private final Period effectivePeriod;
+    @Binding(
+        bindingName = "DefinitionTopic",
+        strength = BindingStrength.Value.EXAMPLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/definition-topic"
+    )
+    private final List<CodeableConcept> topic;
+    private final List<ContactDetail> author;
+    private final List<ContactDetail> editor;
+    private final List<ContactDetail> reviewer;
+    private final List<ContactDetail> endorser;
+    private final List<RelatedArtifact> relatedArtifact;
     @Summary
     private final Boolean caseSensitive;
     @Summary
@@ -154,7 +229,7 @@ public class CodeSystem extends DomainResource {
         bindingName = "CodeSystemHierarchyMeaning",
         strength = BindingStrength.Value.REQUIRED,
         description = "The meaning of the hierarchy of concepts in a code system.",
-        valueSet = "http://hl7.org/fhir/ValueSet/codesystem-hierarchy-meaning|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/codesystem-hierarchy-meaning|5.0.0"
     )
     private final CodeSystemHierarchyMeaning hierarchyMeaning;
     @Summary
@@ -166,7 +241,7 @@ public class CodeSystem extends DomainResource {
         bindingName = "CodeSystemContentMode",
         strength = BindingStrength.Value.REQUIRED,
         description = "The extent of the content of the code system (the concepts and codes it defines) are represented in a code system resource.",
-        valueSet = "http://hl7.org/fhir/ValueSet/codesystem-content-mode|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/codesystem-content-mode|5.0.0"
     )
     @Required
     private final CodeSystemContentMode content;
@@ -185,6 +260,7 @@ public class CodeSystem extends DomainResource {
         url = builder.url;
         identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
         title = builder.title;
         status = builder.status;
@@ -197,6 +273,16 @@ public class CodeSystem extends DomainResource {
         jurisdiction = Collections.unmodifiableList(builder.jurisdiction);
         purpose = builder.purpose;
         copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
+        approvalDate = builder.approvalDate;
+        lastReviewDate = builder.lastReviewDate;
+        effectivePeriod = builder.effectivePeriod;
+        topic = Collections.unmodifiableList(builder.topic);
+        author = Collections.unmodifiableList(builder.author);
+        editor = Collections.unmodifiableList(builder.editor);
+        reviewer = Collections.unmodifiableList(builder.reviewer);
+        endorser = Collections.unmodifiableList(builder.endorser);
+        relatedArtifact = Collections.unmodifiableList(builder.relatedArtifact);
         caseSensitive = builder.caseSensitive;
         valueSet = builder.valueSet;
         hierarchyMeaning = builder.hierarchyMeaning;
@@ -213,8 +299,8 @@ public class CodeSystem extends DomainResource {
     /**
      * An absolute URI that is used to identify this code system when it is referenced in a specification, model, design or 
      * an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
-     * which at which an authoritative instance of this code system is (or will be) published. This URL can be the target of 
-     * a canonical reference. It SHALL remain the same when the code system is stored on different servers. This is used in 
+     * which an authoritative instance of this code system is (or will be) published. This URL can be the target of a 
+     * canonical reference. It SHALL remain the same when the code system is stored on different servers. This is used in 
      * [Coding](datatypes.html#Coding).system.
      * 
      * @return
@@ -250,6 +336,16 @@ public class CodeSystem extends DomainResource {
     }
 
     /**
+     * Indicates the mechanism used to compare versions to determine which CodeSystem is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
+    }
+
+    /**
      * A natural language name identifying the code system. This name should be usable as an identifier for the module by 
      * machine processing applications such as code generation.
      * 
@@ -271,7 +367,7 @@ public class CodeSystem extends DomainResource {
     }
 
     /**
-     * The date (and optionally time) when the code system resource was created or revised.
+     * The status of this code system. Enables tracking the life-cycle of the content.
      * 
      * @return
      *     An immutable object of type {@link PublicationStatus} that is non-null.
@@ -292,9 +388,9 @@ public class CodeSystem extends DomainResource {
     }
 
     /**
-     * The date (and optionally time) when the code system was published. The date must change when the business version 
-     * changes and it must change if the status code changes. In addition, it should change when the substantive content of 
-     * the code system changes.
+     * The date (and optionally time) when the code system was last significantly changed. The date must change when the 
+     * business version changes and it must change if the status code changes. In addition, it should change when the 
+     * substantive content of the code system changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -304,7 +400,7 @@ public class CodeSystem extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the code system.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the code system.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -377,6 +473,113 @@ public class CodeSystem extends DomainResource {
     }
 
     /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
+    }
+
+    /**
+     * The date on which the resource content was approved by the publisher. Approval happens once when the content is 
+     * officially approved for usage.
+     * 
+     * @return
+     *     An immutable object of type {@link Date} that may be null.
+     */
+    public Date getApprovalDate() {
+        return approvalDate;
+    }
+
+    /**
+     * The date on which the resource content was last reviewed. Review happens periodically after approval but does not 
+     * change the original approval date.
+     * 
+     * @return
+     *     An immutable object of type {@link Date} that may be null.
+     */
+    public Date getLastReviewDate() {
+        return lastReviewDate;
+    }
+
+    /**
+     * The period during which the CodeSystem content was or is planned to be in active use.
+     * 
+     * @return
+     *     An immutable object of type {@link Period} that may be null.
+     */
+    public Period getEffectivePeriod() {
+        return effectivePeriod;
+    }
+
+    /**
+     * Descriptions related to the content of the CodeSystem. Topics provide a high-level categorization as well as keywords 
+     * for the CodeSystem that can be useful for filtering and searching.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     */
+    public List<CodeableConcept> getTopic() {
+        return topic;
+    }
+
+    /**
+     * An individiual or organization primarily involved in the creation and maintenance of the CodeSystem.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
+     */
+    public List<ContactDetail> getAuthor() {
+        return author;
+    }
+
+    /**
+     * An individual or organization primarily responsible for internal coherence of the CodeSystem.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
+     */
+    public List<ContactDetail> getEditor() {
+        return editor;
+    }
+
+    /**
+     * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+     * CodeSystem.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
+     */
+    public List<ContactDetail> getReviewer() {
+        return reviewer;
+    }
+
+    /**
+     * An individual or organization asserted by the publisher to be responsible for officially endorsing the CodeSystem for 
+     * use in some setting.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
+     */
+    public List<ContactDetail> getEndorser() {
+        return endorser;
+    }
+
+    /**
+     * Related artifacts such as additional documentation, justification, dependencies, bibliographic references, and 
+     * predecessor and successor artifacts.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link RelatedArtifact} that may be empty.
+     */
+    public List<RelatedArtifact> getRelatedArtifact() {
+        return relatedArtifact;
+    }
+
+    /**
      * If code comparison is case sensitive when codes within this system are compared to each other.
      * 
      * @return
@@ -387,7 +590,7 @@ public class CodeSystem extends DomainResource {
     }
 
     /**
-     * Canonical reference to the value set that contains the entire code system.
+     * Canonical reference to the value set that contains all codes in the code system independent of code status.
      * 
      * @return
      *     An immutable object of type {@link Canonical} that may be null.
@@ -496,6 +699,7 @@ public class CodeSystem extends DomainResource {
             (url != null) || 
             !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
             (title != null) || 
             (status != null) || 
@@ -508,6 +712,16 @@ public class CodeSystem extends DomainResource {
             !jurisdiction.isEmpty() || 
             (purpose != null) || 
             (copyright != null) || 
+            (copyrightLabel != null) || 
+            (approvalDate != null) || 
+            (lastReviewDate != null) || 
+            (effectivePeriod != null) || 
+            !topic.isEmpty() || 
+            !author.isEmpty() || 
+            !editor.isEmpty() || 
+            !reviewer.isEmpty() || 
+            !endorser.isEmpty() || 
+            !relatedArtifact.isEmpty() || 
             (caseSensitive != null) || 
             (valueSet != null) || 
             (hierarchyMeaning != null) || 
@@ -538,6 +752,7 @@ public class CodeSystem extends DomainResource {
                 accept(url, "url", visitor);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(status, "status", visitor);
@@ -550,6 +765,16 @@ public class CodeSystem extends DomainResource {
                 accept(jurisdiction, "jurisdiction", visitor, CodeableConcept.class);
                 accept(purpose, "purpose", visitor);
                 accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
+                accept(approvalDate, "approvalDate", visitor);
+                accept(lastReviewDate, "lastReviewDate", visitor);
+                accept(effectivePeriod, "effectivePeriod", visitor);
+                accept(topic, "topic", visitor, CodeableConcept.class);
+                accept(author, "author", visitor, ContactDetail.class);
+                accept(editor, "editor", visitor, ContactDetail.class);
+                accept(reviewer, "reviewer", visitor, ContactDetail.class);
+                accept(endorser, "endorser", visitor, ContactDetail.class);
+                accept(relatedArtifact, "relatedArtifact", visitor, RelatedArtifact.class);
                 accept(caseSensitive, "caseSensitive", visitor);
                 accept(valueSet, "valueSet", visitor);
                 accept(hierarchyMeaning, "hierarchyMeaning", visitor);
@@ -590,6 +815,7 @@ public class CodeSystem extends DomainResource {
             Objects.equals(url, other.url) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(status, other.status) && 
@@ -602,6 +828,16 @@ public class CodeSystem extends DomainResource {
             Objects.equals(jurisdiction, other.jurisdiction) && 
             Objects.equals(purpose, other.purpose) && 
             Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
+            Objects.equals(approvalDate, other.approvalDate) && 
+            Objects.equals(lastReviewDate, other.lastReviewDate) && 
+            Objects.equals(effectivePeriod, other.effectivePeriod) && 
+            Objects.equals(topic, other.topic) && 
+            Objects.equals(author, other.author) && 
+            Objects.equals(editor, other.editor) && 
+            Objects.equals(reviewer, other.reviewer) && 
+            Objects.equals(endorser, other.endorser) && 
+            Objects.equals(relatedArtifact, other.relatedArtifact) && 
             Objects.equals(caseSensitive, other.caseSensitive) && 
             Objects.equals(valueSet, other.valueSet) && 
             Objects.equals(hierarchyMeaning, other.hierarchyMeaning) && 
@@ -630,6 +866,7 @@ public class CodeSystem extends DomainResource {
                 url, 
                 identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
                 title, 
                 status, 
@@ -642,6 +879,16 @@ public class CodeSystem extends DomainResource {
                 jurisdiction, 
                 purpose, 
                 copyright, 
+                copyrightLabel, 
+                approvalDate, 
+                lastReviewDate, 
+                effectivePeriod, 
+                topic, 
+                author, 
+                editor, 
+                reviewer, 
+                endorser, 
+                relatedArtifact, 
                 caseSensitive, 
                 valueSet, 
                 hierarchyMeaning, 
@@ -671,6 +918,7 @@ public class CodeSystem extends DomainResource {
         private Uri url;
         private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
         private String title;
         private PublicationStatus status;
@@ -683,6 +931,16 @@ public class CodeSystem extends DomainResource {
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
         private Markdown purpose;
         private Markdown copyright;
+        private String copyrightLabel;
+        private Date approvalDate;
+        private Date lastReviewDate;
+        private Period effectivePeriod;
+        private List<CodeableConcept> topic = new ArrayList<>();
+        private List<ContactDetail> author = new ArrayList<>();
+        private List<ContactDetail> editor = new ArrayList<>();
+        private List<ContactDetail> reviewer = new ArrayList<>();
+        private List<ContactDetail> endorser = new ArrayList<>();
+        private List<RelatedArtifact> relatedArtifact = new ArrayList<>();
         private Boolean caseSensitive;
         private Canonical valueSet;
         private CodeSystemHierarchyMeaning hierarchyMeaning;
@@ -777,7 +1035,8 @@ public class CodeSystem extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -795,7 +1054,8 @@ public class CodeSystem extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -816,7 +1076,7 @@ public class CodeSystem extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -836,7 +1096,7 @@ public class CodeSystem extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -861,9 +1121,9 @@ public class CodeSystem extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -886,9 +1146,9 @@ public class CodeSystem extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -913,8 +1173,8 @@ public class CodeSystem extends DomainResource {
         /**
          * An absolute URI that is used to identify this code system when it is referenced in a specification, model, design or 
          * an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
-         * which at which an authoritative instance of this code system is (or will be) published. This URL can be the target of 
-         * a canonical reference. It SHALL remain the same when the code system is stored on different servers. This is used in 
+         * which an authoritative instance of this code system is (or will be) published. This URL can be the target of a 
+         * canonical reference. It SHALL remain the same when the code system is stored on different servers. This is used in 
          * [Coding](datatypes.html#Coding).system.
          * 
          * @param url
@@ -1004,6 +1264,42 @@ public class CodeSystem extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which CodeSystem is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
+            return this;
+        }
+
+        /**
          * Convenience method for setting {@code name}.
          * 
          * @param name
@@ -1065,7 +1361,7 @@ public class CodeSystem extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the code system resource was created or revised.
+         * The status of this code system. Enables tracking the life-cycle of the content.
          * 
          * <p>This element is required.
          * 
@@ -1112,9 +1408,9 @@ public class CodeSystem extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the code system was published. The date must change when the business version 
-         * changes and it must change if the status code changes. In addition, it should change when the substantive content of 
-         * the code system changes.
+         * The date (and optionally time) when the code system was last significantly changed. The date must change when the 
+         * business version changes and it must change if the status code changes. In addition, it should change when the 
+         * substantive content of the code system changes.
          * 
          * @param date
          *     Date last changed
@@ -1131,7 +1427,7 @@ public class CodeSystem extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1144,10 +1440,10 @@ public class CodeSystem extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the code system.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the code system.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1322,6 +1618,355 @@ public class CodeSystem extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code approvalDate}.
+         * 
+         * @param approvalDate
+         *     When the CodeSystem was approved by publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #approvalDate(org.linuxforhealth.fhir.model.type.Date)
+         */
+        public Builder approvalDate(java.time.LocalDate approvalDate) {
+            this.approvalDate = (approvalDate == null) ? null : Date.of(approvalDate);
+            return this;
+        }
+
+        /**
+         * The date on which the resource content was approved by the publisher. Approval happens once when the content is 
+         * officially approved for usage.
+         * 
+         * @param approvalDate
+         *     When the CodeSystem was approved by publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder approvalDate(Date approvalDate) {
+            this.approvalDate = approvalDate;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code lastReviewDate}.
+         * 
+         * @param lastReviewDate
+         *     When the CodeSystem was last reviewed by the publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #lastReviewDate(org.linuxforhealth.fhir.model.type.Date)
+         */
+        public Builder lastReviewDate(java.time.LocalDate lastReviewDate) {
+            this.lastReviewDate = (lastReviewDate == null) ? null : Date.of(lastReviewDate);
+            return this;
+        }
+
+        /**
+         * The date on which the resource content was last reviewed. Review happens periodically after approval but does not 
+         * change the original approval date.
+         * 
+         * @param lastReviewDate
+         *     When the CodeSystem was last reviewed by the publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder lastReviewDate(Date lastReviewDate) {
+            this.lastReviewDate = lastReviewDate;
+            return this;
+        }
+
+        /**
+         * The period during which the CodeSystem content was or is planned to be in active use.
+         * 
+         * @param effectivePeriod
+         *     When the CodeSystem is expected to be used
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder effectivePeriod(Period effectivePeriod) {
+            this.effectivePeriod = effectivePeriod;
+            return this;
+        }
+
+        /**
+         * Descriptions related to the content of the CodeSystem. Topics provide a high-level categorization as well as keywords 
+         * for the CodeSystem that can be useful for filtering and searching.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param topic
+         *     E.g. Education, Treatment, Assessment, etc
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder topic(CodeableConcept... topic) {
+            for (CodeableConcept value : topic) {
+                this.topic.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Descriptions related to the content of the CodeSystem. Topics provide a high-level categorization as well as keywords 
+         * for the CodeSystem that can be useful for filtering and searching.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param topic
+         *     E.g. Education, Treatment, Assessment, etc
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder topic(Collection<CodeableConcept> topic) {
+            this.topic = new ArrayList<>(topic);
+            return this;
+        }
+
+        /**
+         * An individiual or organization primarily involved in the creation and maintenance of the CodeSystem.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param author
+         *     Who authored the CodeSystem
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder author(ContactDetail... author) {
+            for (ContactDetail value : author) {
+                this.author.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * An individiual or organization primarily involved in the creation and maintenance of the CodeSystem.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param author
+         *     Who authored the CodeSystem
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder author(Collection<ContactDetail> author) {
+            this.author = new ArrayList<>(author);
+            return this;
+        }
+
+        /**
+         * An individual or organization primarily responsible for internal coherence of the CodeSystem.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param editor
+         *     Who edited the CodeSystem
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder editor(ContactDetail... editor) {
+            for (ContactDetail value : editor) {
+                this.editor.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * An individual or organization primarily responsible for internal coherence of the CodeSystem.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param editor
+         *     Who edited the CodeSystem
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder editor(Collection<ContactDetail> editor) {
+            this.editor = new ArrayList<>(editor);
+            return this;
+        }
+
+        /**
+         * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+         * CodeSystem.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param reviewer
+         *     Who reviewed the CodeSystem
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder reviewer(ContactDetail... reviewer) {
+            for (ContactDetail value : reviewer) {
+                this.reviewer.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+         * CodeSystem.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param reviewer
+         *     Who reviewed the CodeSystem
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder reviewer(Collection<ContactDetail> reviewer) {
+            this.reviewer = new ArrayList<>(reviewer);
+            return this;
+        }
+
+        /**
+         * An individual or organization asserted by the publisher to be responsible for officially endorsing the CodeSystem for 
+         * use in some setting.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param endorser
+         *     Who endorsed the CodeSystem
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder endorser(ContactDetail... endorser) {
+            for (ContactDetail value : endorser) {
+                this.endorser.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * An individual or organization asserted by the publisher to be responsible for officially endorsing the CodeSystem for 
+         * use in some setting.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param endorser
+         *     Who endorsed the CodeSystem
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder endorser(Collection<ContactDetail> endorser) {
+            this.endorser = new ArrayList<>(endorser);
+            return this;
+        }
+
+        /**
+         * Related artifacts such as additional documentation, justification, dependencies, bibliographic references, and 
+         * predecessor and successor artifacts.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param relatedArtifact
+         *     Additional documentation, citations, etc
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder relatedArtifact(RelatedArtifact... relatedArtifact) {
+            for (RelatedArtifact value : relatedArtifact) {
+                this.relatedArtifact.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Related artifacts such as additional documentation, justification, dependencies, bibliographic references, and 
+         * predecessor and successor artifacts.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param relatedArtifact
+         *     Additional documentation, citations, etc
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder relatedArtifact(Collection<RelatedArtifact> relatedArtifact) {
+            this.relatedArtifact = new ArrayList<>(relatedArtifact);
+            return this;
+        }
+
+        /**
          * Convenience method for setting {@code caseSensitive}.
          * 
          * @param caseSensitive
@@ -1352,7 +1997,7 @@ public class CodeSystem extends DomainResource {
         }
 
         /**
-         * Canonical reference to the value set that contains the entire code system.
+         * Canonical reference to the value set that contains all codes in the code system independent of code status.
          * 
          * @param valueSet
          *     Canonical reference to the value set with entire code system
@@ -1631,10 +2276,17 @@ public class CodeSystem extends DomainResource {
         protected void validate(CodeSystem codeSystem) {
             super.validate(codeSystem);
             ValidationSupport.checkList(codeSystem.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(codeSystem.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.requireNonNull(codeSystem.status, "status");
             ValidationSupport.checkList(codeSystem.contact, "contact", ContactDetail.class);
             ValidationSupport.checkList(codeSystem.useContext, "useContext", UsageContext.class);
             ValidationSupport.checkList(codeSystem.jurisdiction, "jurisdiction", CodeableConcept.class);
+            ValidationSupport.checkList(codeSystem.topic, "topic", CodeableConcept.class);
+            ValidationSupport.checkList(codeSystem.author, "author", ContactDetail.class);
+            ValidationSupport.checkList(codeSystem.editor, "editor", ContactDetail.class);
+            ValidationSupport.checkList(codeSystem.reviewer, "reviewer", ContactDetail.class);
+            ValidationSupport.checkList(codeSystem.endorser, "endorser", ContactDetail.class);
+            ValidationSupport.checkList(codeSystem.relatedArtifact, "relatedArtifact", RelatedArtifact.class);
             ValidationSupport.requireNonNull(codeSystem.content, "content");
             ValidationSupport.checkList(codeSystem.filter, "filter", Filter.class);
             ValidationSupport.checkList(codeSystem.property, "property", Property.class);
@@ -1646,6 +2298,7 @@ public class CodeSystem extends DomainResource {
             url = codeSystem.url;
             identifier.addAll(codeSystem.identifier);
             version = codeSystem.version;
+            versionAlgorithm = codeSystem.versionAlgorithm;
             name = codeSystem.name;
             title = codeSystem.title;
             status = codeSystem.status;
@@ -1658,6 +2311,16 @@ public class CodeSystem extends DomainResource {
             jurisdiction.addAll(codeSystem.jurisdiction);
             purpose = codeSystem.purpose;
             copyright = codeSystem.copyright;
+            copyrightLabel = codeSystem.copyrightLabel;
+            approvalDate = codeSystem.approvalDate;
+            lastReviewDate = codeSystem.lastReviewDate;
+            effectivePeriod = codeSystem.effectivePeriod;
+            topic.addAll(codeSystem.topic);
+            author.addAll(codeSystem.author);
+            editor.addAll(codeSystem.editor);
+            reviewer.addAll(codeSystem.reviewer);
+            endorser.addAll(codeSystem.endorser);
+            relatedArtifact.addAll(codeSystem.relatedArtifact);
             caseSensitive = codeSystem.caseSensitive;
             valueSet = codeSystem.valueSet;
             hierarchyMeaning = codeSystem.hierarchyMeaning;
@@ -1687,7 +2350,7 @@ public class CodeSystem extends DomainResource {
             bindingName = "FilterOperator",
             strength = BindingStrength.Value.REQUIRED,
             description = "The kind of operation to perform as a part of a property based filter.",
-            valueSet = "http://hl7.org/fhir/ValueSet/filter-operator|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/filter-operator|5.0.0"
         )
         @Required
         private final List<FilterOperator> operator;
@@ -1844,7 +2507,7 @@ public class CodeSystem extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1864,7 +2527,7 @@ public class CodeSystem extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1889,7 +2552,7 @@ public class CodeSystem extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1914,7 +2577,7 @@ public class CodeSystem extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1993,7 +2656,7 @@ public class CodeSystem extends DomainResource {
              * <p>This element is required.
              * 
              * @param operator
-             *     = | is-a | descendent-of | is-not-a | regex | in | not-in | generalizes | exists
+             *     = | is-a | descendent-of | is-not-a | regex | in | not-in | generalizes | child-of | descendent-leaf | exists
              * 
              * @return
              *     A reference to this Builder instance
@@ -2014,7 +2677,7 @@ public class CodeSystem extends DomainResource {
              * <p>This element is required.
              * 
              * @param operator
-             *     = | is-a | descendent-of | is-not-a | regex | in | not-in | generalizes | exists
+             *     = | is-a | descendent-of | is-not-a | regex | in | not-in | generalizes | child-of | descendent-leaf | exists
              * 
              * @return
              *     A reference to this Builder instance
@@ -2120,7 +2783,7 @@ public class CodeSystem extends DomainResource {
             bindingName = "PropertyType",
             strength = BindingStrength.Value.REQUIRED,
             description = "The type of a property value.",
-            valueSet = "http://hl7.org/fhir/ValueSet/concept-property-type|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/concept-property-type|5.0.0"
         )
         @Required
         private final PropertyType type;
@@ -2277,7 +2940,7 @@ public class CodeSystem extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2297,7 +2960,7 @@ public class CodeSystem extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2322,7 +2985,7 @@ public class CodeSystem extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2347,7 +3010,7 @@ public class CodeSystem extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2689,7 +3352,7 @@ public class CodeSystem extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2709,7 +3372,7 @@ public class CodeSystem extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2734,7 +3397,7 @@ public class CodeSystem extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2759,7 +3422,7 @@ public class CodeSystem extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3032,10 +3695,9 @@ public class CodeSystem extends DomainResource {
         public static class Designation extends BackboneElement {
             @Binding(
                 bindingName = "Language",
-                strength = BindingStrength.Value.PREFERRED,
-                description = "IETF language tag",
-                valueSet = "http://hl7.org/fhir/ValueSet/languages",
-                maxValueSet = "http://hl7.org/fhir/ValueSet/all-languages"
+                strength = BindingStrength.Value.REQUIRED,
+                description = "IETF language tag for a human language",
+                valueSet = "http://hl7.org/fhir/ValueSet/all-languages|5.0.0"
             )
             private final Code language;
             @Binding(
@@ -3045,6 +3707,13 @@ public class CodeSystem extends DomainResource {
                 valueSet = "http://hl7.org/fhir/ValueSet/designation-use"
             )
             private final Coding use;
+            @Binding(
+                bindingName = "ConceptDesignationUse",
+                strength = BindingStrength.Value.EXTENSIBLE,
+                description = "Details of how a designation would be used.",
+                valueSet = "http://hl7.org/fhir/ValueSet/designation-use"
+            )
+            private final List<Coding> additionalUse;
             @Required
             private final String value;
 
@@ -3052,6 +3721,7 @@ public class CodeSystem extends DomainResource {
                 super(builder);
                 language = builder.language;
                 use = builder.use;
+                additionalUse = Collections.unmodifiableList(builder.additionalUse);
                 value = builder.value;
             }
 
@@ -3076,6 +3746,16 @@ public class CodeSystem extends DomainResource {
             }
 
             /**
+             * Additional codes that detail how this designation would be used, if there is more than one use.
+             * 
+             * @return
+             *     An unmodifiable list containing immutable objects of type {@link Coding} that may be empty.
+             */
+            public List<Coding> getAdditionalUse() {
+                return additionalUse;
+            }
+
+            /**
              * The text value for this designation.
              * 
              * @return
@@ -3090,6 +3770,7 @@ public class CodeSystem extends DomainResource {
                 return super.hasChildren() || 
                     (language != null) || 
                     (use != null) || 
+                    !additionalUse.isEmpty() || 
                     (value != null);
             }
 
@@ -3104,6 +3785,7 @@ public class CodeSystem extends DomainResource {
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                         accept(language, "language", visitor);
                         accept(use, "use", visitor);
+                        accept(additionalUse, "additionalUse", visitor, Coding.class);
                         accept(value, "value", visitor);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
@@ -3128,6 +3810,7 @@ public class CodeSystem extends DomainResource {
                     Objects.equals(modifierExtension, other.modifierExtension) && 
                     Objects.equals(language, other.language) && 
                     Objects.equals(use, other.use) && 
+                    Objects.equals(additionalUse, other.additionalUse) && 
                     Objects.equals(value, other.value);
             }
 
@@ -3140,6 +3823,7 @@ public class CodeSystem extends DomainResource {
                         modifierExtension, 
                         language, 
                         use, 
+                        additionalUse, 
                         value);
                     hashCode = result;
                 }
@@ -3158,6 +3842,7 @@ public class CodeSystem extends DomainResource {
             public static class Builder extends BackboneElement.Builder {
                 private Code language;
                 private Coding use;
+                private List<Coding> additionalUse = new ArrayList<>();
                 private String value;
 
                 private Builder() {
@@ -3181,7 +3866,7 @@ public class CodeSystem extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3201,7 +3886,7 @@ public class CodeSystem extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3226,7 +3911,7 @@ public class CodeSystem extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3251,7 +3936,7 @@ public class CodeSystem extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3300,6 +3985,45 @@ public class CodeSystem extends DomainResource {
                  */
                 public Builder use(Coding use) {
                     this.use = use;
+                    return this;
+                }
+
+                /**
+                 * Additional codes that detail how this designation would be used, if there is more than one use.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param additionalUse
+                 *     Additional ways how this designation would be used
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder additionalUse(Coding... additionalUse) {
+                    for (Coding value : additionalUse) {
+                        this.additionalUse.add(value);
+                    }
+                    return this;
+                }
+
+                /**
+                 * Additional codes that detail how this designation would be used, if there is more than one use.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param additionalUse
+                 *     Additional ways how this designation would be used
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                public Builder additionalUse(Collection<Coding> additionalUse) {
+                    this.additionalUse = new ArrayList<>(additionalUse);
                     return this;
                 }
 
@@ -3361,6 +4085,7 @@ public class CodeSystem extends DomainResource {
 
                 protected void validate(Designation designation) {
                     super.validate(designation);
+                    ValidationSupport.checkList(designation.additionalUse, "additionalUse", Coding.class);
                     ValidationSupport.requireNonNull(designation.value, "value");
                     ValidationSupport.checkValueSetBinding(designation.language, "language", "http://hl7.org/fhir/ValueSet/all-languages", "urn:ietf:bcp:47");
                     ValidationSupport.requireValueOrChildren(designation);
@@ -3370,6 +4095,7 @@ public class CodeSystem extends DomainResource {
                     super.from(designation);
                     language = designation.language;
                     use = designation.use;
+                    additionalUse.addAll(designation.additionalUse);
                     value = designation.value;
                     return this;
                 }
@@ -3384,7 +4110,7 @@ public class CodeSystem extends DomainResource {
             private final Code code;
             @Choice({ Code.class, Coding.class, String.class, Integer.class, Boolean.class, DateTime.class, Decimal.class })
             @Required
-            private final Element value;
+            private final org.linuxforhealth.fhir.model.type.Element value;
 
             private Property(Builder builder) {
                 super(builder);
@@ -3409,7 +4135,7 @@ public class CodeSystem extends DomainResource {
              *     An immutable object of type {@link Code}, {@link Coding}, {@link String}, {@link Integer}, {@link Boolean}, {@link 
              *     DateTime} or {@link Decimal} that is non-null.
              */
-            public Element getValue() {
+            public org.linuxforhealth.fhir.model.type.Element getValue() {
                 return value;
             }
 
@@ -3481,7 +4207,7 @@ public class CodeSystem extends DomainResource {
 
             public static class Builder extends BackboneElement.Builder {
                 private Code code;
-                private Element value;
+                private org.linuxforhealth.fhir.model.type.Element value;
 
                 private Builder() {
                     super();
@@ -3504,7 +4230,7 @@ public class CodeSystem extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3524,7 +4250,7 @@ public class CodeSystem extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3549,7 +4275,7 @@ public class CodeSystem extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3574,7 +4300,7 @@ public class CodeSystem extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3690,7 +4416,7 @@ public class CodeSystem extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder value(Element value) {
+                public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                     this.value = value;
                     return this;
                 }

@@ -12,6 +12,7 @@ import org.apache.maven.plugin.logging.Log;
 
 import org.linuxforhealth.fhir.model.plugin.generator.impl.R4BModelGeneratorImpl;
 import org.linuxforhealth.fhir.model.plugin.generator.impl.R4ModelGeneratorImpl;
+import org.linuxforhealth.fhir.model.plugin.generator.impl.R5ModelGeneratorImpl;
 
 /**
  * Controls the access to the modelgenerator tools
@@ -41,6 +42,8 @@ public class ModelFactory {
             generator = new R4BModelGeneratorImpl();
         } else if ("r4".equalsIgnoreCase(generatorVersion)) {
             generator = new R4ModelGeneratorImpl();
+        } else if ("r5".equalsIgnoreCase(generatorVersion)) {
+            generator = new R5ModelGeneratorImpl();
         } else {
             try {
                 generator = (ModelGenerator) Class.forName(generatorVersion).getDeclaredConstructor().newInstance();

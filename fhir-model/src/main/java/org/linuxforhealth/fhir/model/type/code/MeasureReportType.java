@@ -42,11 +42,12 @@ public class MeasureReportType extends Code {
     public static final MeasureReportType SUMMARY = MeasureReportType.builder().value(Value.SUMMARY).build();
 
     /**
-     * Data Collection
+     * Data Exchange
      * 
-     * <p>A data collection report that contains data-of-interest for the measure.
+     * <p>A data exchange report that contains data-of-interest for the measure (i.e. data that is needed to calculate the 
+     * measure)
      */
-    public static final MeasureReportType DATA_COLLECTION = MeasureReportType.builder().value(Value.DATA_COLLECTION).build();
+    public static final MeasureReportType DATA_EXCHANGE = MeasureReportType.builder().value(Value.DATA_EXCHANGE).build();
 
     private volatile int hashCode;
 
@@ -72,8 +73,8 @@ public class MeasureReportType extends Code {
             return SUBJECT_LIST;
         case SUMMARY:
             return SUMMARY;
-        case DATA_COLLECTION:
-            return DATA_COLLECTION;
+        case DATA_EXCHANGE:
+            return DATA_EXCHANGE;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -229,11 +230,12 @@ public class MeasureReportType extends Code {
         SUMMARY("summary"),
 
         /**
-         * Data Collection
+         * Data Exchange
          * 
-         * <p>A data collection report that contains data-of-interest for the measure.
+         * <p>A data exchange report that contains data-of-interest for the measure (i.e. data that is needed to calculate the 
+         * measure)
          */
-        DATA_COLLECTION("data-collection");
+        DATA_EXCHANGE("data-exchange");
 
         private final java.lang.String value;
 
@@ -270,8 +272,8 @@ public class MeasureReportType extends Code {
                 return SUBJECT_LIST;
             case "summary":
                 return SUMMARY;
-            case "data-collection":
-                return DATA_COLLECTION;
+            case "data-exchange":
+                return DATA_EXCHANGE;
             default:
                 throw new IllegalArgumentException(value);
             }

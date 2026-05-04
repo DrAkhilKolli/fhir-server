@@ -88,6 +88,7 @@ import org.linuxforhealth.fhir.model.type.code.ConditionalReadStatus;
 import org.linuxforhealth.fhir.model.type.code.FHIRVersion;
 import org.linuxforhealth.fhir.model.type.code.IssueType;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
+import org.linuxforhealth.fhir.model.type.code.FHIRTypes;
 import org.linuxforhealth.fhir.model.type.code.ResourceTypeCode;
 import org.linuxforhealth.fhir.model.type.code.ResourceVersionPolicy;
 import org.linuxforhealth.fhir.model.type.code.RestfulCapabilityMode;
@@ -261,7 +262,7 @@ public class Capabilities extends FHIRResource {
                 .incomplete(org.linuxforhealth.fhir.model.type.Boolean.FALSE)
                 .textFilter(Markdown.of("Text searching is not supported"))
                 .build())
-            .codeSearch(CodeSearchSupport.ALL)
+            .codeSearch(CodeSearchSupport.IN_COMPOSE_OR_EXPANSION)
             .validateCode(ValidateCode.builder()
                 .translations(org.linuxforhealth.fhir.model.type.Boolean.FALSE)
                 .build())
@@ -359,7 +360,7 @@ public class Capabilities extends FHIRResource {
             if (Boolean.TRUE.equals(opDef.getSystem().getValue())) {
                 systemOps.add(opDef);
             }
-            for (ResourceTypeCode resourceType : opDef.getResource()) {
+            for (FHIRTypes resourceType : opDef.getResource()) {
                 String resourceTypeName = resourceType.getValue();
                 if (typeOps.containsKey(resourceTypeName)) {
                     typeOps.get(resourceTypeName).add(opDef);
@@ -549,12 +550,12 @@ public class Capabilities extends FHIRResource {
         CapabilityStatement.Implementation impl;
         if (customImpl != null) {
             impl = CapabilityStatement.Implementation.builder()
-                    .description(buildDescription)
+                    .description(Markdown.of(buildDescription))
                     .url(org.linuxforhealth.fhir.model.type.Url.of(customImpl))
                     .build();
         } else {
             impl = CapabilityStatement.Implementation.builder()
-                    .description(buildDescription)
+                    .description(Markdown.of(buildDescription))
                     .build();
         }
 
@@ -563,7 +564,7 @@ public class Capabilities extends FHIRResource {
                 .status(PublicationStatus.ACTIVE)
                 .date(DateTime.now(ZoneOffset.UTC))
                 .kind(CapabilityStatementKind.INSTANCE)
-                .fhirVersion(fhirVersion == FHIRVersionParam.VERSION_43 ? FHIRVersion.VERSION_4_3_0 : FHIRVersion.VERSION_4_0_1)
+                .fhirVersion(getCapabilityStatementFhirVersion(fhirVersion))
                 .format(format)
                 .patchFormat(Code.of(FHIRMediaType.APPLICATION_JSON_PATCH),
                              Code.of(FHIRMediaType.APPLICATION_FHIR_JSON),
@@ -589,6 +590,19 @@ public class Capabilities extends FHIRResource {
         }
 
         return conformance;
+    }
+
+    private FHIRVersion getCapabilityStatementFhirVersion(FHIRVersionParam fhirVersion) {
+        switch (fhirVersion) {
+        case VERSION_40:
+            return FHIRVersion.VERSION_4_0_1;
+        case VERSION_43:
+            return FHIRVersion.VERSION_4_3_0;
+        case VERSION_50:
+            return FHIRVersion.VERSION_5_0;
+        default:
+            throw new IllegalArgumentException("Unexpected FHIR version: " + fhirVersion.value());
+        }
     }
 
     /**

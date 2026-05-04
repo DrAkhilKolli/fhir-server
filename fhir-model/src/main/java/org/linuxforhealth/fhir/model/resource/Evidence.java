@@ -23,8 +23,10 @@ import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.Annotation;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
+import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
 import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.DateTime;
@@ -53,8 +55,8 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
  * The Evidence Resource provides a machine-interpretable expression of an evidence concept including the evidence 
- * variables (eg population, exposures/interventions, comparators, outcomes, measured variables, confounding variables), 
- * the statistics, and the certainty of this evidence.
+ * variables (e.g., population, exposures/interventions, comparators, outcomes, measured variables, confounding 
+ * variables), the statistics, and the certainty of this evidence.
  * 
  * <p>Maturity level: FMM1 (Trial Use)
  */
@@ -67,11 +69,28 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
     source = "http://hl7.org/fhir/StructureDefinition/Evidence"
 )
 @Constraint(
-    id = "evidence-1",
+    id = "cnl-1",
+    level = "Warning",
+    location = "Evidence.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
+    source = "http://hl7.org/fhir/StructureDefinition/Evidence"
+)
+@Constraint(
+    id = "evidence-2",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/Evidence",
+    generated = true
+)
+@Constraint(
+    id = "evidence-3",
     level = "Warning",
     location = "variableDefinition.variableRole",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/variable-role",
@@ -80,34 +99,34 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "evidence-2",
-    level = "Warning",
-    location = "variableDefinition.directnessMatch",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/directness",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/directness', 'extensible')",
-    source = "http://hl7.org/fhir/StructureDefinition/Evidence",
-    generated = true
-)
-@Constraint(
-    id = "evidence-3",
-    level = "Warning",
-    location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/synthesis-type",
-    expression = "synthesisType.exists() implies (synthesisType.memberOf('http://hl7.org/fhir/ValueSet/synthesis-type', 'extensible'))",
-    source = "http://hl7.org/fhir/StructureDefinition/Evidence",
-    generated = true
-)
-@Constraint(
     id = "evidence-4",
     level = "Warning",
-    location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/study-type",
-    expression = "studyType.exists() implies (studyType.memberOf('http://hl7.org/fhir/ValueSet/study-type', 'extensible'))",
+    location = "variableDefinition.directnessMatch",
+    description = "SHALL, if possible, contain a code from value set http://terminology.hl7.org/ValueSet/directness",
+    expression = "$this.memberOf('http://terminology.hl7.org/ValueSet/directness', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/Evidence",
     generated = true
 )
 @Constraint(
     id = "evidence-5",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://terminology.hl7.org/ValueSet/synthesis-type",
+    expression = "synthesisType.exists() implies (synthesisType.memberOf('http://terminology.hl7.org/ValueSet/synthesis-type', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/Evidence",
+    generated = true
+)
+@Constraint(
+    id = "evidence-6",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/study-design",
+    expression = "studyDesign.exists() implies (studyDesign.all(memberOf('http://hl7.org/fhir/ValueSet/study-design', 'extensible')))",
+    source = "http://hl7.org/fhir/StructureDefinition/Evidence",
+    generated = true
+)
+@Constraint(
+    id = "evidence-7",
     level = "Warning",
     location = "statistic.statisticType",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/statistic-type",
@@ -116,7 +135,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "evidence-6",
+    id = "evidence-8",
     level = "Warning",
     location = "statistic.attributeEstimate.type",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/attribute-estimate-type",
@@ -125,7 +144,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "evidence-7",
+    id = "evidence-9",
     level = "Warning",
     location = "statistic.modelCharacteristic.code",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/statistic-model-code",
@@ -134,7 +153,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "evidence-8",
+    id = "evidence-10",
     level = "Warning",
     location = "certainty.type",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/certainty-type",
@@ -143,7 +162,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "evidence-9",
+    id = "evidence-11",
     level = "Warning",
     location = "certainty.rating",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/certainty-rating",
@@ -160,23 +179,30 @@ public class Evidence extends DomainResource {
     @Summary
     private final String version;
     @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+    private final String name;
+    @Summary
     private final String title;
     @ReferenceTarget({ "Citation" })
     @Choice({ Reference.class, Markdown.class })
-    private final Element citeAs;
+    private final org.linuxforhealth.fhir.model.type.Element citeAs;
     @Summary
     @Binding(
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
+    private final Boolean experimental;
     @Summary
     private final DateTime date;
-    @Summary
-    private final List<UsageContext> useContext;
     private final Date approvalDate;
     private final Date lastReviewDate;
     @Summary
@@ -189,6 +215,11 @@ public class Evidence extends DomainResource {
     private final List<ContactDetail> reviewer;
     @Summary
     private final List<ContactDetail> endorser;
+    @Summary
+    private final List<UsageContext> useContext;
+    private final Markdown purpose;
+    private final Markdown copyright;
+    private final String copyrightLabel;
     private final List<RelatedArtifact> relatedArtifact;
     private final Markdown description;
     private final Markdown assertion;
@@ -198,17 +229,17 @@ public class Evidence extends DomainResource {
     @Binding(
         bindingName = "SynthesisType",
         strength = BindingStrength.Value.EXTENSIBLE,
-        description = "Types of combining results from a body of evidence (eg. summary data meta-analysis).",
-        valueSet = "http://hl7.org/fhir/ValueSet/synthesis-type"
+        description = "Types of combining results from a body of evidence (e.g. summary data meta-analysis).",
+        valueSet = "http://terminology.hl7.org/ValueSet/synthesis-type"
     )
     private final CodeableConcept synthesisType;
     @Binding(
-        bindingName = "StudyType",
+        bindingName = "StudyDesign",
         strength = BindingStrength.Value.EXTENSIBLE,
-        description = "The type of study the evidence was derived from.",
-        valueSet = "http://hl7.org/fhir/ValueSet/study-type"
+        description = "This is a set of terms for study design characteristics.",
+        valueSet = "http://hl7.org/fhir/ValueSet/study-design"
     )
-    private final CodeableConcept studyType;
+    private final List<CodeableConcept> studyDesign;
     private final List<Statistic> statistic;
     private final List<Certainty> certainty;
 
@@ -217,11 +248,13 @@ public class Evidence extends DomainResource {
         url = builder.url;
         identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
+        name = builder.name;
         title = builder.title;
         citeAs = builder.citeAs;
         status = builder.status;
+        experimental = builder.experimental;
         date = builder.date;
-        useContext = Collections.unmodifiableList(builder.useContext);
         approvalDate = builder.approvalDate;
         lastReviewDate = builder.lastReviewDate;
         publisher = builder.publisher;
@@ -230,13 +263,17 @@ public class Evidence extends DomainResource {
         editor = Collections.unmodifiableList(builder.editor);
         reviewer = Collections.unmodifiableList(builder.reviewer);
         endorser = Collections.unmodifiableList(builder.endorser);
+        useContext = Collections.unmodifiableList(builder.useContext);
+        purpose = builder.purpose;
+        copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
         relatedArtifact = Collections.unmodifiableList(builder.relatedArtifact);
         description = builder.description;
         assertion = builder.assertion;
         note = Collections.unmodifiableList(builder.note);
         variableDefinition = Collections.unmodifiableList(builder.variableDefinition);
         synthesisType = builder.synthesisType;
-        studyType = builder.studyType;
+        studyDesign = Collections.unmodifiableList(builder.studyDesign);
         statistic = Collections.unmodifiableList(builder.statistic);
         certainty = Collections.unmodifiableList(builder.certainty);
     }
@@ -244,8 +281,8 @@ public class Evidence extends DomainResource {
     /**
      * An absolute URI that is used to identify this evidence when it is referenced in a specification, model, design or an 
      * instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
-     * which at which an authoritative instance of this summary is (or will be) published. This URL can be the target of a 
-     * canonical reference. It SHALL remain the same when the summary is stored on different servers.
+     * which an authoritative instance of this summary is (or will be) published. This URL can be the target of a canonical 
+     * reference. It SHALL remain the same when the summary is stored on different servers.
      * 
      * @return
      *     An immutable object of type {@link Uri} that may be null.
@@ -279,6 +316,27 @@ public class Evidence extends DomainResource {
     }
 
     /**
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
+    }
+
+    /**
+     * A natural language name identifying the evidence. This name should be usable as an identifier for the module by 
+     * machine processing applications such as code generation.
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
      * A short, descriptive, user-friendly title for the summary.
      * 
      * @return
@@ -294,7 +352,7 @@ public class Evidence extends DomainResource {
      * @return
      *     An immutable object of type {@link Reference} or {@link Markdown} that may be null.
      */
-    public Element getCiteAs() {
+    public org.linuxforhealth.fhir.model.type.Element getCiteAs() {
         return citeAs;
     }
 
@@ -309,27 +367,26 @@ public class Evidence extends DomainResource {
     }
 
     /**
-     * The date (and optionally time) when the summary was published. The date must change when the business version changes 
-     * and it must change if the status code changes. In addition, it should change when the substantive content of the 
-     * summary changes.
+     * A Boolean value to indicate that this resource is authored for testing purposes (or education/evaluation/marketing) 
+     * and is not intended to be used for genuine usage.
+     * 
+     * @return
+     *     An immutable object of type {@link Boolean} that may be null.
+     */
+    public Boolean getExperimental() {
+        return experimental;
+    }
+
+    /**
+     * The date (and optionally time) when the summary was last significantly changed. The date must change when the business 
+     * version changes and it must change if the status code changes. In addition, it should change when the substantive 
+     * content of the summary changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
      */
     public DateTime getDate() {
         return date;
-    }
-
-    /**
-     * The content was developed with a focus and intent of supporting the contexts that are listed. These contexts may be 
-     * general categories (gender, age, ...) or may be references to specific programs (insurance plans, studies, ...) and 
-     * may be used to assist with indexing and searching for appropriate evidence instances.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link UsageContext} that may be empty.
-     */
-    public List<UsageContext> getUseContext() {
-        return useContext;
     }
 
     /**
@@ -355,7 +412,7 @@ public class Evidence extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the evidence.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the evidence.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -412,6 +469,50 @@ public class Evidence extends DomainResource {
      */
     public List<ContactDetail> getEndorser() {
         return endorser;
+    }
+
+    /**
+     * The content was developed with a focus and intent of supporting the contexts that are listed. These contexts may be 
+     * general categories (gender, age, ...) or may be references to specific programs (insurance plans, studies, ...) and 
+     * may be used to assist with indexing and searching for appropriate evidence instances.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link UsageContext} that may be empty.
+     */
+    public List<UsageContext> getUseContext() {
+        return useContext;
+    }
+
+    /**
+     * Explanation of why this Evidence is needed and why it has been designed as it has.
+     * 
+     * @return
+     *     An immutable object of type {@link Markdown} that may be null.
+     */
+    public Markdown getPurpose() {
+        return purpose;
+    }
+
+    /**
+     * A copyright statement relating to the Evidence and/or its contents. Copyright statements are generally legal 
+     * restrictions on the use and publishing of the Evidence.
+     * 
+     * @return
+     *     An immutable object of type {@link Markdown} that may be null.
+     */
+    public Markdown getCopyright() {
+        return copyright;
+    }
+
+    /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
     }
 
     /**
@@ -475,13 +576,14 @@ public class Evidence extends DomainResource {
     }
 
     /**
-     * The type of study that produced this evidence.
+     * The design of the study that produced this evidence. The design is described with any number of study design 
+     * characteristics.
      * 
      * @return
-     *     An immutable object of type {@link CodeableConcept} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
      */
-    public CodeableConcept getStudyType() {
-        return studyType;
+    public List<CodeableConcept> getStudyDesign() {
+        return studyDesign;
     }
 
     /**
@@ -510,11 +612,13 @@ public class Evidence extends DomainResource {
             (url != null) || 
             !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
+            (name != null) || 
             (title != null) || 
             (citeAs != null) || 
             (status != null) || 
+            (experimental != null) || 
             (date != null) || 
-            !useContext.isEmpty() || 
             (approvalDate != null) || 
             (lastReviewDate != null) || 
             (publisher != null) || 
@@ -523,13 +627,17 @@ public class Evidence extends DomainResource {
             !editor.isEmpty() || 
             !reviewer.isEmpty() || 
             !endorser.isEmpty() || 
+            !useContext.isEmpty() || 
+            (purpose != null) || 
+            (copyright != null) || 
+            (copyrightLabel != null) || 
             !relatedArtifact.isEmpty() || 
             (description != null) || 
             (assertion != null) || 
             !note.isEmpty() || 
             !variableDefinition.isEmpty() || 
             (synthesisType != null) || 
-            (studyType != null) || 
+            !studyDesign.isEmpty() || 
             !statistic.isEmpty() || 
             !certainty.isEmpty();
     }
@@ -551,11 +659,13 @@ public class Evidence extends DomainResource {
                 accept(url, "url", visitor);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
+                accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(citeAs, "citeAs", visitor);
                 accept(status, "status", visitor);
+                accept(experimental, "experimental", visitor);
                 accept(date, "date", visitor);
-                accept(useContext, "useContext", visitor, UsageContext.class);
                 accept(approvalDate, "approvalDate", visitor);
                 accept(lastReviewDate, "lastReviewDate", visitor);
                 accept(publisher, "publisher", visitor);
@@ -564,13 +674,17 @@ public class Evidence extends DomainResource {
                 accept(editor, "editor", visitor, ContactDetail.class);
                 accept(reviewer, "reviewer", visitor, ContactDetail.class);
                 accept(endorser, "endorser", visitor, ContactDetail.class);
+                accept(useContext, "useContext", visitor, UsageContext.class);
+                accept(purpose, "purpose", visitor);
+                accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
                 accept(relatedArtifact, "relatedArtifact", visitor, RelatedArtifact.class);
                 accept(description, "description", visitor);
                 accept(assertion, "assertion", visitor);
                 accept(note, "note", visitor, Annotation.class);
                 accept(variableDefinition, "variableDefinition", visitor, VariableDefinition.class);
                 accept(synthesisType, "synthesisType", visitor);
-                accept(studyType, "studyType", visitor);
+                accept(studyDesign, "studyDesign", visitor, CodeableConcept.class);
                 accept(statistic, "statistic", visitor, Statistic.class);
                 accept(certainty, "certainty", visitor, Certainty.class);
             }
@@ -602,11 +716,13 @@ public class Evidence extends DomainResource {
             Objects.equals(url, other.url) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
+            Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(citeAs, other.citeAs) && 
             Objects.equals(status, other.status) && 
+            Objects.equals(experimental, other.experimental) && 
             Objects.equals(date, other.date) && 
-            Objects.equals(useContext, other.useContext) && 
             Objects.equals(approvalDate, other.approvalDate) && 
             Objects.equals(lastReviewDate, other.lastReviewDate) && 
             Objects.equals(publisher, other.publisher) && 
@@ -615,13 +731,17 @@ public class Evidence extends DomainResource {
             Objects.equals(editor, other.editor) && 
             Objects.equals(reviewer, other.reviewer) && 
             Objects.equals(endorser, other.endorser) && 
+            Objects.equals(useContext, other.useContext) && 
+            Objects.equals(purpose, other.purpose) && 
+            Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
             Objects.equals(relatedArtifact, other.relatedArtifact) && 
             Objects.equals(description, other.description) && 
             Objects.equals(assertion, other.assertion) && 
             Objects.equals(note, other.note) && 
             Objects.equals(variableDefinition, other.variableDefinition) && 
             Objects.equals(synthesisType, other.synthesisType) && 
-            Objects.equals(studyType, other.studyType) && 
+            Objects.equals(studyDesign, other.studyDesign) && 
             Objects.equals(statistic, other.statistic) && 
             Objects.equals(certainty, other.certainty);
     }
@@ -641,11 +761,13 @@ public class Evidence extends DomainResource {
                 url, 
                 identifier, 
                 version, 
+                versionAlgorithm, 
+                name, 
                 title, 
                 citeAs, 
                 status, 
+                experimental, 
                 date, 
-                useContext, 
                 approvalDate, 
                 lastReviewDate, 
                 publisher, 
@@ -654,13 +776,17 @@ public class Evidence extends DomainResource {
                 editor, 
                 reviewer, 
                 endorser, 
+                useContext, 
+                purpose, 
+                copyright, 
+                copyrightLabel, 
                 relatedArtifact, 
                 description, 
                 assertion, 
                 note, 
                 variableDefinition, 
                 synthesisType, 
-                studyType, 
+                studyDesign, 
                 statistic, 
                 certainty);
             hashCode = result;
@@ -681,11 +807,13 @@ public class Evidence extends DomainResource {
         private Uri url;
         private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+        private String name;
         private String title;
-        private Element citeAs;
+        private org.linuxforhealth.fhir.model.type.Element citeAs;
         private PublicationStatus status;
+        private Boolean experimental;
         private DateTime date;
-        private List<UsageContext> useContext = new ArrayList<>();
         private Date approvalDate;
         private Date lastReviewDate;
         private String publisher;
@@ -694,13 +822,17 @@ public class Evidence extends DomainResource {
         private List<ContactDetail> editor = new ArrayList<>();
         private List<ContactDetail> reviewer = new ArrayList<>();
         private List<ContactDetail> endorser = new ArrayList<>();
+        private List<UsageContext> useContext = new ArrayList<>();
+        private Markdown purpose;
+        private Markdown copyright;
+        private String copyrightLabel;
         private List<RelatedArtifact> relatedArtifact = new ArrayList<>();
         private Markdown description;
         private Markdown assertion;
         private List<Annotation> note = new ArrayList<>();
         private List<VariableDefinition> variableDefinition = new ArrayList<>();
         private CodeableConcept synthesisType;
-        private CodeableConcept studyType;
+        private List<CodeableConcept> studyDesign = new ArrayList<>();
         private List<Statistic> statistic = new ArrayList<>();
         private List<Certainty> certainty = new ArrayList<>();
 
@@ -786,7 +918,8 @@ public class Evidence extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -804,7 +937,8 @@ public class Evidence extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -825,7 +959,7 @@ public class Evidence extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -845,7 +979,7 @@ public class Evidence extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -870,9 +1004,9 @@ public class Evidence extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -895,9 +1029,9 @@ public class Evidence extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -922,8 +1056,8 @@ public class Evidence extends DomainResource {
         /**
          * An absolute URI that is used to identify this evidence when it is referenced in a specification, model, design or an 
          * instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
-         * which at which an authoritative instance of this summary is (or will be) published. This URL can be the target of a 
-         * canonical reference. It SHALL remain the same when the summary is stored on different servers.
+         * which an authoritative instance of this summary is (or will be) published. This URL can be the target of a canonical 
+         * reference. It SHALL remain the same when the summary is stored on different servers.
          * 
          * @param url
          *     Canonical identifier for this evidence, represented as a globally unique URI
@@ -1011,6 +1145,73 @@ public class Evidence extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code name}.
+         * 
+         * @param name
+         *     Name for this summary (machine friendly)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #name(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder name(java.lang.String name) {
+            this.name = (name == null) ? null : String.of(name);
+            return this;
+        }
+
+        /**
+         * A natural language name identifying the evidence. This name should be usable as an identifier for the module by 
+         * machine processing applications such as code generation.
+         * 
+         * @param name
+         *     Name for this summary (machine friendly)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        /**
          * Convenience method for setting {@code title}.
          * 
          * @param title
@@ -1060,7 +1261,7 @@ public class Evidence extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder citeAs(Element citeAs) {
+        public Builder citeAs(org.linuxforhealth.fhir.model.type.Element citeAs) {
             this.citeAs = citeAs;
             return this;
         }
@@ -1082,9 +1283,40 @@ public class Evidence extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the summary was published. The date must change when the business version changes 
-         * and it must change if the status code changes. In addition, it should change when the substantive content of the 
-         * summary changes.
+         * Convenience method for setting {@code experimental}.
+         * 
+         * @param experimental
+         *     For testing purposes, not real usage
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #experimental(org.linuxforhealth.fhir.model.type.Boolean)
+         */
+        public Builder experimental(java.lang.Boolean experimental) {
+            this.experimental = (experimental == null) ? null : Boolean.of(experimental);
+            return this;
+        }
+
+        /**
+         * A Boolean value to indicate that this resource is authored for testing purposes (or education/evaluation/marketing) 
+         * and is not intended to be used for genuine usage.
+         * 
+         * @param experimental
+         *     For testing purposes, not real usage
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder experimental(Boolean experimental) {
+            this.experimental = experimental;
+            return this;
+        }
+
+        /**
+         * The date (and optionally time) when the summary was last significantly changed. The date must change when the business 
+         * version changes and it must change if the status code changes. In addition, it should change when the substantive 
+         * content of the summary changes.
          * 
          * @param date
          *     Date last changed
@@ -1094,49 +1326,6 @@ public class Evidence extends DomainResource {
          */
         public Builder date(DateTime date) {
             this.date = date;
-            return this;
-        }
-
-        /**
-         * The content was developed with a focus and intent of supporting the contexts that are listed. These contexts may be 
-         * general categories (gender, age, ...) or may be references to specific programs (insurance plans, studies, ...) and 
-         * may be used to assist with indexing and searching for appropriate evidence instances.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param useContext
-         *     The context that the content is intended to support
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder useContext(UsageContext... useContext) {
-            for (UsageContext value : useContext) {
-                this.useContext.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * The content was developed with a focus and intent of supporting the contexts that are listed. These contexts may be 
-         * general categories (gender, age, ...) or may be references to specific programs (insurance plans, studies, ...) and 
-         * may be used to assist with indexing and searching for appropriate evidence instances.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param useContext
-         *     The context that the content is intended to support
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder useContext(Collection<UsageContext> useContext) {
-            this.useContext = new ArrayList<>(useContext);
             return this;
         }
 
@@ -1175,7 +1364,7 @@ public class Evidence extends DomainResource {
          * Convenience method for setting {@code lastReviewDate}.
          * 
          * @param lastReviewDate
-         *     When the summary was last reviewed
+         *     When the summary was last reviewed by the publisher
          * 
          * @return
          *     A reference to this Builder instance
@@ -1192,7 +1381,7 @@ public class Evidence extends DomainResource {
          * change the original approval date.
          * 
          * @param lastReviewDate
-         *     When the summary was last reviewed
+         *     When the summary was last reviewed by the publisher
          * 
          * @return
          *     A reference to this Builder instance
@@ -1206,7 +1395,7 @@ public class Evidence extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1219,10 +1408,10 @@ public class Evidence extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the evidence.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the evidence.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1428,6 +1617,109 @@ public class Evidence extends DomainResource {
         }
 
         /**
+         * The content was developed with a focus and intent of supporting the contexts that are listed. These contexts may be 
+         * general categories (gender, age, ...) or may be references to specific programs (insurance plans, studies, ...) and 
+         * may be used to assist with indexing and searching for appropriate evidence instances.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param useContext
+         *     The context that the content is intended to support
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder useContext(UsageContext... useContext) {
+            for (UsageContext value : useContext) {
+                this.useContext.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The content was developed with a focus and intent of supporting the contexts that are listed. These contexts may be 
+         * general categories (gender, age, ...) or may be references to specific programs (insurance plans, studies, ...) and 
+         * may be used to assist with indexing and searching for appropriate evidence instances.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param useContext
+         *     The context that the content is intended to support
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder useContext(Collection<UsageContext> useContext) {
+            this.useContext = new ArrayList<>(useContext);
+            return this;
+        }
+
+        /**
+         * Explanation of why this Evidence is needed and why it has been designed as it has.
+         * 
+         * @param purpose
+         *     Why this Evidence is defined
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder purpose(Markdown purpose) {
+            this.purpose = purpose;
+            return this;
+        }
+
+        /**
+         * A copyright statement relating to the Evidence and/or its contents. Copyright statements are generally legal 
+         * restrictions on the use and publishing of the Evidence.
+         * 
+         * @param copyright
+         *     Use and/or publishing restrictions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyright(Markdown copyright) {
+            this.copyright = copyright;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
+            return this;
+        }
+
+        /**
          * Link or citation to artifact associated with the summary.
          * 
          * <p>Adds new element(s) to the existing list.
@@ -1591,16 +1883,43 @@ public class Evidence extends DomainResource {
         }
 
         /**
-         * The type of study that produced this evidence.
+         * The design of the study that produced this evidence. The design is described with any number of study design 
+         * characteristics.
          * 
-         * @param studyType
-         *     The type of study that produced this evidence
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param studyDesign
+         *     The design of the study that produced this evidence
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder studyType(CodeableConcept studyType) {
-            this.studyType = studyType;
+        public Builder studyDesign(CodeableConcept... studyDesign) {
+            for (CodeableConcept value : studyDesign) {
+                this.studyDesign.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The design of the study that produced this evidence. The design is described with any number of study design 
+         * characteristics.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param studyDesign
+         *     The design of the study that produced this evidence
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder studyDesign(Collection<CodeableConcept> studyDesign) {
+            this.studyDesign = new ArrayList<>(studyDesign);
             return this;
         }
 
@@ -1708,17 +2027,19 @@ public class Evidence extends DomainResource {
         protected void validate(Evidence evidence) {
             super.validate(evidence);
             ValidationSupport.checkList(evidence.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(evidence.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.choiceElement(evidence.citeAs, "citeAs", Reference.class, Markdown.class);
             ValidationSupport.requireNonNull(evidence.status, "status");
-            ValidationSupport.checkList(evidence.useContext, "useContext", UsageContext.class);
             ValidationSupport.checkList(evidence.contact, "contact", ContactDetail.class);
             ValidationSupport.checkList(evidence.author, "author", ContactDetail.class);
             ValidationSupport.checkList(evidence.editor, "editor", ContactDetail.class);
             ValidationSupport.checkList(evidence.reviewer, "reviewer", ContactDetail.class);
             ValidationSupport.checkList(evidence.endorser, "endorser", ContactDetail.class);
+            ValidationSupport.checkList(evidence.useContext, "useContext", UsageContext.class);
             ValidationSupport.checkList(evidence.relatedArtifact, "relatedArtifact", RelatedArtifact.class);
             ValidationSupport.checkList(evidence.note, "note", Annotation.class);
             ValidationSupport.checkNonEmptyList(evidence.variableDefinition, "variableDefinition", VariableDefinition.class);
+            ValidationSupport.checkList(evidence.studyDesign, "studyDesign", CodeableConcept.class);
             ValidationSupport.checkList(evidence.statistic, "statistic", Statistic.class);
             ValidationSupport.checkList(evidence.certainty, "certainty", Certainty.class);
             ValidationSupport.checkReferenceType(evidence.citeAs, "citeAs", "Citation");
@@ -1729,11 +2050,13 @@ public class Evidence extends DomainResource {
             url = evidence.url;
             identifier.addAll(evidence.identifier);
             version = evidence.version;
+            versionAlgorithm = evidence.versionAlgorithm;
+            name = evidence.name;
             title = evidence.title;
             citeAs = evidence.citeAs;
             status = evidence.status;
+            experimental = evidence.experimental;
             date = evidence.date;
-            useContext.addAll(evidence.useContext);
             approvalDate = evidence.approvalDate;
             lastReviewDate = evidence.lastReviewDate;
             publisher = evidence.publisher;
@@ -1742,13 +2065,17 @@ public class Evidence extends DomainResource {
             editor.addAll(evidence.editor);
             reviewer.addAll(evidence.reviewer);
             endorser.addAll(evidence.endorser);
+            useContext.addAll(evidence.useContext);
+            purpose = evidence.purpose;
+            copyright = evidence.copyright;
+            copyrightLabel = evidence.copyrightLabel;
             relatedArtifact.addAll(evidence.relatedArtifact);
             description = evidence.description;
             assertion = evidence.assertion;
             note.addAll(evidence.note);
             variableDefinition.addAll(evidence.variableDefinition);
             synthesisType = evidence.synthesisType;
-            studyType = evidence.studyType;
+            studyDesign.addAll(evidence.studyDesign);
             statistic.addAll(evidence.statistic);
             certainty.addAll(evidence.certainty);
             return this;
@@ -1779,7 +2106,7 @@ public class Evidence extends DomainResource {
             bindingName = "EvidenceDirectness",
             strength = BindingStrength.Value.EXTENSIBLE,
             description = "The quality of how direct the match is.",
-            valueSet = "http://hl7.org/fhir/ValueSet/directness"
+            valueSet = "http://terminology.hl7.org/ValueSet/directness"
         )
         private final CodeableConcept directnessMatch;
 
@@ -1964,7 +2291,7 @@ public class Evidence extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1984,7 +2311,7 @@ public class Evidence extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2009,7 +2336,7 @@ public class Evidence extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2034,7 +2361,7 @@ public class Evidence extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2229,7 +2556,7 @@ public class Evidence extends DomainResource {
      * Values and parameters for a single statistic.
      */
     public static class Statistic extends BackboneElement {
-        private final String description;
+        private final Markdown description;
         private final List<Annotation> note;
         @Binding(
             bindingName = "StatisticType",
@@ -2263,9 +2590,9 @@ public class Evidence extends DomainResource {
          * A description of the content value of the statistic.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link Markdown} that may be null.
          */
-        public String getDescription() {
+        public Markdown getDescription() {
             return description;
         }
 
@@ -2280,7 +2607,7 @@ public class Evidence extends DomainResource {
         }
 
         /**
-         * Type of statistic, eg relative risk.
+         * Type of statistic, e.g., relative risk.
          * 
          * @return
          *     An immutable object of type {@link CodeableConcept} that may be null.
@@ -2461,7 +2788,7 @@ public class Evidence extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private String description;
+            private Markdown description;
             private List<Annotation> note = new ArrayList<>();
             private CodeableConcept statisticType;
             private CodeableConcept category;
@@ -2493,7 +2820,7 @@ public class Evidence extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2513,7 +2840,7 @@ public class Evidence extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2538,7 +2865,7 @@ public class Evidence extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2563,7 +2890,7 @@ public class Evidence extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2588,22 +2915,6 @@ public class Evidence extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code description}.
-             * 
-             * @param description
-             *     Description of content
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #description(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder description(java.lang.String description) {
-                this.description = (description == null) ? null : String.of(description);
-                return this;
-            }
-
-            /**
              * A description of the content value of the statistic.
              * 
              * @param description
@@ -2612,7 +2923,7 @@ public class Evidence extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder description(String description) {
+            public Builder description(Markdown description) {
                 this.description = description;
                 return this;
             }
@@ -2657,10 +2968,10 @@ public class Evidence extends DomainResource {
             }
 
             /**
-             * Type of statistic, eg relative risk.
+             * Type of statistic, e.g., relative risk.
              * 
              * @param statisticType
-             *     Type of statistic, eg relative risk
+             *     Type of statistic, e.g., relative risk
              * 
              * @return
              *     A reference to this Builder instance
@@ -2866,7 +3177,7 @@ public class Evidence extends DomainResource {
          * Number of samples in the statistic.
          */
         public static class SampleSize extends BackboneElement {
-            private final String description;
+            private final Markdown description;
             private final List<Annotation> note;
             private final UnsignedInt numberOfStudies;
             private final UnsignedInt numberOfParticipants;
@@ -2885,9 +3196,9 @@ public class Evidence extends DomainResource {
              * Human-readable summary of population sample size.
              * 
              * @return
-             *     An immutable object of type {@link String} that may be null.
+             *     An immutable object of type {@link Markdown} that may be null.
              */
-            public String getDescription() {
+            public Markdown getDescription() {
                 return description;
             }
 
@@ -3010,7 +3321,7 @@ public class Evidence extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private String description;
+                private Markdown description;
                 private List<Annotation> note = new ArrayList<>();
                 private UnsignedInt numberOfStudies;
                 private UnsignedInt numberOfParticipants;
@@ -3037,7 +3348,7 @@ public class Evidence extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3057,7 +3368,7 @@ public class Evidence extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3082,7 +3393,7 @@ public class Evidence extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3107,7 +3418,7 @@ public class Evidence extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3132,22 +3443,6 @@ public class Evidence extends DomainResource {
                 }
 
                 /**
-                 * Convenience method for setting {@code description}.
-                 * 
-                 * @param description
-                 *     Textual description of sample size for statistic
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @see #description(org.linuxforhealth.fhir.model.type.String)
-                 */
-                public Builder description(java.lang.String description) {
-                    this.description = (description == null) ? null : String.of(description);
-                    return this;
-                }
-
-                /**
                  * Human-readable summary of population sample size.
                  * 
                  * @param description
@@ -3156,7 +3451,7 @@ public class Evidence extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder description(String description) {
+                public Builder description(Markdown description) {
                     this.description = description;
                     return this;
                 }
@@ -3281,7 +3576,7 @@ public class Evidence extends DomainResource {
          * A statistical attribute of the statistic such as a measure of heterogeneity.
          */
         public static class AttributeEstimate extends BackboneElement {
-            private final String description;
+            private final Markdown description;
             private final List<Annotation> note;
             @Binding(
                 bindingName = "AttributeEstimateType",
@@ -3309,9 +3604,9 @@ public class Evidence extends DomainResource {
              * Human-readable summary of the estimate.
              * 
              * @return
-             *     An immutable object of type {@link String} that may be null.
+             *     An immutable object of type {@link Markdown} that may be null.
              */
-            public String getDescription() {
+            public Markdown getDescription() {
                 return description;
             }
 
@@ -3326,7 +3621,7 @@ public class Evidence extends DomainResource {
             }
 
             /**
-             * The type of attribute estimate, eg confidence interval or p value.
+             * The type of attribute estimate, e.g., confidence interval or p value.
              * 
              * @return
              *     An immutable object of type {@link CodeableConcept} that may be null.
@@ -3463,7 +3758,7 @@ public class Evidence extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private String description;
+                private Markdown description;
                 private List<Annotation> note = new ArrayList<>();
                 private CodeableConcept type;
                 private Quantity quantity;
@@ -3492,7 +3787,7 @@ public class Evidence extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3512,7 +3807,7 @@ public class Evidence extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3537,7 +3832,7 @@ public class Evidence extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3562,7 +3857,7 @@ public class Evidence extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3587,22 +3882,6 @@ public class Evidence extends DomainResource {
                 }
 
                 /**
-                 * Convenience method for setting {@code description}.
-                 * 
-                 * @param description
-                 *     Textual description of the attribute estimate
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @see #description(org.linuxforhealth.fhir.model.type.String)
-                 */
-                public Builder description(java.lang.String description) {
-                    this.description = (description == null) ? null : String.of(description);
-                    return this;
-                }
-
-                /**
                  * Human-readable summary of the estimate.
                  * 
                  * @param description
@@ -3611,7 +3890,7 @@ public class Evidence extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder description(String description) {
+                public Builder description(Markdown description) {
                     this.description = description;
                     return this;
                 }
@@ -3656,10 +3935,10 @@ public class Evidence extends DomainResource {
                 }
 
                 /**
-                 * The type of attribute estimate, eg confidence interval or p value.
+                 * The type of attribute estimate, e.g., confidence interval or p value.
                  * 
                  * @param type
-                 *     The type of attribute estimate, eg confidence interval or p value
+                 *     The type of attribute estimate, e.g., confidence interval or p value
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -3689,7 +3968,7 @@ public class Evidence extends DomainResource {
                  * Use 95 for a 95% confidence interval.
                  * 
                  * @param level
-                 *     Level of confidence interval, eg 0.95 for 95% confidence interval
+                 *     Level of confidence interval, e.g., 0.95 for 95% confidence interval
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -3954,7 +4233,7 @@ public class Evidence extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3974,7 +4253,7 @@ public class Evidence extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3999,7 +4278,7 @@ public class Evidence extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4024,7 +4303,7 @@ public class Evidence extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4206,7 +4485,7 @@ public class Evidence extends DomainResource {
                 @Binding(
                     bindingName = "EvidenceVariableHandling",
                     strength = BindingStrength.Value.REQUIRED,
-                    valueSet = "http://hl7.org/fhir/ValueSet/variable-handling|4.3.0"
+                    valueSet = "http://hl7.org/fhir/ValueSet/variable-handling|5.0.0"
                 )
                 private final EvidenceVariableHandling handling;
                 private final List<CodeableConcept> valueCategory;
@@ -4378,7 +4657,7 @@ public class Evidence extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -4398,7 +4677,7 @@ public class Evidence extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -4423,7 +4702,7 @@ public class Evidence extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -4448,7 +4727,7 @@ public class Evidence extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -4675,7 +4954,7 @@ public class Evidence extends DomainResource {
      * Assessment of certainty, confidence in the estimates, or quality of the evidence.
      */
     public static class Certainty extends BackboneElement {
-        private final String description;
+        private final Markdown description;
         private final List<Annotation> note;
         @Binding(
             bindingName = "EvidenceCertaintyType",
@@ -4708,9 +4987,9 @@ public class Evidence extends DomainResource {
          * Textual description of certainty.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link Markdown} that may be null.
          */
-        public String getDescription() {
+        public Markdown getDescription() {
             return description;
         }
 
@@ -4847,7 +5126,7 @@ public class Evidence extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private String description;
+            private Markdown description;
             private List<Annotation> note = new ArrayList<>();
             private CodeableConcept type;
             private CodeableConcept rating;
@@ -4875,7 +5154,7 @@ public class Evidence extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4895,7 +5174,7 @@ public class Evidence extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4920,7 +5199,7 @@ public class Evidence extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4945,7 +5224,7 @@ public class Evidence extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4970,22 +5249,6 @@ public class Evidence extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code description}.
-             * 
-             * @param description
-             *     Textual description of certainty
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #description(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder description(java.lang.String description) {
-                this.description = (description == null) ? null : String.of(description);
-                return this;
-            }
-
-            /**
              * Textual description of certainty.
              * 
              * @param description
@@ -4994,7 +5257,7 @@ public class Evidence extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder description(String description) {
+            public Builder description(Markdown description) {
                 this.description = description;
                 return this;
             }

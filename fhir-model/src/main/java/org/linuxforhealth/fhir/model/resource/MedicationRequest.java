@@ -16,6 +16,7 @@ import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
 import org.linuxforhealth.fhir.model.annotation.Choice;
+import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
@@ -23,15 +24,16 @@ import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.Annotation;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Boolean;
-import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Dosage;
 import org.linuxforhealth.fhir.model.type.Duration;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
+import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
@@ -53,21 +55,55 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * generalize the use across inpatient and outpatient settings, including care plans, etc., and to harmonize with 
  * workflow patterns.
  * 
- * <p>Maturity level: FMM3 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 3,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
+)
+@Constraint(
+    id = "medicationRequest-0",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/medication-intended-performer-role",
+    expression = "performerType.exists() implies (performerType.memberOf('http://hl7.org/fhir/ValueSet/medication-intended-performer-role', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/MedicationRequest",
+    generated = true
+)
+@Constraint(
+    id = "medicationRequest-1",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/medicationrequest-course-of-therapy",
+    expression = "courseOfTherapyType.exists() implies (courseOfTherapyType.memberOf('http://hl7.org/fhir/ValueSet/medicationrequest-course-of-therapy', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/MedicationRequest",
+    generated = true
+)
+@Constraint(
+    id = "medicationRequest-2",
+    level = "Warning",
+    location = "substitution.allowed",
+    description = "SHOULD contain a code from value set http://terminology.hl7.org/ValueSet/v3-ActSubstanceAdminSubstitutionCode",
+    expression = "$this.as(Boolean).memberOf('http://terminology.hl7.org/ValueSet/v3-ActSubstanceAdminSubstitutionCode', 'preferred')",
+    source = "http://hl7.org/fhir/StructureDefinition/MedicationRequest",
+    generated = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class MedicationRequest extends DomainResource {
     private final List<Identifier> identifier;
     @Summary
+    @ReferenceTarget({ "CarePlan", "MedicationRequest", "ServiceRequest", "ImmunizationRecommendation" })
+    private final List<Reference> basedOn;
+    @ReferenceTarget({ "MedicationRequest" })
+    private final Reference priorPrescription;
+    @Summary
+    private final Identifier groupIdentifier;
+    @Summary
     @Binding(
         bindingName = "MedicationRequestStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "A coded concept specifying the state of the prescribing event. Describes the lifecycle of the prescription.",
-        valueSet = "http://hl7.org/fhir/ValueSet/medicationrequest-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/medicationrequest-status|5.0.0"
     )
     @Required
     private final MedicationRequestStatus status;
@@ -78,20 +114,21 @@ public class MedicationRequest extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/medicationrequest-status-reason"
     )
     private final CodeableConcept statusReason;
+    private final DateTime statusChanged;
     @Summary
     @Binding(
         bindingName = "MedicationRequestIntent",
         strength = BindingStrength.Value.REQUIRED,
         description = "The kind of medication order.",
-        valueSet = "http://hl7.org/fhir/ValueSet/medicationrequest-intent|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/medicationrequest-intent|5.0.0"
     )
     @Required
     private final MedicationRequestIntent intent;
     @Binding(
-        bindingName = "MedicationRequestCategory",
+        bindingName = "MedicationRequestAdministrationLocation",
         strength = BindingStrength.Value.EXAMPLE,
-        description = "A coded concept identifying the category of medication request.  For example, where the medication is to be consumed or administered, or the type of medication treatment.",
-        valueSet = "http://hl7.org/fhir/ValueSet/medicationrequest-category"
+        description = "A coded concept identifying where the medication is to be consumed or administered.",
+        valueSet = "http://hl7.org/fhir/ValueSet/medicationrequest-admin-location"
     )
     private final List<CodeableConcept> category;
     @Summary
@@ -99,18 +136,12 @@ public class MedicationRequest extends DomainResource {
         bindingName = "MedicationRequestPriority",
         strength = BindingStrength.Value.REQUIRED,
         description = "Identifies the level of importance to be assigned to actioning the request.",
-        valueSet = "http://hl7.org/fhir/ValueSet/request-priority|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/request-priority|5.0.0"
     )
     private final MedicationRequestPriority priority;
     @Summary
     private final Boolean doNotPerform;
     @Summary
-    @ReferenceTarget({ "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "Organization" })
-    @Choice({ Boolean.class, Reference.class })
-    private final Element reported;
-    @Summary
-    @ReferenceTarget({ "Medication" })
-    @Choice({ CodeableConcept.class, Reference.class })
     @Binding(
         bindingName = "MedicationCode",
         strength = BindingStrength.Value.EXAMPLE,
@@ -118,11 +149,13 @@ public class MedicationRequest extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/medication-codes"
     )
     @Required
-    private final Element medication;
+    private final CodeableReference medication;
     @Summary
     @ReferenceTarget({ "Patient", "Group" })
     @Required
     private final Reference subject;
+    @ReferenceTarget({ "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "Organization" })
+    private final List<Reference> informationSource;
     @ReferenceTarget({ "Encounter" })
     private final Reference encounter;
     private final List<Reference> supportingInformation;
@@ -131,16 +164,19 @@ public class MedicationRequest extends DomainResource {
     @Summary
     @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "Patient", "RelatedPerson", "Device" })
     private final Reference requester;
-    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "Patient", "Device", "RelatedPerson", "CareTeam" })
-    private final Reference performer;
+    @Summary
+    private final Boolean reported;
     @Summary
     @Binding(
         bindingName = "MedicationRequestPerformerType",
-        strength = BindingStrength.Value.EXAMPLE,
+        strength = BindingStrength.Value.EXTENSIBLE,
         description = "Identifies the type of individual that is desired to administer the medication.",
-        valueSet = "http://hl7.org/fhir/ValueSet/performer-role"
+        valueSet = "http://hl7.org/fhir/ValueSet/medication-intended-performer-role"
     )
     private final CodeableConcept performerType;
+    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "Patient", "DeviceDefinition", "RelatedPerson", "CareTeam", "HealthcareService" })
+    private final List<Reference> performer;
+    private final List<CodeableReference> device;
     @ReferenceTarget({ "Practitioner", "PractitionerRole" })
     private final Reference recorder;
     @Binding(
@@ -149,21 +185,10 @@ public class MedicationRequest extends DomainResource {
         description = "A coded concept indicating why the medication was ordered.",
         valueSet = "http://hl7.org/fhir/ValueSet/condition-code"
     )
-    private final List<CodeableConcept> reasonCode;
-    @ReferenceTarget({ "Condition", "Observation" })
-    private final List<Reference> reasonReference;
-    @Summary
-    private final List<Canonical> instantiatesCanonical;
-    @Summary
-    private final List<Uri> instantiatesUri;
-    @Summary
-    @ReferenceTarget({ "CarePlan", "MedicationRequest", "ServiceRequest", "ImmunizationRecommendation" })
-    private final List<Reference> basedOn;
-    @Summary
-    private final Identifier groupIdentifier;
+    private final List<CodeableReference> reason;
     @Binding(
         bindingName = "MedicationRequestCourseOfTherapy",
-        strength = BindingStrength.Value.EXAMPLE,
+        strength = BindingStrength.Value.EXTENSIBLE,
         description = "Identifies the overall pattern of medication administratio.",
         valueSet = "http://hl7.org/fhir/ValueSet/medicationrequest-course-of-therapy"
     )
@@ -171,49 +196,48 @@ public class MedicationRequest extends DomainResource {
     @ReferenceTarget({ "Coverage", "ClaimResponse" })
     private final List<Reference> insurance;
     private final List<Annotation> note;
+    private final Markdown renderedDosageInstruction;
+    private final Period effectiveDosePeriod;
     private final List<Dosage> dosageInstruction;
     private final DispenseRequest dispenseRequest;
     private final Substitution substitution;
-    @ReferenceTarget({ "MedicationRequest" })
-    private final Reference priorPrescription;
-    @ReferenceTarget({ "DetectedIssue" })
-    private final List<Reference> detectedIssue;
     @ReferenceTarget({ "Provenance" })
     private final List<Reference> eventHistory;
 
     private MedicationRequest(Builder builder) {
         super(builder);
         identifier = Collections.unmodifiableList(builder.identifier);
+        basedOn = Collections.unmodifiableList(builder.basedOn);
+        priorPrescription = builder.priorPrescription;
+        groupIdentifier = builder.groupIdentifier;
         status = builder.status;
         statusReason = builder.statusReason;
+        statusChanged = builder.statusChanged;
         intent = builder.intent;
         category = Collections.unmodifiableList(builder.category);
         priority = builder.priority;
         doNotPerform = builder.doNotPerform;
-        reported = builder.reported;
         medication = builder.medication;
         subject = builder.subject;
+        informationSource = Collections.unmodifiableList(builder.informationSource);
         encounter = builder.encounter;
         supportingInformation = Collections.unmodifiableList(builder.supportingInformation);
         authoredOn = builder.authoredOn;
         requester = builder.requester;
-        performer = builder.performer;
+        reported = builder.reported;
         performerType = builder.performerType;
+        performer = Collections.unmodifiableList(builder.performer);
+        device = Collections.unmodifiableList(builder.device);
         recorder = builder.recorder;
-        reasonCode = Collections.unmodifiableList(builder.reasonCode);
-        reasonReference = Collections.unmodifiableList(builder.reasonReference);
-        instantiatesCanonical = Collections.unmodifiableList(builder.instantiatesCanonical);
-        instantiatesUri = Collections.unmodifiableList(builder.instantiatesUri);
-        basedOn = Collections.unmodifiableList(builder.basedOn);
-        groupIdentifier = builder.groupIdentifier;
+        reason = Collections.unmodifiableList(builder.reason);
         courseOfTherapyType = builder.courseOfTherapyType;
         insurance = Collections.unmodifiableList(builder.insurance);
         note = Collections.unmodifiableList(builder.note);
+        renderedDosageInstruction = builder.renderedDosageInstruction;
+        effectiveDosePeriod = builder.effectiveDosePeriod;
         dosageInstruction = Collections.unmodifiableList(builder.dosageInstruction);
         dispenseRequest = builder.dispenseRequest;
         substitution = builder.substitution;
-        priorPrescription = builder.priorPrescription;
-        detectedIssue = Collections.unmodifiableList(builder.detectedIssue);
         eventHistory = Collections.unmodifiableList(builder.eventHistory);
     }
 
@@ -228,6 +252,39 @@ public class MedicationRequest extends DomainResource {
      */
     public List<Identifier> getIdentifier() {
         return identifier;
+    }
+
+    /**
+     * A plan or request that is fulfilled in whole or in part by this medication request.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getBasedOn() {
+        return basedOn;
+    }
+
+    /**
+     * Reference to an order/prescription that is being replaced by this MedicationRequest.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getPriorPrescription() {
+        return priorPrescription;
+    }
+
+    /**
+     * A shared identifier common to multiple independent Request instances that were activated/authorized more or less 
+     * simultaneously by a single author. The presence of the same identifier on each request ties those requests together 
+     * and may have business ramifications in terms of reporting of results, billing, etc. E.g. a requisition number shared 
+     * by a set of lab tests ordered together, or a prescription number shared by all meds ordered at one time.
+     * 
+     * @return
+     *     An immutable object of type {@link Identifier} that may be null.
+     */
+    public Identifier getGroupIdentifier() {
+        return groupIdentifier;
     }
 
     /**
@@ -251,6 +308,16 @@ public class MedicationRequest extends DomainResource {
     }
 
     /**
+     * The date (and perhaps time) when the status was changed.
+     * 
+     * @return
+     *     An immutable object of type {@link DateTime} that may be null.
+     */
+    public DateTime getStatusChanged() {
+        return statusChanged;
+    }
+
+    /**
      * Whether the request is a proposal, plan, or an original order.
      * 
      * @return
@@ -261,8 +328,8 @@ public class MedicationRequest extends DomainResource {
     }
 
     /**
-     * Indicates the type of medication request (for example, where the medication is expected to be consumed or administered 
-     * (i.e. inpatient or outpatient)).
+     * An arbitrary categorization or grouping of the medication request. It could be used for indicating where meds are 
+     * intended to be administered, eg. in an inpatient setting or in a patient's home, or a legal category of the medication.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
@@ -282,7 +349,10 @@ public class MedicationRequest extends DomainResource {
     }
 
     /**
-     * If true indicates that the provider is asking for the medication request not to occur.
+     * If true, indicates that the provider is asking for the patient to either stop taking or to not start taking the 
+     * specified medication. For example, the patient is taking an existing medication and the provider is changing their 
+     * medication. They want to create two seperate requests: one to stop using the current medication and another to start 
+     * the new medication.
      * 
      * @return
      *     An immutable object of type {@link Boolean} that may be null.
@@ -292,36 +362,36 @@ public class MedicationRequest extends DomainResource {
     }
 
     /**
-     * Indicates if this record was captured as a secondary 'reported' record rather than as an original primary source-of-
-     * truth record. It may also indicate the source of the report.
-     * 
-     * @return
-     *     An immutable object of type {@link Boolean} or {@link Reference} that may be null.
-     */
-    public Element getReported() {
-        return reported;
-    }
-
-    /**
      * Identifies the medication being requested. This is a link to a resource that represents the medication which may be 
      * the details of the medication or simply an attribute carrying a code that identifies the medication from a known list 
      * of medications.
      * 
      * @return
-     *     An immutable object of type {@link CodeableConcept} or {@link Reference} that is non-null.
+     *     An immutable object of type {@link CodeableReference} that is non-null.
      */
-    public Element getMedication() {
+    public CodeableReference getMedication() {
         return medication;
     }
 
     /**
-     * A link to a resource representing the person or set of individuals to whom the medication will be given.
+     * The individual or group for whom the medication has been requested.
      * 
      * @return
      *     An immutable object of type {@link Reference} that is non-null.
      */
     public Reference getSubject() {
         return subject;
+    }
+
+    /**
+     * The person or organization who provided the information about this request, if the source is someone other than the 
+     * requestor. This is often used when the MedicationRequest is reported by another person.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getInformationSource() {
+        return informationSource;
     }
 
     /**
@@ -335,7 +405,8 @@ public class MedicationRequest extends DomainResource {
     }
 
     /**
-     * Include additional information (for example, patient height and weight) that supports the ordering of the medication.
+     * Information to support fulfilling (i.e. dispensing or administering) of the medication, for example, patient height 
+     * and weight, a MedicationStatement for the patient).
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
@@ -365,13 +436,14 @@ public class MedicationRequest extends DomainResource {
     }
 
     /**
-     * The specified desired performer of the medication treatment (e.g. the performer of the medication administration).
+     * Indicates if this record was captured as a secondary 'reported' record rather than as an original primary source-of-
+     * truth record. It may also indicate the source of the report.
      * 
      * @return
-     *     An immutable object of type {@link Reference} that may be null.
+     *     An immutable object of type {@link Boolean} that may be null.
      */
-    public Reference getPerformer() {
-        return performer;
+    public Boolean getReported() {
+        return reported;
     }
 
     /**
@@ -382,6 +454,29 @@ public class MedicationRequest extends DomainResource {
      */
     public CodeableConcept getPerformerType() {
         return performerType;
+    }
+
+    /**
+     * The specified desired performer of the medication treatment (e.g. the performer of the medication administration). For 
+     * devices, this is the device that is intended to perform the administration of the medication. An IV Pump would be an 
+     * example of a device that is performing the administration. Both the IV Pump and the practitioner that set the rate or 
+     * bolus on the pump can be listed as performers.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getPerformer() {
+        return performer;
+    }
+
+    /**
+     * The intended type of device that is to be used for the administration of the medication (for example, PCA Pump).
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
+     */
+    public List<CodeableReference> getDevice() {
+        return device;
     }
 
     /**
@@ -399,67 +494,14 @@ public class MedicationRequest extends DomainResource {
      * The reason or the indication for ordering or not ordering the medication.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<CodeableConcept> getReasonCode() {
-        return reasonCode;
+    public List<CodeableReference> getReason() {
+        return reason;
     }
 
     /**
-     * Condition or observation that supports why the medication was ordered.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-     */
-    public List<Reference> getReasonReference() {
-        return reasonReference;
-    }
-
-    /**
-     * The URL pointing to a protocol, guideline, orderset, or other definition that is adhered to in whole or in part by 
-     * this MedicationRequest.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Canonical} that may be empty.
-     */
-    public List<Canonical> getInstantiatesCanonical() {
-        return instantiatesCanonical;
-    }
-
-    /**
-     * The URL pointing to an externally maintained protocol, guideline, orderset or other definition that is adhered to in 
-     * whole or in part by this MedicationRequest.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Uri} that may be empty.
-     */
-    public List<Uri> getInstantiatesUri() {
-        return instantiatesUri;
-    }
-
-    /**
-     * A plan or request that is fulfilled in whole or in part by this medication request.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-     */
-    public List<Reference> getBasedOn() {
-        return basedOn;
-    }
-
-    /**
-     * A shared identifier common to all requests that were authorized more or less simultaneously by a single author, 
-     * representing the identifier of the requisition or prescription.
-     * 
-     * @return
-     *     An immutable object of type {@link Identifier} that may be null.
-     */
-    public Identifier getGroupIdentifier() {
-        return groupIdentifier;
-    }
-
-    /**
-     * The description of the overall patte3rn of the administration of the medication to the patient.
+     * The description of the overall pattern of the administration of the medication to the patient.
      * 
      * @return
      *     An immutable object of type {@link CodeableConcept} that may be null.
@@ -490,7 +532,29 @@ public class MedicationRequest extends DomainResource {
     }
 
     /**
-     * Indicates how the medication is to be used by the patient.
+     * The full representation of the dose of the medication included in all dosage instructions. To be used when multiple 
+     * dosage instructions are included to represent complex dosing such as increasing or tapering doses.
+     * 
+     * @return
+     *     An immutable object of type {@link Markdown} that may be null.
+     */
+    public Markdown getRenderedDosageInstruction() {
+        return renderedDosageInstruction;
+    }
+
+    /**
+     * The period over which the medication is to be taken. Where there are multiple dosageInstruction lines (for example, 
+     * tapering doses), this is the earliest date and the latest end date of the dosageInstructions.
+     * 
+     * @return
+     *     An immutable object of type {@link Period} that may be null.
+     */
+    public Period getEffectiveDosePeriod() {
+        return effectiveDosePeriod;
+    }
+
+    /**
+     * Specific instructions for how the medication is to be used by the patient.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Dosage} that may be empty.
@@ -525,27 +589,6 @@ public class MedicationRequest extends DomainResource {
     }
 
     /**
-     * A link to a resource representing an earlier order related order or prescription.
-     * 
-     * @return
-     *     An immutable object of type {@link Reference} that may be null.
-     */
-    public Reference getPriorPrescription() {
-        return priorPrescription;
-    }
-
-    /**
-     * Indicates an actual or potential clinical issue with or between one or more active or proposed clinical actions for a 
-     * patient; e.g. Drug-drug interaction, duplicate therapy, dosage alert etc.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-     */
-    public List<Reference> getDetectedIssue() {
-        return detectedIssue;
-    }
-
-    /**
      * Links to Provenance records for past versions of this resource or fulfilling request or event resources that identify 
      * key state transitions or updates that are likely to be relevant to a user looking at the current version of the 
      * resource.
@@ -561,36 +604,37 @@ public class MedicationRequest extends DomainResource {
     public boolean hasChildren() {
         return super.hasChildren() || 
             !identifier.isEmpty() || 
+            !basedOn.isEmpty() || 
+            (priorPrescription != null) || 
+            (groupIdentifier != null) || 
             (status != null) || 
             (statusReason != null) || 
+            (statusChanged != null) || 
             (intent != null) || 
             !category.isEmpty() || 
             (priority != null) || 
             (doNotPerform != null) || 
-            (reported != null) || 
             (medication != null) || 
             (subject != null) || 
+            !informationSource.isEmpty() || 
             (encounter != null) || 
             !supportingInformation.isEmpty() || 
             (authoredOn != null) || 
             (requester != null) || 
-            (performer != null) || 
+            (reported != null) || 
             (performerType != null) || 
+            !performer.isEmpty() || 
+            !device.isEmpty() || 
             (recorder != null) || 
-            !reasonCode.isEmpty() || 
-            !reasonReference.isEmpty() || 
-            !instantiatesCanonical.isEmpty() || 
-            !instantiatesUri.isEmpty() || 
-            !basedOn.isEmpty() || 
-            (groupIdentifier != null) || 
+            !reason.isEmpty() || 
             (courseOfTherapyType != null) || 
             !insurance.isEmpty() || 
             !note.isEmpty() || 
+            (renderedDosageInstruction != null) || 
+            (effectiveDosePeriod != null) || 
             !dosageInstruction.isEmpty() || 
             (dispenseRequest != null) || 
             (substitution != null) || 
-            (priorPrescription != null) || 
-            !detectedIssue.isEmpty() || 
             !eventHistory.isEmpty();
     }
 
@@ -609,36 +653,37 @@ public class MedicationRequest extends DomainResource {
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(identifier, "identifier", visitor, Identifier.class);
+                accept(basedOn, "basedOn", visitor, Reference.class);
+                accept(priorPrescription, "priorPrescription", visitor);
+                accept(groupIdentifier, "groupIdentifier", visitor);
                 accept(status, "status", visitor);
                 accept(statusReason, "statusReason", visitor);
+                accept(statusChanged, "statusChanged", visitor);
                 accept(intent, "intent", visitor);
                 accept(category, "category", visitor, CodeableConcept.class);
                 accept(priority, "priority", visitor);
                 accept(doNotPerform, "doNotPerform", visitor);
-                accept(reported, "reported", visitor);
                 accept(medication, "medication", visitor);
                 accept(subject, "subject", visitor);
+                accept(informationSource, "informationSource", visitor, Reference.class);
                 accept(encounter, "encounter", visitor);
                 accept(supportingInformation, "supportingInformation", visitor, Reference.class);
                 accept(authoredOn, "authoredOn", visitor);
                 accept(requester, "requester", visitor);
-                accept(performer, "performer", visitor);
+                accept(reported, "reported", visitor);
                 accept(performerType, "performerType", visitor);
+                accept(performer, "performer", visitor, Reference.class);
+                accept(device, "device", visitor, CodeableReference.class);
                 accept(recorder, "recorder", visitor);
-                accept(reasonCode, "reasonCode", visitor, CodeableConcept.class);
-                accept(reasonReference, "reasonReference", visitor, Reference.class);
-                accept(instantiatesCanonical, "instantiatesCanonical", visitor, Canonical.class);
-                accept(instantiatesUri, "instantiatesUri", visitor, Uri.class);
-                accept(basedOn, "basedOn", visitor, Reference.class);
-                accept(groupIdentifier, "groupIdentifier", visitor);
+                accept(reason, "reason", visitor, CodeableReference.class);
                 accept(courseOfTherapyType, "courseOfTherapyType", visitor);
                 accept(insurance, "insurance", visitor, Reference.class);
                 accept(note, "note", visitor, Annotation.class);
+                accept(renderedDosageInstruction, "renderedDosageInstruction", visitor);
+                accept(effectiveDosePeriod, "effectiveDosePeriod", visitor);
                 accept(dosageInstruction, "dosageInstruction", visitor, Dosage.class);
                 accept(dispenseRequest, "dispenseRequest", visitor);
                 accept(substitution, "substitution", visitor);
-                accept(priorPrescription, "priorPrescription", visitor);
-                accept(detectedIssue, "detectedIssue", visitor, Reference.class);
                 accept(eventHistory, "eventHistory", visitor, Reference.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
@@ -667,36 +712,37 @@ public class MedicationRequest extends DomainResource {
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(identifier, other.identifier) && 
+            Objects.equals(basedOn, other.basedOn) && 
+            Objects.equals(priorPrescription, other.priorPrescription) && 
+            Objects.equals(groupIdentifier, other.groupIdentifier) && 
             Objects.equals(status, other.status) && 
             Objects.equals(statusReason, other.statusReason) && 
+            Objects.equals(statusChanged, other.statusChanged) && 
             Objects.equals(intent, other.intent) && 
             Objects.equals(category, other.category) && 
             Objects.equals(priority, other.priority) && 
             Objects.equals(doNotPerform, other.doNotPerform) && 
-            Objects.equals(reported, other.reported) && 
             Objects.equals(medication, other.medication) && 
             Objects.equals(subject, other.subject) && 
+            Objects.equals(informationSource, other.informationSource) && 
             Objects.equals(encounter, other.encounter) && 
             Objects.equals(supportingInformation, other.supportingInformation) && 
             Objects.equals(authoredOn, other.authoredOn) && 
             Objects.equals(requester, other.requester) && 
-            Objects.equals(performer, other.performer) && 
+            Objects.equals(reported, other.reported) && 
             Objects.equals(performerType, other.performerType) && 
+            Objects.equals(performer, other.performer) && 
+            Objects.equals(device, other.device) && 
             Objects.equals(recorder, other.recorder) && 
-            Objects.equals(reasonCode, other.reasonCode) && 
-            Objects.equals(reasonReference, other.reasonReference) && 
-            Objects.equals(instantiatesCanonical, other.instantiatesCanonical) && 
-            Objects.equals(instantiatesUri, other.instantiatesUri) && 
-            Objects.equals(basedOn, other.basedOn) && 
-            Objects.equals(groupIdentifier, other.groupIdentifier) && 
+            Objects.equals(reason, other.reason) && 
             Objects.equals(courseOfTherapyType, other.courseOfTherapyType) && 
             Objects.equals(insurance, other.insurance) && 
             Objects.equals(note, other.note) && 
+            Objects.equals(renderedDosageInstruction, other.renderedDosageInstruction) && 
+            Objects.equals(effectiveDosePeriod, other.effectiveDosePeriod) && 
             Objects.equals(dosageInstruction, other.dosageInstruction) && 
             Objects.equals(dispenseRequest, other.dispenseRequest) && 
             Objects.equals(substitution, other.substitution) && 
-            Objects.equals(priorPrescription, other.priorPrescription) && 
-            Objects.equals(detectedIssue, other.detectedIssue) && 
             Objects.equals(eventHistory, other.eventHistory);
     }
 
@@ -713,36 +759,37 @@ public class MedicationRequest extends DomainResource {
                 extension, 
                 modifierExtension, 
                 identifier, 
+                basedOn, 
+                priorPrescription, 
+                groupIdentifier, 
                 status, 
                 statusReason, 
+                statusChanged, 
                 intent, 
                 category, 
                 priority, 
                 doNotPerform, 
-                reported, 
                 medication, 
                 subject, 
+                informationSource, 
                 encounter, 
                 supportingInformation, 
                 authoredOn, 
                 requester, 
-                performer, 
+                reported, 
                 performerType, 
+                performer, 
+                device, 
                 recorder, 
-                reasonCode, 
-                reasonReference, 
-                instantiatesCanonical, 
-                instantiatesUri, 
-                basedOn, 
-                groupIdentifier, 
+                reason, 
                 courseOfTherapyType, 
                 insurance, 
                 note, 
+                renderedDosageInstruction, 
+                effectiveDosePeriod, 
                 dosageInstruction, 
                 dispenseRequest, 
                 substitution, 
-                priorPrescription, 
-                detectedIssue, 
                 eventHistory);
             hashCode = result;
         }
@@ -760,36 +807,37 @@ public class MedicationRequest extends DomainResource {
 
     public static class Builder extends DomainResource.Builder {
         private List<Identifier> identifier = new ArrayList<>();
+        private List<Reference> basedOn = new ArrayList<>();
+        private Reference priorPrescription;
+        private Identifier groupIdentifier;
         private MedicationRequestStatus status;
         private CodeableConcept statusReason;
+        private DateTime statusChanged;
         private MedicationRequestIntent intent;
         private List<CodeableConcept> category = new ArrayList<>();
         private MedicationRequestPriority priority;
         private Boolean doNotPerform;
-        private Element reported;
-        private Element medication;
+        private CodeableReference medication;
         private Reference subject;
+        private List<Reference> informationSource = new ArrayList<>();
         private Reference encounter;
         private List<Reference> supportingInformation = new ArrayList<>();
         private DateTime authoredOn;
         private Reference requester;
-        private Reference performer;
+        private Boolean reported;
         private CodeableConcept performerType;
+        private List<Reference> performer = new ArrayList<>();
+        private List<CodeableReference> device = new ArrayList<>();
         private Reference recorder;
-        private List<CodeableConcept> reasonCode = new ArrayList<>();
-        private List<Reference> reasonReference = new ArrayList<>();
-        private List<Canonical> instantiatesCanonical = new ArrayList<>();
-        private List<Uri> instantiatesUri = new ArrayList<>();
-        private List<Reference> basedOn = new ArrayList<>();
-        private Identifier groupIdentifier;
+        private List<CodeableReference> reason = new ArrayList<>();
         private CodeableConcept courseOfTherapyType;
         private List<Reference> insurance = new ArrayList<>();
         private List<Annotation> note = new ArrayList<>();
+        private Markdown renderedDosageInstruction;
+        private Period effectiveDosePeriod;
         private List<Dosage> dosageInstruction = new ArrayList<>();
         private DispenseRequest dispenseRequest;
         private Substitution substitution;
-        private Reference priorPrescription;
-        private List<Reference> detectedIssue = new ArrayList<>();
         private List<Reference> eventHistory = new ArrayList<>();
 
         private Builder() {
@@ -874,7 +922,8 @@ public class MedicationRequest extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -892,7 +941,8 @@ public class MedicationRequest extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -913,7 +963,7 @@ public class MedicationRequest extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -933,7 +983,7 @@ public class MedicationRequest extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -958,9 +1008,9 @@ public class MedicationRequest extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -983,9 +1033,9 @@ public class MedicationRequest extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1053,12 +1103,103 @@ public class MedicationRequest extends DomainResource {
         }
 
         /**
+         * A plan or request that is fulfilled in whole or in part by this medication request.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link CarePlan}</li>
+         * <li>{@link MedicationRequest}</li>
+         * <li>{@link ServiceRequest}</li>
+         * <li>{@link ImmunizationRecommendation}</li>
+         * </ul>
+         * 
+         * @param basedOn
+         *     A plan or request that is fulfilled in whole or in part by this medication request
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder basedOn(Reference... basedOn) {
+            for (Reference value : basedOn) {
+                this.basedOn.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A plan or request that is fulfilled in whole or in part by this medication request.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link CarePlan}</li>
+         * <li>{@link MedicationRequest}</li>
+         * <li>{@link ServiceRequest}</li>
+         * <li>{@link ImmunizationRecommendation}</li>
+         * </ul>
+         * 
+         * @param basedOn
+         *     A plan or request that is fulfilled in whole or in part by this medication request
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder basedOn(Collection<Reference> basedOn) {
+            this.basedOn = new ArrayList<>(basedOn);
+            return this;
+        }
+
+        /**
+         * Reference to an order/prescription that is being replaced by this MedicationRequest.
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link MedicationRequest}</li>
+         * </ul>
+         * 
+         * @param priorPrescription
+         *     Reference to an order/prescription that is being replaced by this MedicationRequest
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder priorPrescription(Reference priorPrescription) {
+            this.priorPrescription = priorPrescription;
+            return this;
+        }
+
+        /**
+         * A shared identifier common to multiple independent Request instances that were activated/authorized more or less 
+         * simultaneously by a single author. The presence of the same identifier on each request ties those requests together 
+         * and may have business ramifications in terms of reporting of results, billing, etc. E.g. a requisition number shared 
+         * by a set of lab tests ordered together, or a prescription number shared by all meds ordered at one time.
+         * 
+         * @param groupIdentifier
+         *     Composite request this is part of
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder groupIdentifier(Identifier groupIdentifier) {
+            this.groupIdentifier = groupIdentifier;
+            return this;
+        }
+
+        /**
          * A code specifying the current state of the order. Generally, this will be active or completed state.
          * 
          * <p>This element is required.
          * 
          * @param status
-         *     active | on-hold | cancelled | completed | entered-in-error | stopped | draft | unknown
+         *     active | on-hold | ended | stopped | completed | cancelled | entered-in-error | draft | unknown
          * 
          * @return
          *     A reference to this Builder instance
@@ -1083,6 +1224,20 @@ public class MedicationRequest extends DomainResource {
         }
 
         /**
+         * The date (and perhaps time) when the status was changed.
+         * 
+         * @param statusChanged
+         *     When the status was changed
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder statusChanged(DateTime statusChanged) {
+            this.statusChanged = statusChanged;
+            return this;
+        }
+
+        /**
          * Whether the request is a proposal, plan, or an original order.
          * 
          * <p>This element is required.
@@ -1099,14 +1254,14 @@ public class MedicationRequest extends DomainResource {
         }
 
         /**
-         * Indicates the type of medication request (for example, where the medication is expected to be consumed or administered 
-         * (i.e. inpatient or outpatient)).
+         * An arbitrary categorization or grouping of the medication request. It could be used for indicating where meds are 
+         * intended to be administered, eg. in an inpatient setting or in a patient's home, or a legal category of the medication.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param category
-         *     Type of medication usage
+         *     Grouping or category of medication request
          * 
          * @return
          *     A reference to this Builder instance
@@ -1119,14 +1274,14 @@ public class MedicationRequest extends DomainResource {
         }
 
         /**
-         * Indicates the type of medication request (for example, where the medication is expected to be consumed or administered 
-         * (i.e. inpatient or outpatient)).
+         * An arbitrary categorization or grouping of the medication request. It could be used for indicating where meds are 
+         * intended to be administered, eg. in an inpatient setting or in a patient's home, or a legal category of the medication.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param category
-         *     Type of medication usage
+         *     Grouping or category of medication request
          * 
          * @return
          *     A reference to this Builder instance
@@ -1157,7 +1312,7 @@ public class MedicationRequest extends DomainResource {
          * Convenience method for setting {@code doNotPerform}.
          * 
          * @param doNotPerform
-         *     True if request is prohibiting action
+         *     True if patient is to stop taking or not to start taking the medication
          * 
          * @return
          *     A reference to this Builder instance
@@ -1170,10 +1325,13 @@ public class MedicationRequest extends DomainResource {
         }
 
         /**
-         * If true indicates that the provider is asking for the medication request not to occur.
+         * If true, indicates that the provider is asking for the patient to either stop taking or to not start taking the 
+         * specified medication. For example, the patient is taking an existing medication and the provider is changing their 
+         * medication. They want to create two seperate requests: one to stop using the current medication and another to start 
+         * the new medication.
          * 
          * @param doNotPerform
-         *     True if request is prohibiting action
+         *     True if patient is to stop taking or not to start taking the medication
          * 
          * @return
          *     A reference to this Builder instance
@@ -1184,68 +1342,11 @@ public class MedicationRequest extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code reported} with choice type Boolean.
-         * 
-         * @param reported
-         *     Reported rather than primary record
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #reported(Element)
-         */
-        public Builder reported(java.lang.Boolean reported) {
-            this.reported = (reported == null) ? null : Boolean.of(reported);
-            return this;
-        }
-
-        /**
-         * Indicates if this record was captured as a secondary 'reported' record rather than as an original primary source-of-
-         * truth record. It may also indicate the source of the report.
-         * 
-         * <p>This is a choice element with the following allowed types:
-         * <ul>
-         * <li>{@link Boolean}</li>
-         * <li>{@link Reference}</li>
-         * </ul>
-         * 
-         * When of type {@link Reference}, the allowed resource types for this reference are:
-         * <ul>
-         * <li>{@link Patient}</li>
-         * <li>{@link Practitioner}</li>
-         * <li>{@link PractitionerRole}</li>
-         * <li>{@link RelatedPerson}</li>
-         * <li>{@link Organization}</li>
-         * </ul>
-         * 
-         * @param reported
-         *     Reported rather than primary record
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder reported(Element reported) {
-            this.reported = reported;
-            return this;
-        }
-
-        /**
          * Identifies the medication being requested. This is a link to a resource that represents the medication which may be 
          * the details of the medication or simply an attribute carrying a code that identifies the medication from a known list 
          * of medications.
          * 
          * <p>This element is required.
-         * 
-         * <p>This is a choice element with the following allowed types:
-         * <ul>
-         * <li>{@link CodeableConcept}</li>
-         * <li>{@link Reference}</li>
-         * </ul>
-         * 
-         * When of type {@link Reference}, the allowed resource types for this reference are:
-         * <ul>
-         * <li>{@link Medication}</li>
-         * </ul>
          * 
          * @param medication
          *     Medication to be taken
@@ -1253,13 +1354,13 @@ public class MedicationRequest extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder medication(Element medication) {
+        public Builder medication(CodeableReference medication) {
             this.medication = medication;
             return this;
         }
 
         /**
-         * A link to a resource representing the person or set of individuals to whom the medication will be given.
+         * The individual or group for whom the medication has been requested.
          * 
          * <p>This element is required.
          * 
@@ -1270,13 +1371,74 @@ public class MedicationRequest extends DomainResource {
          * </ul>
          * 
          * @param subject
-         *     Who or group medication request is for
+         *     Individual or group for whom the medication has been requested
          * 
          * @return
          *     A reference to this Builder instance
          */
         public Builder subject(Reference subject) {
             this.subject = subject;
+            return this;
+        }
+
+        /**
+         * The person or organization who provided the information about this request, if the source is someone other than the 
+         * requestor. This is often used when the MedicationRequest is reported by another person.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link Patient}</li>
+         * <li>{@link Practitioner}</li>
+         * <li>{@link PractitionerRole}</li>
+         * <li>{@link RelatedPerson}</li>
+         * <li>{@link Organization}</li>
+         * </ul>
+         * 
+         * @param informationSource
+         *     The person or organization who provided the information about this request, if the source is someone other than the 
+         *     requestor
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder informationSource(Reference... informationSource) {
+            for (Reference value : informationSource) {
+                this.informationSource.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The person or organization who provided the information about this request, if the source is someone other than the 
+         * requestor. This is often used when the MedicationRequest is reported by another person.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link Patient}</li>
+         * <li>{@link Practitioner}</li>
+         * <li>{@link PractitionerRole}</li>
+         * <li>{@link RelatedPerson}</li>
+         * <li>{@link Organization}</li>
+         * </ul>
+         * 
+         * @param informationSource
+         *     The person or organization who provided the information about this request, if the source is someone other than the 
+         *     requestor
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder informationSource(Collection<Reference> informationSource) {
+            this.informationSource = new ArrayList<>(informationSource);
             return this;
         }
 
@@ -1300,13 +1462,14 @@ public class MedicationRequest extends DomainResource {
         }
 
         /**
-         * Include additional information (for example, patient height and weight) that supports the ordering of the medication.
+         * Information to support fulfilling (i.e. dispensing or administering) of the medication, for example, patient height 
+         * and weight, a MedicationStatement for the patient).
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param supportingInformation
-         *     Information to support ordering of the medication
+         *     Information to support fulfilling of the medication
          * 
          * @return
          *     A reference to this Builder instance
@@ -1319,13 +1482,14 @@ public class MedicationRequest extends DomainResource {
         }
 
         /**
-         * Include additional information (for example, patient height and weight) that supports the ordering of the medication.
+         * Information to support fulfilling (i.e. dispensing or administering) of the medication, for example, patient height 
+         * and weight, a MedicationStatement for the patient).
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param supportingInformation
-         *     Information to support ordering of the medication
+         *     Information to support fulfilling of the medication
          * 
          * @return
          *     A reference to this Builder instance
@@ -1377,27 +1541,33 @@ public class MedicationRequest extends DomainResource {
         }
 
         /**
-         * The specified desired performer of the medication treatment (e.g. the performer of the medication administration).
+         * Convenience method for setting {@code reported}.
          * 
-         * <p>Allowed resource types for this reference:
-         * <ul>
-         * <li>{@link Practitioner}</li>
-         * <li>{@link PractitionerRole}</li>
-         * <li>{@link Organization}</li>
-         * <li>{@link Patient}</li>
-         * <li>{@link Device}</li>
-         * <li>{@link RelatedPerson}</li>
-         * <li>{@link CareTeam}</li>
-         * </ul>
+         * @param reported
+         *     Reported rather than primary record
          * 
-         * @param performer
-         *     Intended performer of administration
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #reported(org.linuxforhealth.fhir.model.type.Boolean)
+         */
+        public Builder reported(java.lang.Boolean reported) {
+            this.reported = (reported == null) ? null : Boolean.of(reported);
+            return this;
+        }
+
+        /**
+         * Indicates if this record was captured as a secondary 'reported' record rather than as an original primary source-of-
+         * truth record. It may also indicate the source of the report.
+         * 
+         * @param reported
+         *     Reported rather than primary record
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder performer(Reference performer) {
-            this.performer = performer;
+        public Builder reported(Boolean reported) {
+            this.reported = reported;
             return this;
         }
 
@@ -1412,6 +1582,114 @@ public class MedicationRequest extends DomainResource {
          */
         public Builder performerType(CodeableConcept performerType) {
             this.performerType = performerType;
+            return this;
+        }
+
+        /**
+         * The specified desired performer of the medication treatment (e.g. the performer of the medication administration). For 
+         * devices, this is the device that is intended to perform the administration of the medication. An IV Pump would be an 
+         * example of a device that is performing the administration. Both the IV Pump and the practitioner that set the rate or 
+         * bolus on the pump can be listed as performers.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link Practitioner}</li>
+         * <li>{@link PractitionerRole}</li>
+         * <li>{@link Organization}</li>
+         * <li>{@link Patient}</li>
+         * <li>{@link DeviceDefinition}</li>
+         * <li>{@link RelatedPerson}</li>
+         * <li>{@link CareTeam}</li>
+         * <li>{@link HealthcareService}</li>
+         * </ul>
+         * 
+         * @param performer
+         *     Intended performer of administration
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder performer(Reference... performer) {
+            for (Reference value : performer) {
+                this.performer.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The specified desired performer of the medication treatment (e.g. the performer of the medication administration). For 
+         * devices, this is the device that is intended to perform the administration of the medication. An IV Pump would be an 
+         * example of a device that is performing the administration. Both the IV Pump and the practitioner that set the rate or 
+         * bolus on the pump can be listed as performers.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link Practitioner}</li>
+         * <li>{@link PractitionerRole}</li>
+         * <li>{@link Organization}</li>
+         * <li>{@link Patient}</li>
+         * <li>{@link DeviceDefinition}</li>
+         * <li>{@link RelatedPerson}</li>
+         * <li>{@link CareTeam}</li>
+         * <li>{@link HealthcareService}</li>
+         * </ul>
+         * 
+         * @param performer
+         *     Intended performer of administration
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder performer(Collection<Reference> performer) {
+            this.performer = new ArrayList<>(performer);
+            return this;
+        }
+
+        /**
+         * The intended type of device that is to be used for the administration of the medication (for example, PCA Pump).
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param device
+         *     Intended type of device for the administration
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder device(CodeableReference... device) {
+            for (CodeableReference value : device) {
+                this.device.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The intended type of device that is to be used for the administration of the medication (for example, PCA Pump).
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param device
+         *     Intended type of device for the administration
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder device(Collection<CodeableReference> device) {
+            this.device = new ArrayList<>(device);
             return this;
         }
 
@@ -1442,15 +1720,15 @@ public class MedicationRequest extends DomainResource {
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
+         * @param reason
          *     Reason or indication for ordering or not ordering the medication
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder reasonCode(CodeableConcept... reasonCode) {
-            for (CodeableConcept value : reasonCode) {
-                this.reasonCode.add(value);
+        public Builder reason(CodeableReference... reason) {
+            for (CodeableReference value : reason) {
+                this.reason.add(value);
             }
             return this;
         }
@@ -1461,7 +1739,7 @@ public class MedicationRequest extends DomainResource {
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
+         * @param reason
          *     Reason or indication for ordering or not ordering the medication
          * 
          * @return
@@ -1470,216 +1748,13 @@ public class MedicationRequest extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder reasonCode(Collection<CodeableConcept> reasonCode) {
-            this.reasonCode = new ArrayList<>(reasonCode);
+        public Builder reason(Collection<CodeableReference> reason) {
+            this.reason = new ArrayList<>(reason);
             return this;
         }
 
         /**
-         * Condition or observation that supports why the medication was ordered.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Condition or observation that supports why the prescription is being written
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder reasonReference(Reference... reasonReference) {
-            for (Reference value : reasonReference) {
-                this.reasonReference.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Condition or observation that supports why the medication was ordered.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Condition or observation that supports why the prescription is being written
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder reasonReference(Collection<Reference> reasonReference) {
-            this.reasonReference = new ArrayList<>(reasonReference);
-            return this;
-        }
-
-        /**
-         * The URL pointing to a protocol, guideline, orderset, or other definition that is adhered to in whole or in part by 
-         * this MedicationRequest.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param instantiatesCanonical
-         *     Instantiates FHIR protocol or definition
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder instantiatesCanonical(Canonical... instantiatesCanonical) {
-            for (Canonical value : instantiatesCanonical) {
-                this.instantiatesCanonical.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * The URL pointing to a protocol, guideline, orderset, or other definition that is adhered to in whole or in part by 
-         * this MedicationRequest.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param instantiatesCanonical
-         *     Instantiates FHIR protocol or definition
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder instantiatesCanonical(Collection<Canonical> instantiatesCanonical) {
-            this.instantiatesCanonical = new ArrayList<>(instantiatesCanonical);
-            return this;
-        }
-
-        /**
-         * The URL pointing to an externally maintained protocol, guideline, orderset or other definition that is adhered to in 
-         * whole or in part by this MedicationRequest.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param instantiatesUri
-         *     Instantiates external protocol or definition
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder instantiatesUri(Uri... instantiatesUri) {
-            for (Uri value : instantiatesUri) {
-                this.instantiatesUri.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * The URL pointing to an externally maintained protocol, guideline, orderset or other definition that is adhered to in 
-         * whole or in part by this MedicationRequest.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param instantiatesUri
-         *     Instantiates external protocol or definition
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder instantiatesUri(Collection<Uri> instantiatesUri) {
-            this.instantiatesUri = new ArrayList<>(instantiatesUri);
-            return this;
-        }
-
-        /**
-         * A plan or request that is fulfilled in whole or in part by this medication request.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link CarePlan}</li>
-         * <li>{@link MedicationRequest}</li>
-         * <li>{@link ServiceRequest}</li>
-         * <li>{@link ImmunizationRecommendation}</li>
-         * </ul>
-         * 
-         * @param basedOn
-         *     What request fulfills
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder basedOn(Reference... basedOn) {
-            for (Reference value : basedOn) {
-                this.basedOn.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * A plan or request that is fulfilled in whole or in part by this medication request.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link CarePlan}</li>
-         * <li>{@link MedicationRequest}</li>
-         * <li>{@link ServiceRequest}</li>
-         * <li>{@link ImmunizationRecommendation}</li>
-         * </ul>
-         * 
-         * @param basedOn
-         *     What request fulfills
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder basedOn(Collection<Reference> basedOn) {
-            this.basedOn = new ArrayList<>(basedOn);
-            return this;
-        }
-
-        /**
-         * A shared identifier common to all requests that were authorized more or less simultaneously by a single author, 
-         * representing the identifier of the requisition or prescription.
-         * 
-         * @param groupIdentifier
-         *     Composite request this is part of
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder groupIdentifier(Identifier groupIdentifier) {
-            this.groupIdentifier = groupIdentifier;
-            return this;
-        }
-
-        /**
-         * The description of the overall patte3rn of the administration of the medication to the patient.
+         * The description of the overall pattern of the administration of the medication to the patient.
          * 
          * @param courseOfTherapyType
          *     Overall pattern of medication administration
@@ -1785,13 +1860,43 @@ public class MedicationRequest extends DomainResource {
         }
 
         /**
-         * Indicates how the medication is to be used by the patient.
+         * The full representation of the dose of the medication included in all dosage instructions. To be used when multiple 
+         * dosage instructions are included to represent complex dosing such as increasing or tapering doses.
+         * 
+         * @param renderedDosageInstruction
+         *     Full representation of the dosage instructions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder renderedDosageInstruction(Markdown renderedDosageInstruction) {
+            this.renderedDosageInstruction = renderedDosageInstruction;
+            return this;
+        }
+
+        /**
+         * The period over which the medication is to be taken. Where there are multiple dosageInstruction lines (for example, 
+         * tapering doses), this is the earliest date and the latest end date of the dosageInstructions.
+         * 
+         * @param effectiveDosePeriod
+         *     Period over which the medication is to be taken
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder effectiveDosePeriod(Period effectiveDosePeriod) {
+            this.effectiveDosePeriod = effectiveDosePeriod;
+            return this;
+        }
+
+        /**
+         * Specific instructions for how the medication is to be used by the patient.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param dosageInstruction
-         *     How the medication should be taken
+         *     Specific instructions for how the medication should be taken
          * 
          * @return
          *     A reference to this Builder instance
@@ -1804,13 +1909,13 @@ public class MedicationRequest extends DomainResource {
         }
 
         /**
-         * Indicates how the medication is to be used by the patient.
+         * Specific instructions for how the medication is to be used by the patient.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param dosageInstruction
-         *     How the medication should be taken
+         *     Specific instructions for how the medication should be taken
          * 
          * @return
          *     A reference to this Builder instance
@@ -1853,76 +1958,6 @@ public class MedicationRequest extends DomainResource {
          */
         public Builder substitution(Substitution substitution) {
             this.substitution = substitution;
-            return this;
-        }
-
-        /**
-         * A link to a resource representing an earlier order related order or prescription.
-         * 
-         * <p>Allowed resource types for this reference:
-         * <ul>
-         * <li>{@link MedicationRequest}</li>
-         * </ul>
-         * 
-         * @param priorPrescription
-         *     An order/prescription that is being replaced
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder priorPrescription(Reference priorPrescription) {
-            this.priorPrescription = priorPrescription;
-            return this;
-        }
-
-        /**
-         * Indicates an actual or potential clinical issue with or between one or more active or proposed clinical actions for a 
-         * patient; e.g. Drug-drug interaction, duplicate therapy, dosage alert etc.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link DetectedIssue}</li>
-         * </ul>
-         * 
-         * @param detectedIssue
-         *     Clinical Issue with action
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder detectedIssue(Reference... detectedIssue) {
-            for (Reference value : detectedIssue) {
-                this.detectedIssue.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Indicates an actual or potential clinical issue with or between one or more active or proposed clinical actions for a 
-         * patient; e.g. Drug-drug interaction, duplicate therapy, dosage alert etc.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link DetectedIssue}</li>
-         * </ul>
-         * 
-         * @param detectedIssue
-         *     Clinical Issue with action
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder detectedIssue(Collection<Reference> detectedIssue) {
-            this.detectedIssue = new ArrayList<>(detectedIssue);
             return this;
         }
 
@@ -2007,71 +2042,67 @@ public class MedicationRequest extends DomainResource {
         protected void validate(MedicationRequest medicationRequest) {
             super.validate(medicationRequest);
             ValidationSupport.checkList(medicationRequest.identifier, "identifier", Identifier.class);
+            ValidationSupport.checkList(medicationRequest.basedOn, "basedOn", Reference.class);
             ValidationSupport.requireNonNull(medicationRequest.status, "status");
             ValidationSupport.requireNonNull(medicationRequest.intent, "intent");
             ValidationSupport.checkList(medicationRequest.category, "category", CodeableConcept.class);
-            ValidationSupport.choiceElement(medicationRequest.reported, "reported", Boolean.class, Reference.class);
-            ValidationSupport.requireChoiceElement(medicationRequest.medication, "medication", CodeableConcept.class, Reference.class);
+            ValidationSupport.requireNonNull(medicationRequest.medication, "medication");
             ValidationSupport.requireNonNull(medicationRequest.subject, "subject");
+            ValidationSupport.checkList(medicationRequest.informationSource, "informationSource", Reference.class);
             ValidationSupport.checkList(medicationRequest.supportingInformation, "supportingInformation", Reference.class);
-            ValidationSupport.checkList(medicationRequest.reasonCode, "reasonCode", CodeableConcept.class);
-            ValidationSupport.checkList(medicationRequest.reasonReference, "reasonReference", Reference.class);
-            ValidationSupport.checkList(medicationRequest.instantiatesCanonical, "instantiatesCanonical", Canonical.class);
-            ValidationSupport.checkList(medicationRequest.instantiatesUri, "instantiatesUri", Uri.class);
-            ValidationSupport.checkList(medicationRequest.basedOn, "basedOn", Reference.class);
+            ValidationSupport.checkList(medicationRequest.performer, "performer", Reference.class);
+            ValidationSupport.checkList(medicationRequest.device, "device", CodeableReference.class);
+            ValidationSupport.checkList(medicationRequest.reason, "reason", CodeableReference.class);
             ValidationSupport.checkList(medicationRequest.insurance, "insurance", Reference.class);
             ValidationSupport.checkList(medicationRequest.note, "note", Annotation.class);
             ValidationSupport.checkList(medicationRequest.dosageInstruction, "dosageInstruction", Dosage.class);
-            ValidationSupport.checkList(medicationRequest.detectedIssue, "detectedIssue", Reference.class);
             ValidationSupport.checkList(medicationRequest.eventHistory, "eventHistory", Reference.class);
-            ValidationSupport.checkReferenceType(medicationRequest.reported, "reported", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "Organization");
-            ValidationSupport.checkReferenceType(medicationRequest.medication, "medication", "Medication");
+            ValidationSupport.checkReferenceType(medicationRequest.basedOn, "basedOn", "CarePlan", "MedicationRequest", "ServiceRequest", "ImmunizationRecommendation");
+            ValidationSupport.checkReferenceType(medicationRequest.priorPrescription, "priorPrescription", "MedicationRequest");
             ValidationSupport.checkReferenceType(medicationRequest.subject, "subject", "Patient", "Group");
+            ValidationSupport.checkReferenceType(medicationRequest.informationSource, "informationSource", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "Organization");
             ValidationSupport.checkReferenceType(medicationRequest.encounter, "encounter", "Encounter");
             ValidationSupport.checkReferenceType(medicationRequest.requester, "requester", "Practitioner", "PractitionerRole", "Organization", "Patient", "RelatedPerson", "Device");
-            ValidationSupport.checkReferenceType(medicationRequest.performer, "performer", "Practitioner", "PractitionerRole", "Organization", "Patient", "Device", "RelatedPerson", "CareTeam");
+            ValidationSupport.checkReferenceType(medicationRequest.performer, "performer", "Practitioner", "PractitionerRole", "Organization", "Patient", "DeviceDefinition", "RelatedPerson", "CareTeam", "HealthcareService");
             ValidationSupport.checkReferenceType(medicationRequest.recorder, "recorder", "Practitioner", "PractitionerRole");
-            ValidationSupport.checkReferenceType(medicationRequest.reasonReference, "reasonReference", "Condition", "Observation");
-            ValidationSupport.checkReferenceType(medicationRequest.basedOn, "basedOn", "CarePlan", "MedicationRequest", "ServiceRequest", "ImmunizationRecommendation");
             ValidationSupport.checkReferenceType(medicationRequest.insurance, "insurance", "Coverage", "ClaimResponse");
-            ValidationSupport.checkReferenceType(medicationRequest.priorPrescription, "priorPrescription", "MedicationRequest");
-            ValidationSupport.checkReferenceType(medicationRequest.detectedIssue, "detectedIssue", "DetectedIssue");
             ValidationSupport.checkReferenceType(medicationRequest.eventHistory, "eventHistory", "Provenance");
         }
 
         protected Builder from(MedicationRequest medicationRequest) {
             super.from(medicationRequest);
             identifier.addAll(medicationRequest.identifier);
+            basedOn.addAll(medicationRequest.basedOn);
+            priorPrescription = medicationRequest.priorPrescription;
+            groupIdentifier = medicationRequest.groupIdentifier;
             status = medicationRequest.status;
             statusReason = medicationRequest.statusReason;
+            statusChanged = medicationRequest.statusChanged;
             intent = medicationRequest.intent;
             category.addAll(medicationRequest.category);
             priority = medicationRequest.priority;
             doNotPerform = medicationRequest.doNotPerform;
-            reported = medicationRequest.reported;
             medication = medicationRequest.medication;
             subject = medicationRequest.subject;
+            informationSource.addAll(medicationRequest.informationSource);
             encounter = medicationRequest.encounter;
             supportingInformation.addAll(medicationRequest.supportingInformation);
             authoredOn = medicationRequest.authoredOn;
             requester = medicationRequest.requester;
-            performer = medicationRequest.performer;
+            reported = medicationRequest.reported;
             performerType = medicationRequest.performerType;
+            performer.addAll(medicationRequest.performer);
+            device.addAll(medicationRequest.device);
             recorder = medicationRequest.recorder;
-            reasonCode.addAll(medicationRequest.reasonCode);
-            reasonReference.addAll(medicationRequest.reasonReference);
-            instantiatesCanonical.addAll(medicationRequest.instantiatesCanonical);
-            instantiatesUri.addAll(medicationRequest.instantiatesUri);
-            basedOn.addAll(medicationRequest.basedOn);
-            groupIdentifier = medicationRequest.groupIdentifier;
+            reason.addAll(medicationRequest.reason);
             courseOfTherapyType = medicationRequest.courseOfTherapyType;
             insurance.addAll(medicationRequest.insurance);
             note.addAll(medicationRequest.note);
+            renderedDosageInstruction = medicationRequest.renderedDosageInstruction;
+            effectiveDosePeriod = medicationRequest.effectiveDosePeriod;
             dosageInstruction.addAll(medicationRequest.dosageInstruction);
             dispenseRequest = medicationRequest.dispenseRequest;
             substitution = medicationRequest.substitution;
-            priorPrescription = medicationRequest.priorPrescription;
-            detectedIssue.addAll(medicationRequest.detectedIssue);
             eventHistory.addAll(medicationRequest.eventHistory);
             return this;
         }
@@ -2091,7 +2122,14 @@ public class MedicationRequest extends DomainResource {
         private final SimpleQuantity quantity;
         private final Duration expectedSupplyDuration;
         @ReferenceTarget({ "Organization" })
-        private final Reference performer;
+        private final Reference dispenser;
+        private final List<Annotation> dispenserInstruction;
+        @Binding(
+            bindingName = "MedicationRequestDoseAdministrationAid",
+            strength = BindingStrength.Value.EXAMPLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/medication-dose-aid"
+        )
+        private final CodeableConcept doseAdministrationAid;
 
         private DispenseRequest(Builder builder) {
             super(builder);
@@ -2101,7 +2139,9 @@ public class MedicationRequest extends DomainResource {
             numberOfRepeatsAllowed = builder.numberOfRepeatsAllowed;
             quantity = builder.quantity;
             expectedSupplyDuration = builder.expectedSupplyDuration;
-            performer = builder.performer;
+            dispenser = builder.dispenser;
+            dispenserInstruction = Collections.unmodifiableList(builder.dispenserInstruction);
+            doseAdministrationAid = builder.doseAdministrationAid;
         }
 
         /**
@@ -2170,13 +2210,33 @@ public class MedicationRequest extends DomainResource {
         }
 
         /**
-         * Indicates the intended dispensing Organization specified by the prescriber.
+         * Indicates the intended performing Organization that will dispense the medication as specified by the prescriber.
          * 
          * @return
          *     An immutable object of type {@link Reference} that may be null.
          */
-        public Reference getPerformer() {
-            return performer;
+        public Reference getDispenser() {
+            return dispenser;
+        }
+
+        /**
+         * Provides additional information to the dispenser, for example, counselling to be provided to the patient.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link Annotation} that may be empty.
+         */
+        public List<Annotation> getDispenserInstruction() {
+            return dispenserInstruction;
+        }
+
+        /**
+         * Provides information about the type of adherence packaging to be supplied for the medication dispense.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getDoseAdministrationAid() {
+            return doseAdministrationAid;
         }
 
         @Override
@@ -2188,7 +2248,9 @@ public class MedicationRequest extends DomainResource {
                 (numberOfRepeatsAllowed != null) || 
                 (quantity != null) || 
                 (expectedSupplyDuration != null) || 
-                (performer != null);
+                (dispenser != null) || 
+                !dispenserInstruction.isEmpty() || 
+                (doseAdministrationAid != null);
         }
 
         @Override
@@ -2206,7 +2268,9 @@ public class MedicationRequest extends DomainResource {
                     accept(numberOfRepeatsAllowed, "numberOfRepeatsAllowed", visitor);
                     accept(quantity, "quantity", visitor);
                     accept(expectedSupplyDuration, "expectedSupplyDuration", visitor);
-                    accept(performer, "performer", visitor);
+                    accept(dispenser, "dispenser", visitor);
+                    accept(dispenserInstruction, "dispenserInstruction", visitor, Annotation.class);
+                    accept(doseAdministrationAid, "doseAdministrationAid", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -2234,7 +2298,9 @@ public class MedicationRequest extends DomainResource {
                 Objects.equals(numberOfRepeatsAllowed, other.numberOfRepeatsAllowed) && 
                 Objects.equals(quantity, other.quantity) && 
                 Objects.equals(expectedSupplyDuration, other.expectedSupplyDuration) && 
-                Objects.equals(performer, other.performer);
+                Objects.equals(dispenser, other.dispenser) && 
+                Objects.equals(dispenserInstruction, other.dispenserInstruction) && 
+                Objects.equals(doseAdministrationAid, other.doseAdministrationAid);
         }
 
         @Override
@@ -2250,7 +2316,9 @@ public class MedicationRequest extends DomainResource {
                     numberOfRepeatsAllowed, 
                     quantity, 
                     expectedSupplyDuration, 
-                    performer);
+                    dispenser, 
+                    dispenserInstruction, 
+                    doseAdministrationAid);
                 hashCode = result;
             }
             return result;
@@ -2272,7 +2340,9 @@ public class MedicationRequest extends DomainResource {
             private UnsignedInt numberOfRepeatsAllowed;
             private SimpleQuantity quantity;
             private Duration expectedSupplyDuration;
-            private Reference performer;
+            private Reference dispenser;
+            private List<Annotation> dispenserInstruction = new ArrayList<>();
+            private CodeableConcept doseAdministrationAid;
 
             private Builder() {
                 super();
@@ -2295,7 +2365,7 @@ public class MedicationRequest extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2315,7 +2385,7 @@ public class MedicationRequest extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2340,7 +2410,7 @@ public class MedicationRequest extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2365,7 +2435,7 @@ public class MedicationRequest extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2479,21 +2549,74 @@ public class MedicationRequest extends DomainResource {
             }
 
             /**
-             * Indicates the intended dispensing Organization specified by the prescriber.
+             * Indicates the intended performing Organization that will dispense the medication as specified by the prescriber.
              * 
              * <p>Allowed resource types for this reference:
              * <ul>
              * <li>{@link Organization}</li>
              * </ul>
              * 
-             * @param performer
-             *     Intended dispenser
+             * @param dispenser
+             *     Intended performer of dispense
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder performer(Reference performer) {
-                this.performer = performer;
+            public Builder dispenser(Reference dispenser) {
+                this.dispenser = dispenser;
+                return this;
+            }
+
+            /**
+             * Provides additional information to the dispenser, for example, counselling to be provided to the patient.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param dispenserInstruction
+             *     Additional information for the dispenser
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder dispenserInstruction(Annotation... dispenserInstruction) {
+                for (Annotation value : dispenserInstruction) {
+                    this.dispenserInstruction.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * Provides additional information to the dispenser, for example, counselling to be provided to the patient.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param dispenserInstruction
+             *     Additional information for the dispenser
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder dispenserInstruction(Collection<Annotation> dispenserInstruction) {
+                this.dispenserInstruction = new ArrayList<>(dispenserInstruction);
+                return this;
+            }
+
+            /**
+             * Provides information about the type of adherence packaging to be supplied for the medication dispense.
+             * 
+             * @param doseAdministrationAid
+             *     Type of adherence packaging to use for the dispense
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder doseAdministrationAid(CodeableConcept doseAdministrationAid) {
+                this.doseAdministrationAid = doseAdministrationAid;
                 return this;
             }
 
@@ -2516,7 +2639,8 @@ public class MedicationRequest extends DomainResource {
 
             protected void validate(DispenseRequest dispenseRequest) {
                 super.validate(dispenseRequest);
-                ValidationSupport.checkReferenceType(dispenseRequest.performer, "performer", "Organization");
+                ValidationSupport.checkList(dispenseRequest.dispenserInstruction, "dispenserInstruction", Annotation.class);
+                ValidationSupport.checkReferenceType(dispenseRequest.dispenser, "dispenser", "Organization");
                 ValidationSupport.requireValueOrChildren(dispenseRequest);
             }
 
@@ -2528,7 +2652,9 @@ public class MedicationRequest extends DomainResource {
                 numberOfRepeatsAllowed = dispenseRequest.numberOfRepeatsAllowed;
                 quantity = dispenseRequest.quantity;
                 expectedSupplyDuration = dispenseRequest.expectedSupplyDuration;
-                performer = dispenseRequest.performer;
+                dispenser = dispenseRequest.dispenser;
+                dispenserInstruction.addAll(dispenseRequest.dispenserInstruction);
+                doseAdministrationAid = dispenseRequest.doseAdministrationAid;
                 return this;
             }
         }
@@ -2657,7 +2783,7 @@ public class MedicationRequest extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2677,7 +2803,7 @@ public class MedicationRequest extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2702,7 +2828,7 @@ public class MedicationRequest extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2727,7 +2853,7 @@ public class MedicationRequest extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2820,12 +2946,12 @@ public class MedicationRequest extends DomainResource {
         @Choice({ Boolean.class, CodeableConcept.class })
         @Binding(
             bindingName = "MedicationRequestSubstitution",
-            strength = BindingStrength.Value.EXAMPLE,
+            strength = BindingStrength.Value.PREFERRED,
             description = "Identifies the type of substitution allowed.",
             valueSet = "http://terminology.hl7.org/ValueSet/v3-ActSubstanceAdminSubstitutionCode"
         )
         @Required
-        private final Element allowed;
+        private final org.linuxforhealth.fhir.model.type.Element allowed;
         @Binding(
             bindingName = "MedicationIntendedSubstitutionReason",
             strength = BindingStrength.Value.EXAMPLE,
@@ -2846,7 +2972,7 @@ public class MedicationRequest extends DomainResource {
          * @return
          *     An immutable object of type {@link Boolean} or {@link CodeableConcept} that is non-null.
          */
-        public Element getAllowed() {
+        public org.linuxforhealth.fhir.model.type.Element getAllowed() {
             return allowed;
         }
 
@@ -2927,7 +3053,7 @@ public class MedicationRequest extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private Element allowed;
+            private org.linuxforhealth.fhir.model.type.Element allowed;
             private CodeableConcept reason;
 
             private Builder() {
@@ -2951,7 +3077,7 @@ public class MedicationRequest extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2971,7 +3097,7 @@ public class MedicationRequest extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2996,7 +3122,7 @@ public class MedicationRequest extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3021,7 +3147,7 @@ public class MedicationRequest extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3080,7 +3206,7 @@ public class MedicationRequest extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder allowed(Element allowed) {
+            public Builder allowed(org.linuxforhealth.fhir.model.type.Element allowed) {
                 this.allowed = allowed;
                 return this;
             }

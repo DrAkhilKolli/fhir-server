@@ -16,7 +16,6 @@ import javax.annotation.Generated;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.builder.AbstractBuilder;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
-import org.linuxforhealth.fhir.model.visitor.AbstractVisitable;
 
 /**
  * Base definition for all elements in a resource.
@@ -25,19 +24,20 @@ import org.linuxforhealth.fhir.model.visitor.AbstractVisitable;
     id = "ele-1",
     level = "Rule",
     location = "(base)",
-    description = "All FHIR elements must have a @value or children unless an empty Parameters resource",
-    expression = "hasValue() or (children().count() > id.count()) or $this is Parameters",
+    description = "All FHIR elements must have a @value or children",
+    expression = "hasValue() or (children().count() > id.count())",
     source = "http://hl7.org/fhir/StructureDefinition/Element",
     modelChecked = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public abstract class Element extends AbstractVisitable {
+public abstract class Element extends Base {
     protected final java.lang.String id;
     protected final List<Extension> extension;
 
     protected volatile int hashCode;
 
     protected Element(Builder builder) {
+        super(builder);
         id = builder.id;
         extension = Collections.unmodifiableList(builder.extension);
     }
@@ -55,7 +55,7 @@ public abstract class Element extends AbstractVisitable {
 
     /**
      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
      * of the definition of the extension.
      * 
@@ -100,7 +100,7 @@ public abstract class Element extends AbstractVisitable {
      */
     public abstract Builder toBuilder();
 
-    public static abstract class Builder extends AbstractBuilder<Element> {
+    public static abstract class Builder extends Base.Builder {
         protected java.lang.String id;
         protected List<Extension> extension = new ArrayList<>();
 
@@ -125,7 +125,7 @@ public abstract class Element extends AbstractVisitable {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -147,7 +147,7 @@ public abstract class Element extends AbstractVisitable {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 

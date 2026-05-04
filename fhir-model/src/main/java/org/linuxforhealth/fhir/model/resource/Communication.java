@@ -26,6 +26,7 @@ import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
@@ -33,7 +34,6 @@ import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Reference;
-import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.CommunicationPriority;
@@ -43,8 +43,9 @@ import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
- * An occurrence of information being transmitted; e.g. an alert that was sent to a responsible provider, a public health 
- * agency that was notified about a reportable condition.
+ * A clinical or business level record of information being transmitted or shared; e.g. an alert that was sent to a 
+ * responsible provider, a public health agency communication to a provider/reporter in response to a case report for a 
+ * reportable condition.
  * 
  * <p>Maturity level: FMM2 (Trial Use)
  */
@@ -71,7 +72,7 @@ public class Communication extends DomainResource {
         bindingName = "CommunicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The status of the communication.",
-        valueSet = "http://hl7.org/fhir/ValueSet/event-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/event-status|5.0.0"
     )
     @Required
     private final CommunicationStatus status;
@@ -95,7 +96,7 @@ public class Communication extends DomainResource {
         bindingName = "CommunicationPriority",
         strength = BindingStrength.Value.REQUIRED,
         description = "Codes indicating the relative importance of a communication.",
-        valueSet = "http://hl7.org/fhir/ValueSet/request-priority|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/request-priority|5.0.0"
     )
     private final CommunicationPriority priority;
     @Binding(
@@ -121,9 +122,9 @@ public class Communication extends DomainResource {
     private final Reference encounter;
     private final DateTime sent;
     private final DateTime received;
-    @ReferenceTarget({ "Device", "Organization", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "Group", "CareTeam", "HealthcareService" })
+    @ReferenceTarget({ "CareTeam", "Device", "Group", "HealthcareService", "Location", "Organization", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "Endpoint" })
     private final List<Reference> recipient;
-    @ReferenceTarget({ "Device", "Organization", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "HealthcareService" })
+    @ReferenceTarget({ "Device", "Organization", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "HealthcareService", "Endpoint", "CareTeam" })
     private final Reference sender;
     @Summary
     @Binding(
@@ -132,10 +133,7 @@ public class Communication extends DomainResource {
         description = "Codes for describing reasons for the occurrence of a communication.",
         valueSet = "http://hl7.org/fhir/ValueSet/clinical-findings"
     )
-    private final List<CodeableConcept> reasonCode;
-    @Summary
-    @ReferenceTarget({ "Condition", "Observation", "DiagnosticReport", "DocumentReference" })
-    private final List<Reference> reasonReference;
+    private final List<CodeableReference> reason;
     private final List<Payload> payload;
     private final List<Annotation> note;
 
@@ -160,8 +158,7 @@ public class Communication extends DomainResource {
         received = builder.received;
         recipient = Collections.unmodifiableList(builder.recipient);
         sender = builder.sender;
-        reasonCode = Collections.unmodifiableList(builder.reasonCode);
-        reasonReference = Collections.unmodifiableList(builder.reasonReference);
+        reason = Collections.unmodifiableList(builder.reason);
         payload = Collections.unmodifiableList(builder.payload);
         note = Collections.unmodifiableList(builder.note);
     }
@@ -210,7 +207,7 @@ public class Communication extends DomainResource {
     }
 
     /**
-     * Part of this action.
+     * A larger event (e.g. Communication, Procedure) of which this particular communication is a component or step.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
@@ -342,10 +339,8 @@ public class Communication extends DomainResource {
     }
 
     /**
-     * The entity (e.g. person, organization, clinical information system, care team or device) which was the target of the 
-     * communication. If receipts need to be tracked by an individual, a separate resource instance will need to be created 
-     * for each recipient. Multiple recipient communications are intended where either receipts are not tracked (e.g. a mass 
-     * mail-out) or a receipt is captured in aggregate (all emails confirmed received by a particular time).
+     * The entity (e.g. person, organization, clinical information system, care team or device) which is the target of the 
+     * communication.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
@@ -355,7 +350,7 @@ public class Communication extends DomainResource {
     }
 
     /**
-     * The entity (e.g. person, organization, clinical information system, or device) which was the source of the 
+     * The entity (e.g. person, organization, clinical information system, or device) which is the source of the 
      * communication.
      * 
      * @return
@@ -369,20 +364,10 @@ public class Communication extends DomainResource {
      * The reason or justification for the communication.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<CodeableConcept> getReasonCode() {
-        return reasonCode;
-    }
-
-    /**
-     * Indicates another resource whose existence justifies this communication.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-     */
-    public List<Reference> getReasonReference() {
-        return reasonReference;
+    public List<CodeableReference> getReason() {
+        return reason;
     }
 
     /**
@@ -427,8 +412,7 @@ public class Communication extends DomainResource {
             (received != null) || 
             !recipient.isEmpty() || 
             (sender != null) || 
-            !reasonCode.isEmpty() || 
-            !reasonReference.isEmpty() || 
+            !reason.isEmpty() || 
             !payload.isEmpty() || 
             !note.isEmpty();
     }
@@ -466,8 +450,7 @@ public class Communication extends DomainResource {
                 accept(received, "received", visitor);
                 accept(recipient, "recipient", visitor, Reference.class);
                 accept(sender, "sender", visitor);
-                accept(reasonCode, "reasonCode", visitor, CodeableConcept.class);
-                accept(reasonReference, "reasonReference", visitor, Reference.class);
+                accept(reason, "reason", visitor, CodeableReference.class);
                 accept(payload, "payload", visitor, Payload.class);
                 accept(note, "note", visitor, Annotation.class);
             }
@@ -515,8 +498,7 @@ public class Communication extends DomainResource {
             Objects.equals(received, other.received) && 
             Objects.equals(recipient, other.recipient) && 
             Objects.equals(sender, other.sender) && 
-            Objects.equals(reasonCode, other.reasonCode) && 
-            Objects.equals(reasonReference, other.reasonReference) && 
+            Objects.equals(reason, other.reason) && 
             Objects.equals(payload, other.payload) && 
             Objects.equals(note, other.note);
     }
@@ -552,8 +534,7 @@ public class Communication extends DomainResource {
                 received, 
                 recipient, 
                 sender, 
-                reasonCode, 
-                reasonReference, 
+                reason, 
                 payload, 
                 note);
             hashCode = result;
@@ -590,8 +571,7 @@ public class Communication extends DomainResource {
         private DateTime received;
         private List<Reference> recipient = new ArrayList<>();
         private Reference sender;
-        private List<CodeableConcept> reasonCode = new ArrayList<>();
-        private List<Reference> reasonReference = new ArrayList<>();
+        private List<CodeableReference> reason = new ArrayList<>();
         private List<Payload> payload = new ArrayList<>();
         private List<Annotation> note = new ArrayList<>();
 
@@ -677,7 +657,8 @@ public class Communication extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -695,7 +676,8 @@ public class Communication extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -716,7 +698,7 @@ public class Communication extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -736,7 +718,7 @@ public class Communication extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -761,9 +743,9 @@ public class Communication extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -786,9 +768,9 @@ public class Communication extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -973,13 +955,13 @@ public class Communication extends DomainResource {
         }
 
         /**
-         * Part of this action.
+         * A larger event (e.g. Communication, Procedure) of which this particular communication is a component or step.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param partOf
-         *     Part of this action
+         *     Part of referenced event (e.g. Communication, Procedure)
          * 
          * @return
          *     A reference to this Builder instance
@@ -992,13 +974,13 @@ public class Communication extends DomainResource {
         }
 
         /**
-         * Part of this action.
+         * A larger event (e.g. Communication, Procedure) of which this particular communication is a component or step.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param partOf
-         *     Part of this action
+         *     Part of referenced event (e.g. Communication, Procedure)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1266,7 +1248,7 @@ public class Communication extends DomainResource {
          * </ul>
          * 
          * @param encounter
-         *     Encounter created as part of
+         *     The Encounter during which this Communication was created
          * 
          * @return
          *     A reference to this Builder instance
@@ -1305,29 +1287,29 @@ public class Communication extends DomainResource {
         }
 
         /**
-         * The entity (e.g. person, organization, clinical information system, care team or device) which was the target of the 
-         * communication. If receipts need to be tracked by an individual, a separate resource instance will need to be created 
-         * for each recipient. Multiple recipient communications are intended where either receipts are not tracked (e.g. a mass 
-         * mail-out) or a receipt is captured in aggregate (all emails confirmed received by a particular time).
+         * The entity (e.g. person, organization, clinical information system, care team or device) which is the target of the 
+         * communication.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * <p>Allowed resource types for the references:
          * <ul>
+         * <li>{@link CareTeam}</li>
          * <li>{@link Device}</li>
+         * <li>{@link Group}</li>
+         * <li>{@link HealthcareService}</li>
+         * <li>{@link Location}</li>
          * <li>{@link Organization}</li>
          * <li>{@link Patient}</li>
          * <li>{@link Practitioner}</li>
          * <li>{@link PractitionerRole}</li>
          * <li>{@link RelatedPerson}</li>
-         * <li>{@link Group}</li>
-         * <li>{@link CareTeam}</li>
-         * <li>{@link HealthcareService}</li>
+         * <li>{@link Endpoint}</li>
          * </ul>
          * 
          * @param recipient
-         *     Message recipient
+         *     Who the information is shared with
          * 
          * @return
          *     A reference to this Builder instance
@@ -1340,29 +1322,29 @@ public class Communication extends DomainResource {
         }
 
         /**
-         * The entity (e.g. person, organization, clinical information system, care team or device) which was the target of the 
-         * communication. If receipts need to be tracked by an individual, a separate resource instance will need to be created 
-         * for each recipient. Multiple recipient communications are intended where either receipts are not tracked (e.g. a mass 
-         * mail-out) or a receipt is captured in aggregate (all emails confirmed received by a particular time).
+         * The entity (e.g. person, organization, clinical information system, care team or device) which is the target of the 
+         * communication.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * <p>Allowed resource types for the references:
          * <ul>
+         * <li>{@link CareTeam}</li>
          * <li>{@link Device}</li>
+         * <li>{@link Group}</li>
+         * <li>{@link HealthcareService}</li>
+         * <li>{@link Location}</li>
          * <li>{@link Organization}</li>
          * <li>{@link Patient}</li>
          * <li>{@link Practitioner}</li>
          * <li>{@link PractitionerRole}</li>
          * <li>{@link RelatedPerson}</li>
-         * <li>{@link Group}</li>
-         * <li>{@link CareTeam}</li>
-         * <li>{@link HealthcareService}</li>
+         * <li>{@link Endpoint}</li>
          * </ul>
          * 
          * @param recipient
-         *     Message recipient
+         *     Who the information is shared with
          * 
          * @return
          *     A reference to this Builder instance
@@ -1376,7 +1358,7 @@ public class Communication extends DomainResource {
         }
 
         /**
-         * The entity (e.g. person, organization, clinical information system, or device) which was the source of the 
+         * The entity (e.g. person, organization, clinical information system, or device) which is the source of the 
          * communication.
          * 
          * <p>Allowed resource types for this reference:
@@ -1388,10 +1370,12 @@ public class Communication extends DomainResource {
          * <li>{@link PractitionerRole}</li>
          * <li>{@link RelatedPerson}</li>
          * <li>{@link HealthcareService}</li>
+         * <li>{@link Endpoint}</li>
+         * <li>{@link CareTeam}</li>
          * </ul>
          * 
          * @param sender
-         *     Message sender
+         *     Who shares the information
          * 
          * @return
          *     A reference to this Builder instance
@@ -1407,15 +1391,15 @@ public class Communication extends DomainResource {
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
+         * @param reason
          *     Indication for message
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder reasonCode(CodeableConcept... reasonCode) {
-            for (CodeableConcept value : reasonCode) {
-                this.reasonCode.add(value);
+        public Builder reason(CodeableReference... reason) {
+            for (CodeableReference value : reason) {
+                this.reason.add(value);
             }
             return this;
         }
@@ -1426,7 +1410,7 @@ public class Communication extends DomainResource {
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
+         * @param reason
          *     Indication for message
          * 
          * @return
@@ -1435,63 +1419,8 @@ public class Communication extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder reasonCode(Collection<CodeableConcept> reasonCode) {
-            this.reasonCode = new ArrayList<>(reasonCode);
-            return this;
-        }
-
-        /**
-         * Indicates another resource whose existence justifies this communication.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Why was communication done?
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder reasonReference(Reference... reasonReference) {
-            for (Reference value : reasonReference) {
-                this.reasonReference.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Indicates another resource whose existence justifies this communication.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Why was communication done?
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder reasonReference(Collection<Reference> reasonReference) {
-            this.reasonReference = new ArrayList<>(reasonReference);
+        public Builder reason(Collection<CodeableReference> reason) {
+            this.reason = new ArrayList<>(reason);
             return this;
         }
 
@@ -1608,16 +1537,14 @@ public class Communication extends DomainResource {
             ValidationSupport.checkList(communication.medium, "medium", CodeableConcept.class);
             ValidationSupport.checkList(communication.about, "about", Reference.class);
             ValidationSupport.checkList(communication.recipient, "recipient", Reference.class);
-            ValidationSupport.checkList(communication.reasonCode, "reasonCode", CodeableConcept.class);
-            ValidationSupport.checkList(communication.reasonReference, "reasonReference", Reference.class);
+            ValidationSupport.checkList(communication.reason, "reason", CodeableReference.class);
             ValidationSupport.checkList(communication.payload, "payload", Payload.class);
             ValidationSupport.checkList(communication.note, "note", Annotation.class);
             ValidationSupport.checkReferenceType(communication.inResponseTo, "inResponseTo", "Communication");
             ValidationSupport.checkReferenceType(communication.subject, "subject", "Patient", "Group");
             ValidationSupport.checkReferenceType(communication.encounter, "encounter", "Encounter");
-            ValidationSupport.checkReferenceType(communication.recipient, "recipient", "Device", "Organization", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "Group", "CareTeam", "HealthcareService");
-            ValidationSupport.checkReferenceType(communication.sender, "sender", "Device", "Organization", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "HealthcareService");
-            ValidationSupport.checkReferenceType(communication.reasonReference, "reasonReference", "Condition", "Observation", "DiagnosticReport", "DocumentReference");
+            ValidationSupport.checkReferenceType(communication.recipient, "recipient", "CareTeam", "Device", "Group", "HealthcareService", "Location", "Organization", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "Endpoint");
+            ValidationSupport.checkReferenceType(communication.sender, "sender", "Device", "Organization", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "HealthcareService", "Endpoint", "CareTeam");
         }
 
         protected Builder from(Communication communication) {
@@ -1641,8 +1568,7 @@ public class Communication extends DomainResource {
             received = communication.received;
             recipient.addAll(communication.recipient);
             sender = communication.sender;
-            reasonCode.addAll(communication.reasonCode);
-            reasonReference.addAll(communication.reasonReference);
+            reason.addAll(communication.reason);
             payload.addAll(communication.payload);
             note.addAll(communication.note);
             return this;
@@ -1653,9 +1579,9 @@ public class Communication extends DomainResource {
      * Text, attachment(s), or resource(s) that was communicated to the recipient.
      */
     public static class Payload extends BackboneElement {
-        @Choice({ String.class, Attachment.class, Reference.class })
+        @Choice({ Attachment.class, Reference.class, CodeableConcept.class })
         @Required
-        private final Element content;
+        private final org.linuxforhealth.fhir.model.type.Element content;
 
         private Payload(Builder builder) {
             super(builder);
@@ -1666,9 +1592,9 @@ public class Communication extends DomainResource {
          * A communicated content (or for multi-part communications, one portion of the communication).
          * 
          * @return
-         *     An immutable object of type {@link String}, {@link Attachment} or {@link Reference} that is non-null.
+         *     An immutable object of type {@link Attachment}, {@link Reference} or {@link CodeableConcept} that is non-null.
          */
-        public Element getContent() {
+        public org.linuxforhealth.fhir.model.type.Element getContent() {
             return content;
         }
 
@@ -1735,7 +1661,7 @@ public class Communication extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private Element content;
+            private org.linuxforhealth.fhir.model.type.Element content;
 
             private Builder() {
                 super();
@@ -1758,7 +1684,7 @@ public class Communication extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1778,7 +1704,7 @@ public class Communication extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1803,7 +1729,7 @@ public class Communication extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1828,7 +1754,7 @@ public class Communication extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1853,33 +1779,15 @@ public class Communication extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code content} with choice type String.
-             * 
-             * <p>This element is required.
-             * 
-             * @param content
-             *     Message part content
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #content(Element)
-             */
-            public Builder content(java.lang.String content) {
-                this.content = (content == null) ? null : String.of(content);
-                return this;
-            }
-
-            /**
              * A communicated content (or for multi-part communications, one portion of the communication).
              * 
              * <p>This element is required.
              * 
              * <p>This is a choice element with the following allowed types:
              * <ul>
-             * <li>{@link String}</li>
              * <li>{@link Attachment}</li>
              * <li>{@link Reference}</li>
+             * <li>{@link CodeableConcept}</li>
              * </ul>
              * 
              * @param content
@@ -1888,7 +1796,7 @@ public class Communication extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder content(Element content) {
+            public Builder content(org.linuxforhealth.fhir.model.type.Element content) {
                 this.content = content;
                 return this;
             }
@@ -1917,7 +1825,7 @@ public class Communication extends DomainResource {
 
             protected void validate(Payload payload) {
                 super.validate(payload);
-                ValidationSupport.requireChoiceElement(payload.content, "content", String.class, Attachment.class, Reference.class);
+                ValidationSupport.requireChoiceElement(payload.content, "content", Attachment.class, Reference.class, CodeableConcept.class);
                 ValidationSupport.requireValueOrChildren(payload);
             }
 

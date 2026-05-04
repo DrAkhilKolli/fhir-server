@@ -20,13 +20,6 @@ import javax.annotation.Generated;
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class StructureMapGroupTypeMode extends Code {
     /**
-     * Not a Default
-     * 
-     * <p>This group is not a default group for the types.
-     */
-    public static final StructureMapGroupTypeMode NONE = StructureMapGroupTypeMode.builder().value(Value.NONE).build();
-
-    /**
      * Default for Type Combination
      * 
      * <p>This group is a default mapping group for the specified types and for the primary source type.
@@ -58,8 +51,6 @@ public class StructureMapGroupTypeMode extends Code {
      */
     public static StructureMapGroupTypeMode of(Value value) {
         switch (value) {
-        case NONE:
-            return NONE;
         case TYPES:
             return TYPES;
         case TYPE_AND_TYPES:
@@ -197,13 +188,6 @@ public class StructureMapGroupTypeMode extends Code {
 
     public enum Value {
         /**
-         * Not a Default
-         * 
-         * <p>This group is not a default group for the types.
-         */
-        NONE("none"),
-
-        /**
          * Default for Type Combination
          * 
          * <p>This group is a default mapping group for the specified types and for the primary source type.
@@ -246,8 +230,6 @@ public class StructureMapGroupTypeMode extends Code {
                 return null;
             }
             switch (value) {
-            case "none":
-                return NONE;
             case "types":
                 return TYPES;
             case "type-and-types":

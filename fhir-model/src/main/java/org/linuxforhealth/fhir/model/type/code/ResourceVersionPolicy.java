@@ -36,7 +36,7 @@ public class ResourceVersionPolicy extends Code {
     /**
      * VersionId tracked fully
      * 
-     * <p>VersionId must be correct for updates (server) or will be specified (If-match header) for updates (client).
+     * <p>Supports version-aware updates (server) or will be specified (If-match header) for updates (client).
      */
     public static final ResourceVersionPolicy VERSIONED_UPDATE = ResourceVersionPolicy.builder().value(Value.VERSIONED_UPDATE).build();
 
@@ -213,7 +213,7 @@ public class ResourceVersionPolicy extends Code {
         /**
          * VersionId tracked fully
          * 
-         * <p>VersionId must be correct for updates (server) or will be specified (If-match header) for updates (client).
+         * <p>Supports version-aware updates (server) or will be specified (If-match header) for updates (client).
          */
         VERSIONED_UPDATE("versioned-update");
 

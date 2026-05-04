@@ -1665,8 +1665,8 @@ public class SearchTest extends FHIRServerTestBase {
         allergyIntolerance = allergyIntolerance
             .toBuilder()
             .patient(Reference.builder().reference(string("Patient/" + patientId)).build())
-            .recorder(Reference.builder().reference(string("Practitioner/" + practitionerId2)).build())
-            .asserter(Reference.builder().reference(string("PractitionerRole/" + practitionerRoleId)).build())
+            .participant(AllergyIntolerance.Participant.builder().function(CodeableConcept.builder().coding(Coding.builder().system(org.linuxforhealth.fhir.model.type.Uri.of("http://terminology.hl7.org/CodeSystem/provenance-participant-type")).code(Code.of("author")).build()).build()).actor(Reference.builder().reference(string("Practitioner/" + practitionerId2)).build()).build())
+            .participant(AllergyIntolerance.Participant.builder().function(CodeableConcept.builder().coding(Coding.builder().system(org.linuxforhealth.fhir.model.type.Uri.of("http://terminology.hl7.org/CodeSystem/provenance-participant-type")).code(Code.of("informant")).build()).build()).actor(Reference.builder().reference(string("PractitionerRole/" + practitionerRoleId)).build()).build())
             .build();
 
         Entity<AllergyIntolerance> entity = Entity.entity(allergyIntolerance, FHIRMediaType.APPLICATION_FHIR_JSON);
@@ -1777,8 +1777,13 @@ public class SearchTest extends FHIRServerTestBase {
         assertEquals(practitionerRoleId, practitionerRole.getId());
         assertEquals(provenanceId, provenance.getId());
         assertEquals("Patient/" + patientId, allergyIntolerance.getPatient().getReference().getValue());
-        assertEquals("Practitioner/" + practitionerId2, allergyIntolerance.getRecorder().getReference().getValue());
-        assertEquals("PractitionerRole/" + practitionerRoleId, allergyIntolerance.getAsserter().getReference().getValue());
+        // recorder and asserter are now stored as participants in R5
+        assertTrue(allergyIntolerance.getParticipant().stream()
+            .anyMatch(p -> p.getActor() != null && p.getActor().getReference() != null
+                && ("Practitioner/" + practitionerId2).equals(p.getActor().getReference().getValue())));
+        assertTrue(allergyIntolerance.getParticipant().stream()
+            .anyMatch(p -> p.getActor() != null && p.getActor().getReference() != null
+                && ("PractitionerRole/" + practitionerRoleId).equals(p.getActor().getReference().getValue())));
         for (Reference reference : provenance.getTarget()) {
             if (reference.getReference() != null) {
                 assertEquals("AllergyIntolerance/" + allergyIntoleranceId, reference.getReference().getValue());

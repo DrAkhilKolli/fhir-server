@@ -15,21 +15,22 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
+import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
-import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
+import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Decimal;
+import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
-import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
@@ -44,10 +45,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 /**
  * A summary of information based on the results of executing a TestScript.
  * 
- * <p>Maturity level: FMM0 (Trial Use)
+ * <p>Maturity level: FMM1 (Trial Use)
  */
 @Maturity(
-    level = 0,
+    level = 1,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
@@ -77,20 +78,19 @@ public class TestReport extends DomainResource {
         bindingName = "TestReportStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The current status of the test script execution.",
-        valueSet = "http://hl7.org/fhir/ValueSet/report-status-codes|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/report-status-codes|5.0.0"
     )
     @Required
     private final TestReportStatus status;
     @Summary
-    @ReferenceTarget({ "TestScript" })
     @Required
-    private final Reference testScript;
+    private final Canonical testScript;
     @Summary
     @Binding(
         bindingName = "TestReportResult",
         strength = BindingStrength.Value.REQUIRED,
         description = "The overall execution result of the TestScript.",
-        valueSet = "http://hl7.org/fhir/ValueSet/report-result-codes|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/report-result-codes|5.0.0"
     )
     @Required
     private final TestReportResult result;
@@ -122,7 +122,7 @@ public class TestReport extends DomainResource {
     }
 
     /**
-     * Identifier for the TestScript assigned for external purposes outside the context of FHIR.
+     * Identifier for the TestReport assigned for external purposes outside the context of FHIR.
      * 
      * @return
      *     An immutable object of type {@link Identifier} that may be null.
@@ -132,7 +132,7 @@ public class TestReport extends DomainResource {
     }
 
     /**
-     * A free text natural language name identifying the executed TestScript.
+     * A free text natural language name identifying the executed TestReport.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -156,9 +156,9 @@ public class TestReport extends DomainResource {
      * the `TestScript.url`.
      * 
      * @return
-     *     An immutable object of type {@link Reference} that is non-null.
+     *     An immutable object of type {@link Canonical} that is non-null.
      */
-    public Reference getTestScript() {
+    public Canonical getTestScript() {
         return testScript;
     }
 
@@ -368,7 +368,7 @@ public class TestReport extends DomainResource {
         private Identifier identifier;
         private String name;
         private TestReportStatus status;
-        private Reference testScript;
+        private Canonical testScript;
         private TestReportResult result;
         private Decimal score;
         private String tester;
@@ -460,7 +460,8 @@ public class TestReport extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -478,7 +479,8 @@ public class TestReport extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -499,7 +501,7 @@ public class TestReport extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -519,7 +521,7 @@ public class TestReport extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -544,9 +546,9 @@ public class TestReport extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -569,9 +571,9 @@ public class TestReport extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -594,7 +596,7 @@ public class TestReport extends DomainResource {
         }
 
         /**
-         * Identifier for the TestScript assigned for external purposes outside the context of FHIR.
+         * Identifier for the TestReport assigned for external purposes outside the context of FHIR.
          * 
          * @param identifier
          *     External identifier
@@ -611,7 +613,7 @@ public class TestReport extends DomainResource {
          * Convenience method for setting {@code name}.
          * 
          * @param name
-         *     Informal name of the executed TestScript
+         *     Informal name of the executed TestReport
          * 
          * @return
          *     A reference to this Builder instance
@@ -624,10 +626,10 @@ public class TestReport extends DomainResource {
         }
 
         /**
-         * A free text natural language name identifying the executed TestScript.
+         * A free text natural language name identifying the executed TestReport.
          * 
          * @param name
-         *     Informal name of the executed TestScript
+         *     Informal name of the executed TestReport
          * 
          * @return
          *     A reference to this Builder instance
@@ -659,18 +661,13 @@ public class TestReport extends DomainResource {
          * 
          * <p>This element is required.
          * 
-         * <p>Allowed resource types for this reference:
-         * <ul>
-         * <li>{@link TestScript}</li>
-         * </ul>
-         * 
          * @param testScript
-         *     Reference to the version-specific TestScript that was executed to produce this TestReport
+         *     Canonical URL to the version-specific TestScript that was executed to produce this TestReport
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder testScript(Reference testScript) {
+        public Builder testScript(Canonical testScript) {
             this.testScript = testScript;
             return this;
         }
@@ -887,7 +884,6 @@ public class TestReport extends DomainResource {
             ValidationSupport.requireNonNull(testReport.result, "result");
             ValidationSupport.checkList(testReport.participant, "participant", Participant.class);
             ValidationSupport.checkList(testReport.test, "test", Test.class);
-            ValidationSupport.checkReferenceType(testReport.testScript, "testScript", "TestScript");
         }
 
         protected Builder from(TestReport testReport) {
@@ -916,7 +912,7 @@ public class TestReport extends DomainResource {
             bindingName = "TestReportParticipantType",
             strength = BindingStrength.Value.REQUIRED,
             description = "The type of participant.",
-            valueSet = "http://hl7.org/fhir/ValueSet/report-participant-type|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/report-participant-type|5.0.0"
         )
         @Required
         private final TestReportParticipantType type;
@@ -1057,7 +1053,7 @@ public class TestReport extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1077,7 +1073,7 @@ public class TestReport extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1102,7 +1098,7 @@ public class TestReport extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1127,7 +1123,7 @@ public class TestReport extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1361,7 +1357,7 @@ public class TestReport extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1381,7 +1377,7 @@ public class TestReport extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1406,7 +1402,7 @@ public class TestReport extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1431,7 +1427,7 @@ public class TestReport extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1657,7 +1653,7 @@ public class TestReport extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1677,7 +1673,7 @@ public class TestReport extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1702,7 +1698,7 @@ public class TestReport extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -1727,7 +1723,7 @@ public class TestReport extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -1817,7 +1813,7 @@ public class TestReport extends DomainResource {
                     bindingName = "TestReportActionResult",
                     strength = BindingStrength.Value.REQUIRED,
                     description = "The result of the execution of an individual action.",
-                    valueSet = "http://hl7.org/fhir/ValueSet/report-action-result-codes|4.3.0"
+                    valueSet = "http://hl7.org/fhir/ValueSet/report-action-result-codes|5.0.0"
                 )
                 @Required
                 private final TestReportActionResult result;
@@ -1957,7 +1953,7 @@ public class TestReport extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -1977,7 +1973,7 @@ public class TestReport extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -2002,7 +1998,7 @@ public class TestReport extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -2027,7 +2023,7 @@ public class TestReport extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -2141,18 +2137,20 @@ public class TestReport extends DomainResource {
                     bindingName = "TestReportActionResult",
                     strength = BindingStrength.Value.REQUIRED,
                     description = "The result of the execution of an individual action.",
-                    valueSet = "http://hl7.org/fhir/ValueSet/report-action-result-codes|4.3.0"
+                    valueSet = "http://hl7.org/fhir/ValueSet/report-action-result-codes|5.0.0"
                 )
                 @Required
                 private final TestReportActionResult result;
                 private final Markdown message;
                 private final String detail;
+                private final List<Requirement> requirement;
 
                 private Assert(Builder builder) {
                     super(builder);
                     result = builder.result;
                     message = builder.message;
                     detail = builder.detail;
+                    requirement = Collections.unmodifiableList(builder.requirement);
                 }
 
                 /**
@@ -2185,12 +2183,23 @@ public class TestReport extends DomainResource {
                     return detail;
                 }
 
+                /**
+                 * Links or references providing traceability to the testing requirements for this assert.
+                 * 
+                 * @return
+                 *     An unmodifiable list containing immutable objects of type {@link Requirement} that may be empty.
+                 */
+                public List<Requirement> getRequirement() {
+                    return requirement;
+                }
+
                 @Override
                 public boolean hasChildren() {
                     return super.hasChildren() || 
                         (result != null) || 
                         (message != null) || 
-                        (detail != null);
+                        (detail != null) || 
+                        !requirement.isEmpty();
                 }
 
                 @Override
@@ -2205,6 +2214,7 @@ public class TestReport extends DomainResource {
                             accept(result, "result", visitor);
                             accept(message, "message", visitor);
                             accept(detail, "detail", visitor);
+                            accept(requirement, "requirement", visitor, Requirement.class);
                         }
                         visitor.visitEnd(elementName, elementIndex, this);
                         visitor.postVisit(this);
@@ -2228,7 +2238,8 @@ public class TestReport extends DomainResource {
                         Objects.equals(modifierExtension, other.modifierExtension) && 
                         Objects.equals(result, other.result) && 
                         Objects.equals(message, other.message) && 
-                        Objects.equals(detail, other.detail);
+                        Objects.equals(detail, other.detail) && 
+                        Objects.equals(requirement, other.requirement);
                 }
 
                 @Override
@@ -2240,7 +2251,8 @@ public class TestReport extends DomainResource {
                             modifierExtension, 
                             this.result, 
                             message, 
-                            detail);
+                            detail, 
+                            requirement);
                         hashCode = result;
                     }
                     return result;
@@ -2259,6 +2271,7 @@ public class TestReport extends DomainResource {
                     private TestReportActionResult result;
                     private Markdown message;
                     private String detail;
+                    private List<Requirement> requirement = new ArrayList<>();
 
                     private Builder() {
                         super();
@@ -2281,7 +2294,7 @@ public class TestReport extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -2301,7 +2314,7 @@ public class TestReport extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -2326,7 +2339,7 @@ public class TestReport extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -2351,7 +2364,7 @@ public class TestReport extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -2436,6 +2449,45 @@ public class TestReport extends DomainResource {
                     }
 
                     /**
+                     * Links or references providing traceability to the testing requirements for this assert.
+                     * 
+                     * <p>Adds new element(s) to the existing list.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param requirement
+                     *     Links or references to the testing requirements
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder requirement(Requirement... requirement) {
+                        for (Requirement value : requirement) {
+                            this.requirement.add(value);
+                        }
+                        return this;
+                    }
+
+                    /**
+                     * Links or references providing traceability to the testing requirements for this assert.
+                     * 
+                     * <p>Replaces the existing list with a new one containing elements from the Collection.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param requirement
+                     *     Links or references to the testing requirements
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @throws NullPointerException
+                     *     If the passed collection is null
+                     */
+                    public Builder requirement(Collection<Requirement> requirement) {
+                        this.requirement = new ArrayList<>(requirement);
+                        return this;
+                    }
+
+                    /**
                      * Build the {@link Assert}
                      * 
                      * <p>Required elements:
@@ -2460,6 +2512,7 @@ public class TestReport extends DomainResource {
                     protected void validate(Assert _assert) {
                         super.validate(_assert);
                         ValidationSupport.requireNonNull(_assert.result, "result");
+                        ValidationSupport.checkList(_assert.requirement, "requirement", Requirement.class);
                         ValidationSupport.requireValueOrChildren(_assert);
                     }
 
@@ -2468,7 +2521,261 @@ public class TestReport extends DomainResource {
                         result = _assert.result;
                         message = _assert.message;
                         detail = _assert.detail;
+                        requirement.addAll(_assert.requirement);
                         return this;
+                    }
+                }
+
+                /**
+                 * Links or references providing traceability to the testing requirements for this assert.
+                 */
+                public static class Requirement extends BackboneElement {
+                    @Choice({ Uri.class, Canonical.class })
+                    private final org.linuxforhealth.fhir.model.type.Element link;
+
+                    private Requirement(Builder builder) {
+                        super(builder);
+                        link = builder.link;
+                    }
+
+                    /**
+                     * Link or reference providing traceability to the testing requirement for this test.
+                     * 
+                     * @return
+                     *     An immutable object of type {@link Uri} or {@link Canonical} that may be null.
+                     */
+                    public org.linuxforhealth.fhir.model.type.Element getLink() {
+                        return link;
+                    }
+
+                    @Override
+                    public boolean hasChildren() {
+                        return super.hasChildren() || 
+                            (link != null);
+                    }
+
+                    @Override
+                    public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                        if (visitor.preVisit(this)) {
+                            visitor.visitStart(elementName, elementIndex, this);
+                            if (visitor.visit(elementName, elementIndex, this)) {
+                                // visit children
+                                accept(id, "id", visitor);
+                                accept(extension, "extension", visitor, Extension.class);
+                                accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                                accept(link, "link", visitor);
+                            }
+                            visitor.visitEnd(elementName, elementIndex, this);
+                            visitor.postVisit(this);
+                        }
+                    }
+
+                    @Override
+                    public boolean equals(Object obj) {
+                        if (this == obj) {
+                            return true;
+                        }
+                        if (obj == null) {
+                            return false;
+                        }
+                        if (getClass() != obj.getClass()) {
+                            return false;
+                        }
+                        Requirement other = (Requirement) obj;
+                        return Objects.equals(id, other.id) && 
+                            Objects.equals(extension, other.extension) && 
+                            Objects.equals(modifierExtension, other.modifierExtension) && 
+                            Objects.equals(link, other.link);
+                    }
+
+                    @Override
+                    public int hashCode() {
+                        int result = hashCode;
+                        if (result == 0) {
+                            result = Objects.hash(id, 
+                                extension, 
+                                modifierExtension, 
+                                link);
+                            hashCode = result;
+                        }
+                        return result;
+                    }
+
+                    @Override
+                    public Builder toBuilder() {
+                        return new Builder().from(this);
+                    }
+
+                    public static Builder builder() {
+                        return new Builder();
+                    }
+
+                    public static class Builder extends BackboneElement.Builder {
+                        private org.linuxforhealth.fhir.model.type.Element link;
+
+                        private Builder() {
+                            super();
+                        }
+
+                        /**
+                         * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                         * contain spaces.
+                         * 
+                         * @param id
+                         *     Unique id for inter-element referencing
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        @Override
+                        public Builder id(java.lang.String id) {
+                            return (Builder) super.id(id);
+                        }
+
+                        /**
+                         * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                         * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                         * of the definition of the extension.
+                         * 
+                         * <p>Adds new element(s) to the existing list.
+                         * If any of the elements are null, calling {@link #build()} will fail.
+                         * 
+                         * @param extension
+                         *     Additional content defined by implementations
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        @Override
+                        public Builder extension(Extension... extension) {
+                            return (Builder) super.extension(extension);
+                        }
+
+                        /**
+                         * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                         * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                         * of the definition of the extension.
+                         * 
+                         * <p>Replaces the existing list with a new one containing elements from the Collection.
+                         * If any of the elements are null, calling {@link #build()} will fail.
+                         * 
+                         * @param extension
+                         *     Additional content defined by implementations
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         * 
+                         * @throws NullPointerException
+                         *     If the passed collection is null
+                         */
+                        @Override
+                        public Builder extension(Collection<Extension> extension) {
+                            return (Builder) super.extension(extension);
+                        }
+
+                        /**
+                         * May be used to represent additional information that is not part of the basic definition of the element and that 
+                         * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                         * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                         * extension. Applications processing a resource are required to check for modifier extensions.
+                         * 
+                         * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                         * change the meaning of modifierExtension itself).
+                         * 
+                         * <p>Adds new element(s) to the existing list.
+                         * If any of the elements are null, calling {@link #build()} will fail.
+                         * 
+                         * @param modifierExtension
+                         *     Extensions that cannot be ignored even if unrecognized
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        @Override
+                        public Builder modifierExtension(Extension... modifierExtension) {
+                            return (Builder) super.modifierExtension(modifierExtension);
+                        }
+
+                        /**
+                         * May be used to represent additional information that is not part of the basic definition of the element and that 
+                         * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                         * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                         * extension. Applications processing a resource are required to check for modifier extensions.
+                         * 
+                         * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                         * change the meaning of modifierExtension itself).
+                         * 
+                         * <p>Replaces the existing list with a new one containing elements from the Collection.
+                         * If any of the elements are null, calling {@link #build()} will fail.
+                         * 
+                         * @param modifierExtension
+                         *     Extensions that cannot be ignored even if unrecognized
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         * 
+                         * @throws NullPointerException
+                         *     If the passed collection is null
+                         */
+                        @Override
+                        public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                            return (Builder) super.modifierExtension(modifierExtension);
+                        }
+
+                        /**
+                         * Link or reference providing traceability to the testing requirement for this test.
+                         * 
+                         * <p>This is a choice element with the following allowed types:
+                         * <ul>
+                         * <li>{@link Uri}</li>
+                         * <li>{@link Canonical}</li>
+                         * </ul>
+                         * 
+                         * @param link
+                         *     Link or reference to the testing requirement
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        public Builder link(org.linuxforhealth.fhir.model.type.Element link) {
+                            this.link = link;
+                            return this;
+                        }
+
+                        /**
+                         * Build the {@link Requirement}
+                         * 
+                         * @return
+                         *     An immutable object of type {@link Requirement}
+                         * @throws IllegalStateException
+                         *     if the current state cannot be built into a valid Requirement per the base specification
+                         */
+                        @Override
+                        public Requirement build() {
+                            Requirement requirement = new Requirement(this);
+                            if (validating) {
+                                validate(requirement);
+                            }
+                            return requirement;
+                        }
+
+                        protected void validate(Requirement requirement) {
+                            super.validate(requirement);
+                            ValidationSupport.choiceElement(requirement.link, "link", Uri.class, Canonical.class);
+                            ValidationSupport.requireValueOrChildren(requirement);
+                        }
+
+                        protected Builder from(Requirement requirement) {
+                            super.from(requirement);
+                            link = requirement.link;
+                            return this;
+                        }
                     }
                 }
             }
@@ -2617,7 +2924,7 @@ public class TestReport extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2637,7 +2944,7 @@ public class TestReport extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2662,7 +2969,7 @@ public class TestReport extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2687,7 +2994,7 @@ public class TestReport extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2975,7 +3282,7 @@ public class TestReport extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2995,7 +3302,7 @@ public class TestReport extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3020,7 +3327,7 @@ public class TestReport extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3045,7 +3352,7 @@ public class TestReport extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3238,7 +3545,7 @@ public class TestReport extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3258,7 +3565,7 @@ public class TestReport extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3283,7 +3590,7 @@ public class TestReport extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3308,7 +3615,7 @@ public class TestReport extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3518,7 +3825,7 @@ public class TestReport extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3538,7 +3845,7 @@ public class TestReport extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3563,7 +3870,7 @@ public class TestReport extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3588,7 +3895,7 @@ public class TestReport extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 

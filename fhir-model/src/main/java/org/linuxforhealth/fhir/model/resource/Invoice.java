@@ -24,21 +24,22 @@ import org.linuxforhealth.fhir.model.type.Annotation;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.DateTime;
-import org.linuxforhealth.fhir.model.type.Decimal;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
+import org.linuxforhealth.fhir.model.type.MonetaryComponent;
 import org.linuxforhealth.fhir.model.type.Money;
 import org.linuxforhealth.fhir.model.type.Narrative;
+import org.linuxforhealth.fhir.model.type.Period;
 import org.linuxforhealth.fhir.model.type.PositiveInt;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
-import org.linuxforhealth.fhir.model.type.code.InvoicePriceComponentType;
 import org.linuxforhealth.fhir.model.type.code.InvoiceStatus;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
@@ -63,7 +64,7 @@ public class Invoice extends DomainResource {
         bindingName = "InvoiceStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "Codes identifying the lifecycle stage of an Invoice.",
-        valueSet = "http://hl7.org/fhir/ValueSet/invoice-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/invoice-status|5.0.0"
     )
     @Required
     private final InvoiceStatus status;
@@ -76,15 +77,19 @@ public class Invoice extends DomainResource {
     @Summary
     @ReferenceTarget({ "Organization", "Patient", "RelatedPerson" })
     private final Reference recipient;
-    @Summary
     private final DateTime date;
+    @Summary
+    private final DateTime creation;
+    @Summary
+    @Choice({ Date.class, Period.class })
+    private final org.linuxforhealth.fhir.model.type.Element period;
     private final List<Participant> participant;
     @ReferenceTarget({ "Organization" })
     private final Reference issuer;
     @ReferenceTarget({ "Account" })
     private final Reference account;
     private final List<LineItem> lineItem;
-    private final List<Invoice.LineItem.PriceComponent> totalPriceComponent;
+    private final List<MonetaryComponent> totalPriceComponent;
     @Summary
     private final Money totalNet;
     @Summary
@@ -101,6 +106,8 @@ public class Invoice extends DomainResource {
         subject = builder.subject;
         recipient = builder.recipient;
         date = builder.date;
+        creation = builder.creation;
+        period = builder.period;
         participant = Collections.unmodifiableList(builder.participant);
         issuer = builder.issuer;
         account = builder.account;
@@ -173,13 +180,33 @@ public class Invoice extends DomainResource {
     }
 
     /**
-     * Date/time(s) of when this Invoice was posted.
+     * Depricared by the element below.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
      */
     public DateTime getDate() {
         return date;
+    }
+
+    /**
+     * Date/time(s) of when this Invoice was posted.
+     * 
+     * @return
+     *     An immutable object of type {@link DateTime} that may be null.
+     */
+    public DateTime getCreation() {
+        return creation;
+    }
+
+    /**
+     * Date/time(s) range of services included in this invoice.
+     * 
+     * @return
+     *     An immutable object of type {@link Date} or {@link Period} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getPeriod() {
+        return period;
     }
 
     /**
@@ -213,8 +240,8 @@ public class Invoice extends DomainResource {
     }
 
     /**
-     * Each line item represents one charge for goods and services rendered. Details such as date, code and amount are found 
-     * in the referenced ChargeItem resource.
+     * Each line item represents one charge for goods and services rendered. Details such.ofType(date), code and amount are 
+     * found in the referenced ChargeItem resource.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link LineItem} that may be empty.
@@ -229,9 +256,9 @@ public class Invoice extends DomainResource {
      * how the total price was calculated.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link PriceComponent} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link MonetaryComponent} that may be empty.
      */
-    public List<Invoice.LineItem.PriceComponent> getTotalPriceComponent() {
+    public List<MonetaryComponent> getTotalPriceComponent() {
         return totalPriceComponent;
     }
 
@@ -285,6 +312,8 @@ public class Invoice extends DomainResource {
             (subject != null) || 
             (recipient != null) || 
             (date != null) || 
+            (creation != null) || 
+            (period != null) || 
             !participant.isEmpty() || 
             (issuer != null) || 
             (account != null) || 
@@ -317,11 +346,13 @@ public class Invoice extends DomainResource {
                 accept(subject, "subject", visitor);
                 accept(recipient, "recipient", visitor);
                 accept(date, "date", visitor);
+                accept(creation, "creation", visitor);
+                accept(period, "period", visitor);
                 accept(participant, "participant", visitor, Participant.class);
                 accept(issuer, "issuer", visitor);
                 accept(account, "account", visitor);
                 accept(lineItem, "lineItem", visitor, LineItem.class);
-                accept(totalPriceComponent, "totalPriceComponent", visitor, Invoice.LineItem.PriceComponent.class);
+                accept(totalPriceComponent, "totalPriceComponent", visitor, MonetaryComponent.class);
                 accept(totalNet, "totalNet", visitor);
                 accept(totalGross, "totalGross", visitor);
                 accept(paymentTerms, "paymentTerms", visitor);
@@ -359,6 +390,8 @@ public class Invoice extends DomainResource {
             Objects.equals(subject, other.subject) && 
             Objects.equals(recipient, other.recipient) && 
             Objects.equals(date, other.date) && 
+            Objects.equals(creation, other.creation) && 
+            Objects.equals(period, other.period) && 
             Objects.equals(participant, other.participant) && 
             Objects.equals(issuer, other.issuer) && 
             Objects.equals(account, other.account) && 
@@ -389,6 +422,8 @@ public class Invoice extends DomainResource {
                 subject, 
                 recipient, 
                 date, 
+                creation, 
+                period, 
                 participant, 
                 issuer, 
                 account, 
@@ -420,11 +455,13 @@ public class Invoice extends DomainResource {
         private Reference subject;
         private Reference recipient;
         private DateTime date;
+        private DateTime creation;
+        private org.linuxforhealth.fhir.model.type.Element period;
         private List<Participant> participant = new ArrayList<>();
         private Reference issuer;
         private Reference account;
         private List<LineItem> lineItem = new ArrayList<>();
-        private List<Invoice.LineItem.PriceComponent> totalPriceComponent = new ArrayList<>();
+        private List<MonetaryComponent> totalPriceComponent = new ArrayList<>();
         private Money totalNet;
         private Money totalGross;
         private Markdown paymentTerms;
@@ -512,7 +549,8 @@ public class Invoice extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -530,7 +568,8 @@ public class Invoice extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -551,7 +590,7 @@ public class Invoice extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -571,7 +610,7 @@ public class Invoice extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -596,9 +635,9 @@ public class Invoice extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -621,9 +660,9 @@ public class Invoice extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -786,16 +825,66 @@ public class Invoice extends DomainResource {
         }
 
         /**
-         * Date/time(s) of when this Invoice was posted.
+         * Depricared by the element below.
          * 
          * @param date
-         *     Invoice date / posting date
+         *     DEPRICATED
          * 
          * @return
          *     A reference to this Builder instance
          */
         public Builder date(DateTime date) {
             this.date = date;
+            return this;
+        }
+
+        /**
+         * Date/time(s) of when this Invoice was posted.
+         * 
+         * @param creation
+         *     When posted
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder creation(DateTime creation) {
+            this.creation = creation;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code period} with choice type Date.
+         * 
+         * @param period
+         *     Billing date or period
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #period(Element)
+         */
+        public Builder period(java.time.LocalDate period) {
+            this.period = (period == null) ? null : Date.of(period);
+            return this;
+        }
+
+        /**
+         * Date/time(s) range of services included in this invoice.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link Date}</li>
+         * <li>{@link Period}</li>
+         * </ul>
+         * 
+         * @param period
+         *     Billing date or period
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder period(org.linuxforhealth.fhir.model.type.Element period) {
+            this.period = period;
             return this;
         }
 
@@ -877,8 +966,8 @@ public class Invoice extends DomainResource {
         }
 
         /**
-         * Each line item represents one charge for goods and services rendered. Details such as date, code and amount are found 
-         * in the referenced ChargeItem resource.
+         * Each line item represents one charge for goods and services rendered. Details such.ofType(date), code and amount are 
+         * found in the referenced ChargeItem resource.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -897,8 +986,8 @@ public class Invoice extends DomainResource {
         }
 
         /**
-         * Each line item represents one charge for goods and services rendered. Details such as date, code and amount are found 
-         * in the referenced ChargeItem resource.
+         * Each line item represents one charge for goods and services rendered. Details such.ofType(date), code and amount are 
+         * found in the referenced ChargeItem resource.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -931,8 +1020,8 @@ public class Invoice extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder totalPriceComponent(Invoice.LineItem.PriceComponent... totalPriceComponent) {
-            for (Invoice.LineItem.PriceComponent value : totalPriceComponent) {
+        public Builder totalPriceComponent(MonetaryComponent... totalPriceComponent) {
+            for (MonetaryComponent value : totalPriceComponent) {
                 this.totalPriceComponent.add(value);
             }
             return this;
@@ -955,7 +1044,7 @@ public class Invoice extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder totalPriceComponent(Collection<Invoice.LineItem.PriceComponent> totalPriceComponent) {
+        public Builder totalPriceComponent(Collection<MonetaryComponent> totalPriceComponent) {
             this.totalPriceComponent = new ArrayList<>(totalPriceComponent);
             return this;
         }
@@ -1067,9 +1156,10 @@ public class Invoice extends DomainResource {
             super.validate(invoice);
             ValidationSupport.checkList(invoice.identifier, "identifier", Identifier.class);
             ValidationSupport.requireNonNull(invoice.status, "status");
+            ValidationSupport.choiceElement(invoice.period, "period", Date.class, Period.class);
             ValidationSupport.checkList(invoice.participant, "participant", Participant.class);
             ValidationSupport.checkList(invoice.lineItem, "lineItem", LineItem.class);
-            ValidationSupport.checkList(invoice.totalPriceComponent, "totalPriceComponent", Invoice.LineItem.PriceComponent.class);
+            ValidationSupport.checkList(invoice.totalPriceComponent, "totalPriceComponent", MonetaryComponent.class);
             ValidationSupport.checkList(invoice.note, "note", Annotation.class);
             ValidationSupport.checkReferenceType(invoice.subject, "subject", "Patient", "Group");
             ValidationSupport.checkReferenceType(invoice.recipient, "recipient", "Organization", "Patient", "RelatedPerson");
@@ -1086,6 +1176,8 @@ public class Invoice extends DomainResource {
             subject = invoice.subject;
             recipient = invoice.recipient;
             date = invoice.date;
+            creation = invoice.creation;
+            period = invoice.period;
             participant.addAll(invoice.participant);
             issuer = invoice.issuer;
             account = invoice.account;
@@ -1226,7 +1318,7 @@ public class Invoice extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1246,7 +1338,7 @@ public class Invoice extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1271,7 +1363,7 @@ public class Invoice extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1296,7 +1388,7 @@ public class Invoice extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1400,20 +1492,23 @@ public class Invoice extends DomainResource {
     }
 
     /**
-     * Each line item represents one charge for goods and services rendered. Details such as date, code and amount are found 
-     * in the referenced ChargeItem resource.
+     * Each line item represents one charge for goods and services rendered. Details such.ofType(date), code and amount are 
+     * found in the referenced ChargeItem resource.
      */
     public static class LineItem extends BackboneElement {
         private final PositiveInt sequence;
+        @Choice({ Date.class, Period.class })
+        private final org.linuxforhealth.fhir.model.type.Element serviced;
         @ReferenceTarget({ "ChargeItem" })
         @Choice({ Reference.class, CodeableConcept.class })
         @Required
-        private final Element chargeItem;
-        private final List<PriceComponent> priceComponent;
+        private final org.linuxforhealth.fhir.model.type.Element chargeItem;
+        private final List<MonetaryComponent> priceComponent;
 
         private LineItem(Builder builder) {
             super(builder);
             sequence = builder.sequence;
+            serviced = builder.serviced;
             chargeItem = builder.chargeItem;
             priceComponent = Collections.unmodifiableList(builder.priceComponent);
         }
@@ -1429,13 +1524,23 @@ public class Invoice extends DomainResource {
         }
 
         /**
+         * Date/time(s) range when this service was delivered or completed.
+         * 
+         * @return
+         *     An immutable object of type {@link Date} or {@link Period} that may be null.
+         */
+        public org.linuxforhealth.fhir.model.type.Element getServiced() {
+            return serviced;
+        }
+
+        /**
          * The ChargeItem contains information such as the billing code, date, amount etc. If no further details are required for 
          * the lineItem, inline billing codes can be added using the CodeableConcept data type instead of the Reference.
          * 
          * @return
          *     An immutable object of type {@link Reference} or {@link CodeableConcept} that is non-null.
          */
-        public Element getChargeItem() {
+        public org.linuxforhealth.fhir.model.type.Element getChargeItem() {
             return chargeItem;
         }
 
@@ -1446,9 +1551,9 @@ public class Invoice extends DomainResource {
          * the Invoice as to how the prices have been calculated.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link PriceComponent} that may be empty.
+         *     An unmodifiable list containing immutable objects of type {@link MonetaryComponent} that may be empty.
          */
-        public List<PriceComponent> getPriceComponent() {
+        public List<MonetaryComponent> getPriceComponent() {
             return priceComponent;
         }
 
@@ -1456,6 +1561,7 @@ public class Invoice extends DomainResource {
         public boolean hasChildren() {
             return super.hasChildren() || 
                 (sequence != null) || 
+                (serviced != null) || 
                 (chargeItem != null) || 
                 !priceComponent.isEmpty();
         }
@@ -1470,8 +1576,9 @@ public class Invoice extends DomainResource {
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(sequence, "sequence", visitor);
+                    accept(serviced, "serviced", visitor);
                     accept(chargeItem, "chargeItem", visitor);
-                    accept(priceComponent, "priceComponent", visitor, PriceComponent.class);
+                    accept(priceComponent, "priceComponent", visitor, MonetaryComponent.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -1494,6 +1601,7 @@ public class Invoice extends DomainResource {
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(sequence, other.sequence) && 
+                Objects.equals(serviced, other.serviced) && 
                 Objects.equals(chargeItem, other.chargeItem) && 
                 Objects.equals(priceComponent, other.priceComponent);
         }
@@ -1506,6 +1614,7 @@ public class Invoice extends DomainResource {
                     extension, 
                     modifierExtension, 
                     sequence, 
+                    serviced, 
                     chargeItem, 
                     priceComponent);
                 hashCode = result;
@@ -1524,8 +1633,9 @@ public class Invoice extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private PositiveInt sequence;
-            private Element chargeItem;
-            private List<PriceComponent> priceComponent = new ArrayList<>();
+            private org.linuxforhealth.fhir.model.type.Element serviced;
+            private org.linuxforhealth.fhir.model.type.Element chargeItem;
+            private List<MonetaryComponent> priceComponent = new ArrayList<>();
 
             private Builder() {
                 super();
@@ -1548,7 +1658,7 @@ public class Invoice extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1568,7 +1678,7 @@ public class Invoice extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1593,7 +1703,7 @@ public class Invoice extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1618,7 +1728,7 @@ public class Invoice extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1657,6 +1767,42 @@ public class Invoice extends DomainResource {
             }
 
             /**
+             * Convenience method for setting {@code serviced} with choice type Date.
+             * 
+             * @param serviced
+             *     Service data or period
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #serviced(Element)
+             */
+            public Builder serviced(java.time.LocalDate serviced) {
+                this.serviced = (serviced == null) ? null : Date.of(serviced);
+                return this;
+            }
+
+            /**
+             * Date/time(s) range when this service was delivered or completed.
+             * 
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link Date}</li>
+             * <li>{@link Period}</li>
+             * </ul>
+             * 
+             * @param serviced
+             *     Service data or period
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder serviced(org.linuxforhealth.fhir.model.type.Element serviced) {
+                this.serviced = serviced;
+                return this;
+            }
+
+            /**
              * The ChargeItem contains information such as the billing code, date, amount etc. If no further details are required for 
              * the lineItem, inline billing codes can be added using the CodeableConcept data type instead of the Reference.
              * 
@@ -1679,7 +1825,7 @@ public class Invoice extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder chargeItem(Element chargeItem) {
+            public Builder chargeItem(org.linuxforhealth.fhir.model.type.Element chargeItem) {
                 this.chargeItem = chargeItem;
                 return this;
             }
@@ -1699,8 +1845,8 @@ public class Invoice extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder priceComponent(PriceComponent... priceComponent) {
-                for (PriceComponent value : priceComponent) {
+            public Builder priceComponent(MonetaryComponent... priceComponent) {
+                for (MonetaryComponent value : priceComponent) {
                     this.priceComponent.add(value);
                 }
                 return this;
@@ -1724,7 +1870,7 @@ public class Invoice extends DomainResource {
              * @throws NullPointerException
              *     If the passed collection is null
              */
-            public Builder priceComponent(Collection<PriceComponent> priceComponent) {
+            public Builder priceComponent(Collection<MonetaryComponent> priceComponent) {
                 this.priceComponent = new ArrayList<>(priceComponent);
                 return this;
             }
@@ -1753,8 +1899,9 @@ public class Invoice extends DomainResource {
 
             protected void validate(LineItem lineItem) {
                 super.validate(lineItem);
+                ValidationSupport.choiceElement(lineItem.serviced, "serviced", Date.class, Period.class);
                 ValidationSupport.requireChoiceElement(lineItem.chargeItem, "chargeItem", Reference.class, CodeableConcept.class);
-                ValidationSupport.checkList(lineItem.priceComponent, "priceComponent", PriceComponent.class);
+                ValidationSupport.checkList(lineItem.priceComponent, "priceComponent", MonetaryComponent.class);
                 ValidationSupport.checkReferenceType(lineItem.chargeItem, "chargeItem", "ChargeItem");
                 ValidationSupport.requireValueOrChildren(lineItem);
             }
@@ -1762,370 +1909,10 @@ public class Invoice extends DomainResource {
             protected Builder from(LineItem lineItem) {
                 super.from(lineItem);
                 sequence = lineItem.sequence;
+                serviced = lineItem.serviced;
                 chargeItem = lineItem.chargeItem;
                 priceComponent.addAll(lineItem.priceComponent);
                 return this;
-            }
-        }
-
-        /**
-         * The price for a ChargeItem may be calculated as a base price with surcharges/deductions that apply in certain 
-         * conditions. A ChargeItemDefinition resource that defines the prices, factors and conditions that apply to a billing 
-         * code is currently under development. The priceComponent element can be used to offer transparency to the recipient of 
-         * the Invoice as to how the prices have been calculated.
-         */
-        public static class PriceComponent extends BackboneElement {
-            @Binding(
-                bindingName = "InvoicePriceComponentType",
-                strength = BindingStrength.Value.REQUIRED,
-                description = "Codes indicating the kind of the price component.",
-                valueSet = "http://hl7.org/fhir/ValueSet/invoice-priceComponentType|4.3.0"
-            )
-            @Required
-            private final InvoicePriceComponentType type;
-            private final CodeableConcept code;
-            private final Decimal factor;
-            private final Money amount;
-
-            private PriceComponent(Builder builder) {
-                super(builder);
-                type = builder.type;
-                code = builder.code;
-                factor = builder.factor;
-                amount = builder.amount;
-            }
-
-            /**
-             * This code identifies the type of the component.
-             * 
-             * @return
-             *     An immutable object of type {@link InvoicePriceComponentType} that is non-null.
-             */
-            public InvoicePriceComponentType getType() {
-                return type;
-            }
-
-            /**
-             * A code that identifies the component. Codes may be used to differentiate between kinds of taxes, surcharges, discounts 
-             * etc.
-             * 
-             * @return
-             *     An immutable object of type {@link CodeableConcept} that may be null.
-             */
-            public CodeableConcept getCode() {
-                return code;
-            }
-
-            /**
-             * The factor that has been applied on the base price for calculating this component.
-             * 
-             * @return
-             *     An immutable object of type {@link Decimal} that may be null.
-             */
-            public Decimal getFactor() {
-                return factor;
-            }
-
-            /**
-             * The amount calculated for this component.
-             * 
-             * @return
-             *     An immutable object of type {@link Money} that may be null.
-             */
-            public Money getAmount() {
-                return amount;
-            }
-
-            @Override
-            public boolean hasChildren() {
-                return super.hasChildren() || 
-                    (type != null) || 
-                    (code != null) || 
-                    (factor != null) || 
-                    (amount != null);
-            }
-
-            @Override
-            public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-                if (visitor.preVisit(this)) {
-                    visitor.visitStart(elementName, elementIndex, this);
-                    if (visitor.visit(elementName, elementIndex, this)) {
-                        // visit children
-                        accept(id, "id", visitor);
-                        accept(extension, "extension", visitor, Extension.class);
-                        accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                        accept(type, "type", visitor);
-                        accept(code, "code", visitor);
-                        accept(factor, "factor", visitor);
-                        accept(amount, "amount", visitor);
-                    }
-                    visitor.visitEnd(elementName, elementIndex, this);
-                    visitor.postVisit(this);
-                }
-            }
-
-            @Override
-            public boolean equals(Object obj) {
-                if (this == obj) {
-                    return true;
-                }
-                if (obj == null) {
-                    return false;
-                }
-                if (getClass() != obj.getClass()) {
-                    return false;
-                }
-                PriceComponent other = (PriceComponent) obj;
-                return Objects.equals(id, other.id) && 
-                    Objects.equals(extension, other.extension) && 
-                    Objects.equals(modifierExtension, other.modifierExtension) && 
-                    Objects.equals(type, other.type) && 
-                    Objects.equals(code, other.code) && 
-                    Objects.equals(factor, other.factor) && 
-                    Objects.equals(amount, other.amount);
-            }
-
-            @Override
-            public int hashCode() {
-                int result = hashCode;
-                if (result == 0) {
-                    result = Objects.hash(id, 
-                        extension, 
-                        modifierExtension, 
-                        type, 
-                        code, 
-                        factor, 
-                        amount);
-                    hashCode = result;
-                }
-                return result;
-            }
-
-            @Override
-            public Builder toBuilder() {
-                return new Builder().from(this);
-            }
-
-            public static Builder builder() {
-                return new Builder();
-            }
-
-            public static class Builder extends BackboneElement.Builder {
-                private InvoicePriceComponentType type;
-                private CodeableConcept code;
-                private Decimal factor;
-                private Money amount;
-
-                private Builder() {
-                    super();
-                }
-
-                /**
-                 * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-                 * contain spaces.
-                 * 
-                 * @param id
-                 *     Unique id for inter-element referencing
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                @Override
-                public Builder id(java.lang.String id) {
-                    return (Builder) super.id(id);
-                }
-
-                /**
-                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-                 * of the definition of the extension.
-                 * 
-                 * <p>Adds new element(s) to the existing list.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param extension
-                 *     Additional content defined by implementations
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                @Override
-                public Builder extension(Extension... extension) {
-                    return (Builder) super.extension(extension);
-                }
-
-                /**
-                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-                 * of the definition of the extension.
-                 * 
-                 * <p>Replaces the existing list with a new one containing elements from the Collection.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param extension
-                 *     Additional content defined by implementations
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @throws NullPointerException
-                 *     If the passed collection is null
-                 */
-                @Override
-                public Builder extension(Collection<Extension> extension) {
-                    return (Builder) super.extension(extension);
-                }
-
-                /**
-                 * May be used to represent additional information that is not part of the basic definition of the element and that 
-                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-                 * extension. Applications processing a resource are required to check for modifier extensions.
-                 * 
-                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-                 * change the meaning of modifierExtension itself).
-                 * 
-                 * <p>Adds new element(s) to the existing list.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param modifierExtension
-                 *     Extensions that cannot be ignored even if unrecognized
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                @Override
-                public Builder modifierExtension(Extension... modifierExtension) {
-                    return (Builder) super.modifierExtension(modifierExtension);
-                }
-
-                /**
-                 * May be used to represent additional information that is not part of the basic definition of the element and that 
-                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-                 * extension. Applications processing a resource are required to check for modifier extensions.
-                 * 
-                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-                 * change the meaning of modifierExtension itself).
-                 * 
-                 * <p>Replaces the existing list with a new one containing elements from the Collection.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param modifierExtension
-                 *     Extensions that cannot be ignored even if unrecognized
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @throws NullPointerException
-                 *     If the passed collection is null
-                 */
-                @Override
-                public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                    return (Builder) super.modifierExtension(modifierExtension);
-                }
-
-                /**
-                 * This code identifies the type of the component.
-                 * 
-                 * <p>This element is required.
-                 * 
-                 * @param type
-                 *     base | surcharge | deduction | discount | tax | informational
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder type(InvoicePriceComponentType type) {
-                    this.type = type;
-                    return this;
-                }
-
-                /**
-                 * A code that identifies the component. Codes may be used to differentiate between kinds of taxes, surcharges, discounts 
-                 * etc.
-                 * 
-                 * @param code
-                 *     Code identifying the specific component
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder code(CodeableConcept code) {
-                    this.code = code;
-                    return this;
-                }
-
-                /**
-                 * The factor that has been applied on the base price for calculating this component.
-                 * 
-                 * @param factor
-                 *     Factor used for calculating this component
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder factor(Decimal factor) {
-                    this.factor = factor;
-                    return this;
-                }
-
-                /**
-                 * The amount calculated for this component.
-                 * 
-                 * @param amount
-                 *     Monetary amount associated with this component
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 */
-                public Builder amount(Money amount) {
-                    this.amount = amount;
-                    return this;
-                }
-
-                /**
-                 * Build the {@link PriceComponent}
-                 * 
-                 * <p>Required elements:
-                 * <ul>
-                 * <li>type</li>
-                 * </ul>
-                 * 
-                 * @return
-                 *     An immutable object of type {@link PriceComponent}
-                 * @throws IllegalStateException
-                 *     if the current state cannot be built into a valid PriceComponent per the base specification
-                 */
-                @Override
-                public PriceComponent build() {
-                    PriceComponent priceComponent = new PriceComponent(this);
-                    if (validating) {
-                        validate(priceComponent);
-                    }
-                    return priceComponent;
-                }
-
-                protected void validate(PriceComponent priceComponent) {
-                    super.validate(priceComponent);
-                    ValidationSupport.requireNonNull(priceComponent.type, "type");
-                    ValidationSupport.requireValueOrChildren(priceComponent);
-                }
-
-                protected Builder from(PriceComponent priceComponent) {
-                    super.from(priceComponent);
-                    type = priceComponent.type;
-                    code = priceComponent.code;
-                    factor = priceComponent.factor;
-                    amount = priceComponent.amount;
-                    return this;
-                }
             }
         }
     }

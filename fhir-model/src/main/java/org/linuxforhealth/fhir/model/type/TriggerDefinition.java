@@ -54,21 +54,26 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     source = "http://hl7.org/fhir/StructureDefinition/TriggerDefinition"
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class TriggerDefinition extends Element {
+public class TriggerDefinition extends DataType {
     @Summary
     @Binding(
         bindingName = "TriggerType",
         strength = BindingStrength.Value.REQUIRED,
-        valueSet = "http://hl7.org/fhir/ValueSet/trigger-type|4.3.0"
+        description = "The type of trigger.",
+        valueSet = "http://hl7.org/fhir/ValueSet/trigger-type|5.0.0"
     )
     @Required
     private final TriggerType type;
     @Summary
     private final String name;
     @Summary
+    private final CodeableConcept code;
+    @Summary
+    private final Canonical subscriptionTopic;
+    @Summary
     @ReferenceTarget({ "Schedule" })
     @Choice({ Timing.class, Reference.class, Date.class, DateTime.class })
-    private final Element timing;
+    private final org.linuxforhealth.fhir.model.type.Element timing;
     @Summary
     private final List<DataRequirement> data;
     @Summary
@@ -78,6 +83,8 @@ public class TriggerDefinition extends Element {
         super(builder);
         type = builder.type;
         name = builder.name;
+        code = builder.code;
+        subscriptionTopic = builder.subscriptionTopic;
         timing = builder.timing;
         data = Collections.unmodifiableList(builder.data);
         condition = builder.condition;
@@ -105,12 +112,33 @@ public class TriggerDefinition extends Element {
     }
 
     /**
+     * A code that identifies the event.
+     * 
+     * @return
+     *     An immutable object of type {@link CodeableConcept} that may be null.
+     */
+    public CodeableConcept getCode() {
+        return code;
+    }
+
+    /**
+     * A reference to a SubscriptionTopic resource that defines the event. If this element is provided, no other information 
+     * about the trigger definition may be supplied.
+     * 
+     * @return
+     *     An immutable object of type {@link Canonical} that may be null.
+     */
+    public Canonical getSubscriptionTopic() {
+        return subscriptionTopic;
+    }
+
+    /**
      * The timing of the event (if this is a periodic trigger).
      * 
      * @return
      *     An immutable object of type {@link Timing}, {@link Reference}, {@link Date} or {@link DateTime} that may be null.
      */
-    public Element getTiming() {
+    public org.linuxforhealth.fhir.model.type.Element getTiming() {
         return timing;
     }
 
@@ -141,6 +169,8 @@ public class TriggerDefinition extends Element {
         return super.hasChildren() || 
             (type != null) || 
             (name != null) || 
+            (code != null) || 
+            (subscriptionTopic != null) || 
             (timing != null) || 
             !data.isEmpty() || 
             (condition != null);
@@ -156,6 +186,8 @@ public class TriggerDefinition extends Element {
                 accept(extension, "extension", visitor, Extension.class);
                 accept(type, "type", visitor);
                 accept(name, "name", visitor);
+                accept(code, "code", visitor);
+                accept(subscriptionTopic, "subscriptionTopic", visitor);
                 accept(timing, "timing", visitor);
                 accept(data, "data", visitor, DataRequirement.class);
                 accept(condition, "condition", visitor);
@@ -181,6 +213,8 @@ public class TriggerDefinition extends Element {
             Objects.equals(extension, other.extension) && 
             Objects.equals(type, other.type) && 
             Objects.equals(name, other.name) && 
+            Objects.equals(code, other.code) && 
+            Objects.equals(subscriptionTopic, other.subscriptionTopic) && 
             Objects.equals(timing, other.timing) && 
             Objects.equals(data, other.data) && 
             Objects.equals(condition, other.condition);
@@ -194,6 +228,8 @@ public class TriggerDefinition extends Element {
                 extension, 
                 type, 
                 name, 
+                code, 
+                subscriptionTopic, 
                 timing, 
                 data, 
                 condition);
@@ -211,10 +247,12 @@ public class TriggerDefinition extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private TriggerType type;
         private String name;
-        private Element timing;
+        private CodeableConcept code;
+        private Canonical subscriptionTopic;
+        private org.linuxforhealth.fhir.model.type.Element timing;
         private List<DataRequirement> data = new ArrayList<>();
         private Expression condition;
 
@@ -239,7 +277,7 @@ public class TriggerDefinition extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -259,7 +297,7 @@ public class TriggerDefinition extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -328,6 +366,35 @@ public class TriggerDefinition extends Element {
         }
 
         /**
+         * A code that identifies the event.
+         * 
+         * @param code
+         *     Coded definition of the event
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder code(CodeableConcept code) {
+            this.code = code;
+            return this;
+        }
+
+        /**
+         * A reference to a SubscriptionTopic resource that defines the event. If this element is provided, no other information 
+         * about the trigger definition may be supplied.
+         * 
+         * @param subscriptionTopic
+         *     What event
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder subscriptionTopic(Canonical subscriptionTopic) {
+            this.subscriptionTopic = subscriptionTopic;
+            return this;
+        }
+
+        /**
          * Convenience method for setting {@code timing} with choice type Date.
          * 
          * @param timing
@@ -365,7 +432,7 @@ public class TriggerDefinition extends Element {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder timing(Element timing) {
+        public Builder timing(org.linuxforhealth.fhir.model.type.Element timing) {
             this.timing = timing;
             return this;
         }
@@ -461,6 +528,8 @@ public class TriggerDefinition extends Element {
             super.from(triggerDefinition);
             type = triggerDefinition.type;
             name = triggerDefinition.name;
+            code = triggerDefinition.code;
+            subscriptionTopic = triggerDefinition.subscriptionTopic;
             timing = triggerDefinition.timing;
             data.addAll(triggerDefinition.data);
             condition = triggerDefinition.condition;

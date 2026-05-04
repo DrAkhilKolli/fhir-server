@@ -15,7 +15,6 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
-import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
@@ -26,11 +25,12 @@ import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Dosage;
-import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
+import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Reference;
@@ -61,48 +61,37 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     expression = "whenHandedOver.empty() or whenPrepared.empty() or whenHandedOver >= whenPrepared",
     source = "http://hl7.org/fhir/StructureDefinition/MedicationDispense"
 )
-@Constraint(
-    id = "medicationDispense-2",
-    level = "Warning",
-    location = "(base)",
-    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/medicationdispense-category",
-    expression = "category.exists() implies (category.memberOf('http://hl7.org/fhir/ValueSet/medicationdispense-category', 'preferred'))",
-    source = "http://hl7.org/fhir/StructureDefinition/MedicationDispense",
-    generated = true
-)
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class MedicationDispense extends DomainResource {
     private final List<Identifier> identifier;
-    @ReferenceTarget({ "Procedure" })
+    @ReferenceTarget({ "CarePlan" })
+    private final List<Reference> basedOn;
+    @ReferenceTarget({ "Procedure", "MedicationAdministration" })
     private final List<Reference> partOf;
     @Summary
     @Binding(
         bindingName = "MedicationDispenseStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "Describes the lifecycle of the dispense.",
-        valueSet = "http://hl7.org/fhir/ValueSet/medicationdispense-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/medicationdispense-status|5.0.0"
     )
     @Required
     private final MedicationDispenseStatus status;
-    @ReferenceTarget({ "DetectedIssue" })
-    @Choice({ CodeableConcept.class, Reference.class })
     @Binding(
         bindingName = "MedicationDispenseStatusReason",
         strength = BindingStrength.Value.EXAMPLE,
-        description = "A code describing why a dispense was not performed.",
         valueSet = "http://hl7.org/fhir/ValueSet/medicationdispense-status-reason"
     )
-    private final Element statusReason;
+    private final CodeableReference notPerformedReason;
+    private final DateTime statusChanged;
     @Binding(
-        bindingName = "MedicationDispenseCategory",
-        strength = BindingStrength.Value.PREFERRED,
+        bindingName = "MedicationDispenseAdminLocation",
+        strength = BindingStrength.Value.EXAMPLE,
         description = "A code describing where the dispensed medication is expected to be consumed or administered.",
-        valueSet = "http://hl7.org/fhir/ValueSet/medicationdispense-category"
+        valueSet = "http://hl7.org/fhir/ValueSet/medicationdispense-admin-location"
     )
-    private final CodeableConcept category;
+    private final List<CodeableConcept> category;
     @Summary
-    @ReferenceTarget({ "Medication" })
-    @Choice({ CodeableConcept.class, Reference.class })
     @Binding(
         bindingName = "MedicationCode",
         strength = BindingStrength.Value.EXAMPLE,
@@ -110,12 +99,13 @@ public class MedicationDispense extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/medication-codes"
     )
     @Required
-    private final Element medication;
+    private final CodeableReference medication;
     @Summary
     @ReferenceTarget({ "Patient", "Group" })
+    @Required
     private final Reference subject;
-    @ReferenceTarget({ "Encounter", "EpisodeOfCare" })
-    private final Reference context;
+    @ReferenceTarget({ "Encounter" })
+    private final Reference encounter;
     private final List<Reference> supportingInformation;
     private final List<Performer> performer;
     @ReferenceTarget({ "Location" })
@@ -125,37 +115,39 @@ public class MedicationDispense extends DomainResource {
     @Binding(
         bindingName = "MedicationDispenseType",
         strength = BindingStrength.Value.EXAMPLE,
-        description = "ActPharmacySupplyType",
+        description = "ActPharmacySupplyType ",
         valueSet = "http://terminology.hl7.org/ValueSet/v3-ActPharmacySupplyType"
     )
     private final CodeableConcept type;
     private final SimpleQuantity quantity;
     private final SimpleQuantity daysSupply;
+    private final DateTime recorded;
     @Summary
     private final DateTime whenPrepared;
     private final DateTime whenHandedOver;
     @ReferenceTarget({ "Location" })
     private final Reference destination;
-    @ReferenceTarget({ "Patient", "Practitioner" })
+    @ReferenceTarget({ "Patient", "Practitioner", "RelatedPerson", "Location", "PractitionerRole" })
     private final List<Reference> receiver;
     private final List<Annotation> note;
+    private final Markdown renderedDosageInstruction;
     private final List<Dosage> dosageInstruction;
     private final Substitution substitution;
-    @ReferenceTarget({ "DetectedIssue" })
-    private final List<Reference> detectedIssue;
     @ReferenceTarget({ "Provenance" })
     private final List<Reference> eventHistory;
 
     private MedicationDispense(Builder builder) {
         super(builder);
         identifier = Collections.unmodifiableList(builder.identifier);
+        basedOn = Collections.unmodifiableList(builder.basedOn);
         partOf = Collections.unmodifiableList(builder.partOf);
         status = builder.status;
-        statusReason = builder.statusReason;
-        category = builder.category;
+        notPerformedReason = builder.notPerformedReason;
+        statusChanged = builder.statusChanged;
+        category = Collections.unmodifiableList(builder.category);
         medication = builder.medication;
         subject = builder.subject;
-        context = builder.context;
+        encounter = builder.encounter;
         supportingInformation = Collections.unmodifiableList(builder.supportingInformation);
         performer = Collections.unmodifiableList(builder.performer);
         location = builder.location;
@@ -163,14 +155,15 @@ public class MedicationDispense extends DomainResource {
         type = builder.type;
         quantity = builder.quantity;
         daysSupply = builder.daysSupply;
+        recorded = builder.recorded;
         whenPrepared = builder.whenPrepared;
         whenHandedOver = builder.whenHandedOver;
         destination = builder.destination;
         receiver = Collections.unmodifiableList(builder.receiver);
         note = Collections.unmodifiableList(builder.note);
+        renderedDosageInstruction = builder.renderedDosageInstruction;
         dosageInstruction = Collections.unmodifiableList(builder.dosageInstruction);
         substitution = builder.substitution;
-        detectedIssue = Collections.unmodifiableList(builder.detectedIssue);
         eventHistory = Collections.unmodifiableList(builder.eventHistory);
     }
 
@@ -188,7 +181,17 @@ public class MedicationDispense extends DomainResource {
     }
 
     /**
-     * The procedure that trigger the dispense.
+     * A plan that is fulfilled in whole or in part by this MedicationDispense.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getBasedOn() {
+        return basedOn;
+    }
+
+    /**
+     * The procedure or medication administration that triggered the dispense.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
@@ -211,31 +214,41 @@ public class MedicationDispense extends DomainResource {
      * Indicates the reason why a dispense was not performed.
      * 
      * @return
-     *     An immutable object of type {@link CodeableConcept} or {@link Reference} that may be null.
+     *     An immutable object of type {@link CodeableReference} that may be null.
      */
-    public Element getStatusReason() {
-        return statusReason;
+    public CodeableReference getNotPerformedReason() {
+        return notPerformedReason;
     }
 
     /**
-     * Indicates the type of medication dispense (for example, where the medication is expected to be consumed or 
-     * administered (i.e. inpatient or outpatient)).
+     * The date (and maybe time) when the status of the dispense record changed.
      * 
      * @return
-     *     An immutable object of type {@link CodeableConcept} that may be null.
+     *     An immutable object of type {@link DateTime} that may be null.
      */
-    public CodeableConcept getCategory() {
+    public DateTime getStatusChanged() {
+        return statusChanged;
+    }
+
+    /**
+     * Indicates the type of medication dispense (for example, drug classification like ATC, where meds would be 
+     * administered, legal category of the medication.).
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     */
+    public List<CodeableConcept> getCategory() {
         return category;
     }
 
     /**
-     * Identifies the medication being administered. This is either a link to a resource representing the details of the 
-     * medication or a simple attribute carrying a code that identifies the medication from a known list of medications.
+     * Identifies the medication supplied. This is either a link to a resource representing the details of the medication or 
+     * a simple attribute carrying a code that identifies the medication from a known list of medications.
      * 
      * @return
-     *     An immutable object of type {@link CodeableConcept} or {@link Reference} that is non-null.
+     *     An immutable object of type {@link CodeableReference} that is non-null.
      */
-    public Element getMedication() {
+    public CodeableReference getMedication() {
         return medication;
     }
 
@@ -243,24 +256,26 @@ public class MedicationDispense extends DomainResource {
      * A link to a resource representing the person or the group to whom the medication will be given.
      * 
      * @return
-     *     An immutable object of type {@link Reference} that may be null.
+     *     An immutable object of type {@link Reference} that is non-null.
      */
     public Reference getSubject() {
         return subject;
     }
 
     /**
-     * The encounter or episode of care that establishes the context for this event.
+     * The encounter that establishes the context for this event.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
      */
-    public Reference getContext() {
-        return context;
+    public Reference getEncounter() {
+        return encounter;
     }
 
     /**
-     * Additional information that supports the medication being dispensed.
+     * Additional information that supports the medication being dispensed. For example, there may be requirements that a 
+     * specific lab test has been completed prior to dispensing or the patient's weight at the time of dispensing is 
+     * documented.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
@@ -331,6 +346,16 @@ public class MedicationDispense extends DomainResource {
     }
 
     /**
+     * The date (and maybe time) when the dispense activity started if whenPrepared or whenHandedOver is not populated.
+     * 
+     * @return
+     *     An immutable object of type {@link DateTime} that may be null.
+     */
+    public DateTime getRecorded() {
+        return recorded;
+    }
+
+    /**
      * The time when the dispensed product was packaged and reviewed.
      * 
      * @return
@@ -351,7 +376,7 @@ public class MedicationDispense extends DomainResource {
     }
 
     /**
-     * Identification of the facility/location where the medication was shipped to, as part of the dispense event.
+     * Identification of the facility/location where the medication was/will be shipped to, as part of the dispense event.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
@@ -361,8 +386,8 @@ public class MedicationDispense extends DomainResource {
     }
 
     /**
-     * Identifies the person who picked up the medication. This will usually be a patient or their caregiver, but some cases 
-     * exist where it can be a healthcare professional.
+     * Identifies the person who picked up the medication or the location of where the medication was delivered. This will 
+     * usually be a patient or their caregiver, but some cases exist where it can be a healthcare professional or a location.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
@@ -379,6 +404,17 @@ public class MedicationDispense extends DomainResource {
      */
     public List<Annotation> getNote() {
         return note;
+    }
+
+    /**
+     * The full representation of the dose of the medication included in all dosage instructions. To be used when multiple 
+     * dosage instructions are included to represent complex dosing such as increasing or tapering doses.
+     * 
+     * @return
+     *     An immutable object of type {@link Markdown} that may be null.
+     */
+    public Markdown getRenderedDosageInstruction() {
+        return renderedDosageInstruction;
     }
 
     /**
@@ -404,17 +440,6 @@ public class MedicationDispense extends DomainResource {
     }
 
     /**
-     * Indicates an actual or potential clinical issue with or between one or more active or proposed clinical actions for a 
-     * patient; e.g. drug-drug interaction, duplicate therapy, dosage alert etc.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-     */
-    public List<Reference> getDetectedIssue() {
-        return detectedIssue;
-    }
-
-    /**
      * A summary of the events of interest that have occurred, such as when the dispense was verified.
      * 
      * @return
@@ -428,13 +453,15 @@ public class MedicationDispense extends DomainResource {
     public boolean hasChildren() {
         return super.hasChildren() || 
             !identifier.isEmpty() || 
+            !basedOn.isEmpty() || 
             !partOf.isEmpty() || 
             (status != null) || 
-            (statusReason != null) || 
-            (category != null) || 
+            (notPerformedReason != null) || 
+            (statusChanged != null) || 
+            !category.isEmpty() || 
             (medication != null) || 
             (subject != null) || 
-            (context != null) || 
+            (encounter != null) || 
             !supportingInformation.isEmpty() || 
             !performer.isEmpty() || 
             (location != null) || 
@@ -442,14 +469,15 @@ public class MedicationDispense extends DomainResource {
             (type != null) || 
             (quantity != null) || 
             (daysSupply != null) || 
+            (recorded != null) || 
             (whenPrepared != null) || 
             (whenHandedOver != null) || 
             (destination != null) || 
             !receiver.isEmpty() || 
             !note.isEmpty() || 
+            (renderedDosageInstruction != null) || 
             !dosageInstruction.isEmpty() || 
             (substitution != null) || 
-            !detectedIssue.isEmpty() || 
             !eventHistory.isEmpty();
     }
 
@@ -468,13 +496,15 @@ public class MedicationDispense extends DomainResource {
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(identifier, "identifier", visitor, Identifier.class);
+                accept(basedOn, "basedOn", visitor, Reference.class);
                 accept(partOf, "partOf", visitor, Reference.class);
                 accept(status, "status", visitor);
-                accept(statusReason, "statusReason", visitor);
-                accept(category, "category", visitor);
+                accept(notPerformedReason, "notPerformedReason", visitor);
+                accept(statusChanged, "statusChanged", visitor);
+                accept(category, "category", visitor, CodeableConcept.class);
                 accept(medication, "medication", visitor);
                 accept(subject, "subject", visitor);
-                accept(context, "context", visitor);
+                accept(encounter, "encounter", visitor);
                 accept(supportingInformation, "supportingInformation", visitor, Reference.class);
                 accept(performer, "performer", visitor, Performer.class);
                 accept(location, "location", visitor);
@@ -482,14 +512,15 @@ public class MedicationDispense extends DomainResource {
                 accept(type, "type", visitor);
                 accept(quantity, "quantity", visitor);
                 accept(daysSupply, "daysSupply", visitor);
+                accept(recorded, "recorded", visitor);
                 accept(whenPrepared, "whenPrepared", visitor);
                 accept(whenHandedOver, "whenHandedOver", visitor);
                 accept(destination, "destination", visitor);
                 accept(receiver, "receiver", visitor, Reference.class);
                 accept(note, "note", visitor, Annotation.class);
+                accept(renderedDosageInstruction, "renderedDosageInstruction", visitor);
                 accept(dosageInstruction, "dosageInstruction", visitor, Dosage.class);
                 accept(substitution, "substitution", visitor);
-                accept(detectedIssue, "detectedIssue", visitor, Reference.class);
                 accept(eventHistory, "eventHistory", visitor, Reference.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
@@ -518,13 +549,15 @@ public class MedicationDispense extends DomainResource {
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(identifier, other.identifier) && 
+            Objects.equals(basedOn, other.basedOn) && 
             Objects.equals(partOf, other.partOf) && 
             Objects.equals(status, other.status) && 
-            Objects.equals(statusReason, other.statusReason) && 
+            Objects.equals(notPerformedReason, other.notPerformedReason) && 
+            Objects.equals(statusChanged, other.statusChanged) && 
             Objects.equals(category, other.category) && 
             Objects.equals(medication, other.medication) && 
             Objects.equals(subject, other.subject) && 
-            Objects.equals(context, other.context) && 
+            Objects.equals(encounter, other.encounter) && 
             Objects.equals(supportingInformation, other.supportingInformation) && 
             Objects.equals(performer, other.performer) && 
             Objects.equals(location, other.location) && 
@@ -532,14 +565,15 @@ public class MedicationDispense extends DomainResource {
             Objects.equals(type, other.type) && 
             Objects.equals(quantity, other.quantity) && 
             Objects.equals(daysSupply, other.daysSupply) && 
+            Objects.equals(recorded, other.recorded) && 
             Objects.equals(whenPrepared, other.whenPrepared) && 
             Objects.equals(whenHandedOver, other.whenHandedOver) && 
             Objects.equals(destination, other.destination) && 
             Objects.equals(receiver, other.receiver) && 
             Objects.equals(note, other.note) && 
+            Objects.equals(renderedDosageInstruction, other.renderedDosageInstruction) && 
             Objects.equals(dosageInstruction, other.dosageInstruction) && 
             Objects.equals(substitution, other.substitution) && 
-            Objects.equals(detectedIssue, other.detectedIssue) && 
             Objects.equals(eventHistory, other.eventHistory);
     }
 
@@ -556,13 +590,15 @@ public class MedicationDispense extends DomainResource {
                 extension, 
                 modifierExtension, 
                 identifier, 
+                basedOn, 
                 partOf, 
                 status, 
-                statusReason, 
+                notPerformedReason, 
+                statusChanged, 
                 category, 
                 medication, 
                 subject, 
-                context, 
+                encounter, 
                 supportingInformation, 
                 performer, 
                 location, 
@@ -570,14 +606,15 @@ public class MedicationDispense extends DomainResource {
                 type, 
                 quantity, 
                 daysSupply, 
+                recorded, 
                 whenPrepared, 
                 whenHandedOver, 
                 destination, 
                 receiver, 
                 note, 
+                renderedDosageInstruction, 
                 dosageInstruction, 
                 substitution, 
-                detectedIssue, 
                 eventHistory);
             hashCode = result;
         }
@@ -595,13 +632,15 @@ public class MedicationDispense extends DomainResource {
 
     public static class Builder extends DomainResource.Builder {
         private List<Identifier> identifier = new ArrayList<>();
+        private List<Reference> basedOn = new ArrayList<>();
         private List<Reference> partOf = new ArrayList<>();
         private MedicationDispenseStatus status;
-        private Element statusReason;
-        private CodeableConcept category;
-        private Element medication;
+        private CodeableReference notPerformedReason;
+        private DateTime statusChanged;
+        private List<CodeableConcept> category = new ArrayList<>();
+        private CodeableReference medication;
         private Reference subject;
-        private Reference context;
+        private Reference encounter;
         private List<Reference> supportingInformation = new ArrayList<>();
         private List<Performer> performer = new ArrayList<>();
         private Reference location;
@@ -609,14 +648,15 @@ public class MedicationDispense extends DomainResource {
         private CodeableConcept type;
         private SimpleQuantity quantity;
         private SimpleQuantity daysSupply;
+        private DateTime recorded;
         private DateTime whenPrepared;
         private DateTime whenHandedOver;
         private Reference destination;
         private List<Reference> receiver = new ArrayList<>();
         private List<Annotation> note = new ArrayList<>();
+        private Markdown renderedDosageInstruction;
         private List<Dosage> dosageInstruction = new ArrayList<>();
         private Substitution substitution;
-        private List<Reference> detectedIssue = new ArrayList<>();
         private List<Reference> eventHistory = new ArrayList<>();
 
         private Builder() {
@@ -701,7 +741,8 @@ public class MedicationDispense extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -719,7 +760,8 @@ public class MedicationDispense extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -740,7 +782,7 @@ public class MedicationDispense extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -760,7 +802,7 @@ public class MedicationDispense extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -785,9 +827,9 @@ public class MedicationDispense extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -810,9 +852,9 @@ public class MedicationDispense extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -880,7 +922,56 @@ public class MedicationDispense extends DomainResource {
         }
 
         /**
-         * The procedure that trigger the dispense.
+         * A plan that is fulfilled in whole or in part by this MedicationDispense.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link CarePlan}</li>
+         * </ul>
+         * 
+         * @param basedOn
+         *     Plan that is fulfilled by this dispense
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder basedOn(Reference... basedOn) {
+            for (Reference value : basedOn) {
+                this.basedOn.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A plan that is fulfilled in whole or in part by this MedicationDispense.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link CarePlan}</li>
+         * </ul>
+         * 
+         * @param basedOn
+         *     Plan that is fulfilled by this dispense
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder basedOn(Collection<Reference> basedOn) {
+            this.basedOn = new ArrayList<>(basedOn);
+            return this;
+        }
+
+        /**
+         * The procedure or medication administration that triggered the dispense.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -888,6 +979,7 @@ public class MedicationDispense extends DomainResource {
          * <p>Allowed resource types for the references:
          * <ul>
          * <li>{@link Procedure}</li>
+         * <li>{@link MedicationAdministration}</li>
          * </ul>
          * 
          * @param partOf
@@ -904,7 +996,7 @@ public class MedicationDispense extends DomainResource {
         }
 
         /**
-         * The procedure that trigger the dispense.
+         * The procedure or medication administration that triggered the dispense.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -912,6 +1004,7 @@ public class MedicationDispense extends DomainResource {
          * <p>Allowed resource types for the references:
          * <ul>
          * <li>{@link Procedure}</li>
+         * <li>{@link MedicationAdministration}</li>
          * </ul>
          * 
          * @param partOf
@@ -947,31 +1040,37 @@ public class MedicationDispense extends DomainResource {
         /**
          * Indicates the reason why a dispense was not performed.
          * 
-         * <p>This is a choice element with the following allowed types:
-         * <ul>
-         * <li>{@link CodeableConcept}</li>
-         * <li>{@link Reference}</li>
-         * </ul>
-         * 
-         * When of type {@link Reference}, the allowed resource types for this reference are:
-         * <ul>
-         * <li>{@link DetectedIssue}</li>
-         * </ul>
-         * 
-         * @param statusReason
+         * @param notPerformedReason
          *     Why a dispense was not performed
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder statusReason(Element statusReason) {
-            this.statusReason = statusReason;
+        public Builder notPerformedReason(CodeableReference notPerformedReason) {
+            this.notPerformedReason = notPerformedReason;
             return this;
         }
 
         /**
-         * Indicates the type of medication dispense (for example, where the medication is expected to be consumed or 
-         * administered (i.e. inpatient or outpatient)).
+         * The date (and maybe time) when the status of the dispense record changed.
+         * 
+         * @param statusChanged
+         *     When the status changed
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder statusChanged(DateTime statusChanged) {
+            this.statusChanged = statusChanged;
+            return this;
+        }
+
+        /**
+         * Indicates the type of medication dispense (for example, drug classification like ATC, where meds would be 
+         * administered, legal category of the medication.).
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param category
          *     Type of medication dispense
@@ -979,27 +1078,39 @@ public class MedicationDispense extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder category(CodeableConcept category) {
-            this.category = category;
+        public Builder category(CodeableConcept... category) {
+            for (CodeableConcept value : category) {
+                this.category.add(value);
+            }
             return this;
         }
 
         /**
-         * Identifies the medication being administered. This is either a link to a resource representing the details of the 
-         * medication or a simple attribute carrying a code that identifies the medication from a known list of medications.
+         * Indicates the type of medication dispense (for example, drug classification like ATC, where meds would be 
+         * administered, legal category of the medication.).
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param category
+         *     Type of medication dispense
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder category(Collection<CodeableConcept> category) {
+            this.category = new ArrayList<>(category);
+            return this;
+        }
+
+        /**
+         * Identifies the medication supplied. This is either a link to a resource representing the details of the medication or 
+         * a simple attribute carrying a code that identifies the medication from a known list of medications.
          * 
          * <p>This element is required.
-         * 
-         * <p>This is a choice element with the following allowed types:
-         * <ul>
-         * <li>{@link CodeableConcept}</li>
-         * <li>{@link Reference}</li>
-         * </ul>
-         * 
-         * When of type {@link Reference}, the allowed resource types for this reference are:
-         * <ul>
-         * <li>{@link Medication}</li>
-         * </ul>
          * 
          * @param medication
          *     What medication was supplied
@@ -1007,13 +1118,15 @@ public class MedicationDispense extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder medication(Element medication) {
+        public Builder medication(CodeableReference medication) {
             this.medication = medication;
             return this;
         }
 
         /**
          * A link to a resource representing the person or the group to whom the medication will be given.
+         * 
+         * <p>This element is required.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
@@ -1033,27 +1146,28 @@ public class MedicationDispense extends DomainResource {
         }
 
         /**
-         * The encounter or episode of care that establishes the context for this event.
+         * The encounter that establishes the context for this event.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
          * <li>{@link Encounter}</li>
-         * <li>{@link EpisodeOfCare}</li>
          * </ul>
          * 
-         * @param context
-         *     Encounter / Episode associated with event
+         * @param encounter
+         *     Encounter associated with event
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder context(Reference context) {
-            this.context = context;
+        public Builder encounter(Reference encounter) {
+            this.encounter = encounter;
             return this;
         }
 
         /**
-         * Additional information that supports the medication being dispensed.
+         * Additional information that supports the medication being dispensed. For example, there may be requirements that a 
+         * specific lab test has been completed prior to dispensing or the patient's weight at the time of dispensing is 
+         * documented.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1072,7 +1186,9 @@ public class MedicationDispense extends DomainResource {
         }
 
         /**
-         * Additional information that supports the medication being dispensed.
+         * Additional information that supports the medication being dispensed. For example, there may be requirements that a 
+         * specific lab test has been completed prior to dispensing or the patient's weight at the time of dispensing is 
+         * documented.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1203,7 +1319,7 @@ public class MedicationDispense extends DomainResource {
          * Emergency Fill, Samples, etc.
          * 
          * @param type
-         *     Trial fill, partial fill, emergency fill, etc.
+         *     Trial fill, partial fill, emergency fill, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -1242,6 +1358,20 @@ public class MedicationDispense extends DomainResource {
         }
 
         /**
+         * The date (and maybe time) when the dispense activity started if whenPrepared or whenHandedOver is not populated.
+         * 
+         * @param recorded
+         *     When the recording of the dispense started
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder recorded(DateTime recorded) {
+            this.recorded = recorded;
+            return this;
+        }
+
+        /**
          * The time when the dispensed product was packaged and reviewed.
          * 
          * @param whenPrepared
@@ -1270,7 +1400,7 @@ public class MedicationDispense extends DomainResource {
         }
 
         /**
-         * Identification of the facility/location where the medication was shipped to, as part of the dispense event.
+         * Identification of the facility/location where the medication was/will be shipped to, as part of the dispense event.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
@@ -1278,7 +1408,7 @@ public class MedicationDispense extends DomainResource {
          * </ul>
          * 
          * @param destination
-         *     Where the medication was sent
+         *     Where the medication was/will be sent
          * 
          * @return
          *     A reference to this Builder instance
@@ -1289,8 +1419,8 @@ public class MedicationDispense extends DomainResource {
         }
 
         /**
-         * Identifies the person who picked up the medication. This will usually be a patient or their caregiver, but some cases 
-         * exist where it can be a healthcare professional.
+         * Identifies the person who picked up the medication or the location of where the medication was delivered. This will 
+         * usually be a patient or their caregiver, but some cases exist where it can be a healthcare professional or a location.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1299,10 +1429,13 @@ public class MedicationDispense extends DomainResource {
          * <ul>
          * <li>{@link Patient}</li>
          * <li>{@link Practitioner}</li>
+         * <li>{@link RelatedPerson}</li>
+         * <li>{@link Location}</li>
+         * <li>{@link PractitionerRole}</li>
          * </ul>
          * 
          * @param receiver
-         *     Who collected the medication
+         *     Who collected the medication or where the medication was delivered
          * 
          * @return
          *     A reference to this Builder instance
@@ -1315,8 +1448,8 @@ public class MedicationDispense extends DomainResource {
         }
 
         /**
-         * Identifies the person who picked up the medication. This will usually be a patient or their caregiver, but some cases 
-         * exist where it can be a healthcare professional.
+         * Identifies the person who picked up the medication or the location of where the medication was delivered. This will 
+         * usually be a patient or their caregiver, but some cases exist where it can be a healthcare professional or a location.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1325,10 +1458,13 @@ public class MedicationDispense extends DomainResource {
          * <ul>
          * <li>{@link Patient}</li>
          * <li>{@link Practitioner}</li>
+         * <li>{@link RelatedPerson}</li>
+         * <li>{@link Location}</li>
+         * <li>{@link PractitionerRole}</li>
          * </ul>
          * 
          * @param receiver
-         *     Who collected the medication
+         *     Who collected the medication or where the medication was delivered
          * 
          * @return
          *     A reference to this Builder instance
@@ -1377,6 +1513,21 @@ public class MedicationDispense extends DomainResource {
          */
         public Builder note(Collection<Annotation> note) {
             this.note = new ArrayList<>(note);
+            return this;
+        }
+
+        /**
+         * The full representation of the dose of the medication included in all dosage instructions. To be used when multiple 
+         * dosage instructions are included to represent complex dosing such as increasing or tapering doses.
+         * 
+         * @param renderedDosageInstruction
+         *     Full representation of the dosage instructions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder renderedDosageInstruction(Markdown renderedDosageInstruction) {
+            this.renderedDosageInstruction = renderedDosageInstruction;
             return this;
         }
 
@@ -1436,57 +1587,6 @@ public class MedicationDispense extends DomainResource {
         }
 
         /**
-         * Indicates an actual or potential clinical issue with or between one or more active or proposed clinical actions for a 
-         * patient; e.g. drug-drug interaction, duplicate therapy, dosage alert etc.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link DetectedIssue}</li>
-         * </ul>
-         * 
-         * @param detectedIssue
-         *     Clinical issue with action
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder detectedIssue(Reference... detectedIssue) {
-            for (Reference value : detectedIssue) {
-                this.detectedIssue.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Indicates an actual or potential clinical issue with or between one or more active or proposed clinical actions for a 
-         * patient; e.g. drug-drug interaction, duplicate therapy, dosage alert etc.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link DetectedIssue}</li>
-         * </ul>
-         * 
-         * @param detectedIssue
-         *     Clinical issue with action
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder detectedIssue(Collection<Reference> detectedIssue) {
-            this.detectedIssue = new ArrayList<>(detectedIssue);
-            return this;
-        }
-
-        /**
          * A summary of the events of interest that have occurred, such as when the dispense was verified.
          * 
          * <p>Adds new element(s) to the existing list.
@@ -1542,6 +1642,7 @@ public class MedicationDispense extends DomainResource {
          * <ul>
          * <li>status</li>
          * <li>medication</li>
+         * <li>subject</li>
          * </ul>
          * 
          * @return
@@ -1561,41 +1662,42 @@ public class MedicationDispense extends DomainResource {
         protected void validate(MedicationDispense medicationDispense) {
             super.validate(medicationDispense);
             ValidationSupport.checkList(medicationDispense.identifier, "identifier", Identifier.class);
+            ValidationSupport.checkList(medicationDispense.basedOn, "basedOn", Reference.class);
             ValidationSupport.checkList(medicationDispense.partOf, "partOf", Reference.class);
             ValidationSupport.requireNonNull(medicationDispense.status, "status");
-            ValidationSupport.choiceElement(medicationDispense.statusReason, "statusReason", CodeableConcept.class, Reference.class);
-            ValidationSupport.requireChoiceElement(medicationDispense.medication, "medication", CodeableConcept.class, Reference.class);
+            ValidationSupport.checkList(medicationDispense.category, "category", CodeableConcept.class);
+            ValidationSupport.requireNonNull(medicationDispense.medication, "medication");
+            ValidationSupport.requireNonNull(medicationDispense.subject, "subject");
             ValidationSupport.checkList(medicationDispense.supportingInformation, "supportingInformation", Reference.class);
             ValidationSupport.checkList(medicationDispense.performer, "performer", Performer.class);
             ValidationSupport.checkList(medicationDispense.authorizingPrescription, "authorizingPrescription", Reference.class);
             ValidationSupport.checkList(medicationDispense.receiver, "receiver", Reference.class);
             ValidationSupport.checkList(medicationDispense.note, "note", Annotation.class);
             ValidationSupport.checkList(medicationDispense.dosageInstruction, "dosageInstruction", Dosage.class);
-            ValidationSupport.checkList(medicationDispense.detectedIssue, "detectedIssue", Reference.class);
             ValidationSupport.checkList(medicationDispense.eventHistory, "eventHistory", Reference.class);
-            ValidationSupport.checkReferenceType(medicationDispense.partOf, "partOf", "Procedure");
-            ValidationSupport.checkReferenceType(medicationDispense.statusReason, "statusReason", "DetectedIssue");
-            ValidationSupport.checkReferenceType(medicationDispense.medication, "medication", "Medication");
+            ValidationSupport.checkReferenceType(medicationDispense.basedOn, "basedOn", "CarePlan");
+            ValidationSupport.checkReferenceType(medicationDispense.partOf, "partOf", "Procedure", "MedicationAdministration");
             ValidationSupport.checkReferenceType(medicationDispense.subject, "subject", "Patient", "Group");
-            ValidationSupport.checkReferenceType(medicationDispense.context, "context", "Encounter", "EpisodeOfCare");
+            ValidationSupport.checkReferenceType(medicationDispense.encounter, "encounter", "Encounter");
             ValidationSupport.checkReferenceType(medicationDispense.location, "location", "Location");
             ValidationSupport.checkReferenceType(medicationDispense.authorizingPrescription, "authorizingPrescription", "MedicationRequest");
             ValidationSupport.checkReferenceType(medicationDispense.destination, "destination", "Location");
-            ValidationSupport.checkReferenceType(medicationDispense.receiver, "receiver", "Patient", "Practitioner");
-            ValidationSupport.checkReferenceType(medicationDispense.detectedIssue, "detectedIssue", "DetectedIssue");
+            ValidationSupport.checkReferenceType(medicationDispense.receiver, "receiver", "Patient", "Practitioner", "RelatedPerson", "Location", "PractitionerRole");
             ValidationSupport.checkReferenceType(medicationDispense.eventHistory, "eventHistory", "Provenance");
         }
 
         protected Builder from(MedicationDispense medicationDispense) {
             super.from(medicationDispense);
             identifier.addAll(medicationDispense.identifier);
+            basedOn.addAll(medicationDispense.basedOn);
             partOf.addAll(medicationDispense.partOf);
             status = medicationDispense.status;
-            statusReason = medicationDispense.statusReason;
-            category = medicationDispense.category;
+            notPerformedReason = medicationDispense.notPerformedReason;
+            statusChanged = medicationDispense.statusChanged;
+            category.addAll(medicationDispense.category);
             medication = medicationDispense.medication;
             subject = medicationDispense.subject;
-            context = medicationDispense.context;
+            encounter = medicationDispense.encounter;
             supportingInformation.addAll(medicationDispense.supportingInformation);
             performer.addAll(medicationDispense.performer);
             location = medicationDispense.location;
@@ -1603,14 +1705,15 @@ public class MedicationDispense extends DomainResource {
             type = medicationDispense.type;
             quantity = medicationDispense.quantity;
             daysSupply = medicationDispense.daysSupply;
+            recorded = medicationDispense.recorded;
             whenPrepared = medicationDispense.whenPrepared;
             whenHandedOver = medicationDispense.whenHandedOver;
             destination = medicationDispense.destination;
             receiver.addAll(medicationDispense.receiver);
             note.addAll(medicationDispense.note);
+            renderedDosageInstruction = medicationDispense.renderedDosageInstruction;
             dosageInstruction.addAll(medicationDispense.dosageInstruction);
             substitution = medicationDispense.substitution;
-            detectedIssue.addAll(medicationDispense.detectedIssue);
             eventHistory.addAll(medicationDispense.eventHistory);
             return this;
         }
@@ -1627,7 +1730,7 @@ public class MedicationDispense extends DomainResource {
             valueSet = "http://hl7.org/fhir/ValueSet/medicationdispense-performer-function"
         )
         private final CodeableConcept function;
-        @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "Patient", "Device", "RelatedPerson" })
+        @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "Patient", "Device", "RelatedPerson", "CareTeam" })
         @Required
         private final Reference actor;
 
@@ -1749,7 +1852,7 @@ public class MedicationDispense extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1769,7 +1872,7 @@ public class MedicationDispense extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1794,7 +1897,7 @@ public class MedicationDispense extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1819,7 +1922,7 @@ public class MedicationDispense extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1871,6 +1974,7 @@ public class MedicationDispense extends DomainResource {
              * <li>{@link Patient}</li>
              * <li>{@link Device}</li>
              * <li>{@link RelatedPerson}</li>
+             * <li>{@link CareTeam}</li>
              * </ul>
              * 
              * @param actor
@@ -1909,7 +2013,7 @@ public class MedicationDispense extends DomainResource {
             protected void validate(Performer performer) {
                 super.validate(performer);
                 ValidationSupport.requireNonNull(performer.actor, "actor");
-                ValidationSupport.checkReferenceType(performer.actor, "actor", "Practitioner", "PractitionerRole", "Organization", "Patient", "Device", "RelatedPerson");
+                ValidationSupport.checkReferenceType(performer.actor, "actor", "Practitioner", "PractitionerRole", "Organization", "Patient", "Device", "RelatedPerson", "CareTeam");
                 ValidationSupport.requireValueOrChildren(performer);
             }
 
@@ -1944,15 +2048,15 @@ public class MedicationDispense extends DomainResource {
             valueSet = "http://terminology.hl7.org/ValueSet/v3-SubstanceAdminSubstitutionReason"
         )
         private final List<CodeableConcept> reason;
-        @ReferenceTarget({ "Practitioner", "PractitionerRole" })
-        private final List<Reference> responsibleParty;
+        @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization" })
+        private final Reference responsibleParty;
 
         private Substitution(Builder builder) {
             super(builder);
             wasSubstituted = builder.wasSubstituted;
             type = builder.type;
             reason = Collections.unmodifiableList(builder.reason);
-            responsibleParty = Collections.unmodifiableList(builder.responsibleParty);
+            responsibleParty = builder.responsibleParty;
         }
 
         /**
@@ -1989,9 +2093,9 @@ public class MedicationDispense extends DomainResource {
          * The person or organization that has primary responsibility for the substitution.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+         *     An immutable object of type {@link Reference} that may be null.
          */
-        public List<Reference> getResponsibleParty() {
+        public Reference getResponsibleParty() {
             return responsibleParty;
         }
 
@@ -2001,7 +2105,7 @@ public class MedicationDispense extends DomainResource {
                 (wasSubstituted != null) || 
                 (type != null) || 
                 !reason.isEmpty() || 
-                !responsibleParty.isEmpty();
+                (responsibleParty != null);
         }
 
         @Override
@@ -2016,7 +2120,7 @@ public class MedicationDispense extends DomainResource {
                     accept(wasSubstituted, "wasSubstituted", visitor);
                     accept(type, "type", visitor);
                     accept(reason, "reason", visitor, CodeableConcept.class);
-                    accept(responsibleParty, "responsibleParty", visitor, Reference.class);
+                    accept(responsibleParty, "responsibleParty", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -2073,7 +2177,7 @@ public class MedicationDispense extends DomainResource {
             private Boolean wasSubstituted;
             private CodeableConcept type;
             private List<CodeableConcept> reason = new ArrayList<>();
-            private List<Reference> responsibleParty = new ArrayList<>();
+            private Reference responsibleParty;
 
             private Builder() {
                 super();
@@ -2096,7 +2200,7 @@ public class MedicationDispense extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2116,7 +2220,7 @@ public class MedicationDispense extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2141,7 +2245,7 @@ public class MedicationDispense extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2166,7 +2270,7 @@ public class MedicationDispense extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2280,13 +2384,11 @@ public class MedicationDispense extends DomainResource {
             /**
              * The person or organization that has primary responsibility for the substitution.
              * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * <p>Allowed resource types for the references:
+             * <p>Allowed resource types for this reference:
              * <ul>
              * <li>{@link Practitioner}</li>
              * <li>{@link PractitionerRole}</li>
+             * <li>{@link Organization}</li>
              * </ul>
              * 
              * @param responsibleParty
@@ -2295,36 +2397,8 @@ public class MedicationDispense extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder responsibleParty(Reference... responsibleParty) {
-                for (Reference value : responsibleParty) {
-                    this.responsibleParty.add(value);
-                }
-                return this;
-            }
-
-            /**
-             * The person or organization that has primary responsibility for the substitution.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * <p>Allowed resource types for the references:
-             * <ul>
-             * <li>{@link Practitioner}</li>
-             * <li>{@link PractitionerRole}</li>
-             * </ul>
-             * 
-             * @param responsibleParty
-             *     Who is responsible for the substitution
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            public Builder responsibleParty(Collection<Reference> responsibleParty) {
-                this.responsibleParty = new ArrayList<>(responsibleParty);
+            public Builder responsibleParty(Reference responsibleParty) {
+                this.responsibleParty = responsibleParty;
                 return this;
             }
 
@@ -2354,8 +2428,7 @@ public class MedicationDispense extends DomainResource {
                 super.validate(substitution);
                 ValidationSupport.requireNonNull(substitution.wasSubstituted, "wasSubstituted");
                 ValidationSupport.checkList(substitution.reason, "reason", CodeableConcept.class);
-                ValidationSupport.checkList(substitution.responsibleParty, "responsibleParty", Reference.class);
-                ValidationSupport.checkReferenceType(substitution.responsibleParty, "responsibleParty", "Practitioner", "PractitionerRole");
+                ValidationSupport.checkReferenceType(substitution.responsibleParty, "responsibleParty", "Practitioner", "PractitionerRole", "Organization");
                 ValidationSupport.requireValueOrChildren(substitution);
             }
 
@@ -2364,7 +2437,7 @@ public class MedicationDispense extends DomainResource {
                 wasSubstituted = substitution.wasSubstituted;
                 type = substitution.type;
                 reason.addAll(substitution.reason);
-                responsibleParty.addAll(substitution.responsibleParty);
+                responsibleParty = substitution.responsibleParty;
                 return this;
             }
         }

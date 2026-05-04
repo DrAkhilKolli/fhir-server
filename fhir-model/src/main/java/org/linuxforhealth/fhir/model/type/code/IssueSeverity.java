@@ -48,6 +48,13 @@ public class IssueSeverity extends Code {
      */
     public static final IssueSeverity INFORMATION = IssueSeverity.builder().value(Value.INFORMATION).build();
 
+    /**
+     * Operation Successful
+     * 
+     * <p>The operation completed successfully.
+     */
+    public static final IssueSeverity SUCCESS = IssueSeverity.builder().value(Value.SUCCESS).build();
+
     private volatile int hashCode;
 
     private IssueSeverity(Builder builder) {
@@ -74,6 +81,8 @@ public class IssueSeverity extends Code {
             return WARNING;
         case INFORMATION:
             return INFORMATION;
+        case SUCCESS:
+            return SUCCESS;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -233,7 +242,14 @@ public class IssueSeverity extends Code {
          * 
          * <p>The issue has no relation to the degree of success of the action.
          */
-        INFORMATION("information");
+        INFORMATION("information"),
+
+        /**
+         * Operation Successful
+         * 
+         * <p>The operation completed successfully.
+         */
+        SUCCESS("success");
 
         private final java.lang.String value;
 
@@ -272,6 +288,8 @@ public class IssueSeverity extends Code {
                 return WARNING;
             case "information":
                 return INFORMATION;
+            case "success":
+                return SUCCESS;
             default:
                 throw new IllegalArgumentException(value);
             }

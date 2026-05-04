@@ -18,7 +18,7 @@ import org.linuxforhealth.fhir.model.resource.Parameters.Parameter;
 import org.linuxforhealth.fhir.model.resource.Resource;
 import org.linuxforhealth.fhir.model.type.code.IssueType;
 import org.linuxforhealth.fhir.model.type.code.OperationParameterUse;
-import org.linuxforhealth.fhir.model.type.code.ResourceTypeCode;
+import org.linuxforhealth.fhir.model.type.code.FHIRTypes;
 import org.linuxforhealth.fhir.model.util.FHIRUtil;
 import org.linuxforhealth.fhir.model.util.ModelSupport;
 import org.linuxforhealth.fhir.search.util.SearchHelper;
@@ -136,7 +136,7 @@ public abstract class AbstractOperation implements FHIROperation {
     protected List<String> getResourceTypeNames() {
         List<String> resourceTypeNames = new ArrayList<String>();
         OperationDefinition definition = getDefinition();
-        for (ResourceTypeCode type : definition.getResource()) {
+        for (FHIRTypes type : definition.getResource()) {
             resourceTypeNames.add(type.getValue());
         }
         return resourceTypeNames;

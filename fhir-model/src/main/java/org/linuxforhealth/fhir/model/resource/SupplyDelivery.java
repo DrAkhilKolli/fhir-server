@@ -62,27 +62,27 @@ public class SupplyDelivery extends DomainResource {
         bindingName = "SupplyDeliveryStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "Status of the supply delivery.",
-        valueSet = "http://hl7.org/fhir/ValueSet/supplydelivery-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/supplydelivery-status|5.0.0"
     )
     private final SupplyDeliveryStatus status;
     @ReferenceTarget({ "Patient" })
     private final Reference patient;
     @Binding(
-        bindingName = "SupplyDeliveryType",
+        bindingName = "SupplyDeliverySupplyItemType",
         strength = BindingStrength.Value.REQUIRED,
         description = "The type of supply dispense.",
-        valueSet = "http://hl7.org/fhir/ValueSet/supplydelivery-type|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/supplydelivery-supplyitemtype|5.0.0"
     )
     private final CodeableConcept type;
-    private final SuppliedItem suppliedItem;
+    private final List<SuppliedItem> suppliedItem;
     @Summary
     @Choice({ DateTime.class, Period.class, Timing.class })
-    private final Element occurrence;
+    private final org.linuxforhealth.fhir.model.type.Element occurrence;
     @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization" })
     private final Reference supplier;
     @ReferenceTarget({ "Location" })
     private final Reference destination;
-    @ReferenceTarget({ "Practitioner", "PractitionerRole" })
+    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization" })
     private final List<Reference> receiver;
 
     private SupplyDelivery(Builder builder) {
@@ -93,7 +93,7 @@ public class SupplyDelivery extends DomainResource {
         status = builder.status;
         patient = builder.patient;
         type = builder.type;
-        suppliedItem = builder.suppliedItem;
+        suppliedItem = Collections.unmodifiableList(builder.suppliedItem);
         occurrence = builder.occurrence;
         supplier = builder.supplier;
         destination = builder.destination;
@@ -151,8 +151,7 @@ public class SupplyDelivery extends DomainResource {
     }
 
     /**
-     * Indicates the type of dispensing event that is performed. Examples include: Trial Fill, Completion of Trial, Partial 
-     * Fill, Emergency Fill, Samples, etc.
+     * Indicates the type of supply being provided. Examples include: Medication, Device, Biologically Derived Product.
      * 
      * @return
      *     An immutable object of type {@link CodeableConcept} that may be null.
@@ -165,9 +164,9 @@ public class SupplyDelivery extends DomainResource {
      * The item that is being delivered or has been supplied.
      * 
      * @return
-     *     An immutable object of type {@link SuppliedItem} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link SuppliedItem} that may be empty.
      */
-    public SuppliedItem getSuppliedItem() {
+    public List<SuppliedItem> getSuppliedItem() {
         return suppliedItem;
     }
 
@@ -177,12 +176,12 @@ public class SupplyDelivery extends DomainResource {
      * @return
      *     An immutable object of type {@link DateTime}, {@link Period} or {@link Timing} that may be null.
      */
-    public Element getOccurrence() {
+    public org.linuxforhealth.fhir.model.type.Element getOccurrence() {
         return occurrence;
     }
 
     /**
-     * The individual responsible for dispensing the medication, supplier or device.
+     * The individual or organization responsible for supplying the delivery.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
@@ -192,7 +191,7 @@ public class SupplyDelivery extends DomainResource {
     }
 
     /**
-     * Identification of the facility/location where the Supply was shipped to, as part of the dispense event.
+     * Identification of the facility/location where the delivery was shipped to.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
@@ -202,7 +201,7 @@ public class SupplyDelivery extends DomainResource {
     }
 
     /**
-     * Identifies the person who picked up the Supply.
+     * Identifies the individual or organization that received the delivery.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
@@ -220,7 +219,7 @@ public class SupplyDelivery extends DomainResource {
             (status != null) || 
             (patient != null) || 
             (type != null) || 
-            (suppliedItem != null) || 
+            !suppliedItem.isEmpty() || 
             (occurrence != null) || 
             (supplier != null) || 
             (destination != null) || 
@@ -247,7 +246,7 @@ public class SupplyDelivery extends DomainResource {
                 accept(status, "status", visitor);
                 accept(patient, "patient", visitor);
                 accept(type, "type", visitor);
-                accept(suppliedItem, "suppliedItem", visitor);
+                accept(suppliedItem, "suppliedItem", visitor, SuppliedItem.class);
                 accept(occurrence, "occurrence", visitor);
                 accept(supplier, "supplier", visitor);
                 accept(destination, "destination", visitor);
@@ -335,8 +334,8 @@ public class SupplyDelivery extends DomainResource {
         private SupplyDeliveryStatus status;
         private Reference patient;
         private CodeableConcept type;
-        private SuppliedItem suppliedItem;
-        private Element occurrence;
+        private List<SuppliedItem> suppliedItem = new ArrayList<>();
+        private org.linuxforhealth.fhir.model.type.Element occurrence;
         private Reference supplier;
         private Reference destination;
         private List<Reference> receiver = new ArrayList<>();
@@ -423,7 +422,8 @@ public class SupplyDelivery extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -441,7 +441,8 @@ public class SupplyDelivery extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -462,7 +463,7 @@ public class SupplyDelivery extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -482,7 +483,7 @@ public class SupplyDelivery extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -507,9 +508,9 @@ public class SupplyDelivery extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -532,9 +533,9 @@ public class SupplyDelivery extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -729,11 +730,10 @@ public class SupplyDelivery extends DomainResource {
         }
 
         /**
-         * Indicates the type of dispensing event that is performed. Examples include: Trial Fill, Completion of Trial, Partial 
-         * Fill, Emergency Fill, Samples, etc.
+         * Indicates the type of supply being provided. Examples include: Medication, Device, Biologically Derived Product.
          * 
          * @param type
-         *     Category of dispense event
+         *     Category of supply event
          * 
          * @return
          *     A reference to this Builder instance
@@ -746,14 +746,39 @@ public class SupplyDelivery extends DomainResource {
         /**
          * The item that is being delivered or has been supplied.
          * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
          * @param suppliedItem
          *     The item that is delivered or supplied
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder suppliedItem(SuppliedItem suppliedItem) {
-            this.suppliedItem = suppliedItem;
+        public Builder suppliedItem(SuppliedItem... suppliedItem) {
+            for (SuppliedItem value : suppliedItem) {
+                this.suppliedItem.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The item that is being delivered or has been supplied.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param suppliedItem
+         *     The item that is delivered or supplied
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder suppliedItem(Collection<SuppliedItem> suppliedItem) {
+            this.suppliedItem = new ArrayList<>(suppliedItem);
             return this;
         }
 
@@ -773,13 +798,13 @@ public class SupplyDelivery extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder occurrence(Element occurrence) {
+        public Builder occurrence(org.linuxforhealth.fhir.model.type.Element occurrence) {
             this.occurrence = occurrence;
             return this;
         }
 
         /**
-         * The individual responsible for dispensing the medication, supplier or device.
+         * The individual or organization responsible for supplying the delivery.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
@@ -789,7 +814,7 @@ public class SupplyDelivery extends DomainResource {
          * </ul>
          * 
          * @param supplier
-         *     Dispenser
+         *     The item supplier
          * 
          * @return
          *     A reference to this Builder instance
@@ -800,7 +825,7 @@ public class SupplyDelivery extends DomainResource {
         }
 
         /**
-         * Identification of the facility/location where the Supply was shipped to, as part of the dispense event.
+         * Identification of the facility/location where the delivery was shipped to.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
@@ -808,7 +833,7 @@ public class SupplyDelivery extends DomainResource {
          * </ul>
          * 
          * @param destination
-         *     Where the Supply was sent
+         *     Where the delivery was sent
          * 
          * @return
          *     A reference to this Builder instance
@@ -819,7 +844,7 @@ public class SupplyDelivery extends DomainResource {
         }
 
         /**
-         * Identifies the person who picked up the Supply.
+         * Identifies the individual or organization that received the delivery.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -828,10 +853,11 @@ public class SupplyDelivery extends DomainResource {
          * <ul>
          * <li>{@link Practitioner}</li>
          * <li>{@link PractitionerRole}</li>
+         * <li>{@link Organization}</li>
          * </ul>
          * 
          * @param receiver
-         *     Who collected the Supply
+         *     Who received the delivery
          * 
          * @return
          *     A reference to this Builder instance
@@ -844,7 +870,7 @@ public class SupplyDelivery extends DomainResource {
         }
 
         /**
-         * Identifies the person who picked up the Supply.
+         * Identifies the individual or organization that received the delivery.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -853,10 +879,11 @@ public class SupplyDelivery extends DomainResource {
          * <ul>
          * <li>{@link Practitioner}</li>
          * <li>{@link PractitionerRole}</li>
+         * <li>{@link Organization}</li>
          * </ul>
          * 
          * @param receiver
-         *     Who collected the Supply
+         *     Who received the delivery
          * 
          * @return
          *     A reference to this Builder instance
@@ -891,15 +918,16 @@ public class SupplyDelivery extends DomainResource {
             ValidationSupport.checkList(supplyDelivery.identifier, "identifier", Identifier.class);
             ValidationSupport.checkList(supplyDelivery.basedOn, "basedOn", Reference.class);
             ValidationSupport.checkList(supplyDelivery.partOf, "partOf", Reference.class);
+            ValidationSupport.checkList(supplyDelivery.suppliedItem, "suppliedItem", SuppliedItem.class);
             ValidationSupport.choiceElement(supplyDelivery.occurrence, "occurrence", DateTime.class, Period.class, Timing.class);
             ValidationSupport.checkList(supplyDelivery.receiver, "receiver", Reference.class);
-            ValidationSupport.checkValueSetBinding(supplyDelivery.type, "type", "http://hl7.org/fhir/ValueSet/supplydelivery-type", "http://terminology.hl7.org/CodeSystem/supply-item-type", "medication", "device");
+            ValidationSupport.checkValueSetBinding(supplyDelivery.type, "type", "http://hl7.org/fhir/ValueSet/supplydelivery-supplyitemtype", "http://hl7.org/fhir/supplydelivery-supplyitemtype", "medication", "device", "biologicallyderivedproduct");
             ValidationSupport.checkReferenceType(supplyDelivery.basedOn, "basedOn", "SupplyRequest");
             ValidationSupport.checkReferenceType(supplyDelivery.partOf, "partOf", "SupplyDelivery", "Contract");
             ValidationSupport.checkReferenceType(supplyDelivery.patient, "patient", "Patient");
             ValidationSupport.checkReferenceType(supplyDelivery.supplier, "supplier", "Practitioner", "PractitionerRole", "Organization");
             ValidationSupport.checkReferenceType(supplyDelivery.destination, "destination", "Location");
-            ValidationSupport.checkReferenceType(supplyDelivery.receiver, "receiver", "Practitioner", "PractitionerRole");
+            ValidationSupport.checkReferenceType(supplyDelivery.receiver, "receiver", "Practitioner", "PractitionerRole", "Organization");
         }
 
         protected Builder from(SupplyDelivery supplyDelivery) {
@@ -910,7 +938,7 @@ public class SupplyDelivery extends DomainResource {
             status = supplyDelivery.status;
             patient = supplyDelivery.patient;
             type = supplyDelivery.type;
-            suppliedItem = supplyDelivery.suppliedItem;
+            suppliedItem.addAll(supplyDelivery.suppliedItem);
             occurrence = supplyDelivery.occurrence;
             supplier = supplyDelivery.supplier;
             destination = supplyDelivery.destination;
@@ -924,15 +952,15 @@ public class SupplyDelivery extends DomainResource {
      */
     public static class SuppliedItem extends BackboneElement {
         private final SimpleQuantity quantity;
-        @ReferenceTarget({ "Medication", "Substance", "Device" })
+        @ReferenceTarget({ "Medication", "Substance", "Device", "BiologicallyDerivedProduct", "NutritionProduct", "InventoryItem" })
         @Choice({ CodeableConcept.class, Reference.class })
         @Binding(
-            bindingName = "SupplyDeliveryItem",
+            bindingName = "SupplyDeliverySupplyItemType",
             strength = BindingStrength.Value.EXAMPLE,
             description = "The item that was delivered.",
-            valueSet = "http://hl7.org/fhir/ValueSet/supply-item"
+            valueSet = "http://hl7.org/fhir/ValueSet/supplydelivery-supplyitemtype"
         )
-        private final Element item;
+        private final org.linuxforhealth.fhir.model.type.Element item;
 
         private SuppliedItem(Builder builder) {
             super(builder);
@@ -941,7 +969,7 @@ public class SupplyDelivery extends DomainResource {
         }
 
         /**
-         * The amount of supply that has been dispensed. Includes unit of measure.
+         * The amount of the item that has been supplied. Unit of measure may be included.
          * 
          * @return
          *     An immutable object of type {@link SimpleQuantity} that may be null.
@@ -951,13 +979,13 @@ public class SupplyDelivery extends DomainResource {
         }
 
         /**
-         * Identifies the medication, substance or device being dispensed. This is either a link to a resource representing the 
-         * details of the item or a code that identifies the item from a known list.
+         * Identifies the medication, substance, device or biologically derived product being supplied. This is either a link to 
+         * a resource representing the details of the item or a code that identifies the item from a known list.
          * 
          * @return
          *     An immutable object of type {@link CodeableConcept} or {@link Reference} that may be null.
          */
-        public Element getItem() {
+        public org.linuxforhealth.fhir.model.type.Element getItem() {
             return item;
         }
 
@@ -1029,7 +1057,7 @@ public class SupplyDelivery extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private SimpleQuantity quantity;
-            private Element item;
+            private org.linuxforhealth.fhir.model.type.Element item;
 
             private Builder() {
                 super();
@@ -1052,7 +1080,7 @@ public class SupplyDelivery extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1072,7 +1100,7 @@ public class SupplyDelivery extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1097,7 +1125,7 @@ public class SupplyDelivery extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1122,7 +1150,7 @@ public class SupplyDelivery extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1147,10 +1175,10 @@ public class SupplyDelivery extends DomainResource {
             }
 
             /**
-             * The amount of supply that has been dispensed. Includes unit of measure.
+             * The amount of the item that has been supplied. Unit of measure may be included.
              * 
              * @param quantity
-             *     Amount dispensed
+             *     Amount supplied
              * 
              * @return
              *     A reference to this Builder instance
@@ -1161,8 +1189,8 @@ public class SupplyDelivery extends DomainResource {
             }
 
             /**
-             * Identifies the medication, substance or device being dispensed. This is either a link to a resource representing the 
-             * details of the item or a code that identifies the item from a known list.
+             * Identifies the medication, substance, device or biologically derived product being supplied. This is either a link to 
+             * a resource representing the details of the item or a code that identifies the item from a known list.
              * 
              * <p>This is a choice element with the following allowed types:
              * <ul>
@@ -1175,15 +1203,18 @@ public class SupplyDelivery extends DomainResource {
              * <li>{@link Medication}</li>
              * <li>{@link Substance}</li>
              * <li>{@link Device}</li>
+             * <li>{@link BiologicallyDerivedProduct}</li>
+             * <li>{@link NutritionProduct}</li>
+             * <li>{@link InventoryItem}</li>
              * </ul>
              * 
              * @param item
-             *     Medication, Substance, or Device supplied
+             *     Medication, Substance, Device or Biologically Derived Product supplied
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder item(Element item) {
+            public Builder item(org.linuxforhealth.fhir.model.type.Element item) {
                 this.item = item;
                 return this;
             }
@@ -1208,7 +1239,7 @@ public class SupplyDelivery extends DomainResource {
             protected void validate(SuppliedItem suppliedItem) {
                 super.validate(suppliedItem);
                 ValidationSupport.choiceElement(suppliedItem.item, "item", CodeableConcept.class, Reference.class);
-                ValidationSupport.checkReferenceType(suppliedItem.item, "item", "Medication", "Substance", "Device");
+                ValidationSupport.checkReferenceType(suppliedItem.item, "item", "Medication", "Substance", "Device", "BiologicallyDerivedProduct", "NutritionProduct", "InventoryItem");
                 ValidationSupport.requireValueOrChildren(suppliedItem);
             }
 

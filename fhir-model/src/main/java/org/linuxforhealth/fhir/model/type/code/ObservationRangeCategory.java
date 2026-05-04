@@ -29,7 +29,7 @@ public class ObservationRangeCategory extends Code {
     /**
      * critical range
      * 
-     * <p>Critical Range for Ordinal and Continuous Observations.
+     * <p>Critical Range for Ordinal and Continuous Observations. Results outside this range are critical.
      */
     public static final ObservationRangeCategory CRITICAL = ObservationRangeCategory.builder().value(Value.CRITICAL).build();
 
@@ -206,7 +206,7 @@ public class ObservationRangeCategory extends Code {
         /**
          * critical range
          * 
-         * <p>Critical Range for Ordinal and Continuous Observations.
+         * <p>Critical Range for Ordinal and Continuous Observations. Results outside this range are critical.
          */
         CRITICAL("critical"),
 

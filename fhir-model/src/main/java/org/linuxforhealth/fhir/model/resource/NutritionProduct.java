@@ -46,22 +46,30 @@ import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
- * A food or fluid product that is consumed by patients.
+ * A food or supplement that is consumed by patients.
  * 
- * <p>Maturity level: FMM0 (Trial Use)
+ * <p>Maturity level: FMM1 (Trial Use)
  */
 @Maturity(
-    level = 0,
+    level = 1,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class NutritionProduct extends DomainResource {
     @Summary
     @Binding(
+        bindingName = "NutritionProductCode",
+        strength = BindingStrength.Value.EXAMPLE,
+        description = "Codes identifying specific types of nutrition products.",
+        valueSet = "http://hl7.org/fhir/ValueSet/edible-substance-type"
+    )
+    private final CodeableConcept code;
+    @Summary
+    @Binding(
         bindingName = "NutritionProductStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "Codes identifying the lifecycle stage of a product.",
-        valueSet = "http://hl7.org/fhir/ValueSet/nutritionproduct-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/nutritionproduct-status|5.0.0"
     )
     @Required
     private final NutritionProductStatus status;
@@ -73,14 +81,6 @@ public class NutritionProduct extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/nutrition-product-category"
     )
     private final List<CodeableConcept> category;
-    @Summary
-    @Binding(
-        bindingName = "NutritionProductCode",
-        strength = BindingStrength.Value.EXAMPLE,
-        description = "Codes identifying specific types of nutrition products.",
-        valueSet = "http://hl7.org/fhir/ValueSet/edible-substance-type"
-    )
-    private final CodeableConcept code;
     @Summary
     @ReferenceTarget({ "Organization" })
     private final List<Reference> manufacturer;
@@ -94,22 +94,32 @@ public class NutritionProduct extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/allergen-class"
     )
     private final List<CodeableReference> knownAllergen;
-    private final List<ProductCharacteristic> productCharacteristic;
-    private final Instance instance;
+    private final List<Characteristic> characteristic;
+    private final List<Instance> instance;
     private final List<Annotation> note;
 
     private NutritionProduct(Builder builder) {
         super(builder);
+        code = builder.code;
         status = builder.status;
         category = Collections.unmodifiableList(builder.category);
-        code = builder.code;
         manufacturer = Collections.unmodifiableList(builder.manufacturer);
         nutrient = Collections.unmodifiableList(builder.nutrient);
         ingredient = Collections.unmodifiableList(builder.ingredient);
         knownAllergen = Collections.unmodifiableList(builder.knownAllergen);
-        productCharacteristic = Collections.unmodifiableList(builder.productCharacteristic);
-        instance = builder.instance;
+        characteristic = Collections.unmodifiableList(builder.characteristic);
+        instance = Collections.unmodifiableList(builder.instance);
         note = Collections.unmodifiableList(builder.note);
+    }
+
+    /**
+     * The code assigned to the product, for example a USDA NDB number, a USDA FDC ID number, or a Langual code.
+     * 
+     * @return
+     *     An immutable object of type {@link CodeableConcept} that may be null.
+     */
+    public CodeableConcept getCode() {
+        return code;
     }
 
     /**
@@ -134,17 +144,7 @@ public class NutritionProduct extends DomainResource {
     }
 
     /**
-     * The code assigned to the product, for example a manufacturer number or other terminology.
-     * 
-     * @return
-     *     An immutable object of type {@link CodeableConcept} that may be null.
-     */
-    public CodeableConcept getCode() {
-        return code;
-    }
-
-    /**
-     * The organisation (manufacturer, representative or legal authorisation holder) that is responsible for the device.
+     * The organisation (manufacturer, representative or legal authorization holder) that is responsible for the device.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
@@ -187,10 +187,10 @@ public class NutritionProduct extends DomainResource {
      * Specifies descriptive properties of the nutrition product.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link ProductCharacteristic} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link Characteristic} that may be empty.
      */
-    public List<ProductCharacteristic> getProductCharacteristic() {
-        return productCharacteristic;
+    public List<Characteristic> getCharacteristic() {
+        return characteristic;
     }
 
     /**
@@ -198,9 +198,9 @@ public class NutritionProduct extends DomainResource {
      * occurrences of the product.
      * 
      * @return
-     *     An immutable object of type {@link Instance} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Instance} that may be empty.
      */
-    public Instance getInstance() {
+    public List<Instance> getInstance() {
         return instance;
     }
 
@@ -217,15 +217,15 @@ public class NutritionProduct extends DomainResource {
     @Override
     public boolean hasChildren() {
         return super.hasChildren() || 
+            (code != null) || 
             (status != null) || 
             !category.isEmpty() || 
-            (code != null) || 
             !manufacturer.isEmpty() || 
             !nutrient.isEmpty() || 
             !ingredient.isEmpty() || 
             !knownAllergen.isEmpty() || 
-            !productCharacteristic.isEmpty() || 
-            (instance != null) || 
+            !characteristic.isEmpty() || 
+            !instance.isEmpty() || 
             !note.isEmpty();
     }
 
@@ -243,15 +243,15 @@ public class NutritionProduct extends DomainResource {
                 accept(contained, "contained", visitor, Resource.class);
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                accept(code, "code", visitor);
                 accept(status, "status", visitor);
                 accept(category, "category", visitor, CodeableConcept.class);
-                accept(code, "code", visitor);
                 accept(manufacturer, "manufacturer", visitor, Reference.class);
                 accept(nutrient, "nutrient", visitor, Nutrient.class);
                 accept(ingredient, "ingredient", visitor, Ingredient.class);
                 accept(knownAllergen, "knownAllergen", visitor, CodeableReference.class);
-                accept(productCharacteristic, "productCharacteristic", visitor, ProductCharacteristic.class);
-                accept(instance, "instance", visitor);
+                accept(characteristic, "characteristic", visitor, Characteristic.class);
+                accept(instance, "instance", visitor, Instance.class);
                 accept(note, "note", visitor, Annotation.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
@@ -279,14 +279,14 @@ public class NutritionProduct extends DomainResource {
             Objects.equals(contained, other.contained) && 
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
+            Objects.equals(code, other.code) && 
             Objects.equals(status, other.status) && 
             Objects.equals(category, other.category) && 
-            Objects.equals(code, other.code) && 
             Objects.equals(manufacturer, other.manufacturer) && 
             Objects.equals(nutrient, other.nutrient) && 
             Objects.equals(ingredient, other.ingredient) && 
             Objects.equals(knownAllergen, other.knownAllergen) && 
-            Objects.equals(productCharacteristic, other.productCharacteristic) && 
+            Objects.equals(characteristic, other.characteristic) && 
             Objects.equals(instance, other.instance) && 
             Objects.equals(note, other.note);
     }
@@ -303,14 +303,14 @@ public class NutritionProduct extends DomainResource {
                 contained, 
                 extension, 
                 modifierExtension, 
+                code, 
                 status, 
                 category, 
-                code, 
                 manufacturer, 
                 nutrient, 
                 ingredient, 
                 knownAllergen, 
-                productCharacteristic, 
+                characteristic, 
                 instance, 
                 note);
             hashCode = result;
@@ -328,15 +328,15 @@ public class NutritionProduct extends DomainResource {
     }
 
     public static class Builder extends DomainResource.Builder {
+        private CodeableConcept code;
         private NutritionProductStatus status;
         private List<CodeableConcept> category = new ArrayList<>();
-        private CodeableConcept code;
         private List<Reference> manufacturer = new ArrayList<>();
         private List<Nutrient> nutrient = new ArrayList<>();
         private List<Ingredient> ingredient = new ArrayList<>();
         private List<CodeableReference> knownAllergen = new ArrayList<>();
-        private List<ProductCharacteristic> productCharacteristic = new ArrayList<>();
-        private Instance instance;
+        private List<Characteristic> characteristic = new ArrayList<>();
+        private List<Instance> instance = new ArrayList<>();
         private List<Annotation> note = new ArrayList<>();
 
         private Builder() {
@@ -421,7 +421,8 @@ public class NutritionProduct extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -439,7 +440,8 @@ public class NutritionProduct extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -460,7 +462,7 @@ public class NutritionProduct extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -480,7 +482,7 @@ public class NutritionProduct extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -505,9 +507,9 @@ public class NutritionProduct extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -530,9 +532,9 @@ public class NutritionProduct extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -552,6 +554,20 @@ public class NutritionProduct extends DomainResource {
         @Override
         public Builder modifierExtension(Collection<Extension> modifierExtension) {
             return (Builder) super.modifierExtension(modifierExtension);
+        }
+
+        /**
+         * The code assigned to the product, for example a USDA NDB number, a USDA FDC ID number, or a Langual code.
+         * 
+         * @param code
+         *     A code that can identify the detailed nutrients and ingredients in a specific food product
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder code(CodeableConcept code) {
+            this.code = code;
+            return this;
         }
 
         /**
@@ -578,7 +594,8 @@ public class NutritionProduct extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param category
-         *     A category or class of the nutrition product (halal, kosher, gluten free, vegan, etc)
+         *     Broad product groups or categories used to classify the product, such as Legume and Legume Products, Beverages, or 
+         *     Beef Products
          * 
          * @return
          *     A reference to this Builder instance
@@ -598,7 +615,8 @@ public class NutritionProduct extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param category
-         *     A category or class of the nutrition product (halal, kosher, gluten free, vegan, etc)
+         *     Broad product groups or categories used to classify the product, such as Legume and Legume Products, Beverages, or 
+         *     Beef Products
          * 
          * @return
          *     A reference to this Builder instance
@@ -612,21 +630,7 @@ public class NutritionProduct extends DomainResource {
         }
 
         /**
-         * The code assigned to the product, for example a manufacturer number or other terminology.
-         * 
-         * @param code
-         *     A code designating a specific type of nutritional product
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder code(CodeableConcept code) {
-            this.code = code;
-            return this;
-        }
-
-        /**
-         * The organisation (manufacturer, representative or legal authorisation holder) that is responsible for the device.
+         * The organisation (manufacturer, representative or legal authorization holder) that is responsible for the device.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -650,7 +654,7 @@ public class NutritionProduct extends DomainResource {
         }
 
         /**
-         * The organisation (manufacturer, representative or legal authorisation holder) that is responsible for the device.
+         * The organisation (manufacturer, representative or legal authorization holder) that is responsible for the device.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -797,15 +801,15 @@ public class NutritionProduct extends DomainResource {
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param productCharacteristic
+         * @param characteristic
          *     Specifies descriptive properties of the nutrition product
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder productCharacteristic(ProductCharacteristic... productCharacteristic) {
-            for (ProductCharacteristic value : productCharacteristic) {
-                this.productCharacteristic.add(value);
+        public Builder characteristic(Characteristic... characteristic) {
+            for (Characteristic value : characteristic) {
+                this.characteristic.add(value);
             }
             return this;
         }
@@ -816,7 +820,7 @@ public class NutritionProduct extends DomainResource {
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param productCharacteristic
+         * @param characteristic
          *     Specifies descriptive properties of the nutrition product
          * 
          * @return
@@ -825,8 +829,8 @@ public class NutritionProduct extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder productCharacteristic(Collection<ProductCharacteristic> productCharacteristic) {
-            this.productCharacteristic = new ArrayList<>(productCharacteristic);
+        public Builder characteristic(Collection<Characteristic> characteristic) {
+            this.characteristic = new ArrayList<>(characteristic);
             return this;
         }
 
@@ -834,14 +838,40 @@ public class NutritionProduct extends DomainResource {
          * Conveys instance-level information about this product item. One or several physical, countable instances or 
          * occurrences of the product.
          * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
          * @param instance
          *     One or several physical instances or occurrences of the nutrition product
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder instance(Instance instance) {
-            this.instance = instance;
+        public Builder instance(Instance... instance) {
+            for (Instance value : instance) {
+                this.instance.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Conveys instance-level information about this product item. One or several physical, countable instances or 
+         * occurrences of the product.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param instance
+         *     One or several physical instances or occurrences of the nutrition product
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder instance(Collection<Instance> instance) {
+            this.instance = new ArrayList<>(instance);
             return this;
         }
 
@@ -914,22 +944,23 @@ public class NutritionProduct extends DomainResource {
             ValidationSupport.checkList(nutritionProduct.nutrient, "nutrient", Nutrient.class);
             ValidationSupport.checkList(nutritionProduct.ingredient, "ingredient", Ingredient.class);
             ValidationSupport.checkList(nutritionProduct.knownAllergen, "knownAllergen", CodeableReference.class);
-            ValidationSupport.checkList(nutritionProduct.productCharacteristic, "productCharacteristic", ProductCharacteristic.class);
+            ValidationSupport.checkList(nutritionProduct.characteristic, "characteristic", Characteristic.class);
+            ValidationSupport.checkList(nutritionProduct.instance, "instance", Instance.class);
             ValidationSupport.checkList(nutritionProduct.note, "note", Annotation.class);
             ValidationSupport.checkReferenceType(nutritionProduct.manufacturer, "manufacturer", "Organization");
         }
 
         protected Builder from(NutritionProduct nutritionProduct) {
             super.from(nutritionProduct);
+            code = nutritionProduct.code;
             status = nutritionProduct.status;
             category.addAll(nutritionProduct.category);
-            code = nutritionProduct.code;
             manufacturer.addAll(nutritionProduct.manufacturer);
             nutrient.addAll(nutritionProduct.nutrient);
             ingredient.addAll(nutritionProduct.ingredient);
             knownAllergen.addAll(nutritionProduct.knownAllergen);
-            productCharacteristic.addAll(nutritionProduct.productCharacteristic);
-            instance = nutritionProduct.instance;
+            characteristic.addAll(nutritionProduct.characteristic);
+            instance.addAll(nutritionProduct.instance);
             note.addAll(nutritionProduct.note);
             return this;
         }
@@ -1065,7 +1096,7 @@ public class NutritionProduct extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1085,7 +1116,7 @@ public class NutritionProduct extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1110,7 +1141,7 @@ public class NutritionProduct extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1135,7 +1166,7 @@ public class NutritionProduct extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1371,7 +1402,7 @@ public class NutritionProduct extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1391,7 +1422,7 @@ public class NutritionProduct extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1416,7 +1447,7 @@ public class NutritionProduct extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1441,7 +1472,7 @@ public class NutritionProduct extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1561,7 +1592,7 @@ public class NutritionProduct extends DomainResource {
     /**
      * Specifies descriptive properties of the nutrition product.
      */
-    public static class ProductCharacteristic extends BackboneElement {
+    public static class Characteristic extends BackboneElement {
         @Binding(
             bindingName = "PropertyCharacteristic",
             strength = BindingStrength.Value.EXAMPLE,
@@ -1572,9 +1603,9 @@ public class NutritionProduct extends DomainResource {
         private final CodeableConcept type;
         @Choice({ CodeableConcept.class, String.class, SimpleQuantity.class, Base64Binary.class, Attachment.class, Boolean.class })
         @Required
-        private final Element value;
+        private final org.linuxforhealth.fhir.model.type.Element value;
 
-        private ProductCharacteristic(Builder builder) {
+        private Characteristic(Builder builder) {
             super(builder);
             type = builder.type;
             value = builder.value;
@@ -1597,7 +1628,7 @@ public class NutritionProduct extends DomainResource {
          *     An immutable object of type {@link CodeableConcept}, {@link String}, {@link SimpleQuantity}, {@link Base64Binary}, 
          *     {@link Attachment} or {@link Boolean} that is non-null.
          */
-        public Element getValue() {
+        public org.linuxforhealth.fhir.model.type.Element getValue() {
             return value;
         }
 
@@ -1636,7 +1667,7 @@ public class NutritionProduct extends DomainResource {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            ProductCharacteristic other = (ProductCharacteristic) obj;
+            Characteristic other = (Characteristic) obj;
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
@@ -1669,7 +1700,7 @@ public class NutritionProduct extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private CodeableConcept type;
-            private Element value;
+            private org.linuxforhealth.fhir.model.type.Element value;
 
             private Builder() {
                 super();
@@ -1692,7 +1723,7 @@ public class NutritionProduct extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1712,7 +1743,7 @@ public class NutritionProduct extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1737,7 +1768,7 @@ public class NutritionProduct extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1762,7 +1793,7 @@ public class NutritionProduct extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1859,13 +1890,13 @@ public class NutritionProduct extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder value(Element value) {
+            public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                 this.value = value;
                 return this;
             }
 
             /**
-             * Build the {@link ProductCharacteristic}
+             * Build the {@link Characteristic}
              * 
              * <p>Required elements:
              * <ul>
@@ -1874,30 +1905,30 @@ public class NutritionProduct extends DomainResource {
              * </ul>
              * 
              * @return
-             *     An immutable object of type {@link ProductCharacteristic}
+             *     An immutable object of type {@link Characteristic}
              * @throws IllegalStateException
-             *     if the current state cannot be built into a valid ProductCharacteristic per the base specification
+             *     if the current state cannot be built into a valid Characteristic per the base specification
              */
             @Override
-            public ProductCharacteristic build() {
-                ProductCharacteristic productCharacteristic = new ProductCharacteristic(this);
+            public Characteristic build() {
+                Characteristic characteristic = new Characteristic(this);
                 if (validating) {
-                    validate(productCharacteristic);
+                    validate(characteristic);
                 }
-                return productCharacteristic;
+                return characteristic;
             }
 
-            protected void validate(ProductCharacteristic productCharacteristic) {
-                super.validate(productCharacteristic);
-                ValidationSupport.requireNonNull(productCharacteristic.type, "type");
-                ValidationSupport.requireChoiceElement(productCharacteristic.value, "value", CodeableConcept.class, String.class, SimpleQuantity.class, Base64Binary.class, Attachment.class, Boolean.class);
-                ValidationSupport.requireValueOrChildren(productCharacteristic);
+            protected void validate(Characteristic characteristic) {
+                super.validate(characteristic);
+                ValidationSupport.requireNonNull(characteristic.type, "type");
+                ValidationSupport.requireChoiceElement(characteristic.value, "value", CodeableConcept.class, String.class, SimpleQuantity.class, Base64Binary.class, Attachment.class, Boolean.class);
+                ValidationSupport.requireValueOrChildren(characteristic);
             }
 
-            protected Builder from(ProductCharacteristic productCharacteristic) {
-                super.from(productCharacteristic);
-                type = productCharacteristic.type;
-                value = productCharacteristic.value;
+            protected Builder from(Characteristic characteristic) {
+                super.from(characteristic);
+                type = characteristic.type;
+                value = characteristic.value;
                 return this;
             }
         }
@@ -1910,17 +1941,21 @@ public class NutritionProduct extends DomainResource {
     public static class Instance extends BackboneElement {
         private final SimpleQuantity quantity;
         private final List<Identifier> identifier;
+        private final String name;
         private final String lotNumber;
         private final DateTime expiry;
         private final DateTime useBy;
+        private final Identifier biologicalSourceEvent;
 
         private Instance(Builder builder) {
             super(builder);
             quantity = builder.quantity;
             identifier = Collections.unmodifiableList(builder.identifier);
+            name = builder.name;
             lotNumber = builder.lotNumber;
             expiry = builder.expiry;
             useBy = builder.useBy;
+            biologicalSourceEvent = builder.biologicalSourceEvent;
         }
 
         /**
@@ -1935,13 +1970,23 @@ public class NutritionProduct extends DomainResource {
         }
 
         /**
-         * The identifier for the physical instance, typically a serial number.
+         * The identifier for the physical instance, typically a serial number or manufacturer number.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
          */
         public List<Identifier> getIdentifier() {
             return identifier;
+        }
+
+        /**
+         * The name for the specific product.
+         * 
+         * @return
+         *     An immutable object of type {@link String} that may be null.
+         */
+        public String getName() {
+            return name;
         }
 
         /**
@@ -1976,14 +2021,27 @@ public class NutritionProduct extends DomainResource {
             return useBy;
         }
 
+        /**
+         * An identifier that supports traceability to the event during which material in this product from one or more 
+         * biological entities was obtained or pooled.
+         * 
+         * @return
+         *     An immutable object of type {@link Identifier} that may be null.
+         */
+        public Identifier getBiologicalSourceEvent() {
+            return biologicalSourceEvent;
+        }
+
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
                 (quantity != null) || 
                 !identifier.isEmpty() || 
+                (name != null) || 
                 (lotNumber != null) || 
                 (expiry != null) || 
-                (useBy != null);
+                (useBy != null) || 
+                (biologicalSourceEvent != null);
         }
 
         @Override
@@ -1997,9 +2055,11 @@ public class NutritionProduct extends DomainResource {
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(quantity, "quantity", visitor);
                     accept(identifier, "identifier", visitor, Identifier.class);
+                    accept(name, "name", visitor);
                     accept(lotNumber, "lotNumber", visitor);
                     accept(expiry, "expiry", visitor);
                     accept(useBy, "useBy", visitor);
+                    accept(biologicalSourceEvent, "biologicalSourceEvent", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -2023,9 +2083,11 @@ public class NutritionProduct extends DomainResource {
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(quantity, other.quantity) && 
                 Objects.equals(identifier, other.identifier) && 
+                Objects.equals(name, other.name) && 
                 Objects.equals(lotNumber, other.lotNumber) && 
                 Objects.equals(expiry, other.expiry) && 
-                Objects.equals(useBy, other.useBy);
+                Objects.equals(useBy, other.useBy) && 
+                Objects.equals(biologicalSourceEvent, other.biologicalSourceEvent);
         }
 
         @Override
@@ -2037,9 +2099,11 @@ public class NutritionProduct extends DomainResource {
                     modifierExtension, 
                     quantity, 
                     identifier, 
+                    name, 
                     lotNumber, 
                     expiry, 
-                    useBy);
+                    useBy, 
+                    biologicalSourceEvent);
                 hashCode = result;
             }
             return result;
@@ -2057,9 +2121,11 @@ public class NutritionProduct extends DomainResource {
         public static class Builder extends BackboneElement.Builder {
             private SimpleQuantity quantity;
             private List<Identifier> identifier = new ArrayList<>();
+            private String name;
             private String lotNumber;
             private DateTime expiry;
             private DateTime useBy;
+            private Identifier biologicalSourceEvent;
 
             private Builder() {
                 super();
@@ -2082,7 +2148,7 @@ public class NutritionProduct extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2102,7 +2168,7 @@ public class NutritionProduct extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2127,7 +2193,7 @@ public class NutritionProduct extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2152,7 +2218,7 @@ public class NutritionProduct extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2192,13 +2258,13 @@ public class NutritionProduct extends DomainResource {
             }
 
             /**
-             * The identifier for the physical instance, typically a serial number.
+             * The identifier for the physical instance, typically a serial number or manufacturer number.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param identifier
-             *     The identifier for the physical instance, typically a serial number
+             *     The identifier for the physical instance, typically a serial number or manufacturer number
              * 
              * @return
              *     A reference to this Builder instance
@@ -2211,13 +2277,13 @@ public class NutritionProduct extends DomainResource {
             }
 
             /**
-             * The identifier for the physical instance, typically a serial number.
+             * The identifier for the physical instance, typically a serial number or manufacturer number.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param identifier
-             *     The identifier for the physical instance, typically a serial number
+             *     The identifier for the physical instance, typically a serial number or manufacturer number
              * 
              * @return
              *     A reference to this Builder instance
@@ -2227,6 +2293,36 @@ public class NutritionProduct extends DomainResource {
              */
             public Builder identifier(Collection<Identifier> identifier) {
                 this.identifier = new ArrayList<>(identifier);
+                return this;
+            }
+
+            /**
+             * Convenience method for setting {@code name}.
+             * 
+             * @param name
+             *     The name for the specific product
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #name(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder name(java.lang.String name) {
+                this.name = (name == null) ? null : String.of(name);
+                return this;
+            }
+
+            /**
+             * The name for the specific product.
+             * 
+             * @param name
+             *     The name for the specific product
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder name(String name) {
+                this.name = name;
                 return this;
             }
 
@@ -2291,6 +2387,22 @@ public class NutritionProduct extends DomainResource {
             }
 
             /**
+             * An identifier that supports traceability to the event during which material in this product from one or more 
+             * biological entities was obtained or pooled.
+             * 
+             * @param biologicalSourceEvent
+             *     An identifier that supports traceability to the event during which material in this product from one or more 
+             *     biological entities was obtained or pooled
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder biologicalSourceEvent(Identifier biologicalSourceEvent) {
+                this.biologicalSourceEvent = biologicalSourceEvent;
+                return this;
+            }
+
+            /**
              * Build the {@link Instance}
              * 
              * @return
@@ -2317,9 +2429,11 @@ public class NutritionProduct extends DomainResource {
                 super.from(instance);
                 quantity = instance.quantity;
                 identifier.addAll(instance.identifier);
+                name = instance.name;
                 lotNumber = instance.lotNumber;
                 expiry = instance.expiry;
                 useBy = instance.useBy;
+                biologicalSourceEvent = instance.biologicalSourceEvent;
                 return this;
             }
         }

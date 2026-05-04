@@ -21,7 +21,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * it is no longer available.
  */
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class MarketingStatus extends BackboneElement {
+public class MarketingStatus extends BackboneType {
     @Summary
     private final CodeableConcept country;
     @Summary
@@ -44,7 +44,7 @@ public class MarketingStatus extends BackboneElement {
     }
 
     /**
-     * The country in which the marketing authorisation has been granted shall be specified It should be specified using the 
+     * The country in which the marketing authorization has been granted shall be specified It should be specified using the 
      * ISO 3166 ‑ 1 alpha-2 code elements.
      * 
      * @return
@@ -55,7 +55,7 @@ public class MarketingStatus extends BackboneElement {
     }
 
     /**
-     * Where a Medicines Regulatory Agency has granted a marketing authorisation for which specific provisions within a 
+     * Where a Medicines Regulatory Agency has granted a marketing authorization for which specific provisions within a 
      * jurisdiction apply, the jurisdiction can be specified using an appropriate controlled terminology The controlled term 
      * and the controlled term identifier shall be specified.
      * 
@@ -78,7 +78,7 @@ public class MarketingStatus extends BackboneElement {
     }
 
     /**
-     * The date when the Medicinal Product is placed on the market by the Marketing Authorisation Holder (or where 
+     * The date when the Medicinal Product is placed on the market by the Marketing Authorization Holder (or where 
      * applicable, the manufacturer/distributor) in a country and/or jurisdiction shall be provided A complete date 
      * consisting of day, month and year shall be specified using the ISO 8601 date format NOTE “Placed on the market” refers 
      * to the release of the Medicinal Product into the distribution chain.
@@ -91,7 +91,7 @@ public class MarketingStatus extends BackboneElement {
     }
 
     /**
-     * The date when the Medicinal Product is placed on the market by the Marketing Authorisation Holder (or where 
+     * The date when the Medicinal Product is placed on the market by the Marketing Authorization Holder (or where 
      * applicable, the manufacturer/distributor) in a country and/or jurisdiction shall be provided A complete date 
      * consisting of day, month and year shall be specified using the ISO 8601 date format NOTE “Placed on the market” refers 
      * to the release of the Medicinal Product into the distribution chain.
@@ -181,7 +181,7 @@ public class MarketingStatus extends BackboneElement {
         return new Builder();
     }
 
-    public static class Builder extends BackboneElement.Builder {
+    public static class Builder extends BackboneType.Builder {
         private CodeableConcept country;
         private CodeableConcept jurisdiction;
         private CodeableConcept status;
@@ -209,7 +209,7 @@ public class MarketingStatus extends BackboneElement {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -229,7 +229,7 @@ public class MarketingStatus extends BackboneElement {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -254,7 +254,7 @@ public class MarketingStatus extends BackboneElement {
          * May be used to represent additional information that is not part of the basic definition of the element and that 
          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
          * extension. Applications processing a resource are required to check for modifier extensions.
          * 
@@ -279,7 +279,7 @@ public class MarketingStatus extends BackboneElement {
          * May be used to represent additional information that is not part of the basic definition of the element and that 
          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
          * extension. Applications processing a resource are required to check for modifier extensions.
          * 
@@ -304,11 +304,11 @@ public class MarketingStatus extends BackboneElement {
         }
 
         /**
-         * The country in which the marketing authorisation has been granted shall be specified It should be specified using the 
+         * The country in which the marketing authorization has been granted shall be specified It should be specified using the 
          * ISO 3166 ‑ 1 alpha-2 code elements.
          * 
          * @param country
-         *     The country in which the marketing authorisation has been granted shall be specified It should be specified using the 
+         *     The country in which the marketing authorization has been granted shall be specified It should be specified using the 
          *     ISO 3166 ‑ 1 alpha-2 code elements
          * 
          * @return
@@ -320,12 +320,12 @@ public class MarketingStatus extends BackboneElement {
         }
 
         /**
-         * Where a Medicines Regulatory Agency has granted a marketing authorisation for which specific provisions within a 
+         * Where a Medicines Regulatory Agency has granted a marketing authorization for which specific provisions within a 
          * jurisdiction apply, the jurisdiction can be specified using an appropriate controlled terminology The controlled term 
          * and the controlled term identifier shall be specified.
          * 
          * @param jurisdiction
-         *     Where a Medicines Regulatory Agency has granted a marketing authorisation for which specific provisions within a 
+         *     Where a Medicines Regulatory Agency has granted a marketing authorization for which specific provisions within a 
          *     jurisdiction apply, the jurisdiction can be specified using an appropriate controlled terminology The controlled term 
          *     and the controlled term identifier shall be specified
          * 
@@ -356,13 +356,13 @@ public class MarketingStatus extends BackboneElement {
         }
 
         /**
-         * The date when the Medicinal Product is placed on the market by the Marketing Authorisation Holder (or where 
+         * The date when the Medicinal Product is placed on the market by the Marketing Authorization Holder (or where 
          * applicable, the manufacturer/distributor) in a country and/or jurisdiction shall be provided A complete date 
          * consisting of day, month and year shall be specified using the ISO 8601 date format NOTE “Placed on the market” refers 
          * to the release of the Medicinal Product into the distribution chain.
          * 
          * @param dateRange
-         *     The date when the Medicinal Product is placed on the market by the Marketing Authorisation Holder (or where 
+         *     The date when the Medicinal Product is placed on the market by the Marketing Authorization Holder (or where 
          *     applicable, the manufacturer/distributor) in a country and/or jurisdiction shall be provided A complete date 
          *     consisting of day, month and year shall be specified using the ISO 8601 date format NOTE “Placed on the market” refers 
          *     to the release of the Medicinal Product into the distribution chain
@@ -376,13 +376,13 @@ public class MarketingStatus extends BackboneElement {
         }
 
         /**
-         * The date when the Medicinal Product is placed on the market by the Marketing Authorisation Holder (or where 
+         * The date when the Medicinal Product is placed on the market by the Marketing Authorization Holder (or where 
          * applicable, the manufacturer/distributor) in a country and/or jurisdiction shall be provided A complete date 
          * consisting of day, month and year shall be specified using the ISO 8601 date format NOTE “Placed on the market” refers 
          * to the release of the Medicinal Product into the distribution chain.
          * 
          * @param restoreDate
-         *     The date when the Medicinal Product is placed on the market by the Marketing Authorisation Holder (or where 
+         *     The date when the Medicinal Product is placed on the market by the Marketing Authorization Holder (or where 
          *     applicable, the manufacturer/distributor) in a country and/or jurisdiction shall be provided A complete date 
          *     consisting of day, month and year shall be specified using the ISO 8601 date format NOTE “Placed on the market” refers 
          *     to the release of the Medicinal Product into the distribution chain

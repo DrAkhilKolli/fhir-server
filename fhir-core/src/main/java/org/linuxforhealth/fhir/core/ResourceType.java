@@ -7,6 +7,7 @@ package org.linuxforhealth.fhir.core;
 
 import static org.linuxforhealth.fhir.core.FHIRVersionParam.VERSION_40;
 import static org.linuxforhealth.fhir.core.FHIRVersionParam.VERSION_43;
+import static org.linuxforhealth.fhir.core.FHIRVersionParam.VERSION_50;
 
 /**
  * Enum constants for all resource types across all versions of HL7 FHIR
@@ -56,6 +57,14 @@ public enum ResourceType {
      * practitioner, or other performance context.
      */
     ACTIVITY_DEFINITION("ActivityDefinition", VERSION_40),
+
+    /**
+     * ActorDefinition
+     *
+     * <p>The ActorDefinition resource is used to describe an actor - a human or an application that plays a role in data
+     * exchange, and that may have obligations associated with the role the actor plays.
+     */
+    ACTOR_DEFINITION("ActorDefinition", VERSION_50),
 
     /**
      * AdministrableProductDefinition
@@ -119,7 +128,22 @@ public enum ResourceType {
      * <p>A material substance originating from a biological entity intended to be transplanted or infused
      * <p>into another (possibly the same) biological entity.
      */
+    ARTIFACT_ASSESSMENT("ArtifactAssessment", VERSION_50),
+
+    /**
+     * BiologicallyDerivedProduct
+     *
+     * <p>A material substance originating from a biological entity intended to be transplanted or infused into another
+     * (possibly the same) biological entity.
+     */
     BIOLOGICALLY_DERIVED_PRODUCT("BiologicallyDerivedProduct", VERSION_40),
+
+    /**
+     * BiologicallyDerivedProductDispense
+     *
+     * <p>A record of dispensation of a biologically derived product.
+     */
+    BIOLOGICALLY_DERIVED_PRODUCT_DISPENSE("BiologicallyDerivedProductDispense", VERSION_50),
 
     /**
      * BodyStructure
@@ -283,6 +307,13 @@ public enum ResourceType {
     CONDITION("Condition", VERSION_40),
 
     /**
+     * ConditionDefinition
+     *
+     * <p>A definition of a condition and information relevant to managing it.
+     */
+    CONDITION_DEFINITION("ConditionDefinition", VERSION_50),
+
+    /**
      * Consent
      *
      * <p>A record of a healthcare consumer’s choices, which permits or denies identified recipient(s) or recipient role(s)
@@ -342,7 +373,21 @@ public enum ResourceType {
      *
      * <p>The characteristics, operational status and capabilities of a medical-related component of a medical device.
      */
+    DEVICE_ASSOCIATION("DeviceAssociation", VERSION_50),
+
+    /**
+     * DeviceDefinition
+     *
+     * <p>The characteristics, operational status and capabilities of a medical-related component of a medical device.
+     */
     DEVICE_DEFINITION("DeviceDefinition", VERSION_40),
+
+    /**
+     * DeviceDispense
+     *
+     * <p>A record of dispensation of a device.
+     */
+    DEVICE_DISPENSE("DeviceDispense", VERSION_50),
 
     /**
      * DeviceMetric
@@ -361,6 +406,14 @@ public enum ResourceType {
 
     /**
      * DeviceUseStatement
+     *
+     * <p>A record of a device being used by a patient where the record is the result of a report from the patient or another
+     * clinician.
+     */
+    DEVICE_USAGE("DeviceUsage", VERSION_50),
+
+    /**
+     * DeviceUseStatement (R4)
      *
      * <p>A record of a device being used by a patient where the record is the result of a report from the patient or another
      * clinician.
@@ -408,6 +461,13 @@ public enum ResourceType {
      * assessing the health status of a patient.
      */
     ENCOUNTER("Encounter", VERSION_40),
+
+    /**
+     * EncounterHistory
+     *
+     * <p>A record of significant events/milestones key data throughout the history of an Encounter.
+     */
+    ENCOUNTER_HISTORY("EncounterHistory", VERSION_50),
 
     /**
      * Endpoint
@@ -537,7 +597,28 @@ public enum ResourceType {
      *
      * <p>The details of a healthcare service available at a location.
      */
+    FORMULARY_ITEM("FormularyItem", VERSION_50),
+
+    /**
+     * GenomicStudy
+     *
+     * <p>A GenomicStudy is a set of analyses performed to analyze and generate genomic data.
+     */
+    GENOMIC_STUDY("GenomicStudy", VERSION_50),
+
+    /**
+     * HealthcareService
+     *
+     * <p>The details of a healthcare service available at a location.
+     */
     HEALTHCARE_SERVICE("HealthcareService", VERSION_40),
+
+    /**
+     * ImagingSelection
+     *
+     * <p>A selection of DICOM SOP instances and/or frames within a single Study and Series.
+     */
+    IMAGING_SELECTION("ImagingSelection", VERSION_50),
 
     /**
      * ImagingStudy
@@ -548,6 +629,20 @@ public enum ResourceType {
      * series of different modalities.
      */
     IMAGING_STUDY("ImagingStudy", VERSION_40),
+
+    /**
+     * InventoryItem
+     *
+     * <p>functional description of an inventory item used in inventory and supply-related workflows.
+     */
+    INVENTORY_ITEM("InventoryItem", VERSION_50),
+
+    /**
+     * InventoryReport
+     *
+     * <p>A report of inventory or stock items.
+     */
+    INVENTORY_REPORT("InventoryReport", VERSION_50),
 
     /**
      * Immunization
@@ -853,6 +948,13 @@ public enum ResourceType {
      *
      * <p>A food or fluid product that is consumed by patients.
      */
+    NUTRITION_INTAKE("NutritionIntake", VERSION_50),
+
+    /**
+     * NutritionProduct
+     *
+     * <p>A food or fluid product that is consumed by patients.
+     */
     NUTRITION_PRODUCT("NutritionProduct", VERSION_43),
 
     /**
@@ -869,6 +971,13 @@ public enum ResourceType {
      * health care service.
      */
     OBSERVATION_DEFINITION("ObservationDefinition", VERSION_40),
+
+    /**
+     * Permission
+     *
+     * <p>Permission resource holds access rules for a given data and context.
+     */
+    PERMISSION("Permission", VERSION_50),
 
     /**
      * OperationDefinition
@@ -1032,6 +1141,22 @@ public enum ResourceType {
      * "give this medication after that one".
      */
     REQUEST_GROUP("RequestGroup", VERSION_40),
+
+    /**
+     * RequestOrchestration
+     *
+     * <p>A set of related requests that can be used to capture intended activities that have inter-dependencies such as
+     * "give this medication after that one".
+     */
+    REQUEST_ORCHESTRATION("RequestOrchestration", VERSION_50),
+
+    /**
+     * Requirements
+     *
+     * <p>The Requirements resource is used to describe an actor - a human or an application that plays a role in data
+     * exchange.
+     */
+    REQUIREMENTS("Requirements", VERSION_50),
 
     /**
      * ResearchDefinition
@@ -1266,6 +1391,13 @@ public enum ResourceType {
      *
      * <p>A summary of information based on the results of executing a TestScript.
      */
+    TEST_PLAN("TestPlan", VERSION_50),
+
+    /**
+     * TestReport
+     *
+     * <p>A summary of information based on the results of executing a TestScript.
+     */
     TEST_REPORT("TestReport", VERSION_40),
 
     /**
@@ -1284,6 +1416,13 @@ public enum ResourceType {
      * (terminologies.html).
      */
     VALUE_SET("ValueSet", VERSION_40),
+
+    /**
+     * VerificationResult
+     *
+     * <p>Describes validation requirements, source(s), status and dates for one or more elements.
+     */
+    TRANSPORT("Transport", VERSION_50),
 
     /**
      * VerificationResult
@@ -1421,6 +1560,8 @@ public enum ResourceType {
             return ACCOUNT;
         case "ActivityDefinition":
             return ACTIVITY_DEFINITION;
+        case "ActorDefinition":
+            return ACTOR_DEFINITION;
         case "AdministrableProductDefinition":
             return ADMINISTRABLE_PRODUCT_DEFINITION;
         case "AdverseEvent":
@@ -1433,10 +1574,14 @@ public enum ResourceType {
             return APPOINTMENT_RESPONSE;
         case "AuditEvent":
             return AUDIT_EVENT;
+        case "ArtifactAssessment":
+            return ARTIFACT_ASSESSMENT;
         case "Basic":
             return BASIC;
         case "BiologicallyDerivedProduct":
             return BIOLOGICALLY_DERIVED_PRODUCT;
+        case "BiologicallyDerivedProductDispense":
+            return BIOLOGICALLY_DERIVED_PRODUCT_DISPENSE;
         case "BodyStructure":
             return BODY_STRUCTURE;
         case "CapabilityStatement":
@@ -1475,6 +1620,8 @@ public enum ResourceType {
             return CONCEPT_MAP;
         case "Condition":
             return CONDITION;
+        case "ConditionDefinition":
+            return CONDITION_DEFINITION;
         case "Consent":
             return CONSENT;
         case "Contract":
@@ -1491,12 +1638,18 @@ public enum ResourceType {
             return DEVICE;
         case "DeviceDefinition":
             return DEVICE_DEFINITION;
+        case "DeviceAssociation":
+            return DEVICE_ASSOCIATION;
+        case "DeviceDispense":
+            return DEVICE_DISPENSE;
         case "DeviceMetric":
             return DEVICE_METRIC;
         case "DeviceRequest":
             return DEVICE_REQUEST;
         case "DeviceUseStatement":
             return DEVICE_USE_STATEMENT;
+        case "DeviceUsage":
+            return DEVICE_USAGE;
         case "DiagnosticReport":
             return DIAGNOSTIC_REPORT;
         case "DocumentManifest":
@@ -1505,6 +1658,8 @@ public enum ResourceType {
             return DOCUMENT_REFERENCE;
         case "Encounter":
             return ENCOUNTER;
+        case "EncounterHistory":
+            return ENCOUNTER_HISTORY;
         case "Endpoint":
             return ENDPOINT;
         case "EnrollmentRequest":
@@ -1539,8 +1694,18 @@ public enum ResourceType {
             return GUIDANCE_RESPONSE;
         case "HealthcareService":
             return HEALTHCARE_SERVICE;
+        case "FormularyItem":
+            return FORMULARY_ITEM;
+        case "GenomicStudy":
+            return GENOMIC_STUDY;
+        case "ImagingSelection":
+            return IMAGING_SELECTION;
         case "ImagingStudy":
             return IMAGING_STUDY;
+        case "InventoryItem":
+            return INVENTORY_ITEM;
+        case "InventoryReport":
+            return INVENTORY_REPORT;
         case "Immunization":
             return IMMUNIZATION;
         case "ImmunizationEvaluation":
@@ -1597,10 +1762,14 @@ public enum ResourceType {
             return NUTRITION_ORDER;
         case "NutritionProduct":
             return NUTRITION_PRODUCT;
+        case "NutritionIntake":
+            return NUTRITION_INTAKE;
         case "Observation":
             return OBSERVATION;
         case "ObservationDefinition":
             return OBSERVATION_DEFINITION;
+        case "Permission":
+            return PERMISSION;
         case "OperationDefinition":
             return OPERATION_DEFINITION;
         case "OperationOutcome":
@@ -1639,6 +1808,10 @@ public enum ResourceType {
             return RELATED_PERSON;
         case "RequestGroup":
             return REQUEST_GROUP;
+        case "RequestOrchestration":
+            return REQUEST_ORCHESTRATION;
+        case "Requirements":
+            return REQUIREMENTS;
         case "ResearchDefinition":
             return RESEARCH_DEFINITION;
         case "ResearchElementDefinition":
@@ -1685,6 +1858,10 @@ public enum ResourceType {
             return TERMINOLOGY_CAPABILITIES;
         case "TestReport":
             return TEST_REPORT;
+        case "TestPlan":
+            return TEST_PLAN;
+        case "Transport":
+            return TRANSPORT;
         case "TestScript":
             return TEST_SCRIPT;
         case "ValueSet":

@@ -22,21 +22,21 @@ public class MedicationStatus extends Code {
     /**
      * Active
      * 
-     * <p>The medication is available for use.
+     * <p>The medication record is current and is appropriate for reference in new instances.
      */
     public static final MedicationStatus ACTIVE = MedicationStatus.builder().value(Value.ACTIVE).build();
 
     /**
      * Inactive
      * 
-     * <p>The medication is not available for use.
+     * <p>The medication record is not current and is not is appropriate for reference in new instances.
      */
     public static final MedicationStatus INACTIVE = MedicationStatus.builder().value(Value.INACTIVE).build();
 
     /**
      * Entered in Error
      * 
-     * <p>The medication was entered in error.
+     * <p>The medication record was created erroneously and is not appropriated for reference in new instances.
      */
     public static final MedicationStatus ENTERED_IN_ERROR = MedicationStatus.builder().value(Value.ENTERED_IN_ERROR).build();
 
@@ -199,21 +199,21 @@ public class MedicationStatus extends Code {
         /**
          * Active
          * 
-         * <p>The medication is available for use.
+         * <p>The medication record is current and is appropriate for reference in new instances.
          */
         ACTIVE("active"),
 
         /**
          * Inactive
          * 
-         * <p>The medication is not available for use.
+         * <p>The medication record is not current and is not is appropriate for reference in new instances.
          */
         INACTIVE("inactive"),
 
         /**
          * Entered in Error
          * 
-         * <p>The medication was entered in error.
+         * <p>The medication record was created erroneously and is not appropriated for reference in new instances.
          */
         ENTERED_IN_ERROR("entered-in-error");
 

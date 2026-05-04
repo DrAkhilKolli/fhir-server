@@ -46,8 +46,10 @@ import org.linuxforhealth.fhir.model.type.Time;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.UsageContext;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
+import org.linuxforhealth.fhir.model.type.code.DisabledDisplay;
 import org.linuxforhealth.fhir.model.type.code.EnableWhenBehavior;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
+import org.linuxforhealth.fhir.model.type.code.QuestionnaireAnswerConstraint;
 import org.linuxforhealth.fhir.model.type.code.QuestionnaireItemOperator;
 import org.linuxforhealth.fhir.model.type.code.QuestionnaireItemType;
 import org.linuxforhealth.fhir.model.type.code.ResourceTypeCode;
@@ -59,18 +61,26 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * A structured set of questions intended to guide the collection of answers from end-users. Questionnaires provide 
  * detailed control over order, presentation, phraseology and grouping to allow coherent, consistent data collection.
  * 
- * <p>Maturity level: FMM3 (Trial Use)
+ * <p>Maturity level: FMM5 (Trial Use)
  */
 @Maturity(
-    level = 3,
+    level = 5,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "que-0",
+    id = "cnl-0",
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
+    source = "http://hl7.org/fhir/StructureDefinition/Questionnaire"
+)
+@Constraint(
+    id = "cnl-1",
+    level = "Warning",
+    location = "Questionnaire.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
     source = "http://hl7.org/fhir/StructureDefinition/Questionnaire"
 )
 @Constraint(
@@ -125,8 +135,8 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "que-5",
     level = "Rule",
     location = "Questionnaire.item",
-    description = "Only 'choice' and 'open-choice' items can have answerValueSet",
-    expression = "(type ='choice' or type = 'open-choice' or type = 'decimal' or type = 'integer' or type = 'date' or type = 'dateTime' or type = 'time' or type = 'string' or type = 'quantity') or (answerValueSet.empty() and answerOption.empty())",
+    description = "Only coding, decimal, integer, date, dateTime, time, string or quantity  items can have answerOption or answerValueSet",
+    expression = "(type='coding' or type = 'decimal' or type = 'integer' or type = 'date' or type = 'dateTime' or type = 'time' or type = 'string' or type = 'quantity') or (answerValueSet.empty() and answerOption.empty())",
     source = "http://hl7.org/fhir/StructureDefinition/Questionnaire"
 )
 @Constraint(
@@ -166,14 +176,14 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Rule",
     location = "Questionnaire.item",
     description = "Maximum length can only be declared for simple question types",
-    expression = "(type in ('boolean' | 'decimal' | 'integer' | 'string' | 'text' | 'url' | 'open-choice')) or maxLength.empty()",
+    expression = "(type in ('boolean' | 'decimal' | 'integer' | 'string' | 'text' | 'url')) or answerConstraint='optionOrString' or maxLength.empty()",
     source = "http://hl7.org/fhir/StructureDefinition/Questionnaire"
 )
 @Constraint(
     id = "que-11",
     level = "Rule",
     location = "Questionnaire.item",
-    description = "If one or more answerOption is present, initial[x] must be missing",
+    description = "If one or more answerOption is present, initial cannot be present.  Use answerOption.initialSelected instead",
     expression = "answerOption.empty() or initial.empty()",
     source = "http://hl7.org/fhir/StructureDefinition/Questionnaire"
 )
@@ -194,7 +204,32 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     source = "http://hl7.org/fhir/StructureDefinition/Questionnaire"
 )
 @Constraint(
-    id = "questionnaire-14",
+    id = "que-14",
+    level = "Warning",
+    location = "Questionnaire.item",
+    description = "Can only have answerConstraint if answerOption or answerValueSet are present.  (This is a warning because extensions may serve the same purpose)",
+    expression = "answerConstraint.exists() implies answerOption.exists() or answerValueSet.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/Questionnaire"
+)
+@Constraint(
+    id = "que-15",
+    level = "Warning",
+    location = "Questionnaire.item.linkId",
+    description = "Link ids should be 255 characters or less",
+    expression = "$this.length() <= 255",
+    source = "http://hl7.org/fhir/StructureDefinition/Questionnaire"
+)
+@Constraint(
+    id = "questionnaire-16",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/Questionnaire",
+    generated = true
+)
+@Constraint(
+    id = "questionnaire-17",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
@@ -211,16 +246,24 @@ public class Questionnaire extends DomainResource {
     @Summary
     private final String version;
     @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+    @Summary
     private final String name;
     @Summary
     private final String title;
+    @Summary
     private final List<Canonical> derivedFrom;
     @Summary
     @Binding(
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -231,7 +274,7 @@ public class Questionnaire extends DomainResource {
         bindingName = "ResourceType",
         strength = BindingStrength.Value.REQUIRED,
         description = "One of the resource types defined as part of this version of FHIR.",
-        valueSet = "http://hl7.org/fhir/ValueSet/resource-types|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/resource-types|5.0.0"
     )
     private final List<ResourceTypeCode> subjectType;
     @Summary
@@ -240,6 +283,7 @@ public class Questionnaire extends DomainResource {
     private final String publisher;
     @Summary
     private final List<ContactDetail> contact;
+    @Summary
     private final Markdown description;
     @Summary
     private final List<UsageContext> useContext;
@@ -253,6 +297,7 @@ public class Questionnaire extends DomainResource {
     private final List<CodeableConcept> jurisdiction;
     private final Markdown purpose;
     private final Markdown copyright;
+    private final String copyrightLabel;
     private final Date approvalDate;
     private final Date lastReviewDate;
     @Summary
@@ -272,6 +317,7 @@ public class Questionnaire extends DomainResource {
         url = builder.url;
         identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
         title = builder.title;
         derivedFrom = Collections.unmodifiableList(builder.derivedFrom);
@@ -286,6 +332,7 @@ public class Questionnaire extends DomainResource {
         jurisdiction = Collections.unmodifiableList(builder.jurisdiction);
         purpose = builder.purpose;
         copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
         approvalDate = builder.approvalDate;
         lastReviewDate = builder.lastReviewDate;
         effectivePeriod = builder.effectivePeriod;
@@ -296,8 +343,8 @@ public class Questionnaire extends DomainResource {
     /**
      * An absolute URI that is used to identify this questionnaire when it is referenced in a specification, model, design or 
      * an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
-     * which at which an authoritative instance of this questionnaire is (or will be) published. This URL can be the target 
-     * of a canonical reference. It SHALL remain the same when the questionnaire is stored on different servers.
+     * which an authoritative instance of this questionnaire is (or will be) published. This URL can be the target of a 
+     * canonical reference. It SHALL remain the same when the questionnaire is stored on different servers.
      * 
      * @return
      *     An immutable object of type {@link Uri} that may be null.
@@ -328,6 +375,16 @@ public class Questionnaire extends DomainResource {
      */
     public String getVersion() {
         return version;
+    }
+
+    /**
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
     }
 
     /**
@@ -362,7 +419,7 @@ public class Questionnaire extends DomainResource {
     }
 
     /**
-     * The status of this questionnaire. Enables tracking the life-cycle of the content.
+     * The current state of this questionnaire.
      * 
      * @return
      *     An immutable object of type {@link PublicationStatus} that is non-null.
@@ -373,7 +430,7 @@ public class Questionnaire extends DomainResource {
 
     /**
      * A Boolean value to indicate that this questionnaire is authored for testing purposes (or 
-     * education/evaluation/marketing) and is not intended to be used for genuine usage.
+     * education/evaluation/marketing) and is not intended for genuine usage.
      * 
      * @return
      *     An immutable object of type {@link Boolean} that may be null.
@@ -393,9 +450,9 @@ public class Questionnaire extends DomainResource {
     }
 
     /**
-     * The date (and optionally time) when the questionnaire was published. The date must change when the business version 
-     * changes and it must change if the status code changes. In addition, it should change when the substantive content of 
-     * the questionnaire changes.
+     * The date (and optionally time) when the questionnaire was last significantly changed. The date must change when the 
+     * business version changes and it must change if the status code changes. In addition, it should change when the 
+     * substantive content of the questionnaire changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -405,7 +462,7 @@ public class Questionnaire extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the questionnaire.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the questionnaire.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -437,7 +494,7 @@ public class Questionnaire extends DomainResource {
     /**
      * The content was developed with a focus and intent of supporting the contexts that are listed. These contexts may be 
      * general categories (gender, age, ...) or may be references to specific programs (insurance plans, studies, ...) and 
-     * may be used to assist with indexing and searching for appropriate questionnaire instances.
+     * may be used to assist with indexing and searching for appropriate questionnaires.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link UsageContext} that may be empty.
@@ -478,6 +535,17 @@ public class Questionnaire extends DomainResource {
     }
 
     /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
+    }
+
+    /**
      * The date on which the resource content was approved by the publisher. Approval happens once when the content is 
      * officially approved for usage.
      * 
@@ -510,7 +578,7 @@ public class Questionnaire extends DomainResource {
     }
 
     /**
-     * An identifier for this question or group of questions in a particular terminology such as LOINC.
+     * An identifier for this collection of questions in a particular terminology such as LOINC.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Coding} that may be empty.
@@ -535,6 +603,7 @@ public class Questionnaire extends DomainResource {
             (url != null) || 
             !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
             (title != null) || 
             !derivedFrom.isEmpty() || 
@@ -549,6 +618,7 @@ public class Questionnaire extends DomainResource {
             !jurisdiction.isEmpty() || 
             (purpose != null) || 
             (copyright != null) || 
+            (copyrightLabel != null) || 
             (approvalDate != null) || 
             (lastReviewDate != null) || 
             (effectivePeriod != null) || 
@@ -573,6 +643,7 @@ public class Questionnaire extends DomainResource {
                 accept(url, "url", visitor);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(derivedFrom, "derivedFrom", visitor, Canonical.class);
@@ -587,6 +658,7 @@ public class Questionnaire extends DomainResource {
                 accept(jurisdiction, "jurisdiction", visitor, CodeableConcept.class);
                 accept(purpose, "purpose", visitor);
                 accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
                 accept(approvalDate, "approvalDate", visitor);
                 accept(lastReviewDate, "lastReviewDate", visitor);
                 accept(effectivePeriod, "effectivePeriod", visitor);
@@ -621,6 +693,7 @@ public class Questionnaire extends DomainResource {
             Objects.equals(url, other.url) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(derivedFrom, other.derivedFrom) && 
@@ -635,6 +708,7 @@ public class Questionnaire extends DomainResource {
             Objects.equals(jurisdiction, other.jurisdiction) && 
             Objects.equals(purpose, other.purpose) && 
             Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
             Objects.equals(approvalDate, other.approvalDate) && 
             Objects.equals(lastReviewDate, other.lastReviewDate) && 
             Objects.equals(effectivePeriod, other.effectivePeriod) && 
@@ -657,6 +731,7 @@ public class Questionnaire extends DomainResource {
                 url, 
                 identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
                 title, 
                 derivedFrom, 
@@ -671,6 +746,7 @@ public class Questionnaire extends DomainResource {
                 jurisdiction, 
                 purpose, 
                 copyright, 
+                copyrightLabel, 
                 approvalDate, 
                 lastReviewDate, 
                 effectivePeriod, 
@@ -694,6 +770,7 @@ public class Questionnaire extends DomainResource {
         private Uri url;
         private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
         private String title;
         private List<Canonical> derivedFrom = new ArrayList<>();
@@ -708,6 +785,7 @@ public class Questionnaire extends DomainResource {
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
         private Markdown purpose;
         private Markdown copyright;
+        private String copyrightLabel;
         private Date approvalDate;
         private Date lastReviewDate;
         private Period effectivePeriod;
@@ -796,7 +874,8 @@ public class Questionnaire extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -814,7 +893,8 @@ public class Questionnaire extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -835,7 +915,7 @@ public class Questionnaire extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -855,7 +935,7 @@ public class Questionnaire extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -880,9 +960,9 @@ public class Questionnaire extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -905,9 +985,9 @@ public class Questionnaire extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -932,11 +1012,11 @@ public class Questionnaire extends DomainResource {
         /**
          * An absolute URI that is used to identify this questionnaire when it is referenced in a specification, model, design or 
          * an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
-         * which at which an authoritative instance of this questionnaire is (or will be) published. This URL can be the target 
-         * of a canonical reference. It SHALL remain the same when the questionnaire is stored on different servers.
+         * which an authoritative instance of this questionnaire is (or will be) published. This URL can be the target of a 
+         * canonical reference. It SHALL remain the same when the questionnaire is stored on different servers.
          * 
          * @param url
-         *     Canonical identifier for this questionnaire, represented as a URI (globally unique)
+         *     Canonical identifier for this questionnaire, represented as an absolute URI (globally unique)
          * 
          * @return
          *     A reference to this Builder instance
@@ -954,7 +1034,7 @@ public class Questionnaire extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param identifier
-         *     Additional identifier for the questionnaire
+         *     Business identifier for questionnaire
          * 
          * @return
          *     A reference to this Builder instance
@@ -974,7 +1054,7 @@ public class Questionnaire extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param identifier
-         *     Additional identifier for the questionnaire
+         *     Business identifier for questionnaire
          * 
          * @return
          *     A reference to this Builder instance
@@ -1017,6 +1097,42 @@ public class Questionnaire extends DomainResource {
          */
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
             return this;
         }
 
@@ -1088,7 +1204,7 @@ public class Questionnaire extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param derivedFrom
-         *     Instantiates protocol or definition
+         *     Based on Questionnaire
          * 
          * @return
          *     A reference to this Builder instance
@@ -1107,7 +1223,7 @@ public class Questionnaire extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param derivedFrom
-         *     Instantiates protocol or definition
+         *     Based on Questionnaire
          * 
          * @return
          *     A reference to this Builder instance
@@ -1121,7 +1237,7 @@ public class Questionnaire extends DomainResource {
         }
 
         /**
-         * The status of this questionnaire. Enables tracking the life-cycle of the content.
+         * The current state of this questionnaire.
          * 
          * <p>This element is required.
          * 
@@ -1154,7 +1270,7 @@ public class Questionnaire extends DomainResource {
 
         /**
          * A Boolean value to indicate that this questionnaire is authored for testing purposes (or 
-         * education/evaluation/marketing) and is not intended to be used for genuine usage.
+         * education/evaluation/marketing) and is not intended for genuine usage.
          * 
          * @param experimental
          *     For testing purposes, not real usage
@@ -1207,9 +1323,9 @@ public class Questionnaire extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the questionnaire was published. The date must change when the business version 
-         * changes and it must change if the status code changes. In addition, it should change when the substantive content of 
-         * the questionnaire changes.
+         * The date (and optionally time) when the questionnaire was last significantly changed. The date must change when the 
+         * business version changes and it must change if the status code changes. In addition, it should change when the 
+         * substantive content of the questionnaire changes.
          * 
          * @param date
          *     Date last changed
@@ -1226,7 +1342,7 @@ public class Questionnaire extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1239,10 +1355,10 @@ public class Questionnaire extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the questionnaire.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the questionnaire.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1308,7 +1424,7 @@ public class Questionnaire extends DomainResource {
         /**
          * The content was developed with a focus and intent of supporting the contexts that are listed. These contexts may be 
          * general categories (gender, age, ...) or may be references to specific programs (insurance plans, studies, ...) and 
-         * may be used to assist with indexing and searching for appropriate questionnaire instances.
+         * may be used to assist with indexing and searching for appropriate questionnaires.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1329,7 +1445,7 @@ public class Questionnaire extends DomainResource {
         /**
          * The content was developed with a focus and intent of supporting the contexts that are listed. These contexts may be 
          * general categories (gender, age, ...) or may be references to specific programs (insurance plans, studies, ...) and 
-         * may be used to assist with indexing and searching for appropriate questionnaire instances.
+         * may be used to assist with indexing and searching for appropriate questionnaires.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1417,6 +1533,37 @@ public class Questionnaire extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
+            return this;
+        }
+
+        /**
          * Convenience method for setting {@code approvalDate}.
          * 
          * @param approvalDate
@@ -1451,7 +1598,7 @@ public class Questionnaire extends DomainResource {
          * Convenience method for setting {@code lastReviewDate}.
          * 
          * @param lastReviewDate
-         *     When the questionnaire was last reviewed
+         *     When the questionnaire was last reviewed by the publisher
          * 
          * @return
          *     A reference to this Builder instance
@@ -1468,7 +1615,7 @@ public class Questionnaire extends DomainResource {
          * change the original approval date.
          * 
          * @param lastReviewDate
-         *     When the questionnaire was last reviewed
+         *     When the questionnaire was last reviewed by the publisher
          * 
          * @return
          *     A reference to this Builder instance
@@ -1493,7 +1640,7 @@ public class Questionnaire extends DomainResource {
         }
 
         /**
-         * An identifier for this question or group of questions in a particular terminology such as LOINC.
+         * An identifier for this collection of questions in a particular terminology such as LOINC.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1512,7 +1659,7 @@ public class Questionnaire extends DomainResource {
         }
 
         /**
-         * An identifier for this question or group of questions in a particular terminology such as LOINC.
+         * An identifier for this collection of questions in a particular terminology such as LOINC.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1595,6 +1742,7 @@ public class Questionnaire extends DomainResource {
         protected void validate(Questionnaire questionnaire) {
             super.validate(questionnaire);
             ValidationSupport.checkList(questionnaire.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(questionnaire.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.checkList(questionnaire.derivedFrom, "derivedFrom", Canonical.class);
             ValidationSupport.requireNonNull(questionnaire.status, "status");
             ValidationSupport.checkList(questionnaire.subjectType, "subjectType", ResourceTypeCode.class);
@@ -1610,6 +1758,7 @@ public class Questionnaire extends DomainResource {
             url = questionnaire.url;
             identifier.addAll(questionnaire.identifier);
             version = questionnaire.version;
+            versionAlgorithm = questionnaire.versionAlgorithm;
             name = questionnaire.name;
             title = questionnaire.title;
             derivedFrom.addAll(questionnaire.derivedFrom);
@@ -1624,6 +1773,7 @@ public class Questionnaire extends DomainResource {
             jurisdiction.addAll(questionnaire.jurisdiction);
             purpose = questionnaire.purpose;
             copyright = questionnaire.copyright;
+            copyrightLabel = questionnaire.copyrightLabel;
             approvalDate = questionnaire.approvalDate;
             lastReviewDate = questionnaire.lastReviewDate;
             effectivePeriod = questionnaire.effectivePeriod;
@@ -1653,7 +1803,7 @@ public class Questionnaire extends DomainResource {
             bindingName = "QuestionnaireItemType",
             strength = BindingStrength.Value.REQUIRED,
             description = "Distinguishes groups from questions and display text and indicates data type for questions.",
-            valueSet = "http://hl7.org/fhir/ValueSet/item-type|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/item-type|5.0.0"
         )
         @Required
         private final QuestionnaireItemType type;
@@ -1662,13 +1812,27 @@ public class Questionnaire extends DomainResource {
             bindingName = "EnableWhenBehavior",
             strength = BindingStrength.Value.REQUIRED,
             description = "Controls how multiple enableWhen values are interpreted -  whether all or any must be true.",
-            valueSet = "http://hl7.org/fhir/ValueSet/questionnaire-enable-behavior|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/questionnaire-enable-behavior|5.0.0"
         )
         private final EnableWhenBehavior enableBehavior;
+        @Binding(
+            bindingName = "DisabledDisplay",
+            strength = BindingStrength.Value.REQUIRED,
+            description = "Defines how disabled elements should be rendered",
+            valueSet = "http://hl7.org/fhir/ValueSet/questionnaire-disabled-display|5.0.0"
+        )
+        private final DisabledDisplay disabledDisplay;
         private final Boolean required;
         private final Boolean repeats;
         private final Boolean readOnly;
         private final Integer maxLength;
+        @Binding(
+            bindingName = "QuestionnaireAnswerConstraint",
+            strength = BindingStrength.Value.REQUIRED,
+            description = "Indicates differnt modes for restricting values when options or valueset are specified",
+            valueSet = "http://hl7.org/fhir/ValueSet/questionnaire-answer-constraint|5.0.0"
+        )
+        private final QuestionnaireAnswerConstraint answerConstraint;
         private final Canonical answerValueSet;
         private final List<AnswerOption> answerOption;
         private final List<Initial> initial;
@@ -1684,10 +1848,12 @@ public class Questionnaire extends DomainResource {
             type = builder.type;
             enableWhen = Collections.unmodifiableList(builder.enableWhen);
             enableBehavior = builder.enableBehavior;
+            disabledDisplay = builder.disabledDisplay;
             required = builder.required;
             repeats = builder.repeats;
             readOnly = builder.readOnly;
             maxLength = builder.maxLength;
+            answerConstraint = builder.answerConstraint;
             answerValueSet = builder.answerValueSet;
             answerOption = Collections.unmodifiableList(builder.answerOption);
             initial = Collections.unmodifiableList(builder.initial);
@@ -1706,19 +1872,10 @@ public class Questionnaire extends DomainResource {
         }
 
         /**
-         * This element is a URI that refers to an [ElementDefinition](elementdefinition.html) that provides information about 
-         * this item, including information that might otherwise be included in the instance of the Questionnaire resource. A 
-         * detailed description of the construction of the URI is shown in Comments, below. If this element is present then the 
-         * following element values MAY be derived from the Element Definition if the corresponding elements of this 
-         * Questionnaire resource instance have no value:
-         * 
-         * <p>* code (ElementDefinition.code) 
-         * <p>* type (ElementDefinition.type) 
-         * <p>* required (ElementDefinition.min) 
-         * <p>* repeats (ElementDefinition.max) 
-         * <p>* maxLength (ElementDefinition.maxLength) 
-         * <p>* answerValueSet (ElementDefinition.binding)
-         * <p>* options (ElementDefinition.binding).
+         * This element is a URI that refers to an [ElementDefinition](elementdefinition.html) or to an [ObservationDefinition]
+         * (observationdefinition.html) that provides information about this item, including information that might otherwise be 
+         * included in the instance of the Questionnaire resource. A detailed description of the construction of the URI is shown 
+         * in [Comments](questionnaire.html#definition), below.
          * 
          * @return
          *     An immutable object of type {@link Uri} that may be null.
@@ -1761,7 +1918,7 @@ public class Questionnaire extends DomainResource {
 
         /**
          * The type of questionnaire item this is - whether text for display, a grouping of other items or a particular type of 
-         * data to be captured (string, integer, coded choice, etc.).
+         * data to be captured (string, integer, Coding, etc.).
          * 
          * @return
          *     An immutable object of type {@link QuestionnaireItemType} that is non-null.
@@ -1792,6 +1949,16 @@ public class Questionnaire extends DomainResource {
         }
 
         /**
+         * Indicates if and how items that are disabled (because enableWhen evaluates to 'false') should be displayed.
+         * 
+         * @return
+         *     An immutable object of type {@link DisabledDisplay} that may be null.
+         */
+        public DisabledDisplay getDisabledDisplay() {
+            return disabledDisplay;
+        }
+
+        /**
          * An indication, if true, that the item must be present in a "completed" QuestionnaireResponse. If false, the item may 
          * be skipped when answering the questionnaire.
          * 
@@ -1803,8 +1970,8 @@ public class Questionnaire extends DomainResource {
         }
 
         /**
-         * An indication, if true, that the item may occur multiple times in the response, collecting multiple answers for 
-         * questions or multiple sets of answers for groups.
+         * An indication, if true, that a QuestionnaireResponse for this item may include multiple answers associated with a 
+         * single instance of this item (for question-type items) or multiple repetitions of the item (for group-type items).
          * 
          * @return
          *     An immutable object of type {@link Boolean} that may be null.
@@ -1834,8 +2001,18 @@ public class Questionnaire extends DomainResource {
         }
 
         /**
-         * A reference to a value set containing a list of codes representing permitted answers for a "choice" or "open-choice" 
-         * question.
+         * For items that have a defined set of allowed answers (via answerOption or answerValueSet), indicates whether values 
+         * *other* than those specified can be selected.
+         * 
+         * @return
+         *     An immutable object of type {@link QuestionnaireAnswerConstraint} that may be null.
+         */
+        public QuestionnaireAnswerConstraint getAnswerConstraint() {
+            return answerConstraint;
+        }
+
+        /**
+         * A reference to a value set containing a list of values representing permitted answers for a question.
          * 
          * @return
          *     An immutable object of type {@link Canonical} that may be null.
@@ -1845,7 +2022,7 @@ public class Questionnaire extends DomainResource {
         }
 
         /**
-         * One of the permitted answers for a "choice" or "open-choice" question.
+         * One of the permitted answers for the question.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link AnswerOption} that may be empty.
@@ -1886,10 +2063,12 @@ public class Questionnaire extends DomainResource {
                 (type != null) || 
                 !enableWhen.isEmpty() || 
                 (enableBehavior != null) || 
+                (disabledDisplay != null) || 
                 (required != null) || 
                 (repeats != null) || 
                 (readOnly != null) || 
                 (maxLength != null) || 
+                (answerConstraint != null) || 
                 (answerValueSet != null) || 
                 !answerOption.isEmpty() || 
                 !initial.isEmpty() || 
@@ -1913,10 +2092,12 @@ public class Questionnaire extends DomainResource {
                     accept(type, "type", visitor);
                     accept(enableWhen, "enableWhen", visitor, EnableWhen.class);
                     accept(enableBehavior, "enableBehavior", visitor);
+                    accept(disabledDisplay, "disabledDisplay", visitor);
                     accept(required, "required", visitor);
                     accept(repeats, "repeats", visitor);
                     accept(readOnly, "readOnly", visitor);
                     accept(maxLength, "maxLength", visitor);
+                    accept(answerConstraint, "answerConstraint", visitor);
                     accept(answerValueSet, "answerValueSet", visitor);
                     accept(answerOption, "answerOption", visitor, AnswerOption.class);
                     accept(initial, "initial", visitor, Initial.class);
@@ -1950,10 +2131,12 @@ public class Questionnaire extends DomainResource {
                 Objects.equals(type, other.type) && 
                 Objects.equals(enableWhen, other.enableWhen) && 
                 Objects.equals(enableBehavior, other.enableBehavior) && 
+                Objects.equals(disabledDisplay, other.disabledDisplay) && 
                 Objects.equals(required, other.required) && 
                 Objects.equals(repeats, other.repeats) && 
                 Objects.equals(readOnly, other.readOnly) && 
                 Objects.equals(maxLength, other.maxLength) && 
+                Objects.equals(answerConstraint, other.answerConstraint) && 
                 Objects.equals(answerValueSet, other.answerValueSet) && 
                 Objects.equals(answerOption, other.answerOption) && 
                 Objects.equals(initial, other.initial) && 
@@ -1975,10 +2158,12 @@ public class Questionnaire extends DomainResource {
                     type, 
                     enableWhen, 
                     enableBehavior, 
+                    disabledDisplay, 
                     required, 
                     repeats, 
                     readOnly, 
                     maxLength, 
+                    answerConstraint, 
                     answerValueSet, 
                     answerOption, 
                     initial, 
@@ -2006,10 +2191,12 @@ public class Questionnaire extends DomainResource {
             private QuestionnaireItemType type;
             private List<EnableWhen> enableWhen = new ArrayList<>();
             private EnableWhenBehavior enableBehavior;
+            private DisabledDisplay disabledDisplay;
             private Boolean required;
             private Boolean repeats;
             private Boolean readOnly;
             private Integer maxLength;
+            private QuestionnaireAnswerConstraint answerConstraint;
             private Canonical answerValueSet;
             private List<AnswerOption> answerOption = new ArrayList<>();
             private List<Initial> initial = new ArrayList<>();
@@ -2036,7 +2223,7 @@ public class Questionnaire extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2056,7 +2243,7 @@ public class Questionnaire extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2081,7 +2268,7 @@ public class Questionnaire extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2106,7 +2293,7 @@ public class Questionnaire extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2166,19 +2353,10 @@ public class Questionnaire extends DomainResource {
             }
 
             /**
-             * This element is a URI that refers to an [ElementDefinition](elementdefinition.html) that provides information about 
-             * this item, including information that might otherwise be included in the instance of the Questionnaire resource. A 
-             * detailed description of the construction of the URI is shown in Comments, below. If this element is present then the 
-             * following element values MAY be derived from the Element Definition if the corresponding elements of this 
-             * Questionnaire resource instance have no value:
-             * 
-             * <p>* code (ElementDefinition.code) 
-             * <p>* type (ElementDefinition.type) 
-             * <p>* required (ElementDefinition.min) 
-             * <p>* repeats (ElementDefinition.max) 
-             * <p>* maxLength (ElementDefinition.maxLength) 
-             * <p>* answerValueSet (ElementDefinition.binding)
-             * <p>* options (ElementDefinition.binding).
+             * This element is a URI that refers to an [ElementDefinition](elementdefinition.html) or to an [ObservationDefinition]
+             * (observationdefinition.html) that provides information about this item, including information that might otherwise be 
+             * included in the instance of the Questionnaire resource. A detailed description of the construction of the URI is shown 
+             * in [Comments](questionnaire.html#definition), below.
              * 
              * @param definition
              *     ElementDefinition - details for the item
@@ -2295,7 +2473,7 @@ public class Questionnaire extends DomainResource {
 
             /**
              * The type of questionnaire item this is - whether text for display, a grouping of other items or a particular type of 
-             * data to be captured (string, integer, coded choice, etc.).
+             * data to be captured (string, integer, Coding, etc.).
              * 
              * <p>This element is required.
              * 
@@ -2366,6 +2544,20 @@ public class Questionnaire extends DomainResource {
             }
 
             /**
+             * Indicates if and how items that are disabled (because enableWhen evaluates to 'false') should be displayed.
+             * 
+             * @param disabledDisplay
+             *     hidden | protected
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder disabledDisplay(DisabledDisplay disabledDisplay) {
+                this.disabledDisplay = disabledDisplay;
+                return this;
+            }
+
+            /**
              * Convenience method for setting {@code required}.
              * 
              * @param required
@@ -2413,8 +2605,8 @@ public class Questionnaire extends DomainResource {
             }
 
             /**
-             * An indication, if true, that the item may occur multiple times in the response, collecting multiple answers for 
-             * questions or multiple sets of answers for groups.
+             * An indication, if true, that a QuestionnaireResponse for this item may include multiple answers associated with a 
+             * single instance of this item (for question-type items) or multiple repetitions of the item (for group-type items).
              * 
              * @param repeats
              *     Whether the item may repeat
@@ -2461,7 +2653,7 @@ public class Questionnaire extends DomainResource {
              * Convenience method for setting {@code maxLength}.
              * 
              * @param maxLength
-             *     No more than this many characters
+             *     No more than these many characters
              * 
              * @return
              *     A reference to this Builder instance
@@ -2477,7 +2669,7 @@ public class Questionnaire extends DomainResource {
              * The maximum number of characters that are permitted in the answer to be considered a "valid" QuestionnaireResponse.
              * 
              * @param maxLength
-             *     No more than this many characters
+             *     No more than these many characters
              * 
              * @return
              *     A reference to this Builder instance
@@ -2488,11 +2680,25 @@ public class Questionnaire extends DomainResource {
             }
 
             /**
-             * A reference to a value set containing a list of codes representing permitted answers for a "choice" or "open-choice" 
-             * question.
+             * For items that have a defined set of allowed answers (via answerOption or answerValueSet), indicates whether values 
+             * *other* than those specified can be selected.
+             * 
+             * @param answerConstraint
+             *     optionsOnly | optionsOrType | optionsOrString
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder answerConstraint(QuestionnaireAnswerConstraint answerConstraint) {
+                this.answerConstraint = answerConstraint;
+                return this;
+            }
+
+            /**
+             * A reference to a value set containing a list of values representing permitted answers for a question.
              * 
              * @param answerValueSet
-             *     Valueset containing permitted answers
+             *     ValueSet containing permitted answers
              * 
              * @return
              *     A reference to this Builder instance
@@ -2503,7 +2709,7 @@ public class Questionnaire extends DomainResource {
             }
 
             /**
-             * One of the permitted answers for a "choice" or "open-choice" question.
+             * One of the permitted answers for the question.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -2522,7 +2728,7 @@ public class Questionnaire extends DomainResource {
             }
 
             /**
-             * One of the permitted answers for a "choice" or "open-choice" question.
+             * One of the permitted answers for the question.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -2666,10 +2872,12 @@ public class Questionnaire extends DomainResource {
                 type = item.type;
                 enableWhen.addAll(item.enableWhen);
                 enableBehavior = item.enableBehavior;
+                disabledDisplay = item.disabledDisplay;
                 required = item.required;
                 repeats = item.repeats;
                 readOnly = item.readOnly;
                 maxLength = item.maxLength;
+                answerConstraint = item.answerConstraint;
                 answerValueSet = item.answerValueSet;
                 answerOption.addAll(item.answerOption);
                 initial.addAll(item.initial);
@@ -2689,7 +2897,7 @@ public class Questionnaire extends DomainResource {
                 bindingName = "QuestionnaireItemOperator",
                 strength = BindingStrength.Value.REQUIRED,
                 description = "The criteria by which a question is enabled.",
-                valueSet = "http://hl7.org/fhir/ValueSet/questionnaire-enable-operator|4.3.0"
+                valueSet = "http://hl7.org/fhir/ValueSet/questionnaire-enable-operator|5.0.0"
             )
             @Required
             private final QuestionnaireItemOperator operator;
@@ -2701,7 +2909,7 @@ public class Questionnaire extends DomainResource {
                 valueSet = "http://hl7.org/fhir/ValueSet/questionnaire-answers"
             )
             @Required
-            private final Element answer;
+            private final org.linuxforhealth.fhir.model.type.Element answer;
 
             private EnableWhen(Builder builder) {
                 super(builder);
@@ -2731,13 +2939,15 @@ public class Questionnaire extends DomainResource {
             }
 
             /**
-             * A value that the referenced question is tested using the specified operator in order for the item to be enabled.
+             * A value that the referenced question is tested using the specified operator in order for the item to be enabled. If 
+             * there are multiple answers, a match on any of the answers suffices. If different behavior is desired (all must match, 
+             * at least 2 must match, etc.), consider using the enableWhenExpression extension.
              * 
              * @return
              *     An immutable object of type {@link Boolean}, {@link Decimal}, {@link Integer}, {@link Date}, {@link DateTime}, {@link 
              *     Time}, {@link String}, {@link Coding}, {@link Quantity} or {@link Reference} that is non-null.
              */
-            public Element getAnswer() {
+            public org.linuxforhealth.fhir.model.type.Element getAnswer() {
                 return answer;
             }
 
@@ -2814,7 +3024,7 @@ public class Questionnaire extends DomainResource {
             public static class Builder extends BackboneElement.Builder {
                 private String question;
                 private QuestionnaireItemOperator operator;
-                private Element answer;
+                private org.linuxforhealth.fhir.model.type.Element answer;
 
                 private Builder() {
                     super();
@@ -2837,7 +3047,7 @@ public class Questionnaire extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2857,7 +3067,7 @@ public class Questionnaire extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2882,7 +3092,7 @@ public class Questionnaire extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2907,7 +3117,7 @@ public class Questionnaire extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2937,7 +3147,7 @@ public class Questionnaire extends DomainResource {
                  * <p>This element is required.
                  * 
                  * @param question
-                 *     Question that determines whether item is enabled
+                 *     The linkId of question that determines whether item is enabled/disabled
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -2955,7 +3165,7 @@ public class Questionnaire extends DomainResource {
                  * <p>This element is required.
                  * 
                  * @param question
-                 *     Question that determines whether item is enabled
+                 *     The linkId of question that determines whether item is enabled/disabled
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -3072,7 +3282,9 @@ public class Questionnaire extends DomainResource {
                 }
 
                 /**
-                 * A value that the referenced question is tested using the specified operator in order for the item to be enabled.
+                 * A value that the referenced question is tested using the specified operator in order for the item to be enabled. If 
+                 * there are multiple answers, a match on any of the answers suffices. If different behavior is desired (all must match, 
+                 * at least 2 must match, etc.), consider using the enableWhenExpression extension.
                  * 
                  * <p>This element is required.
                  * 
@@ -3096,7 +3308,7 @@ public class Questionnaire extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder answer(Element answer) {
+                public Builder answer(org.linuxforhealth.fhir.model.type.Element answer) {
                     this.answer = answer;
                     return this;
                 }
@@ -3144,7 +3356,7 @@ public class Questionnaire extends DomainResource {
         }
 
         /**
-         * One of the permitted answers for a "choice" or "open-choice" question.
+         * One of the permitted answers for the question.
          */
         public static class AnswerOption extends BackboneElement {
             @Choice({ Integer.class, Date.class, Time.class, String.class, Coding.class, Reference.class })
@@ -3155,7 +3367,7 @@ public class Questionnaire extends DomainResource {
                 valueSet = "http://hl7.org/fhir/ValueSet/questionnaire-answers"
             )
             @Required
-            private final Element value;
+            private final org.linuxforhealth.fhir.model.type.Element value;
             private final Boolean initialSelected;
 
             private AnswerOption(Builder builder) {
@@ -3171,7 +3383,7 @@ public class Questionnaire extends DomainResource {
              *     An immutable object of type {@link Integer}, {@link Date}, {@link Time}, {@link String}, {@link Coding} or {@link 
              *     Reference} that is non-null.
              */
-            public Element getValue() {
+            public org.linuxforhealth.fhir.model.type.Element getValue() {
                 return value;
             }
 
@@ -3252,7 +3464,7 @@ public class Questionnaire extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private Element value;
+                private org.linuxforhealth.fhir.model.type.Element value;
                 private Boolean initialSelected;
 
                 private Builder() {
@@ -3276,7 +3488,7 @@ public class Questionnaire extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3296,7 +3508,7 @@ public class Questionnaire extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3321,7 +3533,7 @@ public class Questionnaire extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3346,7 +3558,7 @@ public class Questionnaire extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3463,7 +3675,7 @@ public class Questionnaire extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder value(Element value) {
+                public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                     this.value = value;
                     return this;
                 }
@@ -3548,7 +3760,7 @@ public class Questionnaire extends DomainResource {
                 valueSet = "http://hl7.org/fhir/ValueSet/questionnaire-answers"
             )
             @Required
-            private final Element value;
+            private final org.linuxforhealth.fhir.model.type.Element value;
 
             private Initial(Builder builder) {
                 super(builder);
@@ -3563,7 +3775,7 @@ public class Questionnaire extends DomainResource {
              *     Time}, {@link String}, {@link Uri}, {@link Attachment}, {@link Coding}, {@link Quantity} or {@link Reference} that is 
              *     non-null.
              */
-            public Element getValue() {
+            public org.linuxforhealth.fhir.model.type.Element getValue() {
                 return value;
             }
 
@@ -3630,7 +3842,7 @@ public class Questionnaire extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private Element value;
+                private org.linuxforhealth.fhir.model.type.Element value;
 
                 private Builder() {
                     super();
@@ -3653,7 +3865,7 @@ public class Questionnaire extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3673,7 +3885,7 @@ public class Questionnaire extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3698,7 +3910,7 @@ public class Questionnaire extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3723,7 +3935,7 @@ public class Questionnaire extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3864,7 +4076,7 @@ public class Questionnaire extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder value(Element value) {
+                public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                     this.value = value;
                     return this;
                 }

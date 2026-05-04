@@ -26,15 +26,16 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * An address expressed using postal conventions (as opposed to GPS or other location definition formats). This data type 
  * may be used to convey addresses for use in delivering mail as well as for visiting locations which might not be valid 
  * for mail delivery. There are a variety of postal address formats defined around the world.
+ * The ISO21090-codedString may be used to provide a coded representation of the contents of strings in an Address.
  */
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Address extends Element {
+public class Address extends DataType {
     @Summary
     @Binding(
         bindingName = "AddressUse",
         strength = BindingStrength.Value.REQUIRED,
         description = "The use of an address (home / work / etc.).",
-        valueSet = "http://hl7.org/fhir/ValueSet/address-use|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/address-use|5.0.0"
     )
     private final AddressUse use;
     @Summary
@@ -42,7 +43,7 @@ public class Address extends Element {
         bindingName = "AddressType",
         strength = BindingStrength.Value.REQUIRED,
         description = "The type of an address (physical / postal).",
-        valueSet = "http://hl7.org/fhir/ValueSet/address-type|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/address-type|5.0.0"
     )
     private final AddressType type;
     @Summary
@@ -275,7 +276,7 @@ public class Address extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private AddressUse use;
         private AddressType type;
         private String text;
@@ -308,7 +309,7 @@ public class Address extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -328,7 +329,7 @@ public class Address extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -596,7 +597,7 @@ public class Address extends Element {
          * Convenience method for setting {@code country}.
          * 
          * @param country
-         *     Country (e.g. can be ISO 3166 2 or 3 letter code)
+         *     Country (e.g. may be ISO 3166 2 or 3 letter code)
          * 
          * @return
          *     A reference to this Builder instance
@@ -612,7 +613,7 @@ public class Address extends Element {
          * Country - a nation as commonly understood or generally accepted.
          * 
          * @param country
-         *     Country (e.g. can be ISO 3166 2 or 3 letter code)
+         *     Country (e.g. may be ISO 3166 2 or 3 letter code)
          * 
          * @return
          *     A reference to this Builder instance

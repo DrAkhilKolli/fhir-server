@@ -34,6 +34,7 @@ import org.linuxforhealth.fhir.model.resource.Patient;
 import org.linuxforhealth.fhir.model.resource.Patient.Link;
 import org.linuxforhealth.fhir.model.resource.Resource;
 import org.linuxforhealth.fhir.model.test.TestUtil;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.HumanName;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.code.LinkType;
@@ -131,9 +132,8 @@ public abstract class AbstractIncludeRevincludeTest extends AbstractPersistenceT
             savedObservation5 = observation.toBuilder().subject(reference("Patient/" + savedPatient3.getId())).build();
             savedObservation5 = FHIRPersistenceTestSupport.create(persistence, getDefaultPersistenceContext(), savedObservation5).getResource();
     
-            // a Device with a reference to a patient and an organization
+            // a Device with a reference to an organization (R5: Device no longer references Patient directly)
             savedDevice1 = device.toBuilder()
-                                        .patient(reference("Patient/" + savedPatient3.getId()))
                                         .owner(reference("Organization/" + savedOrg1.getId()))
                                         .build();
             savedDevice1 = FHIRPersistenceTestSupport.create(persistence, getDefaultPersistenceContext(), savedDevice1).getResource();
@@ -156,8 +156,8 @@ public abstract class AbstractIncludeRevincludeTest extends AbstractPersistenceT
             // A DeviceRequest with non-versioned references to a device
             savedDeviceRequest1 = deviceRequest.toBuilder()
                     .subject(reference("Device/" + savedDevice1.getId()))
-                    .performer(reference("Device/" + savedDevice1.getId()))
-                    .code(reference("Device/" + savedDevice1.getId()))
+                    .performer(CodeableReference.builder().reference(reference("Device/" + savedDevice1.getId())).build())
+                    .code(CodeableReference.builder().reference(reference("Device/" + savedDevice1.getId())).build())
                     .build();
             savedDeviceRequest1 = FHIRPersistenceTestSupport.create(persistence, getDefaultPersistenceContext(), savedDeviceRequest1).getResource();
     
@@ -277,7 +277,7 @@ public abstract class AbstractIncludeRevincludeTest extends AbstractPersistenceT
                 assertEquals(savedDevice1.getId(), resource.getId());
                 // check elements are not filtered out
                 assertEquals("Updated Manufacturer", resource.as(Device.class).getManufacturer().getValue());
-                assertEquals("Patient/" + savedPatient3.getId(), resource.as(Device.class).getPatient().getReference().getValue());
+                assertEquals("Organization/" + savedOrg1.getId(), resource.as(Device.class).getOwner().getReference().getValue());
             } else {
                 fail("Unexpected resource type returned.");
             }
@@ -553,7 +553,7 @@ public abstract class AbstractIncludeRevincludeTest extends AbstractPersistenceT
             } else if (resource instanceof Device) {
                 assertEquals(savedDevice1.getId(), resource.getId());
                 // check specified elements
-                assertEquals("Patient/" + savedPatient3.getId(), resource.as(Device.class).getPatient().getReference().getValue());
+                assertEquals("Organization/" + savedOrg1.getId(), resource.as(Device.class).getOwner().getReference().getValue());
                 // check filtered out elements
                 assertNull(resource.as(Device.class).getManufacturer());
             } else {
@@ -669,15 +669,16 @@ public abstract class AbstractIncludeRevincludeTest extends AbstractPersistenceT
     }
 
     /**
-     * This test queries a Patient and requests the reverse inclusion of referenced Observations and referenced Devices.
-     * There are 2 Observations that refer back to the Patient. There are no Devices referencing the Patient.
+     * This test queries a Patient and requests the reverse inclusion of referenced Observations.
+     * (R5: Device:patient removed; Device no longer references Patient directly)
+     * There are 2 Observations that refer back to savedPatient1.
      * @throws Exception
      */
     @Test
     public void testMultiRevInclude() throws Exception {
         Map<String, List<String>> queryParms = new HashMap<String, List<String>>();
         queryParms.put("_id", Collections.singletonList(savedPatient1.getId()));
-        queryParms.put("_revinclude", Arrays.asList(new String[] {"Observation:patient", "Device:patient"}));
+        queryParms.put("_revinclude", Collections.singletonList("Observation:patient"));
         List<Resource> resources = runQueryTest(Patient.class, queryParms);
         assertNotNull(resources);
         assertEquals(3, resources.size());
@@ -694,23 +695,22 @@ public abstract class AbstractIncludeRevincludeTest extends AbstractPersistenceT
     }
 
     /**
-     * This test queries a Patient and requests the reverse inclusion of referenced Observations and referenced Devices.
-     * There is 1 Observation1 that refers back to the Patient and one Device referencing the Patient.
+     * This test queries a Patient and requests the reverse inclusion of referenced Observations.
+     * (R5: Device:patient removed; Device no longer references Patient directly)
+     * There is 1 Observation that refers back to savedPatient3.
      * @throws Exception
      */
     @Test
     public void testMultiRevInclude1() throws Exception {
         Map<String, List<String>> queryParms = new HashMap<String, List<String>>();
         queryParms.put("_id", Collections.singletonList(savedPatient3.getId()));
-        queryParms.put("_revinclude", Arrays.asList(new String[] {"Observation:patient", "Device:patient"}));
+        queryParms.put("_revinclude", Collections.singletonList("Observation:patient"));
         List<Resource> resources = runQueryTest(Patient.class, queryParms);
         assertNotNull(resources);
-        assertEquals(3, resources.size());
+        assertEquals(2, resources.size());
         for (Resource resource : resources) {
             if (resource instanceof Observation) {
                 assertEquals(savedObservation5.getId(), resource.getId());
-            } else if (resource instanceof Device) {
-                assertEquals(savedDevice1.getId(), resource.getId());
             } else if (resource instanceof Patient) {
                 assertEquals(savedPatient3.getId(), resource.getId());
             } else {
@@ -720,25 +720,22 @@ public abstract class AbstractIncludeRevincludeTest extends AbstractPersistenceT
     }
 
     /**
-     * This test queries a Patient and requests the reverse inclusion of referenced Observations and referenced Devices.
-     * There is 1 Observation1 that refers back to the Patient. There are two versions of a single Device referencing
-     * the Patient. The referenced Observation should be returned along with only the latest version of the Device.
+     * This test queries a Patient and requests the reverse inclusion of referenced Observations.
+     * (R5: Device:patient removed; Device no longer references Patient directly)
+     * There is 1 Observation that refers back to savedPatient3. Only latest Device version returned.
      * @throws Exception
      */
     @Test
     public void testMultiRevInclude2() throws Exception {
         Map<String, List<String>> queryParms = new HashMap<String, List<String>>();
         queryParms.put("_id", Collections.singletonList(savedPatient3.getId()));
-        queryParms.put("_revinclude", Arrays.asList(new String[] {"Observation:patient", "Device:patient"}));
+        queryParms.put("_revinclude", Collections.singletonList("Observation:patient"));
         List<Resource> resources = runQueryTest(Patient.class, queryParms);
         assertNotNull(resources);
-        assertEquals(3, resources.size());
+        assertEquals(2, resources.size());
         for (Resource resource : resources) {
             if (resource instanceof Observation) {
                 assertEquals(savedObservation5.getId(), resource.getId());
-            } else if (resource instanceof Device) {
-                assertEquals(savedDevice1.getId(), resource.getId());
-                assertEquals("2", savedDevice1.getMeta().getVersionId().getValue());
             } else if (resource instanceof Patient) {
                 assertEquals(savedPatient3.getId(), resource.getId());
             } else {
@@ -748,9 +745,8 @@ public abstract class AbstractIncludeRevincludeTest extends AbstractPersistenceT
     }
 
     /**
-     * This test queries a Device and requests the reverse inclusion of referencing DeviceRequests.
-     * There is 1 DeviceRequest that refers back to the Device multiple times. Only one instance of
-     * the DeviceRequest will be returned.
+     * This test queries a Device and requests reverse inclusion of DeviceRequests referencing it.
+     * There are 3 DeviceRequest search params (subject, device, performer) that reference the Device.
      * @throws Exception
      */
     @Test
@@ -766,7 +762,7 @@ public abstract class AbstractIncludeRevincludeTest extends AbstractPersistenceT
     }
 
     /**
-     * This test queries a Patient and requests the reverse inclusion of referencing Observations and Devices.
+     * This test queries a Patient and requests the reverse inclusion of referencing Observations.
      * The Patient is NOT referenced from any other resources.
      * @throws Exception
      */
@@ -774,7 +770,7 @@ public abstract class AbstractIncludeRevincludeTest extends AbstractPersistenceT
     public void testNoRevIncludedData() throws Exception {
         Map<String, List<String>> queryParms = new HashMap<String, List<String>>();
         queryParms.put("_id", Collections.singletonList(savedPatient4.getId()));
-        queryParms.put("_revinclude", Arrays.asList(new String[] {"Observation:patient", "Device:patient"}));
+        queryParms.put("_revinclude", Collections.singletonList("Observation:patient"));
         List<Resource> resources = runQueryTest(Patient.class, queryParms);
         assertNotNull(resources);
         assertEquals(1, resources.size());
@@ -927,17 +923,14 @@ public abstract class AbstractIncludeRevincludeTest extends AbstractPersistenceT
         Map<String, List<String>> queryParms = new HashMap<String, List<String>>();
         queryParms.put("_id", Collections.singletonList(savedDevice1.getId()));
         queryParms.put("_include:iterate", Collections.singletonList("Patient:organization"));
-        queryParms.put("_include", Collections.singletonList("Device:patient"));
+        queryParms.put("_include", Collections.singletonList("Device:organization"));
         List<Resource> resources = runQueryTest(Device.class, queryParms);
         assertNotNull(resources);
-        assertEquals(3, resources.size());
+        assertEquals(2, resources.size());
         for (Resource resource : resources) {
             if (resource instanceof Device) {
                 assertEquals(savedDevice1.getId(), resource.getId());
-                assertEquals("Patient/" + savedPatient3.getId(), resource.as(Device.class).getPatient().getReference().getValue());
-            } else if (resource instanceof Patient) {
-                assertEquals(savedPatient3.getId(), resource.getId());
-                assertEquals("Organization/" + savedOrg1.getId(), resource.as(Patient.class).getManagingOrganization().getReference().getValue());
+                assertEquals("Organization/" + savedOrg1.getId(), resource.as(Device.class).getOwner().getReference().getValue());
             } else if (resource instanceof Organization) {
                 assertEquals(savedOrg1.getId(), resource.getId());
             } else {
@@ -947,27 +940,23 @@ public abstract class AbstractIncludeRevincludeTest extends AbstractPersistenceT
     }
 
     /**
-     * This test queries Organizations with inclusion of Patients which reference
-     * them and iterative inclusion of Devices which reference the Patients.
-     * It should return savedOrg1, savedPatient3, and savedDevice1.
+     * This test queries Organizations with inclusion of Devices which reference
+     * them (R5: Device:organization replaced Device:patient).
+     * It should return savedOrg1 and savedDevice1.
      * @throws Exception
      */
     @Test
     public void testRevIncludeIterateOneDeep() throws Exception {
         Map<String, List<String>> queryParms = new HashMap<String, List<String>>();
         queryParms.put("_id", Collections.singletonList(savedOrg1.getId()));
-        queryParms.put("_revinclude:iterate", Collections.singletonList("Device:patient"));
-        queryParms.put("_revinclude", Collections.singletonList("Patient:organization"));
+        queryParms.put("_revinclude", Collections.singletonList("Device:organization"));
         List<Resource> resources = runQueryTest(Organization.class, queryParms);
         assertNotNull(resources);
-        assertEquals(3, resources.size());
+        assertEquals(2, resources.size());
         for (Resource resource : resources) {
             if (resource instanceof Device) {
                 assertEquals(savedDevice1.getId(), resource.getId());
-                assertEquals("Patient/" + savedPatient3.getId(), resource.as(Device.class).getPatient().getReference().getValue());
-            } else if (resource instanceof Patient) {
-                assertEquals(savedPatient3.getId(), resource.getId());
-                assertEquals("Organization/" + savedOrg1.getId(), resource.as(Patient.class).getManagingOrganization().getReference().getValue());
+                assertEquals("Organization/" + savedOrg1.getId(), resource.as(Device.class).getOwner().getReference().getValue());
             } else if (resource instanceof Organization) {
                 assertEquals(savedOrg1.getId(), resource.getId());
             } else {
@@ -986,20 +975,20 @@ public abstract class AbstractIncludeRevincludeTest extends AbstractPersistenceT
     public void testIncludeWithRevIncludeIterate() throws Exception {
         Map<String, List<String>> queryParms = new HashMap<String, List<String>>();
         queryParms.put("_id", Collections.singletonList(savedDevice1.getId()));
-        queryParms.put("_include", Collections.singletonList("Device:patient"));
-        queryParms.put("_revinclude:iterate", Collections.singletonList("Observation:subject"));
+        queryParms.put("_include", Collections.singletonList("Device:organization"));
+        queryParms.put("_revinclude:iterate", Collections.singletonList("Patient:organization"));
         List<Resource> resources = runQueryTest(Device.class, queryParms);
         assertNotNull(resources);
         assertEquals(3, resources.size());
         for (Resource resource : resources) {
             if (resource instanceof Device) {
                 assertEquals(savedDevice1.getId(), resource.getId());
-                assertEquals("Patient/" + savedPatient3.getId(), resource.as(Device.class).getPatient().getReference().getValue());
+                assertEquals("Organization/" + savedOrg1.getId(), resource.as(Device.class).getOwner().getReference().getValue());
+            } else if (resource instanceof Organization) {
+                assertEquals(savedOrg1.getId(), resource.getId());
             } else if (resource instanceof Patient) {
                 assertEquals(savedPatient3.getId(), resource.getId());
-            } else if (resource instanceof Observation) {
-                assertEquals(savedObservation5.getId(), resource.getId());
-                assertEquals("Patient/" + savedPatient3.getId(), resource.as(Observation.class).getSubject().getReference().getValue());
+                assertEquals("Organization/" + savedOrg1.getId(), resource.as(Patient.class).getManagingOrganization().getReference().getValue());
             } else {
                 fail("Unexpected resource type returned.");
             }
@@ -1055,16 +1044,17 @@ public abstract class AbstractIncludeRevincludeTest extends AbstractPersistenceT
     public void testIncludeWithIncludeAndRevIncludeIterate() throws Exception {
         Map<String, List<String>> queryParms = new HashMap<String, List<String>>();
         queryParms.put("_id", Collections.singletonList(savedDevice1.getId()));
-        queryParms.put("_include:iterate", Collections.singletonList("Patient:organization"));
-        queryParms.put("_include", Collections.singletonList("Device:patient"));
-        queryParms.put("_revinclude:iterate", Collections.singletonList("Observation:subject"));
+        queryParms.put("_include", Collections.singletonList("Device:organization"));
+        queryParms.put("_revinclude:iterate", Collections.singletonList("Patient:organization"));
         List<Resource> resources = runQueryTest(Device.class, queryParms);
         assertNotNull(resources);
-        assertEquals(4, resources.size());
+        assertEquals(3, resources.size());
         for (Resource resource : resources) {
             if (resource instanceof Device) {
                 assertEquals(savedDevice1.getId(), resource.getId());
-                assertEquals("Patient/" + savedPatient3.getId(), resource.as(Device.class).getPatient().getReference().getValue());
+                assertEquals("Organization/" + savedOrg1.getId(), resource.as(Device.class).getOwner().getReference().getValue());
+            } else if (resource instanceof Organization) {
+                assertEquals(savedOrg1.getId(), resource.getId());
             } else if (resource instanceof Patient) {
                 assertEquals(savedPatient3.getId(), resource.getId());
                 assertEquals("Organization/" + savedOrg1.getId(), resource.as(Patient.class).getManagingOrganization().getReference().getValue());
@@ -1089,19 +1079,17 @@ public abstract class AbstractIncludeRevincludeTest extends AbstractPersistenceT
     @Test
     public void testRevIncludeWithIncludeAndRevIncludeIterate() throws Exception {
         Map<String, List<String>> queryParms = new HashMap<String, List<String>>();
-        queryParms.put("_revinclude", Collections.singletonList("Device:patient"));
-        queryParms.put("_include:iterate", Collections.singletonList("Device:organization"));
+        queryParms.put("_revinclude", Collections.singletonList("Device:organization"));
         queryParms.put("_revinclude:iterate", Collections.singletonList("Observation:focus"));
         queryParms.put("organization", Collections.singletonList("Organization/" + savedOrg1.getId()));
         List<Resource> resources = runQueryTest(Patient.class, queryParms);
         assertNotNull(resources);
-        assertEquals(4, resources.size());
+        assertEquals(3, resources.size());
         for (Resource resource : resources) {
             if (resource instanceof Patient) {
                 assertEquals(savedPatient3.getId(), resource.getId());
             } else if (resource instanceof Device) {
                 assertEquals(savedDevice1.getId(), resource.getId());
-                assertEquals("Patient/" + savedPatient3.getId(), resource.as(Device.class).getPatient().getReference().getValue());
                 assertEquals("Organization/" + savedOrg1.getId(), resource.as(Device.class).getOwner().getReference().getValue());
             } else if (resource instanceof Observation) {
                 assertEquals(savedObservation6.getId(), resource.getId());
@@ -1124,20 +1112,17 @@ public abstract class AbstractIncludeRevincludeTest extends AbstractPersistenceT
     public void testIncludeWithRevIncludeIterateOnPrimary() throws Exception {
         Map<String, List<String>> queryParms = new HashMap<String, List<String>>();
         queryParms.put("_id", Collections.singletonList(savedDevice1.getId()));
-        queryParms.put("_include", Collections.singletonList("Device:patient"));
+        queryParms.put("_include", Collections.singletonList("Device:organization"));
         queryParms.put("_revinclude:iterate", Collections.singletonList("Observation:focus"));
         List<Resource> resources = runQueryTest(Device.class, queryParms);
         assertNotNull(resources);
-        assertEquals(3, resources.size());
+        assertEquals(2, resources.size());
         for (Resource resource : resources) {
             if (resource instanceof Device) {
                 assertEquals(savedDevice1.getId(), resource.getId());
-                assertEquals("Patient/" + savedPatient3.getId(), resource.as(Device.class).getPatient().getReference().getValue());
-            } else if (resource instanceof Patient) {
-                assertEquals(savedPatient3.getId(), resource.getId());
-            } else if (resource instanceof Observation) {
-                assertEquals(savedObservation6.getId(), resource.getId());
-                assertEquals("Device/" + savedDevice1.getId() + "/_history/2", resource.as(Observation.class).getFocus().get(0).getReference().getValue());
+                assertEquals("Organization/" + savedOrg1.getId(), resource.as(Device.class).getOwner().getReference().getValue());
+            } else if (resource instanceof Organization) {
+                assertEquals(savedOrg1.getId(), resource.getId());
             } else {
                 fail("Unexpected resource type returned.");
             }
@@ -1146,8 +1131,8 @@ public abstract class AbstractIncludeRevincludeTest extends AbstractPersistenceT
 
     /**
      * This test queries Devices with inclusion of Observations which reference
-     * them and iterative inclusion of Patients referenced by the Devices.
-     * It should return savedDevice1, savedPatient3, and savedObservation6.
+     * them and iterative inclusion of Organizations referenced by the Devices.
+     * It should return savedDevice1, savedOrg1, and savedObservation6.
      * @throws Exception
      */
     @Test
@@ -1155,16 +1140,16 @@ public abstract class AbstractIncludeRevincludeTest extends AbstractPersistenceT
         Map<String, List<String>> queryParms = new HashMap<String, List<String>>();
         queryParms.put("_id", Collections.singletonList(savedDevice1.getId()));
         queryParms.put("_revinclude", Collections.singletonList("Observation:focus"));
-        queryParms.put("_include:iterate", Collections.singletonList("Device:patient"));
+        queryParms.put("_include:iterate", Collections.singletonList("Device:organization"));
         List<Resource> resources = runQueryTest(Device.class, queryParms);
         assertNotNull(resources);
         assertEquals(3, resources.size());
         for (Resource resource : resources) {
             if (resource instanceof Device) {
                 assertEquals(savedDevice1.getId(), resource.getId());
-                assertEquals("Patient/" + savedPatient3.getId(), resource.as(Device.class).getPatient().getReference().getValue());
-            } else if (resource instanceof Patient) {
-                assertEquals(savedPatient3.getId(), resource.getId());
+                assertEquals("Organization/" + savedOrg1.getId(), resource.as(Device.class).getOwner().getReference().getValue());
+            } else if (resource instanceof Organization) {
+                assertEquals(savedOrg1.getId(), resource.getId());
             } else if (resource instanceof Observation) {
                 assertEquals(savedObservation6.getId(), resource.getId());
                 assertEquals("Device/" + savedDevice1.getId() + "/_history/2", resource.as(Observation.class).getFocus().get(0).getReference().getValue());

@@ -16,6 +16,7 @@ import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
 import org.linuxforhealth.fhir.model.annotation.Choice;
+import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
@@ -24,12 +25,14 @@ import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
+import org.linuxforhealth.fhir.model.type.Quantity;
 import org.linuxforhealth.fhir.model.type.Ratio;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.String;
@@ -41,14 +44,24 @@ import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
- * This resource is primarily used for the identification and definition of a medication for the purposes of prescribing, 
- * dispensing, and administering a medication as well as for making statements about medication use.
+ * This resource is primarily used for the identification and definition of a medication, including ingredients, for the 
+ * purposes of prescribing, dispensing, and administering a medication as well as for making statements about medication 
+ * use.
  * 
- * <p>Maturity level: FMM3 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 3,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
+)
+@Constraint(
+    id = "medication-0",
+    level = "Warning",
+    location = "ingredient.strength",
+    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/medication-ingredientstrength",
+    expression = "$this.as(Ratio).memberOf('http://hl7.org/fhir/ValueSet/medication-ingredientstrength', 'preferred')",
+    source = "http://hl7.org/fhir/StructureDefinition/Medication",
+    generated = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class Medication extends DomainResource {
@@ -67,34 +80,37 @@ public class Medication extends DomainResource {
         bindingName = "MedicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "A coded concept defining if the medication is in active use.",
-        valueSet = "http://hl7.org/fhir/ValueSet/medication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/medication-status|5.0.0"
     )
     private final MedicationStatus status;
     @Summary
     @ReferenceTarget({ "Organization" })
-    private final Reference manufacturer;
+    private final Reference marketingAuthorizationHolder;
     @Binding(
         bindingName = "MedicationForm",
         strength = BindingStrength.Value.EXAMPLE,
         description = "A coded concept defining the form of a medication.",
         valueSet = "http://hl7.org/fhir/ValueSet/medication-form-codes"
     )
-    private final CodeableConcept form;
+    private final CodeableConcept doseForm;
     @Summary
-    private final Ratio amount;
+    private final Quantity totalVolume;
     private final List<Ingredient> ingredient;
     private final Batch batch;
+    @ReferenceTarget({ "MedicationKnowledge" })
+    private final Reference definition;
 
     private Medication(Builder builder) {
         super(builder);
         identifier = Collections.unmodifiableList(builder.identifier);
         code = builder.code;
         status = builder.status;
-        manufacturer = builder.manufacturer;
-        form = builder.form;
-        amount = builder.amount;
+        marketingAuthorizationHolder = builder.marketingAuthorizationHolder;
+        doseForm = builder.doseForm;
+        totalVolume = builder.totalVolume;
         ingredient = Collections.unmodifiableList(builder.ingredient);
         batch = builder.batch;
+        definition = builder.definition;
     }
 
     /**
@@ -130,14 +146,15 @@ public class Medication extends DomainResource {
     }
 
     /**
-     * Describes the details of the manufacturer of the medication product. This is not intended to represent the distributor 
-     * of a medication product.
+     * The company or other legal entity that has authorization, from the appropriate drug regulatory authority, to market a 
+     * medicine in one or more jurisdictions. Typically abbreviated MAH.Note: The MAH may manufacture the product and may 
+     * also contract the manufacturing of the product to one or more companies (organizations).
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
      */
-    public Reference getManufacturer() {
-        return manufacturer;
+    public Reference getMarketingAuthorizationHolder() {
+        return marketingAuthorizationHolder;
     }
 
     /**
@@ -146,20 +163,20 @@ public class Medication extends DomainResource {
      * @return
      *     An immutable object of type {@link CodeableConcept} that may be null.
      */
-    public CodeableConcept getForm() {
-        return form;
+    public CodeableConcept getDoseForm() {
+        return doseForm;
     }
 
     /**
-     * Specific amount of the drug in the packaged product. For example, when specifying a product that has the same strength 
-     * (For example, Insulin glargine 100 unit per mL solution for injection), this attribute provides additional 
-     * clarification of the package amount (For example, 3 mL, 10mL, etc.).
+     * When the specified product code does not infer a package size, this is the specific amount of drug in the product. For 
+     * example, when specifying a product that has the same strength (For example, Insulin glargine 100 unit per mL solution 
+     * for injection), this attribute provides additional clarification of the package amount (For example, 3 mL, 10mL, etc.).
      * 
      * @return
-     *     An immutable object of type {@link Ratio} that may be null.
+     *     An immutable object of type {@link Quantity} that may be null.
      */
-    public Ratio getAmount() {
-        return amount;
+    public Quantity getTotalVolume() {
+        return totalVolume;
     }
 
     /**
@@ -182,17 +199,28 @@ public class Medication extends DomainResource {
         return batch;
     }
 
+    /**
+     * A reference to a knowledge resource that provides more information about this medication.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getDefinition() {
+        return definition;
+    }
+
     @Override
     public boolean hasChildren() {
         return super.hasChildren() || 
             !identifier.isEmpty() || 
             (code != null) || 
             (status != null) || 
-            (manufacturer != null) || 
-            (form != null) || 
-            (amount != null) || 
+            (marketingAuthorizationHolder != null) || 
+            (doseForm != null) || 
+            (totalVolume != null) || 
             !ingredient.isEmpty() || 
-            (batch != null);
+            (batch != null) || 
+            (definition != null);
     }
 
     @Override
@@ -212,11 +240,12 @@ public class Medication extends DomainResource {
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(code, "code", visitor);
                 accept(status, "status", visitor);
-                accept(manufacturer, "manufacturer", visitor);
-                accept(form, "form", visitor);
-                accept(amount, "amount", visitor);
+                accept(marketingAuthorizationHolder, "marketingAuthorizationHolder", visitor);
+                accept(doseForm, "doseForm", visitor);
+                accept(totalVolume, "totalVolume", visitor);
                 accept(ingredient, "ingredient", visitor, Ingredient.class);
                 accept(batch, "batch", visitor);
+                accept(definition, "definition", visitor);
             }
             visitor.visitEnd(elementName, elementIndex, this);
             visitor.postVisit(this);
@@ -246,11 +275,12 @@ public class Medication extends DomainResource {
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(code, other.code) && 
             Objects.equals(status, other.status) && 
-            Objects.equals(manufacturer, other.manufacturer) && 
-            Objects.equals(form, other.form) && 
-            Objects.equals(amount, other.amount) && 
+            Objects.equals(marketingAuthorizationHolder, other.marketingAuthorizationHolder) && 
+            Objects.equals(doseForm, other.doseForm) && 
+            Objects.equals(totalVolume, other.totalVolume) && 
             Objects.equals(ingredient, other.ingredient) && 
-            Objects.equals(batch, other.batch);
+            Objects.equals(batch, other.batch) && 
+            Objects.equals(definition, other.definition);
     }
 
     @Override
@@ -268,11 +298,12 @@ public class Medication extends DomainResource {
                 identifier, 
                 code, 
                 status, 
-                manufacturer, 
-                form, 
-                amount, 
+                marketingAuthorizationHolder, 
+                doseForm, 
+                totalVolume, 
                 ingredient, 
-                batch);
+                batch, 
+                definition);
             hashCode = result;
         }
         return result;
@@ -291,11 +322,12 @@ public class Medication extends DomainResource {
         private List<Identifier> identifier = new ArrayList<>();
         private CodeableConcept code;
         private MedicationStatus status;
-        private Reference manufacturer;
-        private CodeableConcept form;
-        private Ratio amount;
+        private Reference marketingAuthorizationHolder;
+        private CodeableConcept doseForm;
+        private Quantity totalVolume;
         private List<Ingredient> ingredient = new ArrayList<>();
         private Batch batch;
+        private Reference definition;
 
         private Builder() {
             super();
@@ -379,7 +411,8 @@ public class Medication extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -397,7 +430,8 @@ public class Medication extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -418,7 +452,7 @@ public class Medication extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -438,7 +472,7 @@ public class Medication extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -463,9 +497,9 @@ public class Medication extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -488,9 +522,9 @@ public class Medication extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -582,52 +616,53 @@ public class Medication extends DomainResource {
         }
 
         /**
-         * Describes the details of the manufacturer of the medication product. This is not intended to represent the distributor 
-         * of a medication product.
+         * The company or other legal entity that has authorization, from the appropriate drug regulatory authority, to market a 
+         * medicine in one or more jurisdictions. Typically abbreviated MAH.Note: The MAH may manufacture the product and may 
+         * also contract the manufacturing of the product to one or more companies (organizations).
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
          * <li>{@link Organization}</li>
          * </ul>
          * 
-         * @param manufacturer
-         *     Manufacturer of the item
+         * @param marketingAuthorizationHolder
+         *     Organization that has authorization to market medication
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder manufacturer(Reference manufacturer) {
-            this.manufacturer = manufacturer;
+        public Builder marketingAuthorizationHolder(Reference marketingAuthorizationHolder) {
+            this.marketingAuthorizationHolder = marketingAuthorizationHolder;
             return this;
         }
 
         /**
          * Describes the form of the item. Powder; tablets; capsule.
          * 
-         * @param form
+         * @param doseForm
          *     powder | tablets | capsule +
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder form(CodeableConcept form) {
-            this.form = form;
+        public Builder doseForm(CodeableConcept doseForm) {
+            this.doseForm = doseForm;
             return this;
         }
 
         /**
-         * Specific amount of the drug in the packaged product. For example, when specifying a product that has the same strength 
-         * (For example, Insulin glargine 100 unit per mL solution for injection), this attribute provides additional 
-         * clarification of the package amount (For example, 3 mL, 10mL, etc.).
+         * When the specified product code does not infer a package size, this is the specific amount of drug in the product. For 
+         * example, when specifying a product that has the same strength (For example, Insulin glargine 100 unit per mL solution 
+         * for injection), this attribute provides additional clarification of the package amount (For example, 3 mL, 10mL, etc.).
          * 
-         * @param amount
-         *     Amount of drug in package
+         * @param totalVolume
+         *     When the specified product code does not infer a package size, this is the specific amount of drug in the product
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder amount(Ratio amount) {
-            this.amount = amount;
+        public Builder totalVolume(Quantity totalVolume) {
+            this.totalVolume = totalVolume;
             return this;
         }
 
@@ -685,6 +720,25 @@ public class Medication extends DomainResource {
         }
 
         /**
+         * A reference to a knowledge resource that provides more information about this medication.
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link MedicationKnowledge}</li>
+         * </ul>
+         * 
+         * @param definition
+         *     Knowledge about this medication
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder definition(Reference definition) {
+            this.definition = definition;
+            return this;
+        }
+
+        /**
          * Build the {@link Medication}
          * 
          * @return
@@ -705,7 +759,8 @@ public class Medication extends DomainResource {
             super.validate(medication);
             ValidationSupport.checkList(medication.identifier, "identifier", Identifier.class);
             ValidationSupport.checkList(medication.ingredient, "ingredient", Ingredient.class);
-            ValidationSupport.checkReferenceType(medication.manufacturer, "manufacturer", "Organization");
+            ValidationSupport.checkReferenceType(medication.marketingAuthorizationHolder, "marketingAuthorizationHolder", "Organization");
+            ValidationSupport.checkReferenceType(medication.definition, "definition", "MedicationKnowledge");
         }
 
         protected Builder from(Medication medication) {
@@ -713,11 +768,12 @@ public class Medication extends DomainResource {
             identifier.addAll(medication.identifier);
             code = medication.code;
             status = medication.status;
-            manufacturer = medication.manufacturer;
-            form = medication.form;
-            amount = medication.amount;
+            marketingAuthorizationHolder = medication.marketingAuthorizationHolder;
+            doseForm = medication.doseForm;
+            totalVolume = medication.totalVolume;
             ingredient.addAll(medication.ingredient);
             batch = medication.batch;
+            definition = medication.definition;
             return this;
         }
     }
@@ -726,12 +782,22 @@ public class Medication extends DomainResource {
      * Identifies a particular constituent of interest in the product.
      */
     public static class Ingredient extends BackboneElement {
-        @ReferenceTarget({ "Substance", "Medication" })
-        @Choice({ CodeableConcept.class, Reference.class })
+        @Binding(
+            bindingName = "MedicationFormalRepresentation",
+            strength = BindingStrength.Value.EXAMPLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/medication-codes"
+        )
         @Required
-        private final Element item;
+        private final CodeableReference item;
         private final Boolean isActive;
-        private final Ratio strength;
+        @Choice({ Ratio.class, CodeableConcept.class, Quantity.class })
+        @Binding(
+            bindingName = "MedicationIngredientStrength",
+            strength = BindingStrength.Value.PREFERRED,
+            description = "A coded concpet defining the strength of an ingredient.",
+            valueSet = "http://hl7.org/fhir/ValueSet/medication-ingredientstrength"
+        )
+        private final org.linuxforhealth.fhir.model.type.Element strength;
 
         private Ingredient(Builder builder) {
             super(builder);
@@ -741,12 +807,13 @@ public class Medication extends DomainResource {
         }
 
         /**
-         * The actual ingredient - either a substance (simple ingredient) or another medication of a medication.
+         * The ingredient (substance or medication) that the ingredient.strength relates to. This is represented as a concept 
+         * from a code system or described in another resource (Substance or Medication).
          * 
          * @return
-         *     An immutable object of type {@link CodeableConcept} or {@link Reference} that is non-null.
+         *     An immutable object of type {@link CodeableReference} that is non-null.
          */
-        public Element getItem() {
+        public CodeableReference getItem() {
             return item;
         }
 
@@ -762,12 +829,13 @@ public class Medication extends DomainResource {
 
         /**
          * Specifies how many (or how much) of the items there are in this Medication. For example, 250 mg per tablet. This is 
-         * expressed as a ratio where the numerator is 250mg and the denominator is 1 tablet.
+         * expressed as a ratio where the numerator is 250mg and the denominator is 1 tablet but can also be expressed a quantity 
+         * when the denominator is assumed to be 1 tablet.
          * 
          * @return
-         *     An immutable object of type {@link Ratio} that may be null.
+         *     An immutable object of type {@link Ratio}, {@link CodeableConcept} or {@link Quantity} that may be null.
          */
-        public Ratio getStrength() {
+        public org.linuxforhealth.fhir.model.type.Element getStrength() {
             return strength;
         }
 
@@ -842,9 +910,9 @@ public class Medication extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private Element item;
+            private CodeableReference item;
             private Boolean isActive;
-            private Ratio strength;
+            private org.linuxforhealth.fhir.model.type.Element strength;
 
             private Builder() {
                 super();
@@ -867,7 +935,7 @@ public class Medication extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -887,7 +955,7 @@ public class Medication extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -912,7 +980,7 @@ public class Medication extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -937,7 +1005,7 @@ public class Medication extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -962,29 +1030,18 @@ public class Medication extends DomainResource {
             }
 
             /**
-             * The actual ingredient - either a substance (simple ingredient) or another medication of a medication.
+             * The ingredient (substance or medication) that the ingredient.strength relates to. This is represented as a concept 
+             * from a code system or described in another resource (Substance or Medication).
              * 
              * <p>This element is required.
              * 
-             * <p>This is a choice element with the following allowed types:
-             * <ul>
-             * <li>{@link CodeableConcept}</li>
-             * <li>{@link Reference}</li>
-             * </ul>
-             * 
-             * When of type {@link Reference}, the allowed resource types for this reference are:
-             * <ul>
-             * <li>{@link Substance}</li>
-             * <li>{@link Medication}</li>
-             * </ul>
-             * 
              * @param item
-             *     The actual ingredient or content
+             *     The ingredient (substance or medication) that the ingredient.strength relates to
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder item(Element item) {
+            public Builder item(CodeableReference item) {
                 this.item = item;
                 return this;
             }
@@ -1021,7 +1078,15 @@ public class Medication extends DomainResource {
 
             /**
              * Specifies how many (or how much) of the items there are in this Medication. For example, 250 mg per tablet. This is 
-             * expressed as a ratio where the numerator is 250mg and the denominator is 1 tablet.
+             * expressed as a ratio where the numerator is 250mg and the denominator is 1 tablet but can also be expressed a quantity 
+             * when the denominator is assumed to be 1 tablet.
+             * 
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link Ratio}</li>
+             * <li>{@link CodeableConcept}</li>
+             * <li>{@link Quantity}</li>
+             * </ul>
              * 
              * @param strength
              *     Quantity of ingredient present
@@ -1029,7 +1094,7 @@ public class Medication extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder strength(Ratio strength) {
+            public Builder strength(org.linuxforhealth.fhir.model.type.Element strength) {
                 this.strength = strength;
                 return this;
             }
@@ -1058,8 +1123,8 @@ public class Medication extends DomainResource {
 
             protected void validate(Ingredient ingredient) {
                 super.validate(ingredient);
-                ValidationSupport.requireChoiceElement(ingredient.item, "item", CodeableConcept.class, Reference.class);
-                ValidationSupport.checkReferenceType(ingredient.item, "item", "Substance", "Medication");
+                ValidationSupport.requireNonNull(ingredient.item, "item");
+                ValidationSupport.choiceElement(ingredient.strength, "strength", Ratio.class, CodeableConcept.class, Quantity.class);
                 ValidationSupport.requireValueOrChildren(ingredient);
             }
 
@@ -1197,7 +1262,7 @@ public class Medication extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1217,7 +1282,7 @@ public class Medication extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1242,7 +1307,7 @@ public class Medication extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1267,7 +1332,7 @@ public class Medication extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 

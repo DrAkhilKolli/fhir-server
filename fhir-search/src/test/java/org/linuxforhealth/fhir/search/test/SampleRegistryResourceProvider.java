@@ -18,7 +18,7 @@ import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
-import org.linuxforhealth.fhir.model.type.code.ResourceTypeCode;
+import org.linuxforhealth.fhir.model.type.code.FHIRTypes;
 import org.linuxforhealth.fhir.model.type.code.SearchParamType;
 import org.linuxforhealth.fhir.registry.resource.FHIRRegistryResource;
 import org.linuxforhealth.fhir.registry.util.FHIRRegistryResourceProviderAdapter;
@@ -34,7 +34,7 @@ public class SampleRegistryResourceProvider extends FHIRRegistryResourceProvider
             .description(Markdown.of("sample search param for ParametersSearchUtilTest.testVersionedSearchParameterFilter"))
             .name("a")
             .code(Code.of("a"))
-            .base(ResourceTypeCode.DEVICE, ResourceTypeCode.PATIENT)
+            .base(FHIRTypes.DEVICE, FHIRTypes.PATIENT)
             .type(SearchParamType.STRING)
             .expression("Device.id")
             .build();
@@ -50,7 +50,7 @@ public class SampleRegistryResourceProvider extends FHIRRegistryResourceProvider
             .description(Markdown.of("sample search param for ParametersSearchUtilTest.testVersionedSearchParameterFilter"))
             .name("b")
             .code(Code.of("b"))
-            .base(ResourceTypeCode.PATIENT, ResourceTypeCode.DEVICE)
+            .base(FHIRTypes.PATIENT, FHIRTypes.DEVICE)
             .type(SearchParamType.STRING)
             .expression("Device.id")
             .build();

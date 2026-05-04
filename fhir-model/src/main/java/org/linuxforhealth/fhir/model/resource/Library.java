@@ -25,6 +25,7 @@ import org.linuxforhealth.fhir.model.type.Attachment;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
 import org.linuxforhealth.fhir.model.type.DataRequirement;
 import org.linuxforhealth.fhir.model.type.Date;
@@ -53,10 +54,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * expose existing knowledge assets such as logic libraries and information model descriptions, as well as to describe a 
  * collection of knowledge assets.
  * 
- * <p>Maturity level: FMM3 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 3,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
@@ -64,11 +65,28 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
     source = "http://hl7.org/fhir/StructureDefinition/Library"
 )
 @Constraint(
-    id = "library-1",
+    id = "cnl-1",
+    level = "Warning",
+    location = "Library.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
+    source = "http://hl7.org/fhir/StructureDefinition/Library"
+)
+@Constraint(
+    id = "library-2",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/Library",
+    generated = true
+)
+@Constraint(
+    id = "library-3",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/library-type",
@@ -77,16 +95,16 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "library-2",
+    id = "library-4",
     level = "Warning",
     location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/subject-type",
-    expression = "subject.as(CodeableConcept).exists() implies (subject.as(CodeableConcept).memberOf('http://hl7.org/fhir/ValueSet/subject-type', 'extensible'))",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/participant-resource-types",
+    expression = "subject.as(CodeableConcept).exists() implies (subject.as(CodeableConcept).memberOf('http://hl7.org/fhir/ValueSet/participant-resource-types', 'extensible'))",
     source = "http://hl7.org/fhir/StructureDefinition/Library",
     generated = true
 )
 @Constraint(
-    id = "library-3",
+    id = "library-5",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
@@ -103,6 +121,13 @@ public class Library extends DomainResource {
     @Summary
     private final String version;
     @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+    @Summary
     private final String name;
     @Summary
     private final String title;
@@ -112,7 +137,7 @@ public class Library extends DomainResource {
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -133,9 +158,9 @@ public class Library extends DomainResource {
         bindingName = "SubjectType",
         strength = BindingStrength.Value.EXTENSIBLE,
         description = "The possible types of subjects for a library (E.g. Patient, Practitioner, Organization, Location, etc.).",
-        valueSet = "http://hl7.org/fhir/ValueSet/subject-type"
+        valueSet = "http://hl7.org/fhir/ValueSet/participant-resource-types"
     )
-    private final Element subject;
+    private final org.linuxforhealth.fhir.model.type.Element subject;
     @Summary
     private final DateTime date;
     @Summary
@@ -155,8 +180,9 @@ public class Library extends DomainResource {
     )
     private final List<CodeableConcept> jurisdiction;
     private final Markdown purpose;
-    private final String usage;
+    private final Markdown usage;
     private final Markdown copyright;
+    private final String copyrightLabel;
     private final Date approvalDate;
     private final Date lastReviewDate;
     @Summary
@@ -183,6 +209,7 @@ public class Library extends DomainResource {
         url = builder.url;
         identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
         title = builder.title;
         subtitle = builder.subtitle;
@@ -199,6 +226,7 @@ public class Library extends DomainResource {
         purpose = builder.purpose;
         usage = builder.usage;
         copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
         approvalDate = builder.approvalDate;
         lastReviewDate = builder.lastReviewDate;
         effectivePeriod = builder.effectivePeriod;
@@ -216,8 +244,8 @@ public class Library extends DomainResource {
     /**
      * An absolute URI that is used to identify this library when it is referenced in a specification, model, design or an 
      * instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
-     * which at which an authoritative instance of this library is (or will be) published. This URL can be the target of a 
-     * canonical reference. It SHALL remain the same when the library is stored on different servers.
+     * which an authoritative instance of this library is (or will be) published. This URL can be the target of a canonical 
+     * reference. It SHALL remain the same when the library is stored on different servers.
      * 
      * @return
      *     An immutable object of type {@link Uri} that may be null.
@@ -252,6 +280,16 @@ public class Library extends DomainResource {
      */
     public String getVersion() {
         return version;
+    }
+
+    /**
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
     }
 
     /**
@@ -322,14 +360,14 @@ public class Library extends DomainResource {
      * @return
      *     An immutable object of type {@link CodeableConcept} or {@link Reference} that may be null.
      */
-    public Element getSubject() {
+    public org.linuxforhealth.fhir.model.type.Element getSubject() {
         return subject;
     }
 
     /**
-     * The date (and optionally time) when the library was published. The date must change when the business version changes 
-     * and it must change if the status code changes. In addition, it should change when the substantive content of the 
-     * library changes.
+     * The date (and optionally time) when the library was last significantly changed. The date must change when the business 
+     * version changes and it must change if the status code changes. In addition, it should change when the substantive 
+     * content of the library changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -339,7 +377,7 @@ public class Library extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the library.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the library.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -404,9 +442,9 @@ public class Library extends DomainResource {
      * A detailed description of how the library is used from a clinical perspective.
      * 
      * @return
-     *     An immutable object of type {@link String} that may be null.
+     *     An immutable object of type {@link Markdown} that may be null.
      */
-    public String getUsage() {
+    public Markdown getUsage() {
         return usage;
     }
 
@@ -419,6 +457,17 @@ public class Library extends DomainResource {
      */
     public Markdown getCopyright() {
         return copyright;
+    }
+
+    /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
     }
 
     /**
@@ -485,7 +534,8 @@ public class Library extends DomainResource {
     }
 
     /**
-     * An individual or organization primarily responsible for review of some aspect of the content.
+     * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+     * content.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
@@ -495,7 +545,8 @@ public class Library extends DomainResource {
     }
 
     /**
-     * An individual or organization responsible for officially endorsing the content for use in some setting.
+     * An individual or organization asserted by the publisher to be responsible for officially endorsing the content for use 
+     * in some setting.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
@@ -552,6 +603,7 @@ public class Library extends DomainResource {
             (url != null) || 
             !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
             (title != null) || 
             (subtitle != null) || 
@@ -568,6 +620,7 @@ public class Library extends DomainResource {
             (purpose != null) || 
             (usage != null) || 
             (copyright != null) || 
+            (copyrightLabel != null) || 
             (approvalDate != null) || 
             (lastReviewDate != null) || 
             (effectivePeriod != null) || 
@@ -599,6 +652,7 @@ public class Library extends DomainResource {
                 accept(url, "url", visitor);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(subtitle, "subtitle", visitor);
@@ -615,6 +669,7 @@ public class Library extends DomainResource {
                 accept(purpose, "purpose", visitor);
                 accept(usage, "usage", visitor);
                 accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
                 accept(approvalDate, "approvalDate", visitor);
                 accept(lastReviewDate, "lastReviewDate", visitor);
                 accept(effectivePeriod, "effectivePeriod", visitor);
@@ -656,6 +711,7 @@ public class Library extends DomainResource {
             Objects.equals(url, other.url) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(subtitle, other.subtitle) && 
@@ -672,6 +728,7 @@ public class Library extends DomainResource {
             Objects.equals(purpose, other.purpose) && 
             Objects.equals(usage, other.usage) && 
             Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
             Objects.equals(approvalDate, other.approvalDate) && 
             Objects.equals(lastReviewDate, other.lastReviewDate) && 
             Objects.equals(effectivePeriod, other.effectivePeriod) && 
@@ -701,6 +758,7 @@ public class Library extends DomainResource {
                 url, 
                 identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
                 title, 
                 subtitle, 
@@ -717,6 +775,7 @@ public class Library extends DomainResource {
                 purpose, 
                 usage, 
                 copyright, 
+                copyrightLabel, 
                 approvalDate, 
                 lastReviewDate, 
                 effectivePeriod, 
@@ -747,13 +806,14 @@ public class Library extends DomainResource {
         private Uri url;
         private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
         private String title;
         private String subtitle;
         private PublicationStatus status;
         private Boolean experimental;
         private CodeableConcept type;
-        private Element subject;
+        private org.linuxforhealth.fhir.model.type.Element subject;
         private DateTime date;
         private String publisher;
         private List<ContactDetail> contact = new ArrayList<>();
@@ -761,8 +821,9 @@ public class Library extends DomainResource {
         private List<UsageContext> useContext = new ArrayList<>();
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
         private Markdown purpose;
-        private String usage;
+        private Markdown usage;
         private Markdown copyright;
+        private String copyrightLabel;
         private Date approvalDate;
         private Date lastReviewDate;
         private Period effectivePeriod;
@@ -858,7 +919,8 @@ public class Library extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -876,7 +938,8 @@ public class Library extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -897,7 +960,7 @@ public class Library extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -917,7 +980,7 @@ public class Library extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -942,9 +1005,9 @@ public class Library extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -967,9 +1030,9 @@ public class Library extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -994,8 +1057,8 @@ public class Library extends DomainResource {
         /**
          * An absolute URI that is used to identify this library when it is referenced in a specification, model, design or an 
          * instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
-         * which at which an authoritative instance of this library is (or will be) published. This URL can be the target of a 
-         * canonical reference. It SHALL remain the same when the library is stored on different servers.
+         * which an authoritative instance of this library is (or will be) published. This URL can be the target of a canonical 
+         * reference. It SHALL remain the same when the library is stored on different servers.
          * 
          * @param url
          *     Canonical identifier for this library, represented as a URI (globally unique)
@@ -1084,6 +1147,42 @@ public class Library extends DomainResource {
          */
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
             return this;
         }
 
@@ -1261,15 +1360,15 @@ public class Library extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder subject(Element subject) {
+        public Builder subject(org.linuxforhealth.fhir.model.type.Element subject) {
             this.subject = subject;
             return this;
         }
 
         /**
-         * The date (and optionally time) when the library was published. The date must change when the business version changes 
-         * and it must change if the status code changes. In addition, it should change when the substantive content of the 
-         * library changes.
+         * The date (and optionally time) when the library was last significantly changed. The date must change when the business 
+         * version changes and it must change if the status code changes. In addition, it should change when the substantive 
+         * content of the library changes.
          * 
          * @param date
          *     Date last changed
@@ -1286,7 +1385,7 @@ public class Library extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1299,10 +1398,10 @@ public class Library extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the library.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the library.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1462,22 +1561,6 @@ public class Library extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code usage}.
-         * 
-         * @param usage
-         *     Describes the clinical usage of the library
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #usage(org.linuxforhealth.fhir.model.type.String)
-         */
-        public Builder usage(java.lang.String usage) {
-            this.usage = (usage == null) ? null : String.of(usage);
-            return this;
-        }
-
-        /**
          * A detailed description of how the library is used from a clinical perspective.
          * 
          * @param usage
@@ -1486,7 +1569,7 @@ public class Library extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder usage(String usage) {
+        public Builder usage(Markdown usage) {
             this.usage = usage;
             return this;
         }
@@ -1503,6 +1586,37 @@ public class Library extends DomainResource {
          */
         public Builder copyright(Markdown copyright) {
             this.copyright = copyright;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
             return this;
         }
 
@@ -1541,7 +1655,7 @@ public class Library extends DomainResource {
          * Convenience method for setting {@code lastReviewDate}.
          * 
          * @param lastReviewDate
-         *     When the library was last reviewed
+         *     When the library was last reviewed by the publisher
          * 
          * @return
          *     A reference to this Builder instance
@@ -1558,7 +1672,7 @@ public class Library extends DomainResource {
          * change the original approval date.
          * 
          * @param lastReviewDate
-         *     When the library was last reviewed
+         *     When the library was last reviewed by the publisher
          * 
          * @return
          *     A reference to this Builder instance
@@ -1590,7 +1704,7 @@ public class Library extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param topic
-         *     E.g. Education, Treatment, Assessment, etc.
+         *     E.g. Education, Treatment, Assessment, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -1610,7 +1724,7 @@ public class Library extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param topic
-         *     E.g. Education, Treatment, Assessment, etc.
+         *     E.g. Education, Treatment, Assessment, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -1702,7 +1816,8 @@ public class Library extends DomainResource {
         }
 
         /**
-         * An individual or organization primarily responsible for review of some aspect of the content.
+         * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+         * content.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1721,7 +1836,8 @@ public class Library extends DomainResource {
         }
 
         /**
-         * An individual or organization primarily responsible for review of some aspect of the content.
+         * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+         * content.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1741,7 +1857,8 @@ public class Library extends DomainResource {
         }
 
         /**
-         * An individual or organization responsible for officially endorsing the content for use in some setting.
+         * An individual or organization asserted by the publisher to be responsible for officially endorsing the content for use 
+         * in some setting.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1760,7 +1877,8 @@ public class Library extends DomainResource {
         }
 
         /**
-         * An individual or organization responsible for officially endorsing the content for use in some setting.
+         * An individual or organization asserted by the publisher to be responsible for officially endorsing the content for use 
+         * in some setting.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1786,7 +1904,7 @@ public class Library extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param relatedArtifact
-         *     Additional documentation, citations, etc.
+         *     Additional documentation, citations, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -1805,7 +1923,7 @@ public class Library extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param relatedArtifact
-         *     Additional documentation, citations, etc.
+         *     Additional documentation, citations, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -1965,6 +2083,7 @@ public class Library extends DomainResource {
         protected void validate(Library library) {
             super.validate(library);
             ValidationSupport.checkList(library.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(library.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.requireNonNull(library.status, "status");
             ValidationSupport.requireNonNull(library.type, "type");
             ValidationSupport.choiceElement(library.subject, "subject", CodeableConcept.class, Reference.class);
@@ -1988,6 +2107,7 @@ public class Library extends DomainResource {
             url = library.url;
             identifier.addAll(library.identifier);
             version = library.version;
+            versionAlgorithm = library.versionAlgorithm;
             name = library.name;
             title = library.title;
             subtitle = library.subtitle;
@@ -2004,6 +2124,7 @@ public class Library extends DomainResource {
             purpose = library.purpose;
             usage = library.usage;
             copyright = library.copyright;
+            copyrightLabel = library.copyrightLabel;
             approvalDate = library.approvalDate;
             lastReviewDate = library.lastReviewDate;
             effectivePeriod = library.effectivePeriod;

@@ -15,7 +15,6 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
-import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
@@ -27,8 +26,9 @@ import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
 import org.linuxforhealth.fhir.model.type.Coding;
+import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.DateTime;
-import org.linuxforhealth.fhir.model.type.Element;
+import org.linuxforhealth.fhir.model.type.Expression;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Meta;
@@ -36,6 +36,7 @@ import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.Uri;
+import org.linuxforhealth.fhir.model.type.Url;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.ConsentDataMeaning;
 import org.linuxforhealth.fhir.model.type.code.ConsentProvisionType;
@@ -45,8 +46,9 @@ import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
- * A record of a healthcare consumer’s choices, which permits or denies identified recipient(s) or recipient role(s) to 
- * perform one or more actions within a given policy context, for specific purposes and periods of time.
+ * A record of a healthcare consumer’s choices or choices made on their behalf by a third party, which permits or denies 
+ * identified recipient(s) or recipient role(s) to perform one or more actions within a given policy context, for 
+ * specific purposes and periods of time.
  * 
  * <p>Maturity level: FMM2 (Trial Use)
  */
@@ -55,92 +57,16 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "ppc-1",
-    level = "Rule",
-    location = "(base)",
-    description = "Either a Policy or PolicyRule",
-    expression = "policy.exists() or policyRule.exists()",
-    source = "http://hl7.org/fhir/StructureDefinition/Consent"
-)
-@Constraint(
-    id = "ppc-2",
-    level = "Rule",
-    location = "(base)",
-    description = "IF Scope=privacy, there must be a patient",
-    expression = "patient.exists() or scope.coding.where(system='something' and code='patient-privacy').exists().not()",
-    source = "http://hl7.org/fhir/StructureDefinition/Consent"
-)
-@Constraint(
-    id = "ppc-3",
-    level = "Rule",
-    location = "(base)",
-    description = "IF Scope=research, there must be a patient",
-    expression = "patient.exists() or scope.coding.where(system='something' and code='research').exists().not()",
-    source = "http://hl7.org/fhir/StructureDefinition/Consent"
-)
-@Constraint(
-    id = "ppc-4",
-    level = "Rule",
-    location = "(base)",
-    description = "IF Scope=adr, there must be a patient",
-    expression = "patient.exists() or scope.coding.where(system='something' and code='adr').exists().not()",
-    source = "http://hl7.org/fhir/StructureDefinition/Consent"
-)
-@Constraint(
-    id = "ppc-5",
-    level = "Rule",
-    location = "(base)",
-    description = "IF Scope=treatment, there must be a patient",
-    expression = "patient.exists() or scope.coding.where(system='something' and code='treatment').exists().not()",
-    source = "http://hl7.org/fhir/StructureDefinition/Consent"
-)
-@Constraint(
-    id = "consent-6",
-    level = "Warning",
-    location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/consent-scope",
-    expression = "scope.exists() and scope.memberOf('http://hl7.org/fhir/ValueSet/consent-scope', 'extensible')",
-    source = "http://hl7.org/fhir/StructureDefinition/Consent",
-    generated = true
-)
-@Constraint(
-    id = "consent-7",
-    level = "Warning",
-    location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/consent-category",
-    expression = "category.exists() and category.all(memberOf('http://hl7.org/fhir/ValueSet/consent-category', 'extensible'))",
-    source = "http://hl7.org/fhir/StructureDefinition/Consent",
-    generated = true
-)
-@Constraint(
-    id = "consent-8",
-    level = "Warning",
-    location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/consent-policy",
-    expression = "policyRule.exists() implies (policyRule.memberOf('http://hl7.org/fhir/ValueSet/consent-policy', 'extensible'))",
-    source = "http://hl7.org/fhir/StructureDefinition/Consent",
-    generated = true
-)
-@Constraint(
-    id = "consent-9",
+    id = "consent-0",
     level = "Warning",
     location = "provision.actor.role",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/security-role-type",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/security-role-type', 'extensible')",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/participation-role-type",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/participation-role-type', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/Consent",
     generated = true
 )
 @Constraint(
-    id = "consent-10",
-    level = "Warning",
-    location = "provision.securityLabel",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/security-labels",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/security-labels', 'extensible')",
-    source = "http://hl7.org/fhir/StructureDefinition/Consent",
-    generated = true
-)
-@Constraint(
-    id = "consent-11",
+    id = "consent-1",
     level = "Warning",
     location = "provision.purpose",
     description = "SHALL, if possible, contain a code from value set http://terminology.hl7.org/ValueSet/v3-PurposeOfUse",
@@ -149,11 +75,20 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "consent-12",
+    id = "consent-2",
     level = "Warning",
-    location = "provision.class",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/consent-content-class",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/consent-content-class', 'extensible')",
+    location = "provision.documentType",
+    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/consent-content-class",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/consent-content-class', 'preferred')",
+    source = "http://hl7.org/fhir/StructureDefinition/Consent",
+    generated = true
+)
+@Constraint(
+    id = "consent-3",
+    level = "Warning",
+    location = "provision.resourceType",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/resource-types",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/resource-types', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/Consent",
     generated = true
 )
@@ -166,72 +101,81 @@ public class Consent extends DomainResource {
         bindingName = "ConsentState",
         strength = BindingStrength.Value.REQUIRED,
         description = "Indicates the state of the consent.",
-        valueSet = "http://hl7.org/fhir/ValueSet/consent-state-codes|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/consent-state-codes|5.0.0"
     )
     @Required
     private final ConsentState status;
     @Summary
     @Binding(
-        bindingName = "ConsentScope",
-        strength = BindingStrength.Value.EXTENSIBLE,
-        description = "The four anticipated uses for the Consent Resource.",
-        valueSet = "http://hl7.org/fhir/ValueSet/consent-scope"
-    )
-    @Required
-    private final CodeableConcept scope;
-    @Summary
-    @Binding(
         bindingName = "ConsentCategory",
-        strength = BindingStrength.Value.EXTENSIBLE,
+        strength = BindingStrength.Value.EXAMPLE,
         description = "A classification of the type of consents found in a consent statement.",
         valueSet = "http://hl7.org/fhir/ValueSet/consent-category"
     )
-    @Required
     private final List<CodeableConcept> category;
     @Summary
-    @ReferenceTarget({ "Patient" })
-    private final Reference patient;
+    @ReferenceTarget({ "Patient", "Practitioner", "Group" })
+    private final Reference subject;
     @Summary
-    private final DateTime dateTime;
+    private final Date date;
     @Summary
-    @ReferenceTarget({ "Organization", "Patient", "Practitioner", "RelatedPerson", "PractitionerRole" })
-    private final List<Reference> performer;
+    private final Period period;
     @Summary
-    @ReferenceTarget({ "Organization" })
-    private final List<Reference> organization;
+    @ReferenceTarget({ "CareTeam", "HealthcareService", "Organization", "Patient", "Practitioner", "RelatedPerson", "PractitionerRole" })
+    private final List<Reference> grantor;
     @Summary
+    @ReferenceTarget({ "CareTeam", "HealthcareService", "Organization", "Patient", "Practitioner", "RelatedPerson", "PractitionerRole" })
+    private final List<Reference> grantee;
+    @ReferenceTarget({ "HealthcareService", "Organization", "Patient", "Practitioner" })
+    private final List<Reference> manager;
+    @ReferenceTarget({ "HealthcareService", "Organization", "Patient", "Practitioner" })
+    private final List<Reference> controller;
+    private final List<Attachment> sourceAttachment;
     @ReferenceTarget({ "Consent", "DocumentReference", "Contract", "QuestionnaireResponse" })
-    @Choice({ Attachment.class, Reference.class })
-    private final Element source;
-    private final List<Policy> policy;
-    @Summary
+    private final List<Reference> sourceReference;
     @Binding(
-        bindingName = "ConsentPolicyRule",
-        strength = BindingStrength.Value.EXTENSIBLE,
-        description = "Regulatory policy examples.",
+        bindingName = "ConsentRegulatoryBasis",
+        strength = BindingStrength.Value.EXAMPLE,
+        description = "Regulatory policy examples",
         valueSet = "http://hl7.org/fhir/ValueSet/consent-policy"
     )
-    private final CodeableConcept policyRule;
+    private final List<CodeableConcept> regulatoryBasis;
+    private final PolicyBasis policyBasis;
+    @ReferenceTarget({ "DocumentReference" })
+    private final List<Reference> policyText;
     @Summary
     private final List<Verification> verification;
     @Summary
-    private final Provision provision;
+    @Binding(
+        bindingName = "ConsentProvisionType",
+        strength = BindingStrength.Value.REQUIRED,
+        description = "Sets the base decision for Consent to be either permit or deny, with provisions assumed to be a negation of the previous level.",
+        valueSet = "http://hl7.org/fhir/ValueSet/consent-provision-type|5.0.0"
+    )
+    private final ConsentProvisionType decision;
+    @Summary
+    private final List<Provision> provision;
 
     private Consent(Builder builder) {
         super(builder);
         identifier = Collections.unmodifiableList(builder.identifier);
         status = builder.status;
-        scope = builder.scope;
         category = Collections.unmodifiableList(builder.category);
-        patient = builder.patient;
-        dateTime = builder.dateTime;
-        performer = Collections.unmodifiableList(builder.performer);
-        organization = Collections.unmodifiableList(builder.organization);
-        source = builder.source;
-        policy = Collections.unmodifiableList(builder.policy);
-        policyRule = builder.policyRule;
+        subject = builder.subject;
+        date = builder.date;
+        period = builder.period;
+        grantor = Collections.unmodifiableList(builder.grantor);
+        grantee = Collections.unmodifiableList(builder.grantee);
+        manager = Collections.unmodifiableList(builder.manager);
+        controller = Collections.unmodifiableList(builder.controller);
+        sourceAttachment = Collections.unmodifiableList(builder.sourceAttachment);
+        sourceReference = Collections.unmodifiableList(builder.sourceReference);
+        regulatoryBasis = Collections.unmodifiableList(builder.regulatoryBasis);
+        policyBasis = builder.policyBasis;
+        policyText = Collections.unmodifiableList(builder.policyText);
         verification = Collections.unmodifiableList(builder.verification);
-        provision = builder.provision;
+        decision = builder.decision;
+        provision = Collections.unmodifiableList(builder.provision);
     }
 
     /**
@@ -245,7 +189,7 @@ public class Consent extends DomainResource {
     }
 
     /**
-     * Indicates the current state of this consent.
+     * Indicates the current state of this Consent resource.
      * 
      * @return
      *     An immutable object of type {@link ConsentState} that is non-null.
@@ -255,103 +199,142 @@ public class Consent extends DomainResource {
     }
 
     /**
-     * A selector of the type of consent being presented: ADR, Privacy, Treatment, Research. This list is now extensible.
-     * 
-     * @return
-     *     An immutable object of type {@link CodeableConcept} that is non-null.
-     */
-    public CodeableConcept getScope() {
-        return scope;
-    }
-
-    /**
      * A classification of the type of consents found in the statement. This element supports indexing and retrieval of 
      * consent statements.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that is non-empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
      */
     public List<CodeableConcept> getCategory() {
         return category;
     }
 
     /**
-     * The patient/healthcare consumer to whom this consent applies.
+     * The patient/healthcare practitioner or group of persons to whom this consent applies.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
      */
-    public Reference getPatient() {
-        return patient;
+    public Reference getSubject() {
+        return subject;
     }
 
     /**
-     * When this Consent was issued / created / indexed.
+     * Date the consent instance was agreed to.
      * 
      * @return
-     *     An immutable object of type {@link DateTime} that may be null.
+     *     An immutable object of type {@link Date} that may be null.
      */
-    public DateTime getDateTime() {
-        return dateTime;
+    public Date getDate() {
+        return date;
     }
 
     /**
-     * Either the Grantor, which is the entity responsible for granting the rights listed in a Consent Directive or the 
-     * Grantee, which is the entity responsible for complying with the Consent Directive, including any obligations or 
-     * limitations on authorizations and enforcement of prohibitions.
+     * Effective period for this Consent Resource and all provisions unless specified in that provision.
+     * 
+     * @return
+     *     An immutable object of type {@link Period} that may be null.
+     */
+    public Period getPeriod() {
+        return period;
+    }
+
+    /**
+     * The entity responsible for granting the rights listed in a Consent Directive.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
      */
-    public List<Reference> getPerformer() {
-        return performer;
+    public List<Reference> getGrantor() {
+        return grantor;
     }
 
     /**
-     * The organization that manages the consent, and the framework within which it is executed.
+     * The entity responsible for complying with the Consent Directive, including any obligations or limitations on 
+     * authorizations and enforcement of prohibitions.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
      */
-    public List<Reference> getOrganization() {
-        return organization;
+    public List<Reference> getGrantee() {
+        return grantee;
     }
 
     /**
-     * The source on which this consent statement is based. The source might be a scanned original paper form, or a reference 
-     * to a consent that links back to such a source, a reference to a document repository (e.g. XDS) that stores the 
-     * original consent document.
+     * The actor that manages the consent through its lifecycle.
      * 
      * @return
-     *     An immutable object of type {@link Attachment} or {@link Reference} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
      */
-    public Element getSource() {
-        return source;
+    public List<Reference> getManager() {
+        return manager;
     }
 
     /**
-     * The references to the policies that are included in this consent scope. Policies may be organizational, but are often 
-     * defined jurisdictionally, or in law.
+     * The actor that controls/enforces the access according to the consent.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Policy} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
      */
-    public List<Policy> getPolicy() {
-        return policy;
+    public List<Reference> getController() {
+        return controller;
     }
 
     /**
-     * A reference to the specific base computable regulation or policy.
+     * The source on which this consent statement is based. The source might be a scanned original paper form.
      * 
      * @return
-     *     An immutable object of type {@link CodeableConcept} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Attachment} that may be empty.
      */
-    public CodeableConcept getPolicyRule() {
-        return policyRule;
+    public List<Attachment> getSourceAttachment() {
+        return sourceAttachment;
     }
 
     /**
-     * Whether a treatment instruction (e.g. artificial respiration yes or no) was verified with the patient, his/her family 
+     * A reference to a consent that links back to such a source, a reference to a document repository (e.g. XDS) that stores 
+     * the original consent document.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getSourceReference() {
+        return sourceReference;
+    }
+
+    /**
+     * A set of codes that indicate the regulatory basis (if any) that this consent supports.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     */
+    public List<CodeableConcept> getRegulatoryBasis() {
+        return regulatoryBasis;
+    }
+
+    /**
+     * A Reference or URL used to uniquely identify the policy the organization will enforce for this Consent. This Reference 
+     * or URL should be specific to the version of the policy and should be dereferencable to a computable policy of some 
+     * form.
+     * 
+     * @return
+     *     An immutable object of type {@link PolicyBasis} that may be null.
+     */
+    public PolicyBasis getPolicyBasis() {
+        return policyBasis;
+    }
+
+    /**
+     * A Reference to the human readable policy explaining the basis for the Consent.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getPolicyText() {
+        return policyText;
+    }
+
+    /**
+     * Whether a treatment instruction (e.g. artificial respiration: yes or no) was verified with the patient, his/her family 
      * or another authorized person.
      * 
      * @return
@@ -362,12 +345,22 @@ public class Consent extends DomainResource {
     }
 
     /**
+     * Action to take - permit or deny - as default.
+     * 
+     * @return
+     *     An immutable object of type {@link ConsentProvisionType} that may be null.
+     */
+    public ConsentProvisionType getDecision() {
+        return decision;
+    }
+
+    /**
      * An exception to the base policy of this consent. An exception can be an addition or removal of access permissions.
      * 
      * @return
-     *     An immutable object of type {@link Provision} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Provision} that may be empty.
      */
-    public Provision getProvision() {
+    public List<Provision> getProvision() {
         return provision;
     }
 
@@ -376,17 +369,22 @@ public class Consent extends DomainResource {
         return super.hasChildren() || 
             !identifier.isEmpty() || 
             (status != null) || 
-            (scope != null) || 
             !category.isEmpty() || 
-            (patient != null) || 
-            (dateTime != null) || 
-            !performer.isEmpty() || 
-            !organization.isEmpty() || 
-            (source != null) || 
-            !policy.isEmpty() || 
-            (policyRule != null) || 
+            (subject != null) || 
+            (date != null) || 
+            (period != null) || 
+            !grantor.isEmpty() || 
+            !grantee.isEmpty() || 
+            !manager.isEmpty() || 
+            !controller.isEmpty() || 
+            !sourceAttachment.isEmpty() || 
+            !sourceReference.isEmpty() || 
+            !regulatoryBasis.isEmpty() || 
+            (policyBasis != null) || 
+            !policyText.isEmpty() || 
             !verification.isEmpty() || 
-            (provision != null);
+            (decision != null) || 
+            !provision.isEmpty();
     }
 
     @Override
@@ -405,17 +403,22 @@ public class Consent extends DomainResource {
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(status, "status", visitor);
-                accept(scope, "scope", visitor);
                 accept(category, "category", visitor, CodeableConcept.class);
-                accept(patient, "patient", visitor);
-                accept(dateTime, "dateTime", visitor);
-                accept(performer, "performer", visitor, Reference.class);
-                accept(organization, "organization", visitor, Reference.class);
-                accept(source, "source", visitor);
-                accept(policy, "policy", visitor, Policy.class);
-                accept(policyRule, "policyRule", visitor);
+                accept(subject, "subject", visitor);
+                accept(date, "date", visitor);
+                accept(period, "period", visitor);
+                accept(grantor, "grantor", visitor, Reference.class);
+                accept(grantee, "grantee", visitor, Reference.class);
+                accept(manager, "manager", visitor, Reference.class);
+                accept(controller, "controller", visitor, Reference.class);
+                accept(sourceAttachment, "sourceAttachment", visitor, Attachment.class);
+                accept(sourceReference, "sourceReference", visitor, Reference.class);
+                accept(regulatoryBasis, "regulatoryBasis", visitor, CodeableConcept.class);
+                accept(policyBasis, "policyBasis", visitor);
+                accept(policyText, "policyText", visitor, Reference.class);
                 accept(verification, "verification", visitor, Verification.class);
-                accept(provision, "provision", visitor);
+                accept(decision, "decision", visitor);
+                accept(provision, "provision", visitor, Provision.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
             visitor.postVisit(this);
@@ -444,16 +447,21 @@ public class Consent extends DomainResource {
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(status, other.status) && 
-            Objects.equals(scope, other.scope) && 
             Objects.equals(category, other.category) && 
-            Objects.equals(patient, other.patient) && 
-            Objects.equals(dateTime, other.dateTime) && 
-            Objects.equals(performer, other.performer) && 
-            Objects.equals(organization, other.organization) && 
-            Objects.equals(source, other.source) && 
-            Objects.equals(policy, other.policy) && 
-            Objects.equals(policyRule, other.policyRule) && 
+            Objects.equals(subject, other.subject) && 
+            Objects.equals(date, other.date) && 
+            Objects.equals(period, other.period) && 
+            Objects.equals(grantor, other.grantor) && 
+            Objects.equals(grantee, other.grantee) && 
+            Objects.equals(manager, other.manager) && 
+            Objects.equals(controller, other.controller) && 
+            Objects.equals(sourceAttachment, other.sourceAttachment) && 
+            Objects.equals(sourceReference, other.sourceReference) && 
+            Objects.equals(regulatoryBasis, other.regulatoryBasis) && 
+            Objects.equals(policyBasis, other.policyBasis) && 
+            Objects.equals(policyText, other.policyText) && 
             Objects.equals(verification, other.verification) && 
+            Objects.equals(decision, other.decision) && 
             Objects.equals(provision, other.provision);
     }
 
@@ -471,16 +479,21 @@ public class Consent extends DomainResource {
                 modifierExtension, 
                 identifier, 
                 status, 
-                scope, 
                 category, 
-                patient, 
-                dateTime, 
-                performer, 
-                organization, 
-                source, 
-                policy, 
-                policyRule, 
+                subject, 
+                date, 
+                period, 
+                grantor, 
+                grantee, 
+                manager, 
+                controller, 
+                sourceAttachment, 
+                sourceReference, 
+                regulatoryBasis, 
+                policyBasis, 
+                policyText, 
                 verification, 
+                decision, 
                 provision);
             hashCode = result;
         }
@@ -499,17 +512,22 @@ public class Consent extends DomainResource {
     public static class Builder extends DomainResource.Builder {
         private List<Identifier> identifier = new ArrayList<>();
         private ConsentState status;
-        private CodeableConcept scope;
         private List<CodeableConcept> category = new ArrayList<>();
-        private Reference patient;
-        private DateTime dateTime;
-        private List<Reference> performer = new ArrayList<>();
-        private List<Reference> organization = new ArrayList<>();
-        private Element source;
-        private List<Policy> policy = new ArrayList<>();
-        private CodeableConcept policyRule;
+        private Reference subject;
+        private Date date;
+        private Period period;
+        private List<Reference> grantor = new ArrayList<>();
+        private List<Reference> grantee = new ArrayList<>();
+        private List<Reference> manager = new ArrayList<>();
+        private List<Reference> controller = new ArrayList<>();
+        private List<Attachment> sourceAttachment = new ArrayList<>();
+        private List<Reference> sourceReference = new ArrayList<>();
+        private List<CodeableConcept> regulatoryBasis = new ArrayList<>();
+        private PolicyBasis policyBasis;
+        private List<Reference> policyText = new ArrayList<>();
         private List<Verification> verification = new ArrayList<>();
-        private Provision provision;
+        private ConsentProvisionType decision;
+        private List<Provision> provision = new ArrayList<>();
 
         private Builder() {
             super();
@@ -593,7 +611,8 @@ public class Consent extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -611,7 +630,8 @@ public class Consent extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -632,7 +652,7 @@ public class Consent extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -652,7 +672,7 @@ public class Consent extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -677,9 +697,9 @@ public class Consent extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -702,9 +722,9 @@ public class Consent extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -766,12 +786,12 @@ public class Consent extends DomainResource {
         }
 
         /**
-         * Indicates the current state of this consent.
+         * Indicates the current state of this Consent resource.
          * 
          * <p>This element is required.
          * 
          * @param status
-         *     draft | proposed | active | rejected | inactive | entered-in-error
+         *     draft | active | inactive | not-done | entered-in-error | unknown
          * 
          * @return
          *     A reference to this Builder instance
@@ -782,29 +802,11 @@ public class Consent extends DomainResource {
         }
 
         /**
-         * A selector of the type of consent being presented: ADR, Privacy, Treatment, Research. This list is now extensible.
-         * 
-         * <p>This element is required.
-         * 
-         * @param scope
-         *     Which of the four areas this resource covers (extensible)
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder scope(CodeableConcept scope) {
-            this.scope = scope;
-            return this;
-        }
-
-        /**
          * A classification of the type of consents found in the statement. This element supports indexing and retrieval of 
          * consent statements.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>This element is required.
          * 
          * @param category
          *     Classification of the consent statement - for indexing/retrieval
@@ -826,8 +828,6 @@ public class Consent extends DomainResource {
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>This element is required.
-         * 
          * @param category
          *     Classification of the consent statement - for indexing/retrieval
          * 
@@ -843,48 +843,80 @@ public class Consent extends DomainResource {
         }
 
         /**
-         * The patient/healthcare consumer to whom this consent applies.
+         * The patient/healthcare practitioner or group of persons to whom this consent applies.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
          * <li>{@link Patient}</li>
+         * <li>{@link Practitioner}</li>
+         * <li>{@link Group}</li>
          * </ul>
          * 
-         * @param patient
+         * @param subject
          *     Who the consent applies to
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder patient(Reference patient) {
-            this.patient = patient;
+        public Builder subject(Reference subject) {
+            this.subject = subject;
             return this;
         }
 
         /**
-         * When this Consent was issued / created / indexed.
+         * Convenience method for setting {@code date}.
          * 
-         * @param dateTime
-         *     When this Consent was created or indexed
+         * @param date
+         *     Fully executed date of the consent
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #date(org.linuxforhealth.fhir.model.type.Date)
+         */
+        public Builder date(java.time.LocalDate date) {
+            this.date = (date == null) ? null : Date.of(date);
+            return this;
+        }
+
+        /**
+         * Date the consent instance was agreed to.
+         * 
+         * @param date
+         *     Fully executed date of the consent
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder dateTime(DateTime dateTime) {
-            this.dateTime = dateTime;
+        public Builder date(Date date) {
+            this.date = date;
             return this;
         }
 
         /**
-         * Either the Grantor, which is the entity responsible for granting the rights listed in a Consent Directive or the 
-         * Grantee, which is the entity responsible for complying with the Consent Directive, including any obligations or 
-         * limitations on authorizations and enforcement of prohibitions.
+         * Effective period for this Consent Resource and all provisions unless specified in that provision.
+         * 
+         * @param period
+         *     Effective period for this Consent
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder period(Period period) {
+            this.period = period;
+            return this;
+        }
+
+        /**
+         * The entity responsible for granting the rights listed in a Consent Directive.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * <p>Allowed resource types for the references:
          * <ul>
+         * <li>{@link CareTeam}</li>
+         * <li>{@link HealthcareService}</li>
          * <li>{@link Organization}</li>
          * <li>{@link Patient}</li>
          * <li>{@link Practitioner}</li>
@@ -892,29 +924,29 @@ public class Consent extends DomainResource {
          * <li>{@link PractitionerRole}</li>
          * </ul>
          * 
-         * @param performer
-         *     Who is agreeing to the policy and rules
+         * @param grantor
+         *     Who is granting rights according to the policy and rules
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder performer(Reference... performer) {
-            for (Reference value : performer) {
-                this.performer.add(value);
+        public Builder grantor(Reference... grantor) {
+            for (Reference value : grantor) {
+                this.grantor.add(value);
             }
             return this;
         }
 
         /**
-         * Either the Grantor, which is the entity responsible for granting the rights listed in a Consent Directive or the 
-         * Grantee, which is the entity responsible for complying with the Consent Directive, including any obligations or 
-         * limitations on authorizations and enforcement of prohibitions.
+         * The entity responsible for granting the rights listed in a Consent Directive.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * <p>Allowed resource types for the references:
          * <ul>
+         * <li>{@link CareTeam}</li>
+         * <li>{@link HealthcareService}</li>
          * <li>{@link Organization}</li>
          * <li>{@link Patient}</li>
          * <li>{@link Practitioner}</li>
@@ -922,7 +954,70 @@ public class Consent extends DomainResource {
          * <li>{@link PractitionerRole}</li>
          * </ul>
          * 
-         * @param performer
+         * @param grantor
+         *     Who is granting rights according to the policy and rules
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder grantor(Collection<Reference> grantor) {
+            this.grantor = new ArrayList<>(grantor);
+            return this;
+        }
+
+        /**
+         * The entity responsible for complying with the Consent Directive, including any obligations or limitations on 
+         * authorizations and enforcement of prohibitions.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link CareTeam}</li>
+         * <li>{@link HealthcareService}</li>
+         * <li>{@link Organization}</li>
+         * <li>{@link Patient}</li>
+         * <li>{@link Practitioner}</li>
+         * <li>{@link RelatedPerson}</li>
+         * <li>{@link PractitionerRole}</li>
+         * </ul>
+         * 
+         * @param grantee
+         *     Who is agreeing to the policy and rules
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder grantee(Reference... grantee) {
+            for (Reference value : grantee) {
+                this.grantee.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The entity responsible for complying with the Consent Directive, including any obligations or limitations on 
+         * authorizations and enforcement of prohibitions.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link CareTeam}</li>
+         * <li>{@link HealthcareService}</li>
+         * <li>{@link Organization}</li>
+         * <li>{@link Patient}</li>
+         * <li>{@link Practitioner}</li>
+         * <li>{@link RelatedPerson}</li>
+         * <li>{@link PractitionerRole}</li>
+         * </ul>
+         * 
+         * @param grantee
          *     Who is agreeing to the policy and rules
          * 
          * @return
@@ -931,48 +1026,54 @@ public class Consent extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder performer(Collection<Reference> performer) {
-            this.performer = new ArrayList<>(performer);
+        public Builder grantee(Collection<Reference> grantee) {
+            this.grantee = new ArrayList<>(grantee);
             return this;
         }
 
         /**
-         * The organization that manages the consent, and the framework within which it is executed.
+         * The actor that manages the consent through its lifecycle.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * <p>Allowed resource types for the references:
          * <ul>
+         * <li>{@link HealthcareService}</li>
          * <li>{@link Organization}</li>
+         * <li>{@link Patient}</li>
+         * <li>{@link Practitioner}</li>
          * </ul>
          * 
-         * @param organization
-         *     Custodian of the consent
+         * @param manager
+         *     Consent workflow management
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder organization(Reference... organization) {
-            for (Reference value : organization) {
-                this.organization.add(value);
+        public Builder manager(Reference... manager) {
+            for (Reference value : manager) {
+                this.manager.add(value);
             }
             return this;
         }
 
         /**
-         * The organization that manages the consent, and the framework within which it is executed.
+         * The actor that manages the consent through its lifecycle.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * <p>Allowed resource types for the references:
          * <ul>
+         * <li>{@link HealthcareService}</li>
          * <li>{@link Organization}</li>
+         * <li>{@link Patient}</li>
+         * <li>{@link Practitioner}</li>
          * </ul>
          * 
-         * @param organization
-         *     Custodian of the consent
+         * @param manager
+         *     Consent workflow management
          * 
          * @return
          *     A reference to this Builder instance
@@ -980,23 +1081,113 @@ public class Consent extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder organization(Collection<Reference> organization) {
-            this.organization = new ArrayList<>(organization);
+        public Builder manager(Collection<Reference> manager) {
+            this.manager = new ArrayList<>(manager);
             return this;
         }
 
         /**
-         * The source on which this consent statement is based. The source might be a scanned original paper form, or a reference 
-         * to a consent that links back to such a source, a reference to a document repository (e.g. XDS) that stores the 
-         * original consent document.
+         * The actor that controls/enforces the access according to the consent.
          * 
-         * <p>This is a choice element with the following allowed types:
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
          * <ul>
-         * <li>{@link Attachment}</li>
-         * <li>{@link Reference}</li>
+         * <li>{@link HealthcareService}</li>
+         * <li>{@link Organization}</li>
+         * <li>{@link Patient}</li>
+         * <li>{@link Practitioner}</li>
          * </ul>
          * 
-         * When of type {@link Reference}, the allowed resource types for this reference are:
+         * @param controller
+         *     Consent Enforcer
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder controller(Reference... controller) {
+            for (Reference value : controller) {
+                this.controller.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The actor that controls/enforces the access according to the consent.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link HealthcareService}</li>
+         * <li>{@link Organization}</li>
+         * <li>{@link Patient}</li>
+         * <li>{@link Practitioner}</li>
+         * </ul>
+         * 
+         * @param controller
+         *     Consent Enforcer
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder controller(Collection<Reference> controller) {
+            this.controller = new ArrayList<>(controller);
+            return this;
+        }
+
+        /**
+         * The source on which this consent statement is based. The source might be a scanned original paper form.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param sourceAttachment
+         *     Source from which this consent is taken
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder sourceAttachment(Attachment... sourceAttachment) {
+            for (Attachment value : sourceAttachment) {
+                this.sourceAttachment.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The source on which this consent statement is based. The source might be a scanned original paper form.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param sourceAttachment
+         *     Source from which this consent is taken
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder sourceAttachment(Collection<Attachment> sourceAttachment) {
+            this.sourceAttachment = new ArrayList<>(sourceAttachment);
+            return this;
+        }
+
+        /**
+         * A reference to a consent that links back to such a source, a reference to a document repository (e.g. XDS) that stores 
+         * the original consent document.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
          * <ul>
          * <li>{@link Consent}</li>
          * <li>{@link DocumentReference}</li>
@@ -1004,46 +1195,36 @@ public class Consent extends DomainResource {
          * <li>{@link QuestionnaireResponse}</li>
          * </ul>
          * 
-         * @param source
+         * @param sourceReference
          *     Source from which this consent is taken
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder source(Element source) {
-            this.source = source;
-            return this;
-        }
-
-        /**
-         * The references to the policies that are included in this consent scope. Policies may be organizational, but are often 
-         * defined jurisdictionally, or in law.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param policy
-         *     Policies covered by this consent
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder policy(Policy... policy) {
-            for (Policy value : policy) {
-                this.policy.add(value);
+        public Builder sourceReference(Reference... sourceReference) {
+            for (Reference value : sourceReference) {
+                this.sourceReference.add(value);
             }
             return this;
         }
 
         /**
-         * The references to the policies that are included in this consent scope. Policies may be organizational, but are often 
-         * defined jurisdictionally, or in law.
+         * A reference to a consent that links back to such a source, a reference to a document repository (e.g. XDS) that stores 
+         * the original consent document.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param policy
-         *     Policies covered by this consent
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link Consent}</li>
+         * <li>{@link DocumentReference}</li>
+         * <li>{@link Contract}</li>
+         * <li>{@link QuestionnaireResponse}</li>
+         * </ul>
+         * 
+         * @param sourceReference
+         *     Source from which this consent is taken
          * 
          * @return
          *     A reference to this Builder instance
@@ -1051,27 +1232,117 @@ public class Consent extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder policy(Collection<Policy> policy) {
-            this.policy = new ArrayList<>(policy);
+        public Builder sourceReference(Collection<Reference> sourceReference) {
+            this.sourceReference = new ArrayList<>(sourceReference);
             return this;
         }
 
         /**
-         * A reference to the specific base computable regulation or policy.
+         * A set of codes that indicate the regulatory basis (if any) that this consent supports.
          * 
-         * @param policyRule
-         *     Regulation that this consents to
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param regulatoryBasis
+         *     Regulations establishing base Consent
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder policyRule(CodeableConcept policyRule) {
-            this.policyRule = policyRule;
+        public Builder regulatoryBasis(CodeableConcept... regulatoryBasis) {
+            for (CodeableConcept value : regulatoryBasis) {
+                this.regulatoryBasis.add(value);
+            }
             return this;
         }
 
         /**
-         * Whether a treatment instruction (e.g. artificial respiration yes or no) was verified with the patient, his/her family 
+         * A set of codes that indicate the regulatory basis (if any) that this consent supports.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param regulatoryBasis
+         *     Regulations establishing base Consent
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder regulatoryBasis(Collection<CodeableConcept> regulatoryBasis) {
+            this.regulatoryBasis = new ArrayList<>(regulatoryBasis);
+            return this;
+        }
+
+        /**
+         * A Reference or URL used to uniquely identify the policy the organization will enforce for this Consent. This Reference 
+         * or URL should be specific to the version of the policy and should be dereferencable to a computable policy of some 
+         * form.
+         * 
+         * @param policyBasis
+         *     Computable version of the backing policy
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder policyBasis(PolicyBasis policyBasis) {
+            this.policyBasis = policyBasis;
+            return this;
+        }
+
+        /**
+         * A Reference to the human readable policy explaining the basis for the Consent.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link DocumentReference}</li>
+         * </ul>
+         * 
+         * @param policyText
+         *     Human Readable Policy
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder policyText(Reference... policyText) {
+            for (Reference value : policyText) {
+                this.policyText.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A Reference to the human readable policy explaining the basis for the Consent.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link DocumentReference}</li>
+         * </ul>
+         * 
+         * @param policyText
+         *     Human Readable Policy
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder policyText(Collection<Reference> policyText) {
+            this.policyText = new ArrayList<>(policyText);
+            return this;
+        }
+
+        /**
+         * Whether a treatment instruction (e.g. artificial respiration: yes or no) was verified with the patient, his/her family 
          * or another authorized person.
          * 
          * <p>Adds new element(s) to the existing list.
@@ -1091,7 +1362,7 @@ public class Consent extends DomainResource {
         }
 
         /**
-         * Whether a treatment instruction (e.g. artificial respiration yes or no) was verified with the patient, his/her family 
+         * Whether a treatment instruction (e.g. artificial respiration: yes or no) was verified with the patient, his/her family 
          * or another authorized person.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
@@ -1112,16 +1383,55 @@ public class Consent extends DomainResource {
         }
 
         /**
-         * An exception to the base policy of this consent. An exception can be an addition or removal of access permissions.
+         * Action to take - permit or deny - as default.
          * 
-         * @param provision
-         *     Constraints to the base Consent.policyRule
+         * @param decision
+         *     deny | permit
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder provision(Provision provision) {
-            this.provision = provision;
+        public Builder decision(ConsentProvisionType decision) {
+            this.decision = decision;
+            return this;
+        }
+
+        /**
+         * An exception to the base policy of this consent. An exception can be an addition or removal of access permissions.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param provision
+         *     Constraints to the base Consent.policyRule/Consent.policy
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder provision(Provision... provision) {
+            for (Provision value : provision) {
+                this.provision.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * An exception to the base policy of this consent. An exception can be an addition or removal of access permissions.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param provision
+         *     Constraints to the base Consent.policyRule/Consent.policy
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder provision(Collection<Provision> provision) {
+            this.provision = new ArrayList<>(provision);
             return this;
         }
 
@@ -1131,8 +1441,6 @@ public class Consent extends DomainResource {
          * <p>Required elements:
          * <ul>
          * <li>status</li>
-         * <li>scope</li>
-         * <li>category</li>
          * </ul>
          * 
          * @return
@@ -1153,79 +1461,90 @@ public class Consent extends DomainResource {
             super.validate(consent);
             ValidationSupport.checkList(consent.identifier, "identifier", Identifier.class);
             ValidationSupport.requireNonNull(consent.status, "status");
-            ValidationSupport.requireNonNull(consent.scope, "scope");
-            ValidationSupport.checkNonEmptyList(consent.category, "category", CodeableConcept.class);
-            ValidationSupport.checkList(consent.performer, "performer", Reference.class);
-            ValidationSupport.checkList(consent.organization, "organization", Reference.class);
-            ValidationSupport.choiceElement(consent.source, "source", Attachment.class, Reference.class);
-            ValidationSupport.checkList(consent.policy, "policy", Policy.class);
+            ValidationSupport.checkList(consent.category, "category", CodeableConcept.class);
+            ValidationSupport.checkList(consent.grantor, "grantor", Reference.class);
+            ValidationSupport.checkList(consent.grantee, "grantee", Reference.class);
+            ValidationSupport.checkList(consent.manager, "manager", Reference.class);
+            ValidationSupport.checkList(consent.controller, "controller", Reference.class);
+            ValidationSupport.checkList(consent.sourceAttachment, "sourceAttachment", Attachment.class);
+            ValidationSupport.checkList(consent.sourceReference, "sourceReference", Reference.class);
+            ValidationSupport.checkList(consent.regulatoryBasis, "regulatoryBasis", CodeableConcept.class);
+            ValidationSupport.checkList(consent.policyText, "policyText", Reference.class);
             ValidationSupport.checkList(consent.verification, "verification", Verification.class);
-            ValidationSupport.checkReferenceType(consent.patient, "patient", "Patient");
-            ValidationSupport.checkReferenceType(consent.performer, "performer", "Organization", "Patient", "Practitioner", "RelatedPerson", "PractitionerRole");
-            ValidationSupport.checkReferenceType(consent.organization, "organization", "Organization");
-            ValidationSupport.checkReferenceType(consent.source, "source", "Consent", "DocumentReference", "Contract", "QuestionnaireResponse");
+            ValidationSupport.checkList(consent.provision, "provision", Provision.class);
+            ValidationSupport.checkReferenceType(consent.subject, "subject", "Patient", "Practitioner", "Group");
+            ValidationSupport.checkReferenceType(consent.grantor, "grantor", "CareTeam", "HealthcareService", "Organization", "Patient", "Practitioner", "RelatedPerson", "PractitionerRole");
+            ValidationSupport.checkReferenceType(consent.grantee, "grantee", "CareTeam", "HealthcareService", "Organization", "Patient", "Practitioner", "RelatedPerson", "PractitionerRole");
+            ValidationSupport.checkReferenceType(consent.manager, "manager", "HealthcareService", "Organization", "Patient", "Practitioner");
+            ValidationSupport.checkReferenceType(consent.controller, "controller", "HealthcareService", "Organization", "Patient", "Practitioner");
+            ValidationSupport.checkReferenceType(consent.sourceReference, "sourceReference", "Consent", "DocumentReference", "Contract", "QuestionnaireResponse");
+            ValidationSupport.checkReferenceType(consent.policyText, "policyText", "DocumentReference");
         }
 
         protected Builder from(Consent consent) {
             super.from(consent);
             identifier.addAll(consent.identifier);
             status = consent.status;
-            scope = consent.scope;
             category.addAll(consent.category);
-            patient = consent.patient;
-            dateTime = consent.dateTime;
-            performer.addAll(consent.performer);
-            organization.addAll(consent.organization);
-            source = consent.source;
-            policy.addAll(consent.policy);
-            policyRule = consent.policyRule;
+            subject = consent.subject;
+            date = consent.date;
+            period = consent.period;
+            grantor.addAll(consent.grantor);
+            grantee.addAll(consent.grantee);
+            manager.addAll(consent.manager);
+            controller.addAll(consent.controller);
+            sourceAttachment.addAll(consent.sourceAttachment);
+            sourceReference.addAll(consent.sourceReference);
+            regulatoryBasis.addAll(consent.regulatoryBasis);
+            policyBasis = consent.policyBasis;
+            policyText.addAll(consent.policyText);
             verification.addAll(consent.verification);
-            provision = consent.provision;
+            decision = consent.decision;
+            provision.addAll(consent.provision);
             return this;
         }
     }
 
     /**
-     * The references to the policies that are included in this consent scope. Policies may be organizational, but are often 
-     * defined jurisdictionally, or in law.
+     * A Reference or URL used to uniquely identify the policy the organization will enforce for this Consent. This Reference 
+     * or URL should be specific to the version of the policy and should be dereferencable to a computable policy of some 
+     * form.
      */
-    public static class Policy extends BackboneElement {
-        private final Uri authority;
-        private final Uri uri;
+    public static class PolicyBasis extends BackboneElement {
+        private final Reference reference;
+        private final Url url;
 
-        private Policy(Builder builder) {
+        private PolicyBasis(Builder builder) {
             super(builder);
-            authority = builder.authority;
-            uri = builder.uri;
+            reference = builder.reference;
+            url = builder.url;
         }
 
         /**
-         * Entity or Organization having regulatory jurisdiction or accountability for enforcing policies pertaining to Consent 
-         * Directives.
+         * A Reference that identifies the policy the organization will enforce for this Consent.
          * 
          * @return
-         *     An immutable object of type {@link Uri} that may be null.
+         *     An immutable object of type {@link Reference} that may be null.
          */
-        public Uri getAuthority() {
-            return authority;
+        public Reference getReference() {
+            return reference;
         }
 
         /**
-         * The references to the policies that are included in this consent scope. Policies may be organizational, but are often 
-         * defined jurisdictionally, or in law.
+         * A URL that links to a computable version of the policy the organization will enforce for this Consent.
          * 
          * @return
-         *     An immutable object of type {@link Uri} that may be null.
+         *     An immutable object of type {@link Url} that may be null.
          */
-        public Uri getUri() {
-            return uri;
+        public Url getUrl() {
+            return url;
         }
 
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                (authority != null) || 
-                (uri != null);
+                (reference != null) || 
+                (url != null);
         }
 
         @Override
@@ -1237,8 +1556,8 @@ public class Consent extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(authority, "authority", visitor);
-                    accept(uri, "uri", visitor);
+                    accept(reference, "reference", visitor);
+                    accept(url, "url", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -1256,12 +1575,12 @@ public class Consent extends DomainResource {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            Policy other = (Policy) obj;
+            PolicyBasis other = (PolicyBasis) obj;
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(authority, other.authority) && 
-                Objects.equals(uri, other.uri);
+                Objects.equals(reference, other.reference) && 
+                Objects.equals(url, other.url);
         }
 
         @Override
@@ -1271,8 +1590,8 @@ public class Consent extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    authority, 
-                    uri);
+                    reference, 
+                    url);
                 hashCode = result;
             }
             return result;
@@ -1288,8 +1607,8 @@ public class Consent extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private Uri authority;
-            private Uri uri;
+            private Reference reference;
+            private Url url;
 
             private Builder() {
                 super();
@@ -1312,7 +1631,7 @@ public class Consent extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1332,7 +1651,7 @@ public class Consent extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1357,7 +1676,7 @@ public class Consent extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1382,7 +1701,7 @@ public class Consent extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1407,83 +1726,92 @@ public class Consent extends DomainResource {
             }
 
             /**
-             * Entity or Organization having regulatory jurisdiction or accountability for enforcing policies pertaining to Consent 
-             * Directives.
+             * A Reference that identifies the policy the organization will enforce for this Consent.
              * 
-             * @param authority
-             *     Enforcement source for policy
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder authority(Uri authority) {
-                this.authority = authority;
-                return this;
-            }
-
-            /**
-             * The references to the policies that are included in this consent scope. Policies may be organizational, but are often 
-             * defined jurisdictionally, or in law.
-             * 
-             * @param uri
-             *     Specific policy covered by this consent
+             * @param reference
+             *     Reference backing policy resource
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder uri(Uri uri) {
-                this.uri = uri;
+            public Builder reference(Reference reference) {
+                this.reference = reference;
                 return this;
             }
 
             /**
-             * Build the {@link Policy}
+             * A URL that links to a computable version of the policy the organization will enforce for this Consent.
+             * 
+             * @param url
+             *     URL to a computable backing policy
              * 
              * @return
-             *     An immutable object of type {@link Policy}
+             *     A reference to this Builder instance
+             */
+            public Builder url(Url url) {
+                this.url = url;
+                return this;
+            }
+
+            /**
+             * Build the {@link PolicyBasis}
+             * 
+             * @return
+             *     An immutable object of type {@link PolicyBasis}
              * @throws IllegalStateException
-             *     if the current state cannot be built into a valid Policy per the base specification
+             *     if the current state cannot be built into a valid PolicyBasis per the base specification
              */
             @Override
-            public Policy build() {
-                Policy policy = new Policy(this);
+            public PolicyBasis build() {
+                PolicyBasis policyBasis = new PolicyBasis(this);
                 if (validating) {
-                    validate(policy);
+                    validate(policyBasis);
                 }
-                return policy;
+                return policyBasis;
             }
 
-            protected void validate(Policy policy) {
-                super.validate(policy);
-                ValidationSupport.requireValueOrChildren(policy);
+            protected void validate(PolicyBasis policyBasis) {
+                super.validate(policyBasis);
+                ValidationSupport.requireValueOrChildren(policyBasis);
             }
 
-            protected Builder from(Policy policy) {
-                super.from(policy);
-                authority = policy.authority;
-                uri = policy.uri;
+            protected Builder from(PolicyBasis policyBasis) {
+                super.from(policyBasis);
+                reference = policyBasis.reference;
+                url = policyBasis.url;
                 return this;
             }
         }
     }
 
     /**
-     * Whether a treatment instruction (e.g. artificial respiration yes or no) was verified with the patient, his/her family 
+     * Whether a treatment instruction (e.g. artificial respiration: yes or no) was verified with the patient, his/her family 
      * or another authorized person.
      */
     public static class Verification extends BackboneElement {
         @Summary
         @Required
         private final Boolean verified;
+        @Binding(
+            bindingName = "ConsentVerificationType",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "Types of Verification/Validation.",
+            valueSet = "http://hl7.org/fhir/ValueSet/consent-verification"
+        )
+        private final CodeableConcept verificationType;
+        @ReferenceTarget({ "Organization", "Practitioner", "PractitionerRole" })
+        private final Reference verifiedBy;
         @ReferenceTarget({ "Patient", "RelatedPerson" })
         private final Reference verifiedWith;
-        private final DateTime verificationDate;
+        private final List<DateTime> verificationDate;
 
         private Verification(Builder builder) {
             super(builder);
             verified = builder.verified;
+            verificationType = builder.verificationType;
+            verifiedBy = builder.verifiedBy;
             verifiedWith = builder.verifiedWith;
-            verificationDate = builder.verificationDate;
+            verificationDate = Collections.unmodifiableList(builder.verificationDate);
         }
 
         /**
@@ -1497,6 +1825,26 @@ public class Consent extends DomainResource {
         }
 
         /**
+         * Extensible list of verification type starting with verification and re-validation.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getVerificationType() {
+            return verificationType;
+        }
+
+        /**
+         * The person who conducted the verification/validation of the Grantor decision.
+         * 
+         * @return
+         *     An immutable object of type {@link Reference} that may be null.
+         */
+        public Reference getVerifiedBy() {
+            return verifiedBy;
+        }
+
+        /**
          * Who verified the instruction (Patient, Relative or other Authorized Person).
          * 
          * @return
@@ -1507,12 +1855,12 @@ public class Consent extends DomainResource {
         }
 
         /**
-         * Date verification was collected.
+         * Date(s) verification was collected.
          * 
          * @return
-         *     An immutable object of type {@link DateTime} that may be null.
+         *     An unmodifiable list containing immutable objects of type {@link DateTime} that may be empty.
          */
-        public DateTime getVerificationDate() {
+        public List<DateTime> getVerificationDate() {
             return verificationDate;
         }
 
@@ -1520,8 +1868,10 @@ public class Consent extends DomainResource {
         public boolean hasChildren() {
             return super.hasChildren() || 
                 (verified != null) || 
+                (verificationType != null) || 
+                (verifiedBy != null) || 
                 (verifiedWith != null) || 
-                (verificationDate != null);
+                !verificationDate.isEmpty();
         }
 
         @Override
@@ -1534,8 +1884,10 @@ public class Consent extends DomainResource {
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(verified, "verified", visitor);
+                    accept(verificationType, "verificationType", visitor);
+                    accept(verifiedBy, "verifiedBy", visitor);
                     accept(verifiedWith, "verifiedWith", visitor);
-                    accept(verificationDate, "verificationDate", visitor);
+                    accept(verificationDate, "verificationDate", visitor, DateTime.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -1558,6 +1910,8 @@ public class Consent extends DomainResource {
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(verified, other.verified) && 
+                Objects.equals(verificationType, other.verificationType) && 
+                Objects.equals(verifiedBy, other.verifiedBy) && 
                 Objects.equals(verifiedWith, other.verifiedWith) && 
                 Objects.equals(verificationDate, other.verificationDate);
         }
@@ -1570,6 +1924,8 @@ public class Consent extends DomainResource {
                     extension, 
                     modifierExtension, 
                     verified, 
+                    verificationType, 
+                    verifiedBy, 
                     verifiedWith, 
                     verificationDate);
                 hashCode = result;
@@ -1588,8 +1944,10 @@ public class Consent extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private Boolean verified;
+            private CodeableConcept verificationType;
+            private Reference verifiedBy;
             private Reference verifiedWith;
-            private DateTime verificationDate;
+            private List<DateTime> verificationDate = new ArrayList<>();
 
             private Builder() {
                 super();
@@ -1612,7 +1970,7 @@ public class Consent extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1632,7 +1990,7 @@ public class Consent extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1657,7 +2015,7 @@ public class Consent extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1682,7 +2040,7 @@ public class Consent extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1741,6 +2099,41 @@ public class Consent extends DomainResource {
             }
 
             /**
+             * Extensible list of verification type starting with verification and re-validation.
+             * 
+             * @param verificationType
+             *     Business case of verification
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder verificationType(CodeableConcept verificationType) {
+                this.verificationType = verificationType;
+                return this;
+            }
+
+            /**
+             * The person who conducted the verification/validation of the Grantor decision.
+             * 
+             * <p>Allowed resource types for this reference:
+             * <ul>
+             * <li>{@link Organization}</li>
+             * <li>{@link Practitioner}</li>
+             * <li>{@link PractitionerRole}</li>
+             * </ul>
+             * 
+             * @param verifiedBy
+             *     Person conducting verification
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder verifiedBy(Reference verifiedBy) {
+                this.verifiedBy = verifiedBy;
+                return this;
+            }
+
+            /**
              * Who verified the instruction (Patient, Relative or other Authorized Person).
              * 
              * <p>Allowed resource types for this reference:
@@ -1761,7 +2154,10 @@ public class Consent extends DomainResource {
             }
 
             /**
-             * Date verification was collected.
+             * Date(s) verification was collected.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param verificationDate
              *     When consent verified
@@ -1769,8 +2165,30 @@ public class Consent extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder verificationDate(DateTime verificationDate) {
-                this.verificationDate = verificationDate;
+            public Builder verificationDate(DateTime... verificationDate) {
+                for (DateTime value : verificationDate) {
+                    this.verificationDate.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * Date(s) verification was collected.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param verificationDate
+             *     When consent verified
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder verificationDate(Collection<DateTime> verificationDate) {
+                this.verificationDate = new ArrayList<>(verificationDate);
                 return this;
             }
 
@@ -1799,6 +2217,8 @@ public class Consent extends DomainResource {
             protected void validate(Verification verification) {
                 super.validate(verification);
                 ValidationSupport.requireNonNull(verification.verified, "verified");
+                ValidationSupport.checkList(verification.verificationDate, "verificationDate", DateTime.class);
+                ValidationSupport.checkReferenceType(verification.verifiedBy, "verifiedBy", "Organization", "Practitioner", "PractitionerRole");
                 ValidationSupport.checkReferenceType(verification.verifiedWith, "verifiedWith", "Patient", "RelatedPerson");
                 ValidationSupport.requireValueOrChildren(verification);
             }
@@ -1806,8 +2226,10 @@ public class Consent extends DomainResource {
             protected Builder from(Verification verification) {
                 super.from(verification);
                 verified = verification.verified;
+                verificationType = verification.verificationType;
+                verifiedBy = verification.verifiedBy;
                 verifiedWith = verification.verifiedWith;
-                verificationDate = verification.verificationDate;
+                verificationDate.addAll(verification.verificationDate);
                 return this;
             }
         }
@@ -1817,14 +2239,6 @@ public class Consent extends DomainResource {
      * An exception to the base policy of this consent. An exception can be an addition or removal of access permissions.
      */
     public static class Provision extends BackboneElement {
-        @Summary
-        @Binding(
-            bindingName = "ConsentProvisionType",
-            strength = BindingStrength.Value.REQUIRED,
-            description = "How a rule statement is applied, such as adding additional consent or removing consent.",
-            valueSet = "http://hl7.org/fhir/ValueSet/consent-provision-type|4.3.0"
-        )
-        private final ConsentProvisionType type;
         @Summary
         private final Period period;
         private final List<Actor> actor;
@@ -1839,9 +2253,9 @@ public class Consent extends DomainResource {
         @Summary
         @Binding(
             bindingName = "SecurityLabels",
-            strength = BindingStrength.Value.EXTENSIBLE,
-            description = "Security Labels from the Healthcare Privacy and Security Classification System.",
-            valueSet = "http://hl7.org/fhir/ValueSet/security-labels"
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "Example Security Labels from the Healthcare Privacy and Security Classification System.",
+            valueSet = "http://hl7.org/fhir/ValueSet/security-label-examples"
         )
         private final List<Coding> securityLabel;
         @Summary
@@ -1855,11 +2269,19 @@ public class Consent extends DomainResource {
         @Summary
         @Binding(
             bindingName = "ConsentContentClass",
-            strength = BindingStrength.Value.EXTENSIBLE,
-            description = "The class (type) of information a consent rule covers.",
+            strength = BindingStrength.Value.PREFERRED,
+            description = "The document type a consent provision covers.",
             valueSet = "http://hl7.org/fhir/ValueSet/consent-content-class"
         )
-        private final List<Coding> clazz;
+        private final List<Coding> documentType;
+        @Summary
+        @Binding(
+            bindingName = "ConsentContentClass",
+            strength = BindingStrength.Value.EXTENSIBLE,
+            description = "The resource types a consent provision covers.",
+            valueSet = "http://hl7.org/fhir/ValueSet/resource-types"
+        )
+        private final List<Coding> resourceType;
         @Summary
         @Binding(
             bindingName = "ConsentContentCode",
@@ -1872,36 +2294,27 @@ public class Consent extends DomainResource {
         private final Period dataPeriod;
         @Summary
         private final List<Data> data;
+        private final Expression expression;
         private final List<Consent.Provision> provision;
 
         private Provision(Builder builder) {
             super(builder);
-            type = builder.type;
             period = builder.period;
             actor = Collections.unmodifiableList(builder.actor);
             action = Collections.unmodifiableList(builder.action);
             securityLabel = Collections.unmodifiableList(builder.securityLabel);
             purpose = Collections.unmodifiableList(builder.purpose);
-            clazz = Collections.unmodifiableList(builder.clazz);
+            documentType = Collections.unmodifiableList(builder.documentType);
+            resourceType = Collections.unmodifiableList(builder.resourceType);
             code = Collections.unmodifiableList(builder.code);
             dataPeriod = builder.dataPeriod;
             data = Collections.unmodifiableList(builder.data);
+            expression = builder.expression;
             provision = Collections.unmodifiableList(builder.provision);
         }
 
         /**
-         * Action to take - permit or deny - when the rule conditions are met. Not permitted in root rule, required in all nested 
-         * rules.
-         * 
-         * @return
-         *     An immutable object of type {@link ConsentProvisionType} that may be null.
-         */
-        public ConsentProvisionType getType() {
-            return type;
-        }
-
-        /**
-         * The timeframe in this rule is valid.
+         * Timeframe for this provision.
          * 
          * @return
          *     An immutable object of type {@link Period} that may be null.
@@ -1911,7 +2324,7 @@ public class Consent extends DomainResource {
         }
 
         /**
-         * Who or what is controlled by this rule. Use group to identify a set of actors by some property they share (e.g. 
+         * Who or what is controlled by this provision. Use group to identify a set of actors by some property they share (e.g. 
          * 'admitting officers').
          * 
          * @return
@@ -1922,7 +2335,7 @@ public class Consent extends DomainResource {
         }
 
         /**
-         * Actions controlled by this Rule.
+         * Actions controlled by this provision.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
@@ -1943,7 +2356,8 @@ public class Consent extends DomainResource {
         }
 
         /**
-         * The context of the activities a user is taking - why the user is accessing the data - that are controlled by this rule.
+         * The context of the activities a user is taking - why the user is accessing the data - that are controlled by this 
+         * provision.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link Coding} that may be empty.
@@ -1953,18 +2367,29 @@ public class Consent extends DomainResource {
         }
 
         /**
-         * The class of information covered by this rule. The type can be a FHIR resource type, a profile on a type, or a CDA 
-         * document, or some other type that indicates what sort of information the consent relates to.
+         * The documentType(s) covered by this provision. The type can be a CDA document, or some other type that indicates what 
+         * sort of information the consent relates to.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link Coding} that may be empty.
          */
-        public List<Coding> getClazz() {
-            return clazz;
+        public List<Coding> getDocumentType() {
+            return documentType;
         }
 
         /**
-         * If this code is found in an instance, then the rule applies.
+         * The resourceType(s) covered by this provision. The type can be a FHIR resource type or a profile on a type that 
+         * indicates what information the consent relates to.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link Coding} that may be empty.
+         */
+        public List<Coding> getResourceType() {
+            return resourceType;
+        }
+
+        /**
+         * If this code is found in an instance, then the provision applies.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
@@ -1974,7 +2399,7 @@ public class Consent extends DomainResource {
         }
 
         /**
-         * Clinical or Operational Relevant period of time that bounds the data controlled by this rule.
+         * Clinical or Operational Relevant period of time that bounds the data controlled by this provision.
          * 
          * @return
          *     An immutable object of type {@link Period} that may be null.
@@ -1984,7 +2409,7 @@ public class Consent extends DomainResource {
         }
 
         /**
-         * The resources controlled by this rule if specific resources are referenced.
+         * The resources controlled by this provision if specific resources are referenced.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link Data} that may be empty.
@@ -1994,7 +2419,17 @@ public class Consent extends DomainResource {
         }
 
         /**
-         * Rules which provide exceptions to the base rule or subrules.
+         * A computable (FHIRPath or other) definition of what is controlled by this consent.
+         * 
+         * @return
+         *     An immutable object of type {@link Expression} that may be null.
+         */
+        public Expression getExpression() {
+            return expression;
+        }
+
+        /**
+         * Provisions which provide exceptions to the base provision or subprovisions.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link Provision} that may be empty.
@@ -2006,16 +2441,17 @@ public class Consent extends DomainResource {
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                (type != null) || 
                 (period != null) || 
                 !actor.isEmpty() || 
                 !action.isEmpty() || 
                 !securityLabel.isEmpty() || 
                 !purpose.isEmpty() || 
-                !clazz.isEmpty() || 
+                !documentType.isEmpty() || 
+                !resourceType.isEmpty() || 
                 !code.isEmpty() || 
                 (dataPeriod != null) || 
                 !data.isEmpty() || 
+                (expression != null) || 
                 !provision.isEmpty();
         }
 
@@ -2028,16 +2464,17 @@ public class Consent extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(type, "type", visitor);
                     accept(period, "period", visitor);
                     accept(actor, "actor", visitor, Actor.class);
                     accept(action, "action", visitor, CodeableConcept.class);
                     accept(securityLabel, "securityLabel", visitor, Coding.class);
                     accept(purpose, "purpose", visitor, Coding.class);
-                    accept(clazz, "class", visitor, Coding.class);
+                    accept(documentType, "documentType", visitor, Coding.class);
+                    accept(resourceType, "resourceType", visitor, Coding.class);
                     accept(code, "code", visitor, CodeableConcept.class);
                     accept(dataPeriod, "dataPeriod", visitor);
                     accept(data, "data", visitor, Data.class);
+                    accept(expression, "expression", visitor);
                     accept(provision, "provision", visitor, Consent.Provision.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
@@ -2060,16 +2497,17 @@ public class Consent extends DomainResource {
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(type, other.type) && 
                 Objects.equals(period, other.period) && 
                 Objects.equals(actor, other.actor) && 
                 Objects.equals(action, other.action) && 
                 Objects.equals(securityLabel, other.securityLabel) && 
                 Objects.equals(purpose, other.purpose) && 
-                Objects.equals(clazz, other.clazz) && 
+                Objects.equals(documentType, other.documentType) && 
+                Objects.equals(resourceType, other.resourceType) && 
                 Objects.equals(code, other.code) && 
                 Objects.equals(dataPeriod, other.dataPeriod) && 
                 Objects.equals(data, other.data) && 
+                Objects.equals(expression, other.expression) && 
                 Objects.equals(provision, other.provision);
         }
 
@@ -2080,16 +2518,17 @@ public class Consent extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    type, 
                     period, 
                     actor, 
                     action, 
                     securityLabel, 
                     purpose, 
-                    clazz, 
+                    documentType, 
+                    resourceType, 
                     code, 
                     dataPeriod, 
                     data, 
+                    expression, 
                     provision);
                 hashCode = result;
             }
@@ -2106,16 +2545,17 @@ public class Consent extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private ConsentProvisionType type;
             private Period period;
             private List<Actor> actor = new ArrayList<>();
             private List<CodeableConcept> action = new ArrayList<>();
             private List<Coding> securityLabel = new ArrayList<>();
             private List<Coding> purpose = new ArrayList<>();
-            private List<Coding> clazz = new ArrayList<>();
+            private List<Coding> documentType = new ArrayList<>();
+            private List<Coding> resourceType = new ArrayList<>();
             private List<CodeableConcept> code = new ArrayList<>();
             private Period dataPeriod;
             private List<Data> data = new ArrayList<>();
+            private Expression expression;
             private List<Consent.Provision> provision = new ArrayList<>();
 
             private Builder() {
@@ -2139,7 +2579,7 @@ public class Consent extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2159,7 +2599,7 @@ public class Consent extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2184,7 +2624,7 @@ public class Consent extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2209,7 +2649,7 @@ public class Consent extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2234,25 +2674,10 @@ public class Consent extends DomainResource {
             }
 
             /**
-             * Action to take - permit or deny - when the rule conditions are met. Not permitted in root rule, required in all nested 
-             * rules.
-             * 
-             * @param type
-             *     deny | permit
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder type(ConsentProvisionType type) {
-                this.type = type;
-                return this;
-            }
-
-            /**
-             * The timeframe in this rule is valid.
+             * Timeframe for this provision.
              * 
              * @param period
-             *     Timeframe for this rule
+             *     Timeframe for this provision
              * 
              * @return
              *     A reference to this Builder instance
@@ -2263,14 +2688,14 @@ public class Consent extends DomainResource {
             }
 
             /**
-             * Who or what is controlled by this rule. Use group to identify a set of actors by some property they share (e.g. 
+             * Who or what is controlled by this provision. Use group to identify a set of actors by some property they share (e.g. 
              * 'admitting officers').
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param actor
-             *     Who|what controlled by this rule (or group, by role)
+             *     Who|what controlled by this provision (or group, by role)
              * 
              * @return
              *     A reference to this Builder instance
@@ -2283,14 +2708,14 @@ public class Consent extends DomainResource {
             }
 
             /**
-             * Who or what is controlled by this rule. Use group to identify a set of actors by some property they share (e.g. 
+             * Who or what is controlled by this provision. Use group to identify a set of actors by some property they share (e.g. 
              * 'admitting officers').
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param actor
-             *     Who|what controlled by this rule (or group, by role)
+             *     Who|what controlled by this provision (or group, by role)
              * 
              * @return
              *     A reference to this Builder instance
@@ -2304,13 +2729,13 @@ public class Consent extends DomainResource {
             }
 
             /**
-             * Actions controlled by this Rule.
+             * Actions controlled by this provision.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param action
-             *     Actions controlled by this rule
+             *     Actions controlled by this provision
              * 
              * @return
              *     A reference to this Builder instance
@@ -2323,13 +2748,13 @@ public class Consent extends DomainResource {
             }
 
             /**
-             * Actions controlled by this Rule.
+             * Actions controlled by this provision.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param action
-             *     Actions controlled by this rule
+             *     Actions controlled by this provision
              * 
              * @return
              *     A reference to this Builder instance
@@ -2384,13 +2809,14 @@ public class Consent extends DomainResource {
             }
 
             /**
-             * The context of the activities a user is taking - why the user is accessing the data - that are controlled by this rule.
+             * The context of the activities a user is taking - why the user is accessing the data - that are controlled by this 
+             * provision.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param purpose
-             *     Context of activities covered by this rule
+             *     Context of activities covered by this provision
              * 
              * @return
              *     A reference to this Builder instance
@@ -2403,13 +2829,14 @@ public class Consent extends DomainResource {
             }
 
             /**
-             * The context of the activities a user is taking - why the user is accessing the data - that are controlled by this rule.
+             * The context of the activities a user is taking - why the user is accessing the data - that are controlled by this 
+             * provision.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param purpose
-             *     Context of activities covered by this rule
+             *     Context of activities covered by this provision
              * 
              * @return
              *     A reference to this Builder instance
@@ -2423,34 +2850,34 @@ public class Consent extends DomainResource {
             }
 
             /**
-             * The class of information covered by this rule. The type can be a FHIR resource type, a profile on a type, or a CDA 
-             * document, or some other type that indicates what sort of information the consent relates to.
+             * The documentType(s) covered by this provision. The type can be a CDA document, or some other type that indicates what 
+             * sort of information the consent relates to.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * @param clazz
-             *     e.g. Resource Type, Profile, CDA, etc.
+             * @param documentType
+             *     e.g. Resource Type, Profile, CDA, etc
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder clazz(Coding... clazz) {
-                for (Coding value : clazz) {
-                    this.clazz.add(value);
+            public Builder documentType(Coding... documentType) {
+                for (Coding value : documentType) {
+                    this.documentType.add(value);
                 }
                 return this;
             }
 
             /**
-             * The class of information covered by this rule. The type can be a FHIR resource type, a profile on a type, or a CDA 
-             * document, or some other type that indicates what sort of information the consent relates to.
+             * The documentType(s) covered by this provision. The type can be a CDA document, or some other type that indicates what 
+             * sort of information the consent relates to.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * @param clazz
-             *     e.g. Resource Type, Profile, CDA, etc.
+             * @param documentType
+             *     e.g. Resource Type, Profile, CDA, etc
              * 
              * @return
              *     A reference to this Builder instance
@@ -2458,13 +2885,54 @@ public class Consent extends DomainResource {
              * @throws NullPointerException
              *     If the passed collection is null
              */
-            public Builder clazz(Collection<Coding> clazz) {
-                this.clazz = new ArrayList<>(clazz);
+            public Builder documentType(Collection<Coding> documentType) {
+                this.documentType = new ArrayList<>(documentType);
                 return this;
             }
 
             /**
-             * If this code is found in an instance, then the rule applies.
+             * The resourceType(s) covered by this provision. The type can be a FHIR resource type or a profile on a type that 
+             * indicates what information the consent relates to.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param resourceType
+             *     e.g. Resource Type, Profile, etc
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder resourceType(Coding... resourceType) {
+                for (Coding value : resourceType) {
+                    this.resourceType.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * The resourceType(s) covered by this provision. The type can be a FHIR resource type or a profile on a type that 
+             * indicates what information the consent relates to.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param resourceType
+             *     e.g. Resource Type, Profile, etc
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder resourceType(Collection<Coding> resourceType) {
+                this.resourceType = new ArrayList<>(resourceType);
+                return this;
+            }
+
+            /**
+             * If this code is found in an instance, then the provision applies.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -2483,7 +2951,7 @@ public class Consent extends DomainResource {
             }
 
             /**
-             * If this code is found in an instance, then the rule applies.
+             * If this code is found in an instance, then the provision applies.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -2503,10 +2971,10 @@ public class Consent extends DomainResource {
             }
 
             /**
-             * Clinical or Operational Relevant period of time that bounds the data controlled by this rule.
+             * Clinical or Operational Relevant period of time that bounds the data controlled by this provision.
              * 
              * @param dataPeriod
-             *     Timeframe for data controlled by this rule
+             *     Timeframe for data controlled by this provision
              * 
              * @return
              *     A reference to this Builder instance
@@ -2517,13 +2985,13 @@ public class Consent extends DomainResource {
             }
 
             /**
-             * The resources controlled by this rule if specific resources are referenced.
+             * The resources controlled by this provision if specific resources are referenced.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param data
-             *     Data controlled by this rule
+             *     Data controlled by this provision
              * 
              * @return
              *     A reference to this Builder instance
@@ -2536,13 +3004,13 @@ public class Consent extends DomainResource {
             }
 
             /**
-             * The resources controlled by this rule if specific resources are referenced.
+             * The resources controlled by this provision if specific resources are referenced.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param data
-             *     Data controlled by this rule
+             *     Data controlled by this provision
              * 
              * @return
              *     A reference to this Builder instance
@@ -2556,13 +3024,27 @@ public class Consent extends DomainResource {
             }
 
             /**
-             * Rules which provide exceptions to the base rule or subrules.
+             * A computable (FHIRPath or other) definition of what is controlled by this consent.
+             * 
+             * @param expression
+             *     A computable expression of the consent
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder expression(Expression expression) {
+                this.expression = expression;
+                return this;
+            }
+
+            /**
+             * Provisions which provide exceptions to the base provision or subprovisions.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param provision
-             *     Nested Exception Rules
+             *     Nested Exception Provisions
              * 
              * @return
              *     A reference to this Builder instance
@@ -2575,13 +3057,13 @@ public class Consent extends DomainResource {
             }
 
             /**
-             * Rules which provide exceptions to the base rule or subrules.
+             * Provisions which provide exceptions to the base provision or subprovisions.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param provision
-             *     Nested Exception Rules
+             *     Nested Exception Provisions
              * 
              * @return
              *     A reference to this Builder instance
@@ -2617,7 +3099,8 @@ public class Consent extends DomainResource {
                 ValidationSupport.checkList(provision.action, "action", CodeableConcept.class);
                 ValidationSupport.checkList(provision.securityLabel, "securityLabel", Coding.class);
                 ValidationSupport.checkList(provision.purpose, "purpose", Coding.class);
-                ValidationSupport.checkList(provision.clazz, "class", Coding.class);
+                ValidationSupport.checkList(provision.documentType, "documentType", Coding.class);
+                ValidationSupport.checkList(provision.resourceType, "resourceType", Coding.class);
                 ValidationSupport.checkList(provision.code, "code", CodeableConcept.class);
                 ValidationSupport.checkList(provision.data, "data", Data.class);
                 ValidationSupport.checkList(provision.provision, "provision", Consent.Provision.class);
@@ -2626,23 +3109,24 @@ public class Consent extends DomainResource {
 
             protected Builder from(Provision provision) {
                 super.from(provision);
-                type = provision.type;
                 period = provision.period;
                 actor.addAll(provision.actor);
                 action.addAll(provision.action);
                 securityLabel.addAll(provision.securityLabel);
                 purpose.addAll(provision.purpose);
-                clazz.addAll(provision.clazz);
+                documentType.addAll(provision.documentType);
+                resourceType.addAll(provision.resourceType);
                 code.addAll(provision.code);
                 dataPeriod = provision.dataPeriod;
                 data.addAll(provision.data);
+                expression = provision.expression;
                 this.provision.addAll(provision.provision);
                 return this;
             }
         }
 
         /**
-         * Who or what is controlled by this rule. Use group to identify a set of actors by some property they share (e.g. 
+         * Who or what is controlled by this provision. Use group to identify a set of actors by some property they share (e.g. 
          * 'admitting officers').
          */
         public static class Actor extends BackboneElement {
@@ -2650,12 +3134,10 @@ public class Consent extends DomainResource {
                 bindingName = "ConsentActorRole",
                 strength = BindingStrength.Value.EXTENSIBLE,
                 description = "How an actor is involved in the consent considerations.",
-                valueSet = "http://hl7.org/fhir/ValueSet/security-role-type"
+                valueSet = "http://hl7.org/fhir/ValueSet/participation-role-type"
             )
-            @Required
             private final CodeableConcept role;
             @ReferenceTarget({ "Device", "Group", "CareTeam", "Organization", "Patient", "Practitioner", "RelatedPerson", "PractitionerRole" })
-            @Required
             private final Reference reference;
 
             private Actor(Builder builder) {
@@ -2668,7 +3150,7 @@ public class Consent extends DomainResource {
              * How the individual is involved in the resources content that is described in the exception.
              * 
              * @return
-             *     An immutable object of type {@link CodeableConcept} that is non-null.
+             *     An immutable object of type {@link CodeableConcept} that may be null.
              */
             public CodeableConcept getRole() {
                 return role;
@@ -2679,7 +3161,7 @@ public class Consent extends DomainResource {
              * property they share (e.g. 'admitting officers').
              * 
              * @return
-             *     An immutable object of type {@link Reference} that is non-null.
+             *     An immutable object of type {@link Reference} that may be null.
              */
             public Reference getReference() {
                 return reference;
@@ -2776,7 +3258,7 @@ public class Consent extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2796,7 +3278,7 @@ public class Consent extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2821,7 +3303,7 @@ public class Consent extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2846,7 +3328,7 @@ public class Consent extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2873,8 +3355,6 @@ public class Consent extends DomainResource {
                 /**
                  * How the individual is involved in the resources content that is described in the exception.
                  * 
-                 * <p>This element is required.
-                 * 
                  * @param role
                  *     How the actor is involved
                  * 
@@ -2889,8 +3369,6 @@ public class Consent extends DomainResource {
                 /**
                  * The resource that identifies the actor. To identify actors by type, use group to identify a set of actors by some 
                  * property they share (e.g. 'admitting officers').
-                 * 
-                 * <p>This element is required.
                  * 
                  * <p>Allowed resource types for this reference:
                  * <ul>
@@ -2918,12 +3396,6 @@ public class Consent extends DomainResource {
                 /**
                  * Build the {@link Actor}
                  * 
-                 * <p>Required elements:
-                 * <ul>
-                 * <li>role</li>
-                 * <li>reference</li>
-                 * </ul>
-                 * 
                  * @return
                  *     An immutable object of type {@link Actor}
                  * @throws IllegalStateException
@@ -2940,8 +3412,6 @@ public class Consent extends DomainResource {
 
                 protected void validate(Actor actor) {
                     super.validate(actor);
-                    ValidationSupport.requireNonNull(actor.role, "role");
-                    ValidationSupport.requireNonNull(actor.reference, "reference");
                     ValidationSupport.checkReferenceType(actor.reference, "reference", "Device", "Group", "CareTeam", "Organization", "Patient", "Practitioner", "RelatedPerson", "PractitionerRole");
                     ValidationSupport.requireValueOrChildren(actor);
                 }
@@ -2956,7 +3426,7 @@ public class Consent extends DomainResource {
         }
 
         /**
-         * The resources controlled by this rule if specific resources are referenced.
+         * The resources controlled by this provision if specific resources are referenced.
          */
         public static class Data extends BackboneElement {
             @Summary
@@ -2964,7 +3434,7 @@ public class Consent extends DomainResource {
                 bindingName = "ConsentDataMeaning",
                 strength = BindingStrength.Value.REQUIRED,
                 description = "How a resource reference is interpreted when testing consent restrictions.",
-                valueSet = "http://hl7.org/fhir/ValueSet/consent-data-meaning|4.3.0"
+                valueSet = "http://hl7.org/fhir/ValueSet/consent-data-meaning|5.0.0"
             )
             @Required
             private final ConsentDataMeaning meaning;
@@ -3089,7 +3559,7 @@ public class Consent extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3109,7 +3579,7 @@ public class Consent extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3134,7 +3604,7 @@ public class Consent extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3159,7 +3629,7 @@ public class Consent extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 

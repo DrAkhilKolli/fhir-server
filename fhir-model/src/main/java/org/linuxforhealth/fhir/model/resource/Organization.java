@@ -18,18 +18,19 @@ import org.linuxforhealth.fhir.model.annotation.Binding;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
+import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
-import org.linuxforhealth.fhir.model.type.Address;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
-import org.linuxforhealth.fhir.model.type.ContactPoint;
+import org.linuxforhealth.fhir.model.type.ExtendedContactDetail;
 import org.linuxforhealth.fhir.model.type.Extension;
-import org.linuxforhealth.fhir.model.type.HumanName;
 import org.linuxforhealth.fhir.model.type.Identifier;
+import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
+import org.linuxforhealth.fhir.model.type.Period;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
@@ -43,10 +44,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * of collective action. Includes companies, institutions, corporations, departments, community groups, healthcare 
  * practice groups, payer/insurer, etc.
  * 
- * <p>Maturity level: FMM3 (Trial Use)
+ * <p>Maturity level: FMM5 (Trial Use)
  */
 @Maturity(
-    level = 3,
+    level = 5,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
@@ -58,29 +59,20 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     source = "http://hl7.org/fhir/StructureDefinition/Organization"
 )
 @Constraint(
-    id = "org-2",
-    level = "Rule",
-    location = "Organization.address",
-    description = "An address of an organization can never be of use 'home'",
-    expression = "where(use = 'home').empty()",
-    source = "http://hl7.org/fhir/StructureDefinition/Organization"
-)
-@Constraint(
     id = "org-3",
     level = "Rule",
-    location = "Organization.telecom",
+    location = "Organization.contact",
     description = "The telecom of an organization can never be of use 'home'",
-    expression = "where(use = 'home').empty()",
+    expression = "telecom.where(use = 'home').empty()",
     source = "http://hl7.org/fhir/StructureDefinition/Organization"
 )
 @Constraint(
-    id = "organization-4",
-    level = "Warning",
-    location = "contact.purpose",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/contactentity-type",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/contactentity-type', 'extensible')",
-    source = "http://hl7.org/fhir/StructureDefinition/Organization",
-    generated = true
+    id = "org-4",
+    level = "Rule",
+    location = "Organization.contact",
+    description = "The address of an organization can never be of use 'home'",
+    expression = "address.where(use = 'home').empty()",
+    source = "http://hl7.org/fhir/StructureDefinition/Organization"
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class Organization extends DomainResource {
@@ -99,14 +91,15 @@ public class Organization extends DomainResource {
     @Summary
     private final String name;
     private final List<String> alias;
-    private final List<ContactPoint> telecom;
-    private final List<Address> address;
+    @Summary
+    private final Markdown description;
+    private final List<ExtendedContactDetail> contact;
     @Summary
     @ReferenceTarget({ "Organization" })
     private final Reference partOf;
-    private final List<Contact> contact;
     @ReferenceTarget({ "Endpoint" })
     private final List<Reference> endpoint;
+    private final List<Qualification> qualification;
 
     private Organization(Builder builder) {
         super(builder);
@@ -115,11 +108,11 @@ public class Organization extends DomainResource {
         type = Collections.unmodifiableList(builder.type);
         name = builder.name;
         alias = Collections.unmodifiableList(builder.alias);
-        telecom = Collections.unmodifiableList(builder.telecom);
-        address = Collections.unmodifiableList(builder.address);
-        partOf = builder.partOf;
+        description = builder.description;
         contact = Collections.unmodifiableList(builder.contact);
+        partOf = builder.partOf;
         endpoint = Collections.unmodifiableList(builder.endpoint);
+        qualification = Collections.unmodifiableList(builder.qualification);
     }
 
     /**
@@ -173,23 +166,25 @@ public class Organization extends DomainResource {
     }
 
     /**
-     * A contact detail for the organization.
+     * Description of the organization, which helps provide additional general context on the organization to ensure that the 
+     * correct organization is selected.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link ContactPoint} that may be empty.
+     *     An immutable object of type {@link Markdown} that may be null.
      */
-    public List<ContactPoint> getTelecom() {
-        return telecom;
+    public Markdown getDescription() {
+        return description;
     }
 
     /**
-     * An address for the organization.
+     * The contact details of communication devices available relevant to the specific Organization. This can include 
+     * addresses, phone numbers, fax numbers, mobile numbers, email addresses and web sites.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Address} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link ExtendedContactDetail} that may be empty.
      */
-    public List<Address> getAddress() {
-        return address;
+    public List<ExtendedContactDetail> getContact() {
+        return contact;
     }
 
     /**
@@ -203,16 +198,6 @@ public class Organization extends DomainResource {
     }
 
     /**
-     * Contact for the organization for a certain purpose.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Contact} that may be empty.
-     */
-    public List<Contact> getContact() {
-        return contact;
-    }
-
-    /**
      * Technical endpoints providing access to services operated for the organization.
      * 
      * @return
@@ -220,6 +205,18 @@ public class Organization extends DomainResource {
      */
     public List<Reference> getEndpoint() {
         return endpoint;
+    }
+
+    /**
+     * The official certifications, accreditations, training, designations and licenses that authorize and/or otherwise 
+     * endorse the provision of care by the organization.For example, an approval to provide a type of services issued by a 
+     * certifying body (such as the US Joint Commission) to an organization.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Qualification} that may be empty.
+     */
+    public List<Qualification> getQualification() {
+        return qualification;
     }
 
     @Override
@@ -230,11 +227,11 @@ public class Organization extends DomainResource {
             !type.isEmpty() || 
             (name != null) || 
             !alias.isEmpty() || 
-            !telecom.isEmpty() || 
-            !address.isEmpty() || 
-            (partOf != null) || 
+            (description != null) || 
             !contact.isEmpty() || 
-            !endpoint.isEmpty();
+            (partOf != null) || 
+            !endpoint.isEmpty() || 
+            !qualification.isEmpty();
     }
 
     @Override
@@ -256,11 +253,11 @@ public class Organization extends DomainResource {
                 accept(type, "type", visitor, CodeableConcept.class);
                 accept(name, "name", visitor);
                 accept(alias, "alias", visitor, String.class);
-                accept(telecom, "telecom", visitor, ContactPoint.class);
-                accept(address, "address", visitor, Address.class);
+                accept(description, "description", visitor);
+                accept(contact, "contact", visitor, ExtendedContactDetail.class);
                 accept(partOf, "partOf", visitor);
-                accept(contact, "contact", visitor, Contact.class);
                 accept(endpoint, "endpoint", visitor, Reference.class);
+                accept(qualification, "qualification", visitor, Qualification.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
             visitor.postVisit(this);
@@ -292,11 +289,11 @@ public class Organization extends DomainResource {
             Objects.equals(type, other.type) && 
             Objects.equals(name, other.name) && 
             Objects.equals(alias, other.alias) && 
-            Objects.equals(telecom, other.telecom) && 
-            Objects.equals(address, other.address) && 
-            Objects.equals(partOf, other.partOf) && 
+            Objects.equals(description, other.description) && 
             Objects.equals(contact, other.contact) && 
-            Objects.equals(endpoint, other.endpoint);
+            Objects.equals(partOf, other.partOf) && 
+            Objects.equals(endpoint, other.endpoint) && 
+            Objects.equals(qualification, other.qualification);
     }
 
     @Override
@@ -316,11 +313,11 @@ public class Organization extends DomainResource {
                 type, 
                 name, 
                 alias, 
-                telecom, 
-                address, 
-                partOf, 
+                description, 
                 contact, 
-                endpoint);
+                partOf, 
+                endpoint, 
+                qualification);
             hashCode = result;
         }
         return result;
@@ -341,11 +338,11 @@ public class Organization extends DomainResource {
         private List<CodeableConcept> type = new ArrayList<>();
         private String name;
         private List<String> alias = new ArrayList<>();
-        private List<ContactPoint> telecom = new ArrayList<>();
-        private List<Address> address = new ArrayList<>();
+        private Markdown description;
+        private List<ExtendedContactDetail> contact = new ArrayList<>();
         private Reference partOf;
-        private List<Contact> contact = new ArrayList<>();
         private List<Reference> endpoint = new ArrayList<>();
+        private List<Qualification> qualification = new ArrayList<>();
 
         private Builder() {
             super();
@@ -429,7 +426,8 @@ public class Organization extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -447,7 +445,8 @@ public class Organization extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -468,7 +467,7 @@ public class Organization extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -488,7 +487,7 @@ public class Organization extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -513,9 +512,9 @@ public class Organization extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -538,9 +537,9 @@ public class Organization extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -761,32 +760,50 @@ public class Organization extends DomainResource {
         }
 
         /**
-         * A contact detail for the organization.
+         * Description of the organization, which helps provide additional general context on the organization to ensure that the 
+         * correct organization is selected.
          * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param telecom
-         *     A contact detail for the organization
+         * @param description
+         *     Additional details about the Organization that could be displayed as further information to identify the Organization 
+         *     beyond its name
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder telecom(ContactPoint... telecom) {
-            for (ContactPoint value : telecom) {
-                this.telecom.add(value);
+        public Builder description(Markdown description) {
+            this.description = description;
+            return this;
+        }
+
+        /**
+         * The contact details of communication devices available relevant to the specific Organization. This can include 
+         * addresses, phone numbers, fax numbers, mobile numbers, email addresses and web sites.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param contact
+         *     Official contact details for the Organization
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder contact(ExtendedContactDetail... contact) {
+            for (ExtendedContactDetail value : contact) {
+                this.contact.add(value);
             }
             return this;
         }
 
         /**
-         * A contact detail for the organization.
+         * The contact details of communication devices available relevant to the specific Organization. This can include 
+         * addresses, phone numbers, fax numbers, mobile numbers, email addresses and web sites.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param telecom
-         *     A contact detail for the organization
+         * @param contact
+         *     Official contact details for the Organization
          * 
          * @return
          *     A reference to this Builder instance
@@ -794,47 +811,8 @@ public class Organization extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder telecom(Collection<ContactPoint> telecom) {
-            this.telecom = new ArrayList<>(telecom);
-            return this;
-        }
-
-        /**
-         * An address for the organization.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param address
-         *     An address for the organization
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder address(Address... address) {
-            for (Address value : address) {
-                this.address.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * An address for the organization.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param address
-         *     An address for the organization
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder address(Collection<Address> address) {
-            this.address = new ArrayList<>(address);
+        public Builder contact(Collection<ExtendedContactDetail> contact) {
+            this.contact = new ArrayList<>(contact);
             return this;
         }
 
@@ -854,45 +832,6 @@ public class Organization extends DomainResource {
          */
         public Builder partOf(Reference partOf) {
             this.partOf = partOf;
-            return this;
-        }
-
-        /**
-         * Contact for the organization for a certain purpose.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param contact
-         *     Contact for the organization for a certain purpose
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder contact(Contact... contact) {
-            for (Contact value : contact) {
-                this.contact.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Contact for the organization for a certain purpose.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param contact
-         *     Contact for the organization for a certain purpose
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder contact(Collection<Contact> contact) {
-            this.contact = new ArrayList<>(contact);
             return this;
         }
 
@@ -946,6 +885,49 @@ public class Organization extends DomainResource {
         }
 
         /**
+         * The official certifications, accreditations, training, designations and licenses that authorize and/or otherwise 
+         * endorse the provision of care by the organization.For example, an approval to provide a type of services issued by a 
+         * certifying body (such as the US Joint Commission) to an organization.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param qualification
+         *     Qualifications, certifications, accreditations, licenses, training, etc. pertaining to the provision of care
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder qualification(Qualification... qualification) {
+            for (Qualification value : qualification) {
+                this.qualification.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The official certifications, accreditations, training, designations and licenses that authorize and/or otherwise 
+         * endorse the provision of care by the organization.For example, an approval to provide a type of services issued by a 
+         * certifying body (such as the US Joint Commission) to an organization.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param qualification
+         *     Qualifications, certifications, accreditations, licenses, training, etc. pertaining to the provision of care
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder qualification(Collection<Qualification> qualification) {
+            this.qualification = new ArrayList<>(qualification);
+            return this;
+        }
+
+        /**
          * Build the {@link Organization}
          * 
          * @return
@@ -967,10 +949,9 @@ public class Organization extends DomainResource {
             ValidationSupport.checkList(organization.identifier, "identifier", Identifier.class);
             ValidationSupport.checkList(organization.type, "type", CodeableConcept.class);
             ValidationSupport.checkList(organization.alias, "alias", String.class);
-            ValidationSupport.checkList(organization.telecom, "telecom", ContactPoint.class);
-            ValidationSupport.checkList(organization.address, "address", Address.class);
-            ValidationSupport.checkList(organization.contact, "contact", Contact.class);
+            ValidationSupport.checkList(organization.contact, "contact", ExtendedContactDetail.class);
             ValidationSupport.checkList(organization.endpoint, "endpoint", Reference.class);
+            ValidationSupport.checkList(organization.qualification, "qualification", Qualification.class);
             ValidationSupport.checkReferenceType(organization.partOf, "partOf", "Organization");
             ValidationSupport.checkReferenceType(organization.endpoint, "endpoint", "Endpoint");
         }
@@ -982,85 +963,88 @@ public class Organization extends DomainResource {
             type.addAll(organization.type);
             name = organization.name;
             alias.addAll(organization.alias);
-            telecom.addAll(organization.telecom);
-            address.addAll(organization.address);
-            partOf = organization.partOf;
+            description = organization.description;
             contact.addAll(organization.contact);
+            partOf = organization.partOf;
             endpoint.addAll(organization.endpoint);
+            qualification.addAll(organization.qualification);
             return this;
         }
     }
 
     /**
-     * Contact for the organization for a certain purpose.
+     * The official certifications, accreditations, training, designations and licenses that authorize and/or otherwise 
+     * endorse the provision of care by the organization.For example, an approval to provide a type of services issued by a 
+     * certifying body (such as the US Joint Commission) to an organization.
      */
-    public static class Contact extends BackboneElement {
+    public static class Qualification extends BackboneElement {
+        private final List<Identifier> identifier;
         @Binding(
-            bindingName = "ContactPartyType",
-            strength = BindingStrength.Value.EXTENSIBLE,
-            description = "The purpose for which you would contact a contact party.",
-            valueSet = "http://hl7.org/fhir/ValueSet/contactentity-type"
+            bindingName = "Qualification",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "Specific qualification the organization has to provide a service."
         )
-        private final CodeableConcept purpose;
-        private final HumanName name;
-        private final List<ContactPoint> telecom;
-        private final Address address;
+        @Required
+        private final CodeableConcept code;
+        private final Period period;
+        @ReferenceTarget({ "Organization" })
+        private final Reference issuer;
 
-        private Contact(Builder builder) {
+        private Qualification(Builder builder) {
             super(builder);
-            purpose = builder.purpose;
-            name = builder.name;
-            telecom = Collections.unmodifiableList(builder.telecom);
-            address = builder.address;
+            identifier = Collections.unmodifiableList(builder.identifier);
+            code = builder.code;
+            period = builder.period;
+            issuer = builder.issuer;
         }
 
         /**
-         * Indicates a purpose for which the contact can be reached.
+         * An identifier allocated to this qualification for this organization.
          * 
          * @return
-         *     An immutable object of type {@link CodeableConcept} that may be null.
+         *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
          */
-        public CodeableConcept getPurpose() {
-            return purpose;
+        public List<Identifier> getIdentifier() {
+            return identifier;
         }
 
         /**
-         * A name associated with the contact.
+         * Coded representation of the qualification.
          * 
          * @return
-         *     An immutable object of type {@link HumanName} that may be null.
+         *     An immutable object of type {@link CodeableConcept} that is non-null.
          */
-        public HumanName getName() {
-            return name;
+        public CodeableConcept getCode() {
+            return code;
         }
 
         /**
-         * A contact detail (e.g. a telephone number or an email address) by which the party may be contacted.
+         * Period during which the qualification is valid.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link ContactPoint} that may be empty.
+         *     An immutable object of type {@link Period} that may be null.
          */
-        public List<ContactPoint> getTelecom() {
-            return telecom;
+        public Period getPeriod() {
+            return period;
         }
 
         /**
-         * Visiting or postal addresses for the contact.
+         * Organization that regulates and issues the qualification.
          * 
          * @return
-         *     An immutable object of type {@link Address} that may be null.
+         *     An immutable object of type {@link Reference} that may be null.
          */
-        public Address getAddress() {
-            return address;
+        public Reference getIssuer() {
+            return issuer;
         }
 
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                (purpose != null) || 
-                (name != null) || 
-                !telecom.isEmpty() || 
-                (address != null);
+                !identifier.isEmpty() || 
+                (code != null) || 
+                (period != null) || 
+                (issuer != null);
         }
 
         @Override
@@ -1072,10 +1056,10 @@ public class Organization extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(purpose, "purpose", visitor);
-                    accept(name, "name", visitor);
-                    accept(telecom, "telecom", visitor, ContactPoint.class);
-                    accept(address, "address", visitor);
+                    accept(identifier, "identifier", visitor, Identifier.class);
+                    accept(code, "code", visitor);
+                    accept(period, "period", visitor);
+                    accept(issuer, "issuer", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -1093,14 +1077,14 @@ public class Organization extends DomainResource {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            Contact other = (Contact) obj;
+            Qualification other = (Qualification) obj;
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(purpose, other.purpose) && 
-                Objects.equals(name, other.name) && 
-                Objects.equals(telecom, other.telecom) && 
-                Objects.equals(address, other.address);
+                Objects.equals(identifier, other.identifier) && 
+                Objects.equals(code, other.code) && 
+                Objects.equals(period, other.period) && 
+                Objects.equals(issuer, other.issuer);
         }
 
         @Override
@@ -1110,10 +1094,10 @@ public class Organization extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    purpose, 
-                    name, 
-                    telecom, 
-                    address);
+                    identifier, 
+                    code, 
+                    period, 
+                    issuer);
                 hashCode = result;
             }
             return result;
@@ -1129,10 +1113,10 @@ public class Organization extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private CodeableConcept purpose;
-            private HumanName name;
-            private List<ContactPoint> telecom = new ArrayList<>();
-            private Address address;
+            private List<Identifier> identifier = new ArrayList<>();
+            private CodeableConcept code;
+            private Period period;
+            private Reference issuer;
 
             private Builder() {
                 super();
@@ -1155,7 +1139,7 @@ public class Organization extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1175,7 +1159,7 @@ public class Organization extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1200,7 +1184,7 @@ public class Organization extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1225,7 +1209,7 @@ public class Organization extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1250,60 +1234,32 @@ public class Organization extends DomainResource {
             }
 
             /**
-             * Indicates a purpose for which the contact can be reached.
-             * 
-             * @param purpose
-             *     The type of contact
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder purpose(CodeableConcept purpose) {
-                this.purpose = purpose;
-                return this;
-            }
-
-            /**
-             * A name associated with the contact.
-             * 
-             * @param name
-             *     A name associated with the contact
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder name(HumanName name) {
-                this.name = name;
-                return this;
-            }
-
-            /**
-             * A contact detail (e.g. a telephone number or an email address) by which the party may be contacted.
+             * An identifier allocated to this qualification for this organization.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * @param telecom
-             *     Contact details (telephone, email, etc.) for a contact
+             * @param identifier
+             *     An identifier for this qualification for the organization
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder telecom(ContactPoint... telecom) {
-                for (ContactPoint value : telecom) {
-                    this.telecom.add(value);
+            public Builder identifier(Identifier... identifier) {
+                for (Identifier value : identifier) {
+                    this.identifier.add(value);
                 }
                 return this;
             }
 
             /**
-             * A contact detail (e.g. a telephone number or an email address) by which the party may be contacted.
+             * An identifier allocated to this qualification for this organization.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * @param telecom
-             *     Contact details (telephone, email, etc.) for a contact
+             * @param identifier
+             *     An identifier for this qualification for the organization
              * 
              * @return
              *     A reference to this Builder instance
@@ -1311,54 +1267,96 @@ public class Organization extends DomainResource {
              * @throws NullPointerException
              *     If the passed collection is null
              */
-            public Builder telecom(Collection<ContactPoint> telecom) {
-                this.telecom = new ArrayList<>(telecom);
+            public Builder identifier(Collection<Identifier> identifier) {
+                this.identifier = new ArrayList<>(identifier);
                 return this;
             }
 
             /**
-             * Visiting or postal addresses for the contact.
+             * Coded representation of the qualification.
              * 
-             * @param address
-             *     Visiting or postal addresses for the contact
+             * <p>This element is required.
+             * 
+             * @param code
+             *     Coded representation of the qualification
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder address(Address address) {
-                this.address = address;
+            public Builder code(CodeableConcept code) {
+                this.code = code;
                 return this;
             }
 
             /**
-             * Build the {@link Contact}
+             * Period during which the qualification is valid.
+             * 
+             * @param period
+             *     Period during which the qualification is valid
              * 
              * @return
-             *     An immutable object of type {@link Contact}
+             *     A reference to this Builder instance
+             */
+            public Builder period(Period period) {
+                this.period = period;
+                return this;
+            }
+
+            /**
+             * Organization that regulates and issues the qualification.
+             * 
+             * <p>Allowed resource types for this reference:
+             * <ul>
+             * <li>{@link Organization}</li>
+             * </ul>
+             * 
+             * @param issuer
+             *     Organization that regulates and issues the qualification
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder issuer(Reference issuer) {
+                this.issuer = issuer;
+                return this;
+            }
+
+            /**
+             * Build the {@link Qualification}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>code</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link Qualification}
              * @throws IllegalStateException
-             *     if the current state cannot be built into a valid Contact per the base specification
+             *     if the current state cannot be built into a valid Qualification per the base specification
              */
             @Override
-            public Contact build() {
-                Contact contact = new Contact(this);
+            public Qualification build() {
+                Qualification qualification = new Qualification(this);
                 if (validating) {
-                    validate(contact);
+                    validate(qualification);
                 }
-                return contact;
+                return qualification;
             }
 
-            protected void validate(Contact contact) {
-                super.validate(contact);
-                ValidationSupport.checkList(contact.telecom, "telecom", ContactPoint.class);
-                ValidationSupport.requireValueOrChildren(contact);
+            protected void validate(Qualification qualification) {
+                super.validate(qualification);
+                ValidationSupport.checkList(qualification.identifier, "identifier", Identifier.class);
+                ValidationSupport.requireNonNull(qualification.code, "code");
+                ValidationSupport.checkReferenceType(qualification.issuer, "issuer", "Organization");
+                ValidationSupport.requireValueOrChildren(qualification);
             }
 
-            protected Builder from(Contact contact) {
-                super.from(contact);
-                purpose = contact.purpose;
-                name = contact.name;
-                telecom.addAll(contact.telecom);
-                address = contact.address;
+            protected Builder from(Qualification qualification) {
+                super.from(qualification);
+                identifier.addAll(qualification.identifier);
+                code = qualification.code;
+                period = qualification.period;
+                issuer = qualification.issuer;
                 return this;
             }
         }

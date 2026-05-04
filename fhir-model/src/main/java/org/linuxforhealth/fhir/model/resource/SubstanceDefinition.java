@@ -83,15 +83,6 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 @Constraint(
     id = "substanceDefinition-3",
     level = "Warning",
-    location = "name.language",
-    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/languages",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/languages', 'preferred')",
-    source = "http://hl7.org/fhir/StructureDefinition/SubstanceDefinition",
-    generated = true
-)
-@Constraint(
-    id = "substanceDefinition-4",
-    level = "Warning",
     location = "name.official.authority",
     description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/substance-name-authority",
     expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/substance-name-authority', 'preferred')",
@@ -99,7 +90,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "substanceDefinition-5",
+    id = "substanceDefinition-4",
     level = "Warning",
     location = "name.official.status",
     description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/publication-status",
@@ -155,7 +146,12 @@ public class SubstanceDefinition extends DomainResource {
     @Summary
     private final List<Moiety> moiety;
     @Summary
+    private final List<Characterization> characterization;
+    @Summary
     private final List<Property> property;
+    @Summary
+    @ReferenceTarget({ "SubstanceReferenceInformation" })
+    private final Reference referenceInformation;
     @Summary
     private final List<MolecularWeight> molecularWeight;
     @Summary
@@ -166,6 +162,15 @@ public class SubstanceDefinition extends DomainResource {
     private final List<Name> name;
     @Summary
     private final List<Relationship> relationship;
+    @Summary
+    @ReferenceTarget({ "SubstanceNucleicAcid" })
+    private final Reference nucleicAcid;
+    @Summary
+    @ReferenceTarget({ "SubstancePolymer" })
+    private final Reference polymer;
+    @Summary
+    @ReferenceTarget({ "SubstanceProtein" })
+    private final Reference protein;
     @Summary
     private final SourceMaterial sourceMaterial;
 
@@ -183,12 +188,17 @@ public class SubstanceDefinition extends DomainResource {
         manufacturer = Collections.unmodifiableList(builder.manufacturer);
         supplier = Collections.unmodifiableList(builder.supplier);
         moiety = Collections.unmodifiableList(builder.moiety);
+        characterization = Collections.unmodifiableList(builder.characterization);
         property = Collections.unmodifiableList(builder.property);
+        referenceInformation = builder.referenceInformation;
         molecularWeight = Collections.unmodifiableList(builder.molecularWeight);
         structure = builder.structure;
         code = Collections.unmodifiableList(builder.code);
         name = Collections.unmodifiableList(builder.name);
         relationship = Collections.unmodifiableList(builder.relationship);
+        nucleicAcid = builder.nucleicAcid;
+        polymer = builder.polymer;
+        protein = builder.protein;
         sourceMaterial = builder.sourceMaterial;
     }
 
@@ -320,6 +330,16 @@ public class SubstanceDefinition extends DomainResource {
      * General specifications for this substance.
      * 
      * @return
+     *     An unmodifiable list containing immutable objects of type {@link Characterization} that may be empty.
+     */
+    public List<Characterization> getCharacterization() {
+        return characterization;
+    }
+
+    /**
+     * General specifications for this substance.
+     * 
+     * @return
      *     An unmodifiable list containing immutable objects of type {@link Property} that may be empty.
      */
     public List<Property> getProperty() {
@@ -327,7 +347,18 @@ public class SubstanceDefinition extends DomainResource {
     }
 
     /**
-     * The molecular weight or weight range (for proteins, polymers or nucleic acids).
+     * General information detailing this substance.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getReferenceInformation() {
+        return referenceInformation;
+    }
+
+    /**
+     * The average mass of a molecule of a compound compared to 1/12 the mass of carbon 12 and calculated as the sum of the 
+     * atomic weights of the constituent atoms.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link MolecularWeight} that may be empty.
@@ -377,6 +408,36 @@ public class SubstanceDefinition extends DomainResource {
     }
 
     /**
+     * Data items specific to nucleic acids.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getNucleicAcid() {
+        return nucleicAcid;
+    }
+
+    /**
+     * Data items specific to polymers.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getPolymer() {
+        return polymer;
+    }
+
+    /**
+     * Data items specific to proteins.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getProtein() {
+        return protein;
+    }
+
+    /**
      * Material or taxonomic/anatomical source for the substance.
      * 
      * @return
@@ -401,12 +462,17 @@ public class SubstanceDefinition extends DomainResource {
             !manufacturer.isEmpty() || 
             !supplier.isEmpty() || 
             !moiety.isEmpty() || 
+            !characterization.isEmpty() || 
             !property.isEmpty() || 
+            (referenceInformation != null) || 
             !molecularWeight.isEmpty() || 
             (structure != null) || 
             !code.isEmpty() || 
             !name.isEmpty() || 
             !relationship.isEmpty() || 
+            (nucleicAcid != null) || 
+            (polymer != null) || 
+            (protein != null) || 
             (sourceMaterial != null);
     }
 
@@ -436,12 +502,17 @@ public class SubstanceDefinition extends DomainResource {
                 accept(manufacturer, "manufacturer", visitor, Reference.class);
                 accept(supplier, "supplier", visitor, Reference.class);
                 accept(moiety, "moiety", visitor, Moiety.class);
+                accept(characterization, "characterization", visitor, Characterization.class);
                 accept(property, "property", visitor, Property.class);
+                accept(referenceInformation, "referenceInformation", visitor);
                 accept(molecularWeight, "molecularWeight", visitor, MolecularWeight.class);
                 accept(structure, "structure", visitor);
                 accept(code, "code", visitor, Code.class);
                 accept(name, "name", visitor, Name.class);
                 accept(relationship, "relationship", visitor, Relationship.class);
+                accept(nucleicAcid, "nucleicAcid", visitor);
+                accept(polymer, "polymer", visitor);
+                accept(protein, "protein", visitor);
                 accept(sourceMaterial, "sourceMaterial", visitor);
             }
             visitor.visitEnd(elementName, elementIndex, this);
@@ -481,12 +552,17 @@ public class SubstanceDefinition extends DomainResource {
             Objects.equals(manufacturer, other.manufacturer) && 
             Objects.equals(supplier, other.supplier) && 
             Objects.equals(moiety, other.moiety) && 
+            Objects.equals(characterization, other.characterization) && 
             Objects.equals(property, other.property) && 
+            Objects.equals(referenceInformation, other.referenceInformation) && 
             Objects.equals(molecularWeight, other.molecularWeight) && 
             Objects.equals(structure, other.structure) && 
             Objects.equals(code, other.code) && 
             Objects.equals(name, other.name) && 
             Objects.equals(relationship, other.relationship) && 
+            Objects.equals(nucleicAcid, other.nucleicAcid) && 
+            Objects.equals(polymer, other.polymer) && 
+            Objects.equals(protein, other.protein) && 
             Objects.equals(sourceMaterial, other.sourceMaterial);
     }
 
@@ -514,12 +590,17 @@ public class SubstanceDefinition extends DomainResource {
                 manufacturer, 
                 supplier, 
                 moiety, 
+                characterization, 
                 property, 
+                referenceInformation, 
                 molecularWeight, 
                 structure, 
                 code, 
                 name, 
                 relationship, 
+                nucleicAcid, 
+                polymer, 
+                protein, 
                 sourceMaterial);
             hashCode = result;
         }
@@ -548,12 +629,17 @@ public class SubstanceDefinition extends DomainResource {
         private List<Reference> manufacturer = new ArrayList<>();
         private List<Reference> supplier = new ArrayList<>();
         private List<Moiety> moiety = new ArrayList<>();
+        private List<Characterization> characterization = new ArrayList<>();
         private List<Property> property = new ArrayList<>();
+        private Reference referenceInformation;
         private List<MolecularWeight> molecularWeight = new ArrayList<>();
         private Structure structure;
         private List<Code> code = new ArrayList<>();
         private List<Name> name = new ArrayList<>();
         private List<Relationship> relationship = new ArrayList<>();
+        private Reference nucleicAcid;
+        private Reference polymer;
+        private Reference protein;
         private SourceMaterial sourceMaterial;
 
         private Builder() {
@@ -638,7 +724,8 @@ public class SubstanceDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -656,7 +743,8 @@ public class SubstanceDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -677,7 +765,7 @@ public class SubstanceDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -697,7 +785,7 @@ public class SubstanceDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -722,9 +810,9 @@ public class SubstanceDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -747,9 +835,9 @@ public class SubstanceDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1201,6 +1289,45 @@ public class SubstanceDefinition extends DomainResource {
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
+         * @param characterization
+         *     General specifications for this substance
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder characterization(Characterization... characterization) {
+            for (Characterization value : characterization) {
+                this.characterization.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * General specifications for this substance.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param characterization
+         *     General specifications for this substance
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder characterization(Collection<Characterization> characterization) {
+            this.characterization = new ArrayList<>(characterization);
+            return this;
+        }
+
+        /**
+         * General specifications for this substance.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
          * @param property
          *     General specifications for this substance
          * 
@@ -1235,13 +1362,33 @@ public class SubstanceDefinition extends DomainResource {
         }
 
         /**
-         * The molecular weight or weight range (for proteins, polymers or nucleic acids).
+         * General information detailing this substance.
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link SubstanceReferenceInformation}</li>
+         * </ul>
+         * 
+         * @param referenceInformation
+         *     General information detailing this substance
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder referenceInformation(Reference referenceInformation) {
+            this.referenceInformation = referenceInformation;
+            return this;
+        }
+
+        /**
+         * The average mass of a molecule of a compound compared to 1/12 the mass of carbon 12 and calculated as the sum of the 
+         * atomic weights of the constituent atoms.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param molecularWeight
-         *     The molecular weight or weight range
+         *     The average mass of a molecule of a compound
          * 
          * @return
          *     A reference to this Builder instance
@@ -1254,13 +1401,14 @@ public class SubstanceDefinition extends DomainResource {
         }
 
         /**
-         * The molecular weight or weight range (for proteins, polymers or nucleic acids).
+         * The average mass of a molecule of a compound compared to 1/12 the mass of carbon 12 and calculated as the sum of the 
+         * atomic weights of the constituent atoms.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param molecularWeight
-         *     The molecular weight or weight range
+         *     The average mass of a molecule of a compound
          * 
          * @return
          *     A reference to this Builder instance
@@ -1405,6 +1553,63 @@ public class SubstanceDefinition extends DomainResource {
         }
 
         /**
+         * Data items specific to nucleic acids.
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link SubstanceNucleicAcid}</li>
+         * </ul>
+         * 
+         * @param nucleicAcid
+         *     Data items specific to nucleic acids
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder nucleicAcid(Reference nucleicAcid) {
+            this.nucleicAcid = nucleicAcid;
+            return this;
+        }
+
+        /**
+         * Data items specific to polymers.
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link SubstancePolymer}</li>
+         * </ul>
+         * 
+         * @param polymer
+         *     Data items specific to polymers
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder polymer(Reference polymer) {
+            this.polymer = polymer;
+            return this;
+        }
+
+        /**
+         * Data items specific to proteins.
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link SubstanceProtein}</li>
+         * </ul>
+         * 
+         * @param protein
+         *     Data items specific to proteins
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder protein(Reference protein) {
+            this.protein = protein;
+            return this;
+        }
+
+        /**
          * Material or taxonomic/anatomical source for the substance.
          * 
          * @param sourceMaterial
@@ -1445,6 +1650,7 @@ public class SubstanceDefinition extends DomainResource {
             ValidationSupport.checkList(substanceDefinition.manufacturer, "manufacturer", Reference.class);
             ValidationSupport.checkList(substanceDefinition.supplier, "supplier", Reference.class);
             ValidationSupport.checkList(substanceDefinition.moiety, "moiety", Moiety.class);
+            ValidationSupport.checkList(substanceDefinition.characterization, "characterization", Characterization.class);
             ValidationSupport.checkList(substanceDefinition.property, "property", Property.class);
             ValidationSupport.checkList(substanceDefinition.molecularWeight, "molecularWeight", MolecularWeight.class);
             ValidationSupport.checkList(substanceDefinition.code, "code", Code.class);
@@ -1453,6 +1659,10 @@ public class SubstanceDefinition extends DomainResource {
             ValidationSupport.checkReferenceType(substanceDefinition.informationSource, "informationSource", "Citation");
             ValidationSupport.checkReferenceType(substanceDefinition.manufacturer, "manufacturer", "Organization");
             ValidationSupport.checkReferenceType(substanceDefinition.supplier, "supplier", "Organization");
+            ValidationSupport.checkReferenceType(substanceDefinition.referenceInformation, "referenceInformation", "SubstanceReferenceInformation");
+            ValidationSupport.checkReferenceType(substanceDefinition.nucleicAcid, "nucleicAcid", "SubstanceNucleicAcid");
+            ValidationSupport.checkReferenceType(substanceDefinition.polymer, "polymer", "SubstancePolymer");
+            ValidationSupport.checkReferenceType(substanceDefinition.protein, "protein", "SubstanceProtein");
         }
 
         protected Builder from(SubstanceDefinition substanceDefinition) {
@@ -1469,12 +1679,17 @@ public class SubstanceDefinition extends DomainResource {
             manufacturer.addAll(substanceDefinition.manufacturer);
             supplier.addAll(substanceDefinition.supplier);
             moiety.addAll(substanceDefinition.moiety);
+            characterization.addAll(substanceDefinition.characterization);
             property.addAll(substanceDefinition.property);
+            referenceInformation = substanceDefinition.referenceInformation;
             molecularWeight.addAll(substanceDefinition.molecularWeight);
             structure = substanceDefinition.structure;
             code.addAll(substanceDefinition.code);
             name.addAll(substanceDefinition.name);
             relationship.addAll(substanceDefinition.relationship);
+            nucleicAcid = substanceDefinition.nucleicAcid;
+            polymer = substanceDefinition.polymer;
+            protein = substanceDefinition.protein;
             sourceMaterial = substanceDefinition.sourceMaterial;
             return this;
         }
@@ -1510,7 +1725,7 @@ public class SubstanceDefinition extends DomainResource {
         private final String molecularFormula;
         @Summary
         @Choice({ Quantity.class, String.class })
-        private final Element amount;
+        private final org.linuxforhealth.fhir.model.type.Element amount;
         @Summary
         @Binding(
             bindingName = "SubstanceAmountType",
@@ -1598,7 +1813,7 @@ public class SubstanceDefinition extends DomainResource {
          * @return
          *     An immutable object of type {@link Quantity} or {@link String} that may be null.
          */
-        public Element getAmount() {
+        public org.linuxforhealth.fhir.model.type.Element getAmount() {
             return amount;
         }
 
@@ -1710,7 +1925,7 @@ public class SubstanceDefinition extends DomainResource {
             private CodeableConcept stereochemistry;
             private CodeableConcept opticalActivity;
             private String molecularFormula;
-            private Element amount;
+            private org.linuxforhealth.fhir.model.type.Element amount;
             private CodeableConcept measurementType;
 
             private Builder() {
@@ -1734,7 +1949,7 @@ public class SubstanceDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1754,7 +1969,7 @@ public class SubstanceDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1779,7 +1994,7 @@ public class SubstanceDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1804,7 +2019,7 @@ public class SubstanceDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1975,7 +2190,7 @@ public class SubstanceDefinition extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder amount(Element amount) {
+            public Builder amount(org.linuxforhealth.fhir.model.type.Element amount) {
                 this.amount = amount;
                 return this;
             }
@@ -2036,6 +2251,393 @@ public class SubstanceDefinition extends DomainResource {
     /**
      * General specifications for this substance.
      */
+    public static class Characterization extends BackboneElement {
+        @Summary
+        @Binding(
+            bindingName = "SubstanceStructureTechnique",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "The method used to elucidate the characterization of the drug substance.",
+            valueSet = "http://hl7.org/fhir/ValueSet/substance-structure-technique"
+        )
+        private final CodeableConcept technique;
+        @Summary
+        @Binding(
+            bindingName = "SubstanceForm",
+            strength = BindingStrength.Value.EXAMPLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/substance-form"
+        )
+        private final CodeableConcept form;
+        @Summary
+        private final Markdown description;
+        @Summary
+        private final List<Attachment> file;
+
+        private Characterization(Builder builder) {
+            super(builder);
+            technique = builder.technique;
+            form = builder.form;
+            description = builder.description;
+            file = Collections.unmodifiableList(builder.file);
+        }
+
+        /**
+         * The method used to elucidate the characterization of the drug substance. Example: HPLC.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getTechnique() {
+            return technique;
+        }
+
+        /**
+         * Describes the nature of the chemical entity and explains, for instance, whether this is a base or a salt form.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getForm() {
+            return form;
+        }
+
+        /**
+         * The description or justification in support of the interpretation of the data file.
+         * 
+         * @return
+         *     An immutable object of type {@link Markdown} that may be null.
+         */
+        public Markdown getDescription() {
+            return description;
+        }
+
+        /**
+         * The data produced by the analytical instrument or a pictorial representation of that data. Examples: a JCAMP, JDX, or 
+         * ADX file, or a chromatogram or spectrum analysis.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link Attachment} that may be empty.
+         */
+        public List<Attachment> getFile() {
+            return file;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (technique != null) || 
+                (form != null) || 
+                (description != null) || 
+                !file.isEmpty();
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(technique, "technique", visitor);
+                    accept(form, "form", visitor);
+                    accept(description, "description", visitor);
+                    accept(file, "file", visitor, Attachment.class);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Characterization other = (Characterization) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(technique, other.technique) && 
+                Objects.equals(form, other.form) && 
+                Objects.equals(description, other.description) && 
+                Objects.equals(file, other.file);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    technique, 
+                    form, 
+                    description, 
+                    file);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private CodeableConcept technique;
+            private CodeableConcept form;
+            private Markdown description;
+            private List<Attachment> file = new ArrayList<>();
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * The method used to elucidate the characterization of the drug substance. Example: HPLC.
+             * 
+             * @param technique
+             *     The method used to find the characterization e.g. HPLC
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder technique(CodeableConcept technique) {
+                this.technique = technique;
+                return this;
+            }
+
+            /**
+             * Describes the nature of the chemical entity and explains, for instance, whether this is a base or a salt form.
+             * 
+             * @param form
+             *     Describes the nature of the chemical entity and explains, for instance, whether this is a base or a salt form
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder form(CodeableConcept form) {
+                this.form = form;
+                return this;
+            }
+
+            /**
+             * The description or justification in support of the interpretation of the data file.
+             * 
+             * @param description
+             *     The description or justification in support of the interpretation of the data file
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder description(Markdown description) {
+                this.description = description;
+                return this;
+            }
+
+            /**
+             * The data produced by the analytical instrument or a pictorial representation of that data. Examples: a JCAMP, JDX, or 
+             * ADX file, or a chromatogram or spectrum analysis.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param file
+             *     The data produced by the analytical instrument or a pictorial representation of that data. Examples: a JCAMP, JDX, or 
+             *     ADX file, or a chromatogram or spectrum analysis
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder file(Attachment... file) {
+                for (Attachment value : file) {
+                    this.file.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * The data produced by the analytical instrument or a pictorial representation of that data. Examples: a JCAMP, JDX, or 
+             * ADX file, or a chromatogram or spectrum analysis.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param file
+             *     The data produced by the analytical instrument or a pictorial representation of that data. Examples: a JCAMP, JDX, or 
+             *     ADX file, or a chromatogram or spectrum analysis
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder file(Collection<Attachment> file) {
+                this.file = new ArrayList<>(file);
+                return this;
+            }
+
+            /**
+             * Build the {@link Characterization}
+             * 
+             * @return
+             *     An immutable object of type {@link Characterization}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Characterization per the base specification
+             */
+            @Override
+            public Characterization build() {
+                Characterization characterization = new Characterization(this);
+                if (validating) {
+                    validate(characterization);
+                }
+                return characterization;
+            }
+
+            protected void validate(Characterization characterization) {
+                super.validate(characterization);
+                ValidationSupport.checkList(characterization.file, "file", Attachment.class);
+                ValidationSupport.requireValueOrChildren(characterization);
+            }
+
+            protected Builder from(Characterization characterization) {
+                super.from(characterization);
+                technique = characterization.technique;
+                form = characterization.form;
+                description = characterization.description;
+                file.addAll(characterization.file);
+                return this;
+            }
+        }
+    }
+
+    /**
+     * General specifications for this substance.
+     */
     public static class Property extends BackboneElement {
         @Summary
         @Binding(
@@ -2048,7 +2650,7 @@ public class SubstanceDefinition extends DomainResource {
         private final CodeableConcept type;
         @Summary
         @Choice({ CodeableConcept.class, Quantity.class, Date.class, Boolean.class, Attachment.class })
-        private final Element value;
+        private final org.linuxforhealth.fhir.model.type.Element value;
 
         private Property(Builder builder) {
             super(builder);
@@ -2073,7 +2675,7 @@ public class SubstanceDefinition extends DomainResource {
          *     An immutable object of type {@link CodeableConcept}, {@link Quantity}, {@link Date}, {@link Boolean} or {@link 
          *     Attachment} that may be null.
          */
-        public Element getValue() {
+        public org.linuxforhealth.fhir.model.type.Element getValue() {
             return value;
         }
 
@@ -2145,7 +2747,7 @@ public class SubstanceDefinition extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private CodeableConcept type;
-            private Element value;
+            private org.linuxforhealth.fhir.model.type.Element value;
 
             private Builder() {
                 super();
@@ -2168,7 +2770,7 @@ public class SubstanceDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2188,7 +2790,7 @@ public class SubstanceDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2213,7 +2815,7 @@ public class SubstanceDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2238,7 +2840,7 @@ public class SubstanceDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2328,7 +2930,7 @@ public class SubstanceDefinition extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder value(Element value) {
+            public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                 this.value = value;
                 return this;
             }
@@ -2372,7 +2974,8 @@ public class SubstanceDefinition extends DomainResource {
     }
 
     /**
-     * The molecular weight or weight range (for proteins, polymers or nucleic acids).
+     * The average mass of a molecule of a compound compared to 1/12 the mass of carbon 12 and calculated as the sum of the 
+     * atomic weights of the constituent atoms.
      */
     public static class MolecularWeight extends BackboneElement {
         @Summary
@@ -2529,7 +3132,7 @@ public class SubstanceDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2549,7 +3152,7 @@ public class SubstanceDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2574,7 +3177,7 @@ public class SubstanceDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2599,7 +3202,7 @@ public class SubstanceDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2736,7 +3339,7 @@ public class SubstanceDefinition extends DomainResource {
         @Binding(
             bindingName = "SubstanceStructureTechnique",
             strength = BindingStrength.Value.EXAMPLE,
-            description = "The method used to elucidate the structure or characterization of the drug substance.",
+            description = "The method used to elucidate the structure of the drug substance.",
             valueSet = "http://hl7.org/fhir/ValueSet/substance-structure-technique"
         )
         private final List<CodeableConcept> technique;
@@ -2779,7 +3382,7 @@ public class SubstanceDefinition extends DomainResource {
         }
 
         /**
-         * Molecular formula of this substance, typically using the Hill system.
+         * An expression which states the number and type of atoms present in a molecule of a substance.
          * 
          * @return
          *     An immutable object of type {@link String} that may be null.
@@ -2810,8 +3413,8 @@ public class SubstanceDefinition extends DomainResource {
         }
 
         /**
-         * The method used to elucidate the structure or characterization of the drug substance. Examples: X-ray, HPLC, NMR, 
-         * Peptide mapping, Ligand binding assay.
+         * The method used to elucidate the structure of the drug substance. Examples: X-ray, NMR, Peptide mapping, Ligand 
+         * binding assay.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
@@ -2831,7 +3434,7 @@ public class SubstanceDefinition extends DomainResource {
         }
 
         /**
-         * A depiction of the structure or characterization of the substance.
+         * A depiction of the structure of the substance.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link Representation} that may be empty.
@@ -2961,7 +3564,7 @@ public class SubstanceDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2981,7 +3584,7 @@ public class SubstanceDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3006,7 +3609,7 @@ public class SubstanceDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3031,7 +3634,7 @@ public class SubstanceDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3087,7 +3690,7 @@ public class SubstanceDefinition extends DomainResource {
              * Convenience method for setting {@code molecularFormula}.
              * 
              * @param molecularFormula
-             *     Molecular formula (e.g. using the Hill system)
+             *     An expression which states the number and type of atoms present in a molecule of a substance
              * 
              * @return
              *     A reference to this Builder instance
@@ -3100,10 +3703,10 @@ public class SubstanceDefinition extends DomainResource {
             }
 
             /**
-             * Molecular formula of this substance, typically using the Hill system.
+             * An expression which states the number and type of atoms present in a molecule of a substance.
              * 
              * @param molecularFormula
-             *     Molecular formula (e.g. using the Hill system)
+             *     An expression which states the number and type of atoms present in a molecule of a substance
              * 
              * @return
              *     A reference to this Builder instance
@@ -3159,8 +3762,8 @@ public class SubstanceDefinition extends DomainResource {
             }
 
             /**
-             * The method used to elucidate the structure or characterization of the drug substance. Examples: X-ray, HPLC, NMR, 
-             * Peptide mapping, Ligand binding assay.
+             * The method used to elucidate the structure of the drug substance. Examples: X-ray, NMR, Peptide mapping, Ligand 
+             * binding assay.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -3179,8 +3782,8 @@ public class SubstanceDefinition extends DomainResource {
             }
 
             /**
-             * The method used to elucidate the structure or characterization of the drug substance. Examples: X-ray, HPLC, NMR, 
-             * Peptide mapping, Ligand binding assay.
+             * The method used to elucidate the structure of the drug substance. Examples: X-ray, NMR, Peptide mapping, Ligand 
+             * binding assay.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -3249,13 +3852,13 @@ public class SubstanceDefinition extends DomainResource {
             }
 
             /**
-             * A depiction of the structure or characterization of the substance.
+             * A depiction of the structure of the substance.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param representation
-             *     A depiction of the structure or characterization of the substance
+             *     A depiction of the structure of the substance
              * 
              * @return
              *     A reference to this Builder instance
@@ -3268,13 +3871,13 @@ public class SubstanceDefinition extends DomainResource {
             }
 
             /**
-             * A depiction of the structure or characterization of the substance.
+             * A depiction of the structure of the substance.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param representation
-             *     A depiction of the structure or characterization of the substance
+             *     A depiction of the structure of the substance
              * 
              * @return
              *     A reference to this Builder instance
@@ -3328,7 +3931,7 @@ public class SubstanceDefinition extends DomainResource {
         }
 
         /**
-         * A depiction of the structure or characterization of the substance.
+         * A depiction of the structure of the substance.
          */
         public static class Representation extends BackboneElement {
             @Summary
@@ -3372,7 +3975,7 @@ public class SubstanceDefinition extends DomainResource {
             }
 
             /**
-             * The structural representation or characterization as a text string in a standard format.
+             * The structural representation as a text string in a standard format.
              * 
              * @return
              *     An immutable object of type {@link String} that may be null.
@@ -3393,8 +3996,8 @@ public class SubstanceDefinition extends DomainResource {
             }
 
             /**
-             * An attached file with the structural representation or characterization e.g. a molecular structure graphic of the 
-             * substance, a JCAMP or AnIML file.
+             * An attached file with the structural representation e.g. a molecular structure graphic of the substance, a JCAMP or 
+             * AnIML file.
              * 
              * @return
              *     An immutable object of type {@link Reference} that may be null.
@@ -3504,7 +4107,7 @@ public class SubstanceDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3524,7 +4127,7 @@ public class SubstanceDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3549,7 +4152,7 @@ public class SubstanceDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3574,7 +4177,7 @@ public class SubstanceDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3616,7 +4219,7 @@ public class SubstanceDefinition extends DomainResource {
                  * Convenience method for setting {@code representation}.
                  * 
                  * @param representation
-                 *     The structural representation or characterization as a text string in a standard format
+                 *     The structural representation as a text string in a standard format
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -3629,10 +4232,10 @@ public class SubstanceDefinition extends DomainResource {
                 }
 
                 /**
-                 * The structural representation or characterization as a text string in a standard format.
+                 * The structural representation as a text string in a standard format.
                  * 
                  * @param representation
-                 *     The structural representation or characterization as a text string in a standard format
+                 *     The structural representation as a text string in a standard format
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -3658,8 +4261,8 @@ public class SubstanceDefinition extends DomainResource {
                 }
 
                 /**
-                 * An attached file with the structural representation or characterization e.g. a molecular structure graphic of the 
-                 * substance, a JCAMP or AnIML file.
+                 * An attached file with the structural representation e.g. a molecular structure graphic of the substance, a JCAMP or 
+                 * AnIML file.
                  * 
                  * <p>Allowed resource types for this reference:
                  * <ul>
@@ -3899,7 +4502,7 @@ public class SubstanceDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3919,7 +4522,7 @@ public class SubstanceDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3944,7 +4547,7 @@ public class SubstanceDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3969,7 +4572,7 @@ public class SubstanceDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4188,10 +4791,9 @@ public class SubstanceDefinition extends DomainResource {
         @Summary
         @Binding(
             bindingName = "Language",
-            strength = BindingStrength.Value.PREFERRED,
-            description = "IETF language tag",
-            valueSet = "http://hl7.org/fhir/ValueSet/languages",
-            maxValueSet = "http://hl7.org/fhir/ValueSet/all-languages"
+            strength = BindingStrength.Value.REQUIRED,
+            description = "IETF language tag for a human language",
+            valueSet = "http://hl7.org/fhir/ValueSet/all-languages|5.0.0"
         )
         private final List<CodeableConcept> language;
         @Summary
@@ -4482,7 +5084,7 @@ public class SubstanceDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4502,7 +5104,7 @@ public class SubstanceDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4527,7 +5129,7 @@ public class SubstanceDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4552,7 +5154,7 @@ public class SubstanceDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -5163,7 +5765,7 @@ public class SubstanceDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5183,7 +5785,7 @@ public class SubstanceDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -5208,7 +5810,7 @@ public class SubstanceDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5233,7 +5835,7 @@ public class SubstanceDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -5339,7 +5941,7 @@ public class SubstanceDefinition extends DomainResource {
         @Summary
         @ReferenceTarget({ "SubstanceDefinition" })
         @Choice({ Reference.class, CodeableConcept.class })
-        private final Element substanceDefinition;
+        private final org.linuxforhealth.fhir.model.type.Element substanceDefinition;
         @Summary
         @Binding(
             bindingName = "SubstanceRelationshipType",
@@ -5353,7 +5955,7 @@ public class SubstanceDefinition extends DomainResource {
         private final Boolean isDefining;
         @Summary
         @Choice({ Quantity.class, Ratio.class, String.class })
-        private final Element amount;
+        private final org.linuxforhealth.fhir.model.type.Element amount;
         @Summary
         private final Ratio ratioHighLimitAmount;
         @Summary
@@ -5385,7 +5987,7 @@ public class SubstanceDefinition extends DomainResource {
          * @return
          *     An immutable object of type {@link Reference} or {@link CodeableConcept} that may be null.
          */
-        public Element getSubstanceDefinition() {
+        public org.linuxforhealth.fhir.model.type.Element getSubstanceDefinition() {
             return substanceDefinition;
         }
 
@@ -5417,7 +6019,7 @@ public class SubstanceDefinition extends DomainResource {
          * @return
          *     An immutable object of type {@link Quantity}, {@link Ratio} or {@link String} that may be null.
          */
-        public Element getAmount() {
+        public org.linuxforhealth.fhir.model.type.Element getAmount() {
             return amount;
         }
 
@@ -5538,10 +6140,10 @@ public class SubstanceDefinition extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private Element substanceDefinition;
+            private org.linuxforhealth.fhir.model.type.Element substanceDefinition;
             private CodeableConcept type;
             private Boolean isDefining;
-            private Element amount;
+            private org.linuxforhealth.fhir.model.type.Element amount;
             private Ratio ratioHighLimitAmount;
             private CodeableConcept comparator;
             private List<Reference> source = new ArrayList<>();
@@ -5567,7 +6169,7 @@ public class SubstanceDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -5587,7 +6189,7 @@ public class SubstanceDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -5612,7 +6214,7 @@ public class SubstanceDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -5637,7 +6239,7 @@ public class SubstanceDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -5681,7 +6283,7 @@ public class SubstanceDefinition extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder substanceDefinition(Element substanceDefinition) {
+            public Builder substanceDefinition(org.linuxforhealth.fhir.model.type.Element substanceDefinition) {
                 this.substanceDefinition = substanceDefinition;
                 return this;
             }
@@ -5770,7 +6372,7 @@ public class SubstanceDefinition extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder amount(Element amount) {
+            public Builder amount(org.linuxforhealth.fhir.model.type.Element amount) {
                 this.amount = amount;
                 return this;
             }
@@ -5940,7 +6542,7 @@ public class SubstanceDefinition extends DomainResource {
             bindingName = "Country",
             strength = BindingStrength.Value.REQUIRED,
             description = "Jurisdiction codes",
-            valueSet = "http://hl7.org/fhir/ValueSet/country|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/country|5.0.0"
         )
         private final List<CodeableConcept> countryOfOrigin;
 
@@ -6110,7 +6712,7 @@ public class SubstanceDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -6130,7 +6732,7 @@ public class SubstanceDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -6155,7 +6757,7 @@ public class SubstanceDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -6180,7 +6782,7 @@ public class SubstanceDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 

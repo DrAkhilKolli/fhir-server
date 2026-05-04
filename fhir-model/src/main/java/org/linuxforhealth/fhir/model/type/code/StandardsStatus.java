@@ -16,7 +16,7 @@ import java.util.Objects;
 
 import javax.annotation.Generated;
 
-@System("http://hl7.org/fhir/standards-status")
+@System("http://terminology.hl7.org/CodeSystem/standards-status")
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class StandardsStatus extends Code {
     /**

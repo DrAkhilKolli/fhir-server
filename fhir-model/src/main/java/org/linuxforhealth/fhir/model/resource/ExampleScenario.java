@@ -15,6 +15,7 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
+import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.Required;
@@ -24,20 +25,22 @@ import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
 import org.linuxforhealth.fhir.model.type.DateTime;
+import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
+import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.UsageContext;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.ExampleScenarioActorType;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
-import org.linuxforhealth.fhir.model.type.code.ResourceTypeCode;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
@@ -45,26 +48,245 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 /**
  * Example of workflow instance.
  * 
- * <p>Maturity level: FMM0 (Trial Use)
+ * <p>Maturity level: FMM1 (Trial Use)
  */
 @Maturity(
-    level = 0,
+    level = 1,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "esc-0",
+    id = "cnl-0",
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
     source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
 )
 @Constraint(
-    id = "exampleScenario-1",
+    id = "cnl-1",
+    level = "Warning",
+    location = "ExampleScenario.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-1",
+    level = "Rule",
+    location = "ExampleScenario.instance",
+    description = "StructureVersion is required if structureType is not FHIR (but may still be present even if FHIR)",
+    expression = "structureType.exists() and structureType.memberOf('http://hl7.org/fhir/ValueSet/resource-types').not() implies structureVersion.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-2",
+    level = "Rule",
+    location = "ExampleScenario.instance",
+    description = "instance.content is only allowed if there are no instance.versions",
+    expression = "content.exists() implies version.empty()",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-3",
+    level = "Rule",
+    location = "(base)",
+    description = "Must have actors if status is active or required",
+    expression = "status='active' or status='retired' implies actor.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-4",
+    level = "Rule",
+    location = "(base)",
+    description = "Must have processes if status is active or required",
+    expression = "status='active' or status='retired' implies process.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-5",
+    level = "Rule",
+    location = "ExampleScenario.process",
+    description = "Processes must have steps if ExampleScenario status is active or required",
+    expression = "%resource.status='active' or %resource.status='retired' implies step.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-6",
+    level = "Rule",
+    location = "(base)",
+    description = "Actor keys must be unique",
+    expression = "actor.key.count() = actor.key.distinct().count()",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-7",
+    level = "Rule",
+    location = "(base)",
+    description = "Actor titles must be unique",
+    expression = "actor.title.count() = actor.title.distinct().count()",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-8",
+    level = "Rule",
+    location = "(base)",
+    description = "Instance keys must be unique",
+    expression = "instance.key.count() = instance.key.distinct().count()",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-9",
+    level = "Rule",
+    location = "(base)",
+    description = "Instance titles must be unique",
+    expression = "instance.title.count() = instance.title.distinct().count()",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-10",
+    level = "Rule",
+    location = "ExampleScenario.instance",
+    description = "Version keys must be unique within an instance",
+    expression = "version.key.count() = version.key.distinct().count()",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-11",
+    level = "Rule",
+    location = "ExampleScenario.instance",
+    description = "Version titles must be unique within an instance",
+    expression = "version.title.count() = version.title.distinct().count()",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-12",
+    level = "Rule",
+    location = "(base)",
+    description = "Process titles must be unique",
+    expression = "process.title.count() = process.title.distinct().count()",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-13",
+    level = "Rule",
+    location = "ExampleScenario.process.step",
+    description = "Alternative titles must be unique within a step",
+    expression = "alternative.title.count() = alternative.title.distinct().count()",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-14",
+    level = "Rule",
+    location = "ExampleScenario.instance.containedInstance",
+    description = "InstanceReference must be a key of an instance defined in the ExampleScenario",
+    expression = "%resource.instance.where(key=%context.instanceReference).exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-15",
+    level = "Rule",
+    location = "ExampleScenario.instance.containedInstance",
+    description = "versionReference must be specified if the referenced instance defines versions",
+    expression = "versionReference.empty() implies %resource.instance.where(key=%context.instanceReference).version.empty()",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-16",
+    level = "Rule",
+    location = "ExampleScenario.instance.containedInstance",
+    description = "versionReference must be a key of a version within the instance pointed to by instanceReference",
+    expression = "versionReference.exists() implies %resource.instance.where(key=%context.instanceReference).version.where(key=%context.versionReference).exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-17",
+    level = "Rule",
+    location = "ExampleScenario.process.step.operation",
+    description = "If specified, initiator must be a key of an actor within the ExampleScenario",
+    expression = "initiator.exists() implies initiator = 'OTHER' or %resource.actor.where(key=%context.initiator).exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-18",
+    level = "Rule",
+    location = "ExampleScenario.process.step.operation",
+    description = "If specified, receiver must be a key of an actor within the ExampleScenario",
+    expression = "receiver.exists() implies receiver = 'OTHER' or %resource.actor.where(key=%context.receiver).exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-19",
+    level = "Warning",
+    location = "ExampleScenario.actor",
+    description = "Actor should be referenced in at least one operation",
+    expression = "%resource.process.descendants().select(operation).where(initiator=%context.key or receiver=%context.key).exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-20",
+    level = "Warning",
+    location = "ExampleScenario.instance",
+    description = "Instance should be referenced in at least one location",
+    expression = "%resource.process.descendants().select(instanceReference).where($this=%context.key).exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-21",
+    level = "Warning",
+    location = "ExampleScenario.instance",
+    description = "Instance version should be referenced in at least one operation",
+    expression = "version.exists() implies version.key.intersect(%resource.process.descendants().where(instanceReference = %context.key).versionReference).exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-22",
+    level = "Rule",
+    location = "ExampleScenario.process.step",
+    description = "Can have a process, a workflow, one or more operations or none of these, but cannot have a combination",
+    expression = "(process.exists() implies workflow.empty() and operation.empty()) and (workflow.exists() implies operation.empty())",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exs-23",
+    level = "Rule",
+    location = "ExampleScenario.actor",
+    description = "actor.key canot be 'OTHER'",
+    expression = "key != 'OTHER'",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario"
+)
+@Constraint(
+    id = "exampleScenario-24",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario",
+    generated = true
+)
+@Constraint(
+    id = "exampleScenario-25",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
     expression = "jurisdiction.exists() implies (jurisdiction.all(memberOf('http://hl7.org/fhir/ValueSet/jurisdiction', 'extensible')))",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario",
+    generated = true
+)
+@Constraint(
+    id = "exampleScenario-26",
+    level = "Warning",
+    location = "instance.structureType",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/examplescenario-instance-type",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/examplescenario-instance-type', 'extensible')",
+    source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario",
+    generated = true
+)
+@Constraint(
+    id = "exampleScenario-27",
+    level = "Warning",
+    location = "process.step.operation.type",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/testscript-operation-codes",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/testscript-operation-codes', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/ExampleScenario",
     generated = true
 )
@@ -77,13 +299,22 @@ public class ExampleScenario extends DomainResource {
     @Summary
     private final String version;
     @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+    @Summary
     private final String name;
+    @Summary
+    private final String title;
     @Summary
     @Binding(
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -96,6 +327,8 @@ public class ExampleScenario extends DomainResource {
     @Summary
     private final List<ContactDetail> contact;
     @Summary
+    private final Markdown description;
+    @Summary
     private final List<UsageContext> useContext;
     @Summary
     @Binding(
@@ -105,39 +338,42 @@ public class ExampleScenario extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/jurisdiction"
     )
     private final List<CodeableConcept> jurisdiction;
-    private final Markdown copyright;
     private final Markdown purpose;
+    private final Markdown copyright;
+    private final String copyrightLabel;
     private final List<Actor> actor;
     private final List<Instance> instance;
     private final List<Process> process;
-    private final List<Canonical> workflow;
 
     private ExampleScenario(Builder builder) {
         super(builder);
         url = builder.url;
         identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
+        title = builder.title;
         status = builder.status;
         experimental = builder.experimental;
         date = builder.date;
         publisher = builder.publisher;
         contact = Collections.unmodifiableList(builder.contact);
+        description = builder.description;
         useContext = Collections.unmodifiableList(builder.useContext);
         jurisdiction = Collections.unmodifiableList(builder.jurisdiction);
-        copyright = builder.copyright;
         purpose = builder.purpose;
+        copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
         actor = Collections.unmodifiableList(builder.actor);
         instance = Collections.unmodifiableList(builder.instance);
         process = Collections.unmodifiableList(builder.process);
-        workflow = Collections.unmodifiableList(builder.workflow);
     }
 
     /**
      * An absolute URI that is used to identify this example scenario when it is referenced in a specification, model, design 
      * or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address 
-     * at which at which an authoritative instance of this example scenario is (or will be) published. This URL can be the 
-     * target of a canonical reference. It SHALL remain the same when the example scenario is stored on different servers.
+     * at which an authoritative instance of this example scenario is (or will be) published. This URL can be the target of a 
+     * canonical reference. It SHALL remain the same when the example scenario is stored on different servers.
      * 
      * @return
      *     An immutable object of type {@link Uri} that may be null.
@@ -171,14 +407,33 @@ public class ExampleScenario extends DomainResource {
     }
 
     /**
-     * A natural language name identifying the example scenario. This name should be usable as an identifier for the module 
-     * by machine processing applications such as code generation.
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
+    }
+
+    /**
+     * Temporarily retained for tooling purposes.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
      */
     public String getName() {
         return name;
+    }
+
+    /**
+     * A short, descriptive, user-friendly title for the ExampleScenario.
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getTitle() {
+        return title;
     }
 
     /**
@@ -203,9 +458,9 @@ public class ExampleScenario extends DomainResource {
     }
 
     /**
-     * The date (and optionally time) when the example scenario was published. The date must change when the business version 
-     * changes and it must change if the status code changes. In addition, it should change when the substantive content of 
-     * the example scenario changes. (e.g. the 'content logical definition').
+     * The date (and optionally time) when the example scenario was last significantly changed. The date must change when the 
+     * business version changes and it must change if the status code changes. In addition, it should change when the 
+     * substantive content of the example scenario changes. (e.g. the 'content logical definition').
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -215,7 +470,7 @@ public class ExampleScenario extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the example scenario.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the example scenario.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -232,6 +487,16 @@ public class ExampleScenario extends DomainResource {
      */
     public List<ContactDetail> getContact() {
         return contact;
+    }
+
+    /**
+     * A free text natural language description of the ExampleScenario from a consumer's perspective.
+     * 
+     * @return
+     *     An immutable object of type {@link Markdown} that may be null.
+     */
+    public Markdown getDescription() {
+        return description;
     }
 
     /**
@@ -257,17 +522,6 @@ public class ExampleScenario extends DomainResource {
     }
 
     /**
-     * A copyright statement relating to the example scenario and/or its contents. Copyright statements are generally legal 
-     * restrictions on the use and publishing of the example scenario.
-     * 
-     * @return
-     *     An immutable object of type {@link Markdown} that may be null.
-     */
-    public Markdown getCopyright() {
-        return copyright;
-    }
-
-    /**
      * What the example scenario resource is created for. This should not be used to show the business purpose of the 
      * scenario itself, but the purpose of documenting a scenario.
      * 
@@ -279,7 +533,29 @@ public class ExampleScenario extends DomainResource {
     }
 
     /**
-     * Actor participating in the resource.
+     * A copyright statement relating to the example scenario and/or its contents. Copyright statements are generally legal 
+     * restrictions on the use and publishing of the example scenario.
+     * 
+     * @return
+     *     An immutable object of type {@link Markdown} that may be null.
+     */
+    public Markdown getCopyright() {
+        return copyright;
+    }
+
+    /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
+    }
+
+    /**
+     * A system or person who shares or receives an instance within the scenario.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Actor} that may be empty.
@@ -289,7 +565,7 @@ public class ExampleScenario extends DomainResource {
     }
 
     /**
-     * Each resource and each version that is present in the workflow.
+     * A single data collection that is shared as part of the scenario.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Instance} that may be empty.
@@ -299,7 +575,7 @@ public class ExampleScenario extends DomainResource {
     }
 
     /**
-     * Each major process - a group of operations.
+     * A group of operations that represents a significant step within a scenario.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Process} that may be empty.
@@ -308,36 +584,29 @@ public class ExampleScenario extends DomainResource {
         return process;
     }
 
-    /**
-     * Another nested workflow.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Canonical} that may be empty.
-     */
-    public List<Canonical> getWorkflow() {
-        return workflow;
-    }
-
     @Override
     public boolean hasChildren() {
         return super.hasChildren() || 
             (url != null) || 
             !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
+            (title != null) || 
             (status != null) || 
             (experimental != null) || 
             (date != null) || 
             (publisher != null) || 
             !contact.isEmpty() || 
+            (description != null) || 
             !useContext.isEmpty() || 
             !jurisdiction.isEmpty() || 
-            (copyright != null) || 
             (purpose != null) || 
+            (copyright != null) || 
+            (copyrightLabel != null) || 
             !actor.isEmpty() || 
             !instance.isEmpty() || 
-            !process.isEmpty() || 
-            !workflow.isEmpty();
+            !process.isEmpty();
     }
 
     @Override
@@ -357,20 +626,23 @@ public class ExampleScenario extends DomainResource {
                 accept(url, "url", visitor);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
+                accept(title, "title", visitor);
                 accept(status, "status", visitor);
                 accept(experimental, "experimental", visitor);
                 accept(date, "date", visitor);
                 accept(publisher, "publisher", visitor);
                 accept(contact, "contact", visitor, ContactDetail.class);
+                accept(description, "description", visitor);
                 accept(useContext, "useContext", visitor, UsageContext.class);
                 accept(jurisdiction, "jurisdiction", visitor, CodeableConcept.class);
-                accept(copyright, "copyright", visitor);
                 accept(purpose, "purpose", visitor);
+                accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
                 accept(actor, "actor", visitor, Actor.class);
                 accept(instance, "instance", visitor, Instance.class);
                 accept(process, "process", visitor, Process.class);
-                accept(workflow, "workflow", visitor, Canonical.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
             visitor.postVisit(this);
@@ -400,20 +672,23 @@ public class ExampleScenario extends DomainResource {
             Objects.equals(url, other.url) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
+            Objects.equals(title, other.title) && 
             Objects.equals(status, other.status) && 
             Objects.equals(experimental, other.experimental) && 
             Objects.equals(date, other.date) && 
             Objects.equals(publisher, other.publisher) && 
             Objects.equals(contact, other.contact) && 
+            Objects.equals(description, other.description) && 
             Objects.equals(useContext, other.useContext) && 
             Objects.equals(jurisdiction, other.jurisdiction) && 
-            Objects.equals(copyright, other.copyright) && 
             Objects.equals(purpose, other.purpose) && 
+            Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
             Objects.equals(actor, other.actor) && 
             Objects.equals(instance, other.instance) && 
-            Objects.equals(process, other.process) && 
-            Objects.equals(workflow, other.workflow);
+            Objects.equals(process, other.process);
     }
 
     @Override
@@ -431,20 +706,23 @@ public class ExampleScenario extends DomainResource {
                 url, 
                 identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
+                title, 
                 status, 
                 experimental, 
                 date, 
                 publisher, 
                 contact, 
+                description, 
                 useContext, 
                 jurisdiction, 
-                copyright, 
                 purpose, 
+                copyright, 
+                copyrightLabel, 
                 actor, 
                 instance, 
-                process, 
-                workflow);
+                process);
             hashCode = result;
         }
         return result;
@@ -463,20 +741,23 @@ public class ExampleScenario extends DomainResource {
         private Uri url;
         private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
+        private String title;
         private PublicationStatus status;
         private Boolean experimental;
         private DateTime date;
         private String publisher;
         private List<ContactDetail> contact = new ArrayList<>();
+        private Markdown description;
         private List<UsageContext> useContext = new ArrayList<>();
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
-        private Markdown copyright;
         private Markdown purpose;
+        private Markdown copyright;
+        private String copyrightLabel;
         private List<Actor> actor = new ArrayList<>();
         private List<Instance> instance = new ArrayList<>();
         private List<Process> process = new ArrayList<>();
-        private List<Canonical> workflow = new ArrayList<>();
 
         private Builder() {
             super();
@@ -560,7 +841,8 @@ public class ExampleScenario extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -578,7 +860,8 @@ public class ExampleScenario extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -599,7 +882,7 @@ public class ExampleScenario extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -619,7 +902,7 @@ public class ExampleScenario extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -644,9 +927,9 @@ public class ExampleScenario extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -669,9 +952,9 @@ public class ExampleScenario extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -696,8 +979,8 @@ public class ExampleScenario extends DomainResource {
         /**
          * An absolute URI that is used to identify this example scenario when it is referenced in a specification, model, design 
          * or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address 
-         * at which at which an authoritative instance of this example scenario is (or will be) published. This URL can be the 
-         * target of a canonical reference. It SHALL remain the same when the example scenario is stored on different servers.
+         * at which an authoritative instance of this example scenario is (or will be) published. This URL can be the target of a 
+         * canonical reference. It SHALL remain the same when the example scenario is stored on different servers.
          * 
          * @param url
          *     Canonical identifier for this example scenario, represented as a URI (globally unique)
@@ -785,10 +1068,46 @@ public class ExampleScenario extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
+            return this;
+        }
+
+        /**
          * Convenience method for setting {@code name}.
          * 
          * @param name
-         *     Name for this example scenario (computer friendly)
+         *     To be removed?
          * 
          * @return
          *     A reference to this Builder instance
@@ -801,17 +1120,46 @@ public class ExampleScenario extends DomainResource {
         }
 
         /**
-         * A natural language name identifying the example scenario. This name should be usable as an identifier for the module 
-         * by machine processing applications such as code generation.
+         * Temporarily retained for tooling purposes.
          * 
          * @param name
-         *     Name for this example scenario (computer friendly)
+         *     To be removed?
          * 
          * @return
          *     A reference to this Builder instance
          */
         public Builder name(String name) {
             this.name = name;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code title}.
+         * 
+         * @param title
+         *     Name for this example scenario (human friendly)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #title(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder title(java.lang.String title) {
+            this.title = (title == null) ? null : String.of(title);
+            return this;
+        }
+
+        /**
+         * A short, descriptive, user-friendly title for the ExampleScenario.
+         * 
+         * @param title
+         *     Name for this example scenario (human friendly)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder title(String title) {
+            this.title = title;
             return this;
         }
 
@@ -863,9 +1211,9 @@ public class ExampleScenario extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the example scenario was published. The date must change when the business version 
-         * changes and it must change if the status code changes. In addition, it should change when the substantive content of 
-         * the example scenario changes. (e.g. the 'content logical definition').
+         * The date (and optionally time) when the example scenario was last significantly changed. The date must change when the 
+         * business version changes and it must change if the status code changes. In addition, it should change when the 
+         * substantive content of the example scenario changes. (e.g. the 'content logical definition').
          * 
          * @param date
          *     Date last changed
@@ -882,7 +1230,7 @@ public class ExampleScenario extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -895,10 +1243,10 @@ public class ExampleScenario extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the example scenario.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the example scenario.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -944,6 +1292,20 @@ public class ExampleScenario extends DomainResource {
          */
         public Builder contact(Collection<ContactDetail> contact) {
             this.contact = new ArrayList<>(contact);
+            return this;
+        }
+
+        /**
+         * A free text natural language description of the ExampleScenario from a consumer's perspective.
+         * 
+         * @param description
+         *     Natural language description of the ExampleScenario
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder description(Markdown description) {
+            this.description = description;
             return this;
         }
 
@@ -1030,21 +1392,6 @@ public class ExampleScenario extends DomainResource {
         }
 
         /**
-         * A copyright statement relating to the example scenario and/or its contents. Copyright statements are generally legal 
-         * restrictions on the use and publishing of the example scenario.
-         * 
-         * @param copyright
-         *     Use and/or publishing restrictions
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder copyright(Markdown copyright) {
-            this.copyright = copyright;
-            return this;
-        }
-
-        /**
          * What the example scenario resource is created for. This should not be used to show the business purpose of the 
          * scenario itself, but the purpose of documenting a scenario.
          * 
@@ -1060,13 +1407,59 @@ public class ExampleScenario extends DomainResource {
         }
 
         /**
-         * Actor participating in the resource.
+         * A copyright statement relating to the example scenario and/or its contents. Copyright statements are generally legal 
+         * restrictions on the use and publishing of the example scenario.
+         * 
+         * @param copyright
+         *     Use and/or publishing restrictions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyright(Markdown copyright) {
+            this.copyright = copyright;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
+            return this;
+        }
+
+        /**
+         * A system or person who shares or receives an instance within the scenario.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param actor
-         *     Actor participating in the resource
+         *     Individual involved in exchange
          * 
          * @return
          *     A reference to this Builder instance
@@ -1079,13 +1472,13 @@ public class ExampleScenario extends DomainResource {
         }
 
         /**
-         * Actor participating in the resource.
+         * A system or person who shares or receives an instance within the scenario.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param actor
-         *     Actor participating in the resource
+         *     Individual involved in exchange
          * 
          * @return
          *     A reference to this Builder instance
@@ -1099,13 +1492,13 @@ public class ExampleScenario extends DomainResource {
         }
 
         /**
-         * Each resource and each version that is present in the workflow.
+         * A single data collection that is shared as part of the scenario.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param instance
-         *     Each resource and each version that is present in the workflow
+         *     Data used in the scenario
          * 
          * @return
          *     A reference to this Builder instance
@@ -1118,13 +1511,13 @@ public class ExampleScenario extends DomainResource {
         }
 
         /**
-         * Each resource and each version that is present in the workflow.
+         * A single data collection that is shared as part of the scenario.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param instance
-         *     Each resource and each version that is present in the workflow
+         *     Data used in the scenario
          * 
          * @return
          *     A reference to this Builder instance
@@ -1138,13 +1531,13 @@ public class ExampleScenario extends DomainResource {
         }
 
         /**
-         * Each major process - a group of operations.
+         * A group of operations that represents a significant step within a scenario.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param process
-         *     Each major process - a group of operations
+         *     Major process within scenario
          * 
          * @return
          *     A reference to this Builder instance
@@ -1157,13 +1550,13 @@ public class ExampleScenario extends DomainResource {
         }
 
         /**
-         * Each major process - a group of operations.
+         * A group of operations that represents a significant step within a scenario.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param process
-         *     Each major process - a group of operations
+         *     Major process within scenario
          * 
          * @return
          *     A reference to this Builder instance
@@ -1173,45 +1566,6 @@ public class ExampleScenario extends DomainResource {
          */
         public Builder process(Collection<Process> process) {
             this.process = new ArrayList<>(process);
-            return this;
-        }
-
-        /**
-         * Another nested workflow.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param workflow
-         *     Another nested workflow
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder workflow(Canonical... workflow) {
-            for (Canonical value : workflow) {
-                this.workflow.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Another nested workflow.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param workflow
-         *     Another nested workflow
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder workflow(Collection<Canonical> workflow) {
-            this.workflow = new ArrayList<>(workflow);
             return this;
         }
 
@@ -1240,6 +1594,7 @@ public class ExampleScenario extends DomainResource {
         protected void validate(ExampleScenario exampleScenario) {
             super.validate(exampleScenario);
             ValidationSupport.checkList(exampleScenario.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(exampleScenario.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.requireNonNull(exampleScenario.status, "status");
             ValidationSupport.checkList(exampleScenario.contact, "contact", ContactDetail.class);
             ValidationSupport.checkList(exampleScenario.useContext, "useContext", UsageContext.class);
@@ -1247,7 +1602,6 @@ public class ExampleScenario extends DomainResource {
             ValidationSupport.checkList(exampleScenario.actor, "actor", Actor.class);
             ValidationSupport.checkList(exampleScenario.instance, "instance", Instance.class);
             ValidationSupport.checkList(exampleScenario.process, "process", Process.class);
-            ValidationSupport.checkList(exampleScenario.workflow, "workflow", Canonical.class);
         }
 
         protected Builder from(ExampleScenario exampleScenario) {
@@ -1255,61 +1609,65 @@ public class ExampleScenario extends DomainResource {
             url = exampleScenario.url;
             identifier.addAll(exampleScenario.identifier);
             version = exampleScenario.version;
+            versionAlgorithm = exampleScenario.versionAlgorithm;
             name = exampleScenario.name;
+            title = exampleScenario.title;
             status = exampleScenario.status;
             experimental = exampleScenario.experimental;
             date = exampleScenario.date;
             publisher = exampleScenario.publisher;
             contact.addAll(exampleScenario.contact);
+            description = exampleScenario.description;
             useContext.addAll(exampleScenario.useContext);
             jurisdiction.addAll(exampleScenario.jurisdiction);
-            copyright = exampleScenario.copyright;
             purpose = exampleScenario.purpose;
+            copyright = exampleScenario.copyright;
+            copyrightLabel = exampleScenario.copyrightLabel;
             actor.addAll(exampleScenario.actor);
             instance.addAll(exampleScenario.instance);
             process.addAll(exampleScenario.process);
-            workflow.addAll(exampleScenario.workflow);
             return this;
         }
     }
 
     /**
-     * Actor participating in the resource.
+     * A system or person who shares or receives an instance within the scenario.
      */
     public static class Actor extends BackboneElement {
         @Required
-        private final String actorId;
+        private final String key;
         @Binding(
             bindingName = "ExampleScenarioActorType",
             strength = BindingStrength.Value.REQUIRED,
             description = "The type of actor - system or human.",
-            valueSet = "http://hl7.org/fhir/ValueSet/examplescenario-actor-type|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/examplescenario-actor-type|5.0.0"
         )
         @Required
         private final ExampleScenarioActorType type;
-        private final String name;
+        @Required
+        private final String title;
         private final Markdown description;
 
         private Actor(Builder builder) {
             super(builder);
-            actorId = builder.actorId;
+            key = builder.key;
             type = builder.type;
-            name = builder.name;
+            title = builder.title;
             description = builder.description;
         }
 
         /**
-         * ID or acronym of actor.
+         * A unique string within the scenario that is used to reference the actor.
          * 
          * @return
          *     An immutable object of type {@link String} that is non-null.
          */
-        public String getActorId() {
-            return actorId;
+        public String getKey() {
+            return key;
         }
 
         /**
-         * The type of actor - person or system.
+         * The category of actor - person or system.
          * 
          * @return
          *     An immutable object of type {@link ExampleScenarioActorType} that is non-null.
@@ -1319,17 +1677,17 @@ public class ExampleScenario extends DomainResource {
         }
 
         /**
-         * The name of the actor as shown in the page.
+         * The human-readable name for the actor used when rendering the scenario.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link String} that is non-null.
          */
-        public String getName() {
-            return name;
+        public String getTitle() {
+            return title;
         }
 
         /**
-         * The description of the actor.
+         * An explanation of who/what the actor is and its role in the scenario.
          * 
          * @return
          *     An immutable object of type {@link Markdown} that may be null.
@@ -1341,9 +1699,9 @@ public class ExampleScenario extends DomainResource {
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                (actorId != null) || 
+                (key != null) || 
                 (type != null) || 
-                (name != null) || 
+                (title != null) || 
                 (description != null);
         }
 
@@ -1356,9 +1714,9 @@ public class ExampleScenario extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(actorId, "actorId", visitor);
+                    accept(key, "key", visitor);
                     accept(type, "type", visitor);
-                    accept(name, "name", visitor);
+                    accept(title, "title", visitor);
                     accept(description, "description", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
@@ -1381,9 +1739,9 @@ public class ExampleScenario extends DomainResource {
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(actorId, other.actorId) && 
+                Objects.equals(key, other.key) && 
                 Objects.equals(type, other.type) && 
-                Objects.equals(name, other.name) && 
+                Objects.equals(title, other.title) && 
                 Objects.equals(description, other.description);
         }
 
@@ -1394,9 +1752,9 @@ public class ExampleScenario extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    actorId, 
+                    key, 
                     type, 
-                    name, 
+                    title, 
                     description);
                 hashCode = result;
             }
@@ -1413,9 +1771,9 @@ public class ExampleScenario extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private String actorId;
+            private String key;
             private ExampleScenarioActorType type;
-            private String name;
+            private String title;
             private Markdown description;
 
             private Builder() {
@@ -1439,7 +1797,7 @@ public class ExampleScenario extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1459,7 +1817,7 @@ public class ExampleScenario extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1484,7 +1842,7 @@ public class ExampleScenario extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1509,7 +1867,7 @@ public class ExampleScenario extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1534,46 +1892,46 @@ public class ExampleScenario extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code actorId}.
+             * Convenience method for setting {@code key}.
              * 
              * <p>This element is required.
              * 
-             * @param actorId
+             * @param key
              *     ID or acronym of the actor
              * 
              * @return
              *     A reference to this Builder instance
              * 
-             * @see #actorId(org.linuxforhealth.fhir.model.type.String)
+             * @see #key(org.linuxforhealth.fhir.model.type.String)
              */
-            public Builder actorId(java.lang.String actorId) {
-                this.actorId = (actorId == null) ? null : String.of(actorId);
+            public Builder key(java.lang.String key) {
+                this.key = (key == null) ? null : String.of(key);
                 return this;
             }
 
             /**
-             * ID or acronym of actor.
+             * A unique string within the scenario that is used to reference the actor.
              * 
              * <p>This element is required.
              * 
-             * @param actorId
+             * @param key
              *     ID or acronym of the actor
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder actorId(String actorId) {
-                this.actorId = actorId;
+            public Builder key(String key) {
+                this.key = key;
                 return this;
             }
 
             /**
-             * The type of actor - person or system.
+             * The category of actor - person or system.
              * 
              * <p>This element is required.
              * 
              * @param type
-             *     person | entity
+             *     person | system
              * 
              * @return
              *     A reference to this Builder instance
@@ -1584,40 +1942,44 @@ public class ExampleScenario extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code name}.
+             * Convenience method for setting {@code title}.
              * 
-             * @param name
-             *     The name of the actor as shown in the page
+             * <p>This element is required.
+             * 
+             * @param title
+             *     Label for actor when rendering
              * 
              * @return
              *     A reference to this Builder instance
              * 
-             * @see #name(org.linuxforhealth.fhir.model.type.String)
+             * @see #title(org.linuxforhealth.fhir.model.type.String)
              */
-            public Builder name(java.lang.String name) {
-                this.name = (name == null) ? null : String.of(name);
+            public Builder title(java.lang.String title) {
+                this.title = (title == null) ? null : String.of(title);
                 return this;
             }
 
             /**
-             * The name of the actor as shown in the page.
+             * The human-readable name for the actor used when rendering the scenario.
              * 
-             * @param name
-             *     The name of the actor as shown in the page
+             * <p>This element is required.
+             * 
+             * @param title
+             *     Label for actor when rendering
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder name(String name) {
-                this.name = name;
+            public Builder title(String title) {
+                this.title = title;
                 return this;
             }
 
             /**
-             * The description of the actor.
+             * An explanation of who/what the actor is and its role in the scenario.
              * 
              * @param description
-             *     The description of the actor
+             *     Details about actor
              * 
              * @return
              *     A reference to this Builder instance
@@ -1632,8 +1994,9 @@ public class ExampleScenario extends DomainResource {
              * 
              * <p>Required elements:
              * <ul>
-             * <li>actorId</li>
+             * <li>key</li>
              * <li>type</li>
+             * <li>title</li>
              * </ul>
              * 
              * @return
@@ -1652,16 +2015,17 @@ public class ExampleScenario extends DomainResource {
 
             protected void validate(Actor actor) {
                 super.validate(actor);
-                ValidationSupport.requireNonNull(actor.actorId, "actorId");
+                ValidationSupport.requireNonNull(actor.key, "key");
                 ValidationSupport.requireNonNull(actor.type, "type");
+                ValidationSupport.requireNonNull(actor.title, "title");
                 ValidationSupport.requireValueOrChildren(actor);
             }
 
             protected Builder from(Actor actor) {
                 super.from(actor);
-                actorId = actor.actorId;
+                key = actor.key;
                 type = actor.type;
-                name = actor.name;
+                title = actor.title;
                 description = actor.description;
                 return this;
             }
@@ -1669,66 +2033,95 @@ public class ExampleScenario extends DomainResource {
     }
 
     /**
-     * Each resource and each version that is present in the workflow.
+     * A single data collection that is shared as part of the scenario.
      */
     public static class Instance extends BackboneElement {
         @Required
-        private final String resourceId;
+        private final String key;
         @Binding(
-            bindingName = "FHIRResourceType",
-            strength = BindingStrength.Value.REQUIRED,
-            description = "The type of resource.",
-            valueSet = "http://hl7.org/fhir/ValueSet/resource-types|4.3.0"
+            bindingName = "InstanceType",
+            strength = BindingStrength.Value.EXTENSIBLE,
+            description = "The structure that defines the instance",
+            valueSet = "http://hl7.org/fhir/ValueSet/examplescenario-instance-type"
         )
         @Required
-        private final ResourceTypeCode resourceType;
-        private final String name;
+        private final Coding structureType;
+        private final String structureVersion;
+        @Choice({ Canonical.class, Uri.class })
+        private final org.linuxforhealth.fhir.model.type.Element structureProfile;
+        @Required
+        private final String title;
         private final Markdown description;
+        private final Reference content;
         private final List<Version> version;
         private final List<ContainedInstance> containedInstance;
 
         private Instance(Builder builder) {
             super(builder);
-            resourceId = builder.resourceId;
-            resourceType = builder.resourceType;
-            name = builder.name;
+            key = builder.key;
+            structureType = builder.structureType;
+            structureVersion = builder.structureVersion;
+            structureProfile = builder.structureProfile;
+            title = builder.title;
             description = builder.description;
+            content = builder.content;
             version = Collections.unmodifiableList(builder.version);
             containedInstance = Collections.unmodifiableList(builder.containedInstance);
         }
 
         /**
-         * The id of the resource for referencing.
+         * A unique string within the scenario that is used to reference the instance.
          * 
          * @return
          *     An immutable object of type {@link String} that is non-null.
          */
-        public String getResourceId() {
-            return resourceId;
+        public String getKey() {
+            return key;
         }
 
         /**
-         * The type of the resource.
+         * A code indicating the kind of data structure (FHIR resource or some other standard) this is an instance of.
          * 
          * @return
-         *     An immutable object of type {@link ResourceTypeCode} that is non-null.
+         *     An immutable object of type {@link Coding} that is non-null.
          */
-        public ResourceTypeCode getResourceType() {
-            return resourceType;
+        public Coding getStructureType() {
+            return structureType;
         }
 
         /**
-         * A short name for the resource instance.
+         * Conveys the version of the data structure instantiated. I.e. what release of FHIR, X12, OpenEHR, etc. is instance 
+         * compliant with.
          * 
          * @return
          *     An immutable object of type {@link String} that may be null.
          */
-        public String getName() {
-            return name;
+        public String getStructureVersion() {
+            return structureVersion;
         }
 
         /**
-         * Human-friendly description of the resource instance.
+         * Refers to a profile, template or other ruleset the instance adheres to.
+         * 
+         * @return
+         *     An immutable object of type {@link Canonical} or {@link Uri} that may be null.
+         */
+        public org.linuxforhealth.fhir.model.type.Element getStructureProfile() {
+            return structureProfile;
+        }
+
+        /**
+         * A short descriptive label the instance to be used in tables or diagrams.
+         * 
+         * @return
+         *     An immutable object of type {@link String} that is non-null.
+         */
+        public String getTitle() {
+            return title;
+        }
+
+        /**
+         * An explanation of what the instance contains and what it's for.
          * 
          * @return
          *     An immutable object of type {@link Markdown} that may be null.
@@ -1738,7 +2131,17 @@ public class ExampleScenario extends DomainResource {
         }
 
         /**
-         * A specific version of the resource.
+         * Points to an instance (typically an example) that shows the data that would corespond to this instance.
+         * 
+         * @return
+         *     An immutable object of type {@link Reference} that may be null.
+         */
+        public Reference getContent() {
+            return content;
+        }
+
+        /**
+         * Represents the instance as it was at a specific time-point.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link Version} that may be empty.
@@ -1748,7 +2151,7 @@ public class ExampleScenario extends DomainResource {
         }
 
         /**
-         * Resources contained in the instance (e.g. the observations contained in a bundle).
+         * References to other instances that can be found within this instance (e.g. the observations contained in a bundle).
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link ContainedInstance} that may be empty.
@@ -1760,10 +2163,13 @@ public class ExampleScenario extends DomainResource {
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                (resourceId != null) || 
-                (resourceType != null) || 
-                (name != null) || 
+                (key != null) || 
+                (structureType != null) || 
+                (structureVersion != null) || 
+                (structureProfile != null) || 
+                (title != null) || 
                 (description != null) || 
+                (content != null) || 
                 !version.isEmpty() || 
                 !containedInstance.isEmpty();
         }
@@ -1777,10 +2183,13 @@ public class ExampleScenario extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(resourceId, "resourceId", visitor);
-                    accept(resourceType, "resourceType", visitor);
-                    accept(name, "name", visitor);
+                    accept(key, "key", visitor);
+                    accept(structureType, "structureType", visitor);
+                    accept(structureVersion, "structureVersion", visitor);
+                    accept(structureProfile, "structureProfile", visitor);
+                    accept(title, "title", visitor);
                     accept(description, "description", visitor);
+                    accept(content, "content", visitor);
                     accept(version, "version", visitor, Version.class);
                     accept(containedInstance, "containedInstance", visitor, ContainedInstance.class);
                 }
@@ -1804,10 +2213,13 @@ public class ExampleScenario extends DomainResource {
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(resourceId, other.resourceId) && 
-                Objects.equals(resourceType, other.resourceType) && 
-                Objects.equals(name, other.name) && 
+                Objects.equals(key, other.key) && 
+                Objects.equals(structureType, other.structureType) && 
+                Objects.equals(structureVersion, other.structureVersion) && 
+                Objects.equals(structureProfile, other.structureProfile) && 
+                Objects.equals(title, other.title) && 
                 Objects.equals(description, other.description) && 
+                Objects.equals(content, other.content) && 
                 Objects.equals(version, other.version) && 
                 Objects.equals(containedInstance, other.containedInstance);
         }
@@ -1819,10 +2231,13 @@ public class ExampleScenario extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    resourceId, 
-                    resourceType, 
-                    name, 
+                    key, 
+                    structureType, 
+                    structureVersion, 
+                    structureProfile, 
+                    title, 
                     description, 
+                    content, 
                     version, 
                     containedInstance);
                 hashCode = result;
@@ -1840,10 +2255,13 @@ public class ExampleScenario extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private String resourceId;
-            private ResourceTypeCode resourceType;
-            private String name;
+            private String key;
+            private Coding structureType;
+            private String structureVersion;
+            private org.linuxforhealth.fhir.model.type.Element structureProfile;
+            private String title;
             private Markdown description;
+            private Reference content;
             private List<Version> version = new ArrayList<>();
             private List<ContainedInstance> containedInstance = new ArrayList<>();
 
@@ -1868,7 +2286,7 @@ public class ExampleScenario extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1888,7 +2306,7 @@ public class ExampleScenario extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1913,7 +2331,7 @@ public class ExampleScenario extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1938,7 +2356,7 @@ public class ExampleScenario extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1963,90 +2381,145 @@ public class ExampleScenario extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code resourceId}.
+             * Convenience method for setting {@code key}.
              * 
              * <p>This element is required.
              * 
-             * @param resourceId
-             *     The id of the resource for referencing
+             * @param key
+             *     ID or acronym of the instance
              * 
              * @return
              *     A reference to this Builder instance
              * 
-             * @see #resourceId(org.linuxforhealth.fhir.model.type.String)
+             * @see #key(org.linuxforhealth.fhir.model.type.String)
              */
-            public Builder resourceId(java.lang.String resourceId) {
-                this.resourceId = (resourceId == null) ? null : String.of(resourceId);
+            public Builder key(java.lang.String key) {
+                this.key = (key == null) ? null : String.of(key);
                 return this;
             }
 
             /**
-             * The id of the resource for referencing.
+             * A unique string within the scenario that is used to reference the instance.
              * 
              * <p>This element is required.
              * 
-             * @param resourceId
-             *     The id of the resource for referencing
+             * @param key
+             *     ID or acronym of the instance
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder resourceId(String resourceId) {
-                this.resourceId = resourceId;
+            public Builder key(String key) {
+                this.key = key;
                 return this;
             }
 
             /**
-             * The type of the resource.
+             * A code indicating the kind of data structure (FHIR resource or some other standard) this is an instance of.
              * 
              * <p>This element is required.
              * 
-             * @param resourceType
-             *     The type of the resource
+             * @param structureType
+             *     Data structure for example
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder resourceType(ResourceTypeCode resourceType) {
-                this.resourceType = resourceType;
+            public Builder structureType(Coding structureType) {
+                this.structureType = structureType;
                 return this;
             }
 
             /**
-             * Convenience method for setting {@code name}.
+             * Convenience method for setting {@code structureVersion}.
              * 
-             * @param name
-             *     A short name for the resource instance
+             * @param structureVersion
+             *     E.g. 4.0.1
              * 
              * @return
              *     A reference to this Builder instance
              * 
-             * @see #name(org.linuxforhealth.fhir.model.type.String)
+             * @see #structureVersion(org.linuxforhealth.fhir.model.type.String)
              */
-            public Builder name(java.lang.String name) {
-                this.name = (name == null) ? null : String.of(name);
+            public Builder structureVersion(java.lang.String structureVersion) {
+                this.structureVersion = (structureVersion == null) ? null : String.of(structureVersion);
                 return this;
             }
 
             /**
-             * A short name for the resource instance.
+             * Conveys the version of the data structure instantiated. I.e. what release of FHIR, X12, OpenEHR, etc. is instance 
+             * compliant with.
              * 
-             * @param name
-             *     A short name for the resource instance
+             * @param structureVersion
+             *     E.g. 4.0.1
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder name(String name) {
-                this.name = name;
+            public Builder structureVersion(String structureVersion) {
+                this.structureVersion = structureVersion;
                 return this;
             }
 
             /**
-             * Human-friendly description of the resource instance.
+             * Refers to a profile, template or other ruleset the instance adheres to.
+             * 
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link Canonical}</li>
+             * <li>{@link Uri}</li>
+             * </ul>
+             * 
+             * @param structureProfile
+             *     Rules instance adheres to
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder structureProfile(org.linuxforhealth.fhir.model.type.Element structureProfile) {
+                this.structureProfile = structureProfile;
+                return this;
+            }
+
+            /**
+             * Convenience method for setting {@code title}.
+             * 
+             * <p>This element is required.
+             * 
+             * @param title
+             *     Label for instance
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #title(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder title(java.lang.String title) {
+                this.title = (title == null) ? null : String.of(title);
+                return this;
+            }
+
+            /**
+             * A short descriptive label the instance to be used in tables or diagrams.
+             * 
+             * <p>This element is required.
+             * 
+             * @param title
+             *     Label for instance
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder title(String title) {
+                this.title = title;
+                return this;
+            }
+
+            /**
+             * An explanation of what the instance contains and what it's for.
              * 
              * @param description
-             *     Human-friendly description of the resource instance
+             *     Human-friendly description of the instance
              * 
              * @return
              *     A reference to this Builder instance
@@ -2057,13 +2530,27 @@ public class ExampleScenario extends DomainResource {
             }
 
             /**
-             * A specific version of the resource.
+             * Points to an instance (typically an example) that shows the data that would corespond to this instance.
+             * 
+             * @param content
+             *     Example instance data
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder content(Reference content) {
+                this.content = content;
+                return this;
+            }
+
+            /**
+             * Represents the instance as it was at a specific time-point.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param version
-             *     A specific version of the resource
+             *     Snapshot of instance that changes
              * 
              * @return
              *     A reference to this Builder instance
@@ -2076,13 +2563,13 @@ public class ExampleScenario extends DomainResource {
             }
 
             /**
-             * A specific version of the resource.
+             * Represents the instance as it was at a specific time-point.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param version
-             *     A specific version of the resource
+             *     Snapshot of instance that changes
              * 
              * @return
              *     A reference to this Builder instance
@@ -2096,7 +2583,7 @@ public class ExampleScenario extends DomainResource {
             }
 
             /**
-             * Resources contained in the instance (e.g. the observations contained in a bundle).
+             * References to other instances that can be found within this instance (e.g. the observations contained in a bundle).
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -2115,7 +2602,7 @@ public class ExampleScenario extends DomainResource {
             }
 
             /**
-             * Resources contained in the instance (e.g. the observations contained in a bundle).
+             * References to other instances that can be found within this instance (e.g. the observations contained in a bundle).
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
@@ -2139,8 +2626,9 @@ public class ExampleScenario extends DomainResource {
              * 
              * <p>Required elements:
              * <ul>
-             * <li>resourceId</li>
-             * <li>resourceType</li>
+             * <li>key</li>
+             * <li>structureType</li>
+             * <li>title</li>
              * </ul>
              * 
              * @return
@@ -2159,8 +2647,10 @@ public class ExampleScenario extends DomainResource {
 
             protected void validate(Instance instance) {
                 super.validate(instance);
-                ValidationSupport.requireNonNull(instance.resourceId, "resourceId");
-                ValidationSupport.requireNonNull(instance.resourceType, "resourceType");
+                ValidationSupport.requireNonNull(instance.key, "key");
+                ValidationSupport.requireNonNull(instance.structureType, "structureType");
+                ValidationSupport.choiceElement(instance.structureProfile, "structureProfile", Canonical.class, Uri.class);
+                ValidationSupport.requireNonNull(instance.title, "title");
                 ValidationSupport.checkList(instance.version, "version", Version.class);
                 ValidationSupport.checkList(instance.containedInstance, "containedInstance", ContainedInstance.class);
                 ValidationSupport.requireValueOrChildren(instance);
@@ -2168,10 +2658,13 @@ public class ExampleScenario extends DomainResource {
 
             protected Builder from(Instance instance) {
                 super.from(instance);
-                resourceId = instance.resourceId;
-                resourceType = instance.resourceType;
-                name = instance.name;
+                key = instance.key;
+                structureType = instance.structureType;
+                structureVersion = instance.structureVersion;
+                structureProfile = instance.structureProfile;
+                title = instance.title;
                 description = instance.description;
+                content = instance.content;
                 version.addAll(instance.version);
                 containedInstance.addAll(instance.containedInstance);
                 return this;
@@ -2179,45 +2672,71 @@ public class ExampleScenario extends DomainResource {
         }
 
         /**
-         * A specific version of the resource.
+         * Represents the instance as it was at a specific time-point.
          */
         public static class Version extends BackboneElement {
             @Required
-            private final String versionId;
+            private final String key;
             @Required
+            private final String title;
             private final Markdown description;
+            private final Reference content;
 
             private Version(Builder builder) {
                 super(builder);
-                versionId = builder.versionId;
+                key = builder.key;
+                title = builder.title;
                 description = builder.description;
+                content = builder.content;
             }
 
             /**
-             * The identifier of a specific version of a resource.
+             * A unique string within the instance that is used to reference the version of the instance.
              * 
              * @return
              *     An immutable object of type {@link String} that is non-null.
              */
-            public String getVersionId() {
-                return versionId;
+            public String getKey() {
+                return key;
             }
 
             /**
-             * The description of the resource version.
+             * A short descriptive label the version to be used in tables or diagrams.
              * 
              * @return
-             *     An immutable object of type {@link Markdown} that is non-null.
+             *     An immutable object of type {@link String} that is non-null.
+             */
+            public String getTitle() {
+                return title;
+            }
+
+            /**
+             * An explanation of what this specific version of the instance contains and represents.
+             * 
+             * @return
+             *     An immutable object of type {@link Markdown} that may be null.
              */
             public Markdown getDescription() {
                 return description;
             }
 
+            /**
+             * Points to an instance (typically an example) that shows the data that would flow at this point in the scenario.
+             * 
+             * @return
+             *     An immutable object of type {@link Reference} that may be null.
+             */
+            public Reference getContent() {
+                return content;
+            }
+
             @Override
             public boolean hasChildren() {
                 return super.hasChildren() || 
-                    (versionId != null) || 
-                    (description != null);
+                    (key != null) || 
+                    (title != null) || 
+                    (description != null) || 
+                    (content != null);
             }
 
             @Override
@@ -2229,8 +2748,10 @@ public class ExampleScenario extends DomainResource {
                         accept(id, "id", visitor);
                         accept(extension, "extension", visitor, Extension.class);
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                        accept(versionId, "versionId", visitor);
+                        accept(key, "key", visitor);
+                        accept(title, "title", visitor);
                         accept(description, "description", visitor);
+                        accept(content, "content", visitor);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
                     visitor.postVisit(this);
@@ -2252,8 +2773,10 @@ public class ExampleScenario extends DomainResource {
                 return Objects.equals(id, other.id) && 
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
-                    Objects.equals(versionId, other.versionId) && 
-                    Objects.equals(description, other.description);
+                    Objects.equals(key, other.key) && 
+                    Objects.equals(title, other.title) && 
+                    Objects.equals(description, other.description) && 
+                    Objects.equals(content, other.content);
             }
 
             @Override
@@ -2263,8 +2786,10 @@ public class ExampleScenario extends DomainResource {
                     result = Objects.hash(id, 
                         extension, 
                         modifierExtension, 
-                        versionId, 
-                        description);
+                        key, 
+                        title, 
+                        description, 
+                        content);
                     hashCode = result;
                 }
                 return result;
@@ -2280,8 +2805,10 @@ public class ExampleScenario extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private String versionId;
+                private String key;
+                private String title;
                 private Markdown description;
+                private Reference content;
 
                 private Builder() {
                     super();
@@ -2304,7 +2831,7 @@ public class ExampleScenario extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2324,7 +2851,7 @@ public class ExampleScenario extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2349,7 +2876,7 @@ public class ExampleScenario extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2374,7 +2901,7 @@ public class ExampleScenario extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2399,46 +2926,78 @@ public class ExampleScenario extends DomainResource {
                 }
 
                 /**
-                 * Convenience method for setting {@code versionId}.
+                 * Convenience method for setting {@code key}.
                  * 
                  * <p>This element is required.
                  * 
-                 * @param versionId
-                 *     The identifier of a specific version of a resource
+                 * @param key
+                 *     ID or acronym of the version
                  * 
                  * @return
                  *     A reference to this Builder instance
                  * 
-                 * @see #versionId(org.linuxforhealth.fhir.model.type.String)
+                 * @see #key(org.linuxforhealth.fhir.model.type.String)
                  */
-                public Builder versionId(java.lang.String versionId) {
-                    this.versionId = (versionId == null) ? null : String.of(versionId);
+                public Builder key(java.lang.String key) {
+                    this.key = (key == null) ? null : String.of(key);
                     return this;
                 }
 
                 /**
-                 * The identifier of a specific version of a resource.
+                 * A unique string within the instance that is used to reference the version of the instance.
                  * 
                  * <p>This element is required.
                  * 
-                 * @param versionId
-                 *     The identifier of a specific version of a resource
+                 * @param key
+                 *     ID or acronym of the version
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder versionId(String versionId) {
-                    this.versionId = versionId;
+                public Builder key(String key) {
+                    this.key = key;
                     return this;
                 }
 
                 /**
-                 * The description of the resource version.
+                 * Convenience method for setting {@code title}.
                  * 
                  * <p>This element is required.
+                 * 
+                 * @param title
+                 *     Label for instance version
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #title(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder title(java.lang.String title) {
+                    this.title = (title == null) ? null : String.of(title);
+                    return this;
+                }
+
+                /**
+                 * A short descriptive label the version to be used in tables or diagrams.
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * @param title
+                 *     Label for instance version
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder title(String title) {
+                    this.title = title;
+                    return this;
+                }
+
+                /**
+                 * An explanation of what this specific version of the instance contains and represents.
                  * 
                  * @param description
-                 *     The description of the resource version
+                 *     Details about version
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -2449,12 +3008,26 @@ public class ExampleScenario extends DomainResource {
                 }
 
                 /**
+                 * Points to an instance (typically an example) that shows the data that would flow at this point in the scenario.
+                 * 
+                 * @param content
+                 *     Example instance version data
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder content(Reference content) {
+                    this.content = content;
+                    return this;
+                }
+
+                /**
                  * Build the {@link Version}
                  * 
                  * <p>Required elements:
                  * <ul>
-                 * <li>versionId</li>
-                 * <li>description</li>
+                 * <li>key</li>
+                 * <li>title</li>
                  * </ul>
                  * 
                  * @return
@@ -2473,59 +3046,61 @@ public class ExampleScenario extends DomainResource {
 
                 protected void validate(Version version) {
                     super.validate(version);
-                    ValidationSupport.requireNonNull(version.versionId, "versionId");
-                    ValidationSupport.requireNonNull(version.description, "description");
+                    ValidationSupport.requireNonNull(version.key, "key");
+                    ValidationSupport.requireNonNull(version.title, "title");
                     ValidationSupport.requireValueOrChildren(version);
                 }
 
                 protected Builder from(Version version) {
                     super.from(version);
-                    versionId = version.versionId;
+                    key = version.key;
+                    title = version.title;
                     description = version.description;
+                    content = version.content;
                     return this;
                 }
             }
         }
 
         /**
-         * Resources contained in the instance (e.g. the observations contained in a bundle).
+         * References to other instances that can be found within this instance (e.g. the observations contained in a bundle).
          */
         public static class ContainedInstance extends BackboneElement {
             @Required
-            private final String resourceId;
-            private final String versionId;
+            private final String instanceReference;
+            private final String versionReference;
 
             private ContainedInstance(Builder builder) {
                 super(builder);
-                resourceId = builder.resourceId;
-                versionId = builder.versionId;
+                instanceReference = builder.instanceReference;
+                versionReference = builder.versionReference;
             }
 
             /**
-             * Each resource contained in the instance.
+             * A reference to the key of an instance found within this one.
              * 
              * @return
              *     An immutable object of type {@link String} that is non-null.
              */
-            public String getResourceId() {
-                return resourceId;
+            public String getInstanceReference() {
+                return instanceReference;
             }
 
             /**
-             * A specific version of a resource contained in the instance.
+             * A reference to the key of a specific version of an instance in this instance.
              * 
              * @return
              *     An immutable object of type {@link String} that may be null.
              */
-            public String getVersionId() {
-                return versionId;
+            public String getVersionReference() {
+                return versionReference;
             }
 
             @Override
             public boolean hasChildren() {
                 return super.hasChildren() || 
-                    (resourceId != null) || 
-                    (versionId != null);
+                    (instanceReference != null) || 
+                    (versionReference != null);
             }
 
             @Override
@@ -2537,8 +3112,8 @@ public class ExampleScenario extends DomainResource {
                         accept(id, "id", visitor);
                         accept(extension, "extension", visitor, Extension.class);
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                        accept(resourceId, "resourceId", visitor);
-                        accept(versionId, "versionId", visitor);
+                        accept(instanceReference, "instanceReference", visitor);
+                        accept(versionReference, "versionReference", visitor);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
                     visitor.postVisit(this);
@@ -2560,8 +3135,8 @@ public class ExampleScenario extends DomainResource {
                 return Objects.equals(id, other.id) && 
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
-                    Objects.equals(resourceId, other.resourceId) && 
-                    Objects.equals(versionId, other.versionId);
+                    Objects.equals(instanceReference, other.instanceReference) && 
+                    Objects.equals(versionReference, other.versionReference);
             }
 
             @Override
@@ -2571,8 +3146,8 @@ public class ExampleScenario extends DomainResource {
                     result = Objects.hash(id, 
                         extension, 
                         modifierExtension, 
-                        resourceId, 
-                        versionId);
+                        instanceReference, 
+                        versionReference);
                     hashCode = result;
                 }
                 return result;
@@ -2588,8 +3163,8 @@ public class ExampleScenario extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private String resourceId;
-                private String versionId;
+                private String instanceReference;
+                private String versionReference;
 
                 private Builder() {
                     super();
@@ -2612,7 +3187,7 @@ public class ExampleScenario extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2632,7 +3207,7 @@ public class ExampleScenario extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2657,7 +3232,7 @@ public class ExampleScenario extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2682,7 +3257,7 @@ public class ExampleScenario extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2707,66 +3282,66 @@ public class ExampleScenario extends DomainResource {
                 }
 
                 /**
-                 * Convenience method for setting {@code resourceId}.
+                 * Convenience method for setting {@code instanceReference}.
                  * 
                  * <p>This element is required.
                  * 
-                 * @param resourceId
-                 *     Each resource contained in the instance
+                 * @param instanceReference
+                 *     Key of contained instance
                  * 
                  * @return
                  *     A reference to this Builder instance
                  * 
-                 * @see #resourceId(org.linuxforhealth.fhir.model.type.String)
+                 * @see #instanceReference(org.linuxforhealth.fhir.model.type.String)
                  */
-                public Builder resourceId(java.lang.String resourceId) {
-                    this.resourceId = (resourceId == null) ? null : String.of(resourceId);
+                public Builder instanceReference(java.lang.String instanceReference) {
+                    this.instanceReference = (instanceReference == null) ? null : String.of(instanceReference);
                     return this;
                 }
 
                 /**
-                 * Each resource contained in the instance.
+                 * A reference to the key of an instance found within this one.
                  * 
                  * <p>This element is required.
                  * 
-                 * @param resourceId
-                 *     Each resource contained in the instance
+                 * @param instanceReference
+                 *     Key of contained instance
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder resourceId(String resourceId) {
-                    this.resourceId = resourceId;
+                public Builder instanceReference(String instanceReference) {
+                    this.instanceReference = instanceReference;
                     return this;
                 }
 
                 /**
-                 * Convenience method for setting {@code versionId}.
+                 * Convenience method for setting {@code versionReference}.
                  * 
-                 * @param versionId
-                 *     A specific version of a resource contained in the instance
+                 * @param versionReference
+                 *     Key of contained instance version
                  * 
                  * @return
                  *     A reference to this Builder instance
                  * 
-                 * @see #versionId(org.linuxforhealth.fhir.model.type.String)
+                 * @see #versionReference(org.linuxforhealth.fhir.model.type.String)
                  */
-                public Builder versionId(java.lang.String versionId) {
-                    this.versionId = (versionId == null) ? null : String.of(versionId);
+                public Builder versionReference(java.lang.String versionReference) {
+                    this.versionReference = (versionReference == null) ? null : String.of(versionReference);
                     return this;
                 }
 
                 /**
-                 * A specific version of a resource contained in the instance.
+                 * A reference to the key of a specific version of an instance in this instance.
                  * 
-                 * @param versionId
-                 *     A specific version of a resource contained in the instance
+                 * @param versionReference
+                 *     Key of contained instance version
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder versionId(String versionId) {
-                    this.versionId = versionId;
+                public Builder versionReference(String versionReference) {
+                    this.versionReference = versionReference;
                     return this;
                 }
 
@@ -2775,7 +3350,7 @@ public class ExampleScenario extends DomainResource {
                  * 
                  * <p>Required elements:
                  * <ul>
-                 * <li>resourceId</li>
+                 * <li>instanceReference</li>
                  * </ul>
                  * 
                  * @return
@@ -2794,14 +3369,14 @@ public class ExampleScenario extends DomainResource {
 
                 protected void validate(ContainedInstance containedInstance) {
                     super.validate(containedInstance);
-                    ValidationSupport.requireNonNull(containedInstance.resourceId, "resourceId");
+                    ValidationSupport.requireNonNull(containedInstance.instanceReference, "instanceReference");
                     ValidationSupport.requireValueOrChildren(containedInstance);
                 }
 
                 protected Builder from(ContainedInstance containedInstance) {
                     super.from(containedInstance);
-                    resourceId = containedInstance.resourceId;
-                    versionId = containedInstance.versionId;
+                    instanceReference = containedInstance.instanceReference;
+                    versionReference = containedInstance.versionReference;
                     return this;
                 }
             }
@@ -2809,7 +3384,7 @@ public class ExampleScenario extends DomainResource {
     }
 
     /**
-     * Each major process - a group of operations.
+     * A group of operations that represents a significant step within a scenario.
      */
     public static class Process extends BackboneElement {
         @Summary
@@ -2830,7 +3405,7 @@ public class ExampleScenario extends DomainResource {
         }
 
         /**
-         * The diagram title of the group of operations.
+         * A short descriptive label the process to be used in tables or diagrams.
          * 
          * @return
          *     An immutable object of type {@link String} that is non-null.
@@ -2840,7 +3415,7 @@ public class ExampleScenario extends DomainResource {
         }
 
         /**
-         * A longer description of the group of operations.
+         * An explanation of what the process represents and what it does.
          * 
          * @return
          *     An immutable object of type {@link Markdown} that may be null.
@@ -2850,7 +3425,7 @@ public class ExampleScenario extends DomainResource {
         }
 
         /**
-         * Description of initial status before the process starts.
+         * Description of the initial state of the actors, environment and data before the process starts.
          * 
          * @return
          *     An immutable object of type {@link Markdown} that may be null.
@@ -2860,7 +3435,7 @@ public class ExampleScenario extends DomainResource {
         }
 
         /**
-         * Description of final status after the process ends.
+         * Description of the final state of the actors, environment and data after the process has been successfully completed.
          * 
          * @return
          *     An immutable object of type {@link Markdown} that may be null.
@@ -2870,7 +3445,7 @@ public class ExampleScenario extends DomainResource {
         }
 
         /**
-         * Each step of the process.
+         * A significant action that occurs as part of the process.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link Step} that may be empty.
@@ -2985,7 +3560,7 @@ public class ExampleScenario extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3005,7 +3580,7 @@ public class ExampleScenario extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3030,7 +3605,7 @@ public class ExampleScenario extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3055,7 +3630,7 @@ public class ExampleScenario extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3085,7 +3660,7 @@ public class ExampleScenario extends DomainResource {
              * <p>This element is required.
              * 
              * @param title
-             *     The diagram title of the group of operations
+             *     Label for procss
              * 
              * @return
              *     A reference to this Builder instance
@@ -3098,12 +3673,12 @@ public class ExampleScenario extends DomainResource {
             }
 
             /**
-             * The diagram title of the group of operations.
+             * A short descriptive label the process to be used in tables or diagrams.
              * 
              * <p>This element is required.
              * 
              * @param title
-             *     The diagram title of the group of operations
+             *     Label for procss
              * 
              * @return
              *     A reference to this Builder instance
@@ -3114,10 +3689,10 @@ public class ExampleScenario extends DomainResource {
             }
 
             /**
-             * A longer description of the group of operations.
+             * An explanation of what the process represents and what it does.
              * 
              * @param description
-             *     A longer description of the group of operations
+             *     Human-friendly description of the process
              * 
              * @return
              *     A reference to this Builder instance
@@ -3128,10 +3703,10 @@ public class ExampleScenario extends DomainResource {
             }
 
             /**
-             * Description of initial status before the process starts.
+             * Description of the initial state of the actors, environment and data before the process starts.
              * 
              * @param preConditions
-             *     Description of initial status before the process starts
+             *     Status before process starts
              * 
              * @return
              *     A reference to this Builder instance
@@ -3142,10 +3717,10 @@ public class ExampleScenario extends DomainResource {
             }
 
             /**
-             * Description of final status after the process ends.
+             * Description of the final state of the actors, environment and data after the process has been successfully completed.
              * 
              * @param postConditions
-             *     Description of final status after the process ends
+             *     Status after successful completion
              * 
              * @return
              *     A reference to this Builder instance
@@ -3156,13 +3731,13 @@ public class ExampleScenario extends DomainResource {
             }
 
             /**
-             * Each step of the process.
+             * A significant action that occurs as part of the process.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param step
-             *     Each step of the process
+             *     Event within of the process
              * 
              * @return
              *     A reference to this Builder instance
@@ -3175,13 +3750,13 @@ public class ExampleScenario extends DomainResource {
             }
 
             /**
-             * Each step of the process.
+             * A significant action that occurs as part of the process.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param step
-             *     Each step of the process
+             *     Event within of the process
              * 
              * @return
              *     A reference to this Builder instance
@@ -3235,44 +3810,58 @@ public class ExampleScenario extends DomainResource {
         }
 
         /**
-         * Each step of the process.
+         * A significant action that occurs as part of the process.
          */
         public static class Step extends BackboneElement {
-            private final List<ExampleScenario.Process> process;
-            private final Boolean pause;
+            private final String number;
+            private final ExampleScenario.Process process;
+            private final Canonical workflow;
             private final Operation operation;
             private final List<Alternative> alternative;
+            private final Boolean pause;
 
             private Step(Builder builder) {
                 super(builder);
-                process = Collections.unmodifiableList(builder.process);
-                pause = builder.pause;
+                number = builder.number;
+                process = builder.process;
+                workflow = builder.workflow;
                 operation = builder.operation;
                 alternative = Collections.unmodifiableList(builder.alternative);
+                pause = builder.pause;
             }
 
             /**
-             * Nested process.
+             * The sequential number of the step, e.g. 1.2.5.
              * 
              * @return
-             *     An unmodifiable list containing immutable objects of type {@link Process} that may be empty.
+             *     An immutable object of type {@link String} that may be null.
              */
-            public List<ExampleScenario.Process> getProcess() {
+            public String getNumber() {
+                return number;
+            }
+
+            /**
+             * Indicates that the step is a complex sub-process with its own steps.
+             * 
+             * @return
+             *     An immutable object of type {@link ExampleScenario.Process} that may be null.
+             */
+            public ExampleScenario.Process getProcess() {
                 return process;
             }
 
             /**
-             * If there is a pause in the flow.
+             * Indicates that the step is defined by a seaparate scenario instance.
              * 
              * @return
-             *     An immutable object of type {@link Boolean} that may be null.
+             *     An immutable object of type {@link Canonical} that may be null.
              */
-            public Boolean getPause() {
-                return pause;
+            public Canonical getWorkflow() {
+                return workflow;
             }
 
             /**
-             * Each interaction or action.
+             * The step represents a single operation invoked on receiver by sender.
              * 
              * @return
              *     An immutable object of type {@link Operation} that may be null.
@@ -3282,8 +3871,8 @@ public class ExampleScenario extends DomainResource {
             }
 
             /**
-             * Indicates an alternative step that can be taken instead of the operations on the base step in exceptional/atypical 
-             * circumstances.
+             * Indicates an alternative step that can be taken instead of the sub-process, scenario or operation. E.g. to represent 
+             * non-happy-path/exceptional/atypical circumstances.
              * 
              * @return
              *     An unmodifiable list containing immutable objects of type {@link Alternative} that may be empty.
@@ -3292,13 +3881,26 @@ public class ExampleScenario extends DomainResource {
                 return alternative;
             }
 
+            /**
+             * If true, indicates that, following this step, there is a pause in the flow and the subsequent step will occur at some 
+             * later time (triggered by some event).
+             * 
+             * @return
+             *     An immutable object of type {@link Boolean} that may be null.
+             */
+            public Boolean getPause() {
+                return pause;
+            }
+
             @Override
             public boolean hasChildren() {
                 return super.hasChildren() || 
-                    !process.isEmpty() || 
-                    (pause != null) || 
+                    (number != null) || 
+                    (process != null) || 
+                    (workflow != null) || 
                     (operation != null) || 
-                    !alternative.isEmpty();
+                    !alternative.isEmpty() || 
+                    (pause != null);
             }
 
             @Override
@@ -3310,10 +3912,12 @@ public class ExampleScenario extends DomainResource {
                         accept(id, "id", visitor);
                         accept(extension, "extension", visitor, Extension.class);
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                        accept(process, "process", visitor, ExampleScenario.Process.class);
-                        accept(pause, "pause", visitor);
+                        accept(number, "number", visitor);
+                        accept(process, "process", visitor);
+                        accept(workflow, "workflow", visitor);
                         accept(operation, "operation", visitor);
                         accept(alternative, "alternative", visitor, Alternative.class);
+                        accept(pause, "pause", visitor);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
                     visitor.postVisit(this);
@@ -3335,10 +3939,12 @@ public class ExampleScenario extends DomainResource {
                 return Objects.equals(id, other.id) && 
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(number, other.number) && 
                     Objects.equals(process, other.process) && 
-                    Objects.equals(pause, other.pause) && 
+                    Objects.equals(workflow, other.workflow) && 
                     Objects.equals(operation, other.operation) && 
-                    Objects.equals(alternative, other.alternative);
+                    Objects.equals(alternative, other.alternative) && 
+                    Objects.equals(pause, other.pause);
             }
 
             @Override
@@ -3348,10 +3954,12 @@ public class ExampleScenario extends DomainResource {
                     result = Objects.hash(id, 
                         extension, 
                         modifierExtension, 
+                        number, 
                         process, 
-                        pause, 
+                        workflow, 
                         operation, 
-                        alternative);
+                        alternative, 
+                        pause);
                     hashCode = result;
                 }
                 return result;
@@ -3367,10 +3975,12 @@ public class ExampleScenario extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private List<ExampleScenario.Process> process = new ArrayList<>();
-                private Boolean pause;
+                private String number;
+                private ExampleScenario.Process process;
+                private Canonical workflow;
                 private Operation operation;
                 private List<Alternative> alternative = new ArrayList<>();
+                private Boolean pause;
 
                 private Builder() {
                     super();
@@ -3393,7 +4003,7 @@ public class ExampleScenario extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3413,7 +4023,7 @@ public class ExampleScenario extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3438,7 +4048,7 @@ public class ExampleScenario extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3463,7 +4073,7 @@ public class ExampleScenario extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3488,79 +4098,68 @@ public class ExampleScenario extends DomainResource {
                 }
 
                 /**
-                 * Nested process.
+                 * Convenience method for setting {@code number}.
                  * 
-                 * <p>Adds new element(s) to the existing list.
-                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * @param number
+                 *     Sequential number of the step
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #number(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder number(java.lang.String number) {
+                    this.number = (number == null) ? null : String.of(number);
+                    return this;
+                }
+
+                /**
+                 * The sequential number of the step, e.g. 1.2.5.
+                 * 
+                 * @param number
+                 *     Sequential number of the step
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder number(String number) {
+                    this.number = number;
+                    return this;
+                }
+
+                /**
+                 * Indicates that the step is a complex sub-process with its own steps.
                  * 
                  * @param process
-                 *     Nested process
+                 *     Step is nested process
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder process(ExampleScenario.Process... process) {
-                    for (ExampleScenario.Process value : process) {
-                        this.process.add(value);
-                    }
+                public Builder process(ExampleScenario.Process process) {
+                    this.process = process;
                     return this;
                 }
 
                 /**
-                 * Nested process.
+                 * Indicates that the step is defined by a seaparate scenario instance.
                  * 
-                 * <p>Replaces the existing list with a new one containing elements from the Collection.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
-                 * @param process
-                 *     Nested process
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @throws NullPointerException
-                 *     If the passed collection is null
-                 */
-                public Builder process(Collection<ExampleScenario.Process> process) {
-                    this.process = new ArrayList<>(process);
-                    return this;
-                }
-
-                /**
-                 * Convenience method for setting {@code pause}.
-                 * 
-                 * @param pause
-                 *     If there is a pause in the flow
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @see #pause(org.linuxforhealth.fhir.model.type.Boolean)
-                 */
-                public Builder pause(java.lang.Boolean pause) {
-                    this.pause = (pause == null) ? null : Boolean.of(pause);
-                    return this;
-                }
-
-                /**
-                 * If there is a pause in the flow.
-                 * 
-                 * @param pause
-                 *     If there is a pause in the flow
+                 * @param workflow
+                 *     Step is nested workflow
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder pause(Boolean pause) {
-                    this.pause = pause;
+                public Builder workflow(Canonical workflow) {
+                    this.workflow = workflow;
                     return this;
                 }
 
                 /**
-                 * Each interaction or action.
+                 * The step represents a single operation invoked on receiver by sender.
                  * 
                  * @param operation
-                 *     Each interaction or action
+                 *     Step is simple action
                  * 
                  * @return
                  *     A reference to this Builder instance
@@ -3571,8 +4170,8 @@ public class ExampleScenario extends DomainResource {
                 }
 
                 /**
-                 * Indicates an alternative step that can be taken instead of the operations on the base step in exceptional/atypical 
-                 * circumstances.
+                 * Indicates an alternative step that can be taken instead of the sub-process, scenario or operation. E.g. to represent 
+                 * non-happy-path/exceptional/atypical circumstances.
                  * 
                  * <p>Adds new element(s) to the existing list.
                  * If any of the elements are null, calling {@link #build()} will fail.
@@ -3591,8 +4190,8 @@ public class ExampleScenario extends DomainResource {
                 }
 
                 /**
-                 * Indicates an alternative step that can be taken instead of the operations on the base step in exceptional/atypical 
-                 * circumstances.
+                 * Indicates an alternative step that can be taken instead of the sub-process, scenario or operation. E.g. to represent 
+                 * non-happy-path/exceptional/atypical circumstances.
                  * 
                  * <p>Replaces the existing list with a new one containing elements from the Collection.
                  * If any of the elements are null, calling {@link #build()} will fail.
@@ -3608,6 +4207,37 @@ public class ExampleScenario extends DomainResource {
                  */
                 public Builder alternative(Collection<Alternative> alternative) {
                     this.alternative = new ArrayList<>(alternative);
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code pause}.
+                 * 
+                 * @param pause
+                 *     Pause in the flow?
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #pause(org.linuxforhealth.fhir.model.type.Boolean)
+                 */
+                public Builder pause(java.lang.Boolean pause) {
+                    this.pause = (pause == null) ? null : Boolean.of(pause);
+                    return this;
+                }
+
+                /**
+                 * If true, indicates that, following this step, there is a pause in the flow and the subsequent step will occur at some 
+                 * later time (triggered by some event).
+                 * 
+                 * @param pause
+                 *     Pause in the flow?
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder pause(Boolean pause) {
+                    this.pause = pause;
                     return this;
                 }
 
@@ -3630,29 +4260,33 @@ public class ExampleScenario extends DomainResource {
 
                 protected void validate(Step step) {
                     super.validate(step);
-                    ValidationSupport.checkList(step.process, "process", ExampleScenario.Process.class);
                     ValidationSupport.checkList(step.alternative, "alternative", Alternative.class);
                     ValidationSupport.requireValueOrChildren(step);
                 }
 
                 protected Builder from(Step step) {
                     super.from(step);
-                    process.addAll(step.process);
-                    pause = step.pause;
+                    number = step.number;
+                    process = step.process;
+                    workflow = step.workflow;
                     operation = step.operation;
                     alternative.addAll(step.alternative);
+                    pause = step.pause;
                     return this;
                 }
             }
 
             /**
-             * Each interaction or action.
+             * The step represents a single operation invoked on receiver by sender.
              */
             public static class Operation extends BackboneElement {
+                @Binding(
+                    strength = BindingStrength.Value.EXTENSIBLE,
+                    valueSet = "http://hl7.org/fhir/ValueSet/testscript-operation-codes"
+                )
+                private final Coding type;
                 @Required
-                private final String number;
-                private final String type;
-                private final String name;
+                private final String title;
                 private final String initiator;
                 private final String receiver;
                 private final Markdown description;
@@ -3663,9 +4297,8 @@ public class ExampleScenario extends DomainResource {
 
                 private Operation(Builder builder) {
                     super(builder);
-                    number = builder.number;
                     type = builder.type;
-                    name = builder.name;
+                    title = builder.title;
                     initiator = builder.initiator;
                     receiver = builder.receiver;
                     description = builder.description;
@@ -3676,37 +4309,27 @@ public class ExampleScenario extends DomainResource {
                 }
 
                 /**
-                 * The sequential number of the interaction, e.g. 1.2.5.
+                 * The standardized type of action (FHIR or otherwise).
                  * 
                  * @return
-                 *     An immutable object of type {@link String} that is non-null.
+                 *     An immutable object of type {@link Coding} that may be null.
                  */
-                public String getNumber() {
-                    return number;
-                }
-
-                /**
-                 * The type of operation - CRUD.
-                 * 
-                 * @return
-                 *     An immutable object of type {@link String} that may be null.
-                 */
-                public String getType() {
+                public Coding getType() {
                     return type;
                 }
 
                 /**
-                 * The human-friendly name of the interaction.
+                 * A short descriptive label the step to be used in tables or diagrams.
                  * 
                  * @return
-                 *     An immutable object of type {@link String} that may be null.
+                 *     An immutable object of type {@link String} that is non-null.
                  */
-                public String getName() {
-                    return name;
+                public String getTitle() {
+                    return title;
                 }
 
                 /**
-                 * Who starts the transaction.
+                 * The system that invokes the action/transmits the data.
                  * 
                  * @return
                  *     An immutable object of type {@link String} that may be null.
@@ -3716,7 +4339,7 @@ public class ExampleScenario extends DomainResource {
                 }
 
                 /**
-                 * Who receives the transaction.
+                 * The system on which the action is invoked/receives the data.
                  * 
                  * @return
                  *     An immutable object of type {@link String} that may be null.
@@ -3726,7 +4349,7 @@ public class ExampleScenario extends DomainResource {
                 }
 
                 /**
-                 * A comment to be inserted in the diagram.
+                 * An explanation of what the operation represents and what it does.
                  * 
                  * @return
                  *     An immutable object of type {@link Markdown} that may be null.
@@ -3736,7 +4359,7 @@ public class ExampleScenario extends DomainResource {
                 }
 
                 /**
-                 * Whether the initiator is deactivated right after the transaction.
+                 * If false, the initiator is deactivated right after the operation.
                  * 
                  * @return
                  *     An immutable object of type {@link Boolean} that may be null.
@@ -3746,7 +4369,7 @@ public class ExampleScenario extends DomainResource {
                 }
 
                 /**
-                 * Whether the receiver is deactivated right after the transaction.
+                 * If false, the receiver is deactivated right after the operation.
                  * 
                  * @return
                  *     An immutable object of type {@link Boolean} that may be null.
@@ -3756,7 +4379,7 @@ public class ExampleScenario extends DomainResource {
                 }
 
                 /**
-                 * Each resource instance used by the initiator.
+                 * A reference to the instance that is transmitted from requester to receiver as part of the invocation of the operation.
                  * 
                  * @return
                  *     An immutable object of type {@link ExampleScenario.Instance.ContainedInstance} that may be null.
@@ -3766,7 +4389,8 @@ public class ExampleScenario extends DomainResource {
                 }
 
                 /**
-                 * Each resource instance used by the responder.
+                 * A reference to the instance that is transmitted from receiver to requester as part of the operation's synchronous 
+                 * response (if any).
                  * 
                  * @return
                  *     An immutable object of type {@link ExampleScenario.Instance.ContainedInstance} that may be null.
@@ -3778,9 +4402,8 @@ public class ExampleScenario extends DomainResource {
                 @Override
                 public boolean hasChildren() {
                     return super.hasChildren() || 
-                        (number != null) || 
                         (type != null) || 
-                        (name != null) || 
+                        (title != null) || 
                         (initiator != null) || 
                         (receiver != null) || 
                         (description != null) || 
@@ -3799,9 +4422,8 @@ public class ExampleScenario extends DomainResource {
                             accept(id, "id", visitor);
                             accept(extension, "extension", visitor, Extension.class);
                             accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                            accept(number, "number", visitor);
                             accept(type, "type", visitor);
-                            accept(name, "name", visitor);
+                            accept(title, "title", visitor);
                             accept(initiator, "initiator", visitor);
                             accept(receiver, "receiver", visitor);
                             accept(description, "description", visitor);
@@ -3830,9 +4452,8 @@ public class ExampleScenario extends DomainResource {
                     return Objects.equals(id, other.id) && 
                         Objects.equals(extension, other.extension) && 
                         Objects.equals(modifierExtension, other.modifierExtension) && 
-                        Objects.equals(number, other.number) && 
                         Objects.equals(type, other.type) && 
-                        Objects.equals(name, other.name) && 
+                        Objects.equals(title, other.title) && 
                         Objects.equals(initiator, other.initiator) && 
                         Objects.equals(receiver, other.receiver) && 
                         Objects.equals(description, other.description) && 
@@ -3849,9 +4470,8 @@ public class ExampleScenario extends DomainResource {
                         result = Objects.hash(id, 
                             extension, 
                             modifierExtension, 
-                            number, 
                             type, 
-                            name, 
+                            title, 
                             initiator, 
                             receiver, 
                             description, 
@@ -3874,9 +4494,8 @@ public class ExampleScenario extends DomainResource {
                 }
 
                 public static class Builder extends BackboneElement.Builder {
-                    private String number;
-                    private String type;
-                    private String name;
+                    private Coding type;
+                    private String title;
                     private String initiator;
                     private String receiver;
                     private Markdown description;
@@ -3906,7 +4525,7 @@ public class ExampleScenario extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -3926,7 +4545,7 @@ public class ExampleScenario extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -3951,7 +4570,7 @@ public class ExampleScenario extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -3976,7 +4595,7 @@ public class ExampleScenario extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -4001,96 +4620,50 @@ public class ExampleScenario extends DomainResource {
                     }
 
                     /**
-                     * Convenience method for setting {@code number}.
-                     * 
-                     * <p>This element is required.
-                     * 
-                     * @param number
-                     *     The sequential number of the interaction
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @see #number(org.linuxforhealth.fhir.model.type.String)
-                     */
-                    public Builder number(java.lang.String number) {
-                        this.number = (number == null) ? null : String.of(number);
-                        return this;
-                    }
-
-                    /**
-                     * The sequential number of the interaction, e.g. 1.2.5.
-                     * 
-                     * <p>This element is required.
-                     * 
-                     * @param number
-                     *     The sequential number of the interaction
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     */
-                    public Builder number(String number) {
-                        this.number = number;
-                        return this;
-                    }
-
-                    /**
-                     * Convenience method for setting {@code type}.
+                     * The standardized type of action (FHIR or otherwise).
                      * 
                      * @param type
-                     *     The type of operation - CRUD
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @see #type(org.linuxforhealth.fhir.model.type.String)
-                     */
-                    public Builder type(java.lang.String type) {
-                        this.type = (type == null) ? null : String.of(type);
-                        return this;
-                    }
-
-                    /**
-                     * The type of operation - CRUD.
-                     * 
-                     * @param type
-                     *     The type of operation - CRUD
+                     *     Kind of action
                      * 
                      * @return
                      *     A reference to this Builder instance
                      */
-                    public Builder type(String type) {
+                    public Builder type(Coding type) {
                         this.type = type;
                         return this;
                     }
 
                     /**
-                     * Convenience method for setting {@code name}.
+                     * Convenience method for setting {@code title}.
                      * 
-                     * @param name
-                     *     The human-friendly name of the interaction
+                     * <p>This element is required.
+                     * 
+                     * @param title
+                     *     Label for step
                      * 
                      * @return
                      *     A reference to this Builder instance
                      * 
-                     * @see #name(org.linuxforhealth.fhir.model.type.String)
+                     * @see #title(org.linuxforhealth.fhir.model.type.String)
                      */
-                    public Builder name(java.lang.String name) {
-                        this.name = (name == null) ? null : String.of(name);
+                    public Builder title(java.lang.String title) {
+                        this.title = (title == null) ? null : String.of(title);
                         return this;
                     }
 
                     /**
-                     * The human-friendly name of the interaction.
+                     * A short descriptive label the step to be used in tables or diagrams.
                      * 
-                     * @param name
-                     *     The human-friendly name of the interaction
+                     * <p>This element is required.
+                     * 
+                     * @param title
+                     *     Label for step
                      * 
                      * @return
                      *     A reference to this Builder instance
                      */
-                    public Builder name(String name) {
-                        this.name = name;
+                    public Builder title(String title) {
+                        this.title = title;
                         return this;
                     }
 
@@ -4098,7 +4671,7 @@ public class ExampleScenario extends DomainResource {
                      * Convenience method for setting {@code initiator}.
                      * 
                      * @param initiator
-                     *     Who starts the transaction
+                     *     Who starts the operation
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -4111,10 +4684,10 @@ public class ExampleScenario extends DomainResource {
                     }
 
                     /**
-                     * Who starts the transaction.
+                     * The system that invokes the action/transmits the data.
                      * 
                      * @param initiator
-                     *     Who starts the transaction
+                     *     Who starts the operation
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -4128,7 +4701,7 @@ public class ExampleScenario extends DomainResource {
                      * Convenience method for setting {@code receiver}.
                      * 
                      * @param receiver
-                     *     Who receives the transaction
+                     *     Who receives the operation
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -4141,10 +4714,10 @@ public class ExampleScenario extends DomainResource {
                     }
 
                     /**
-                     * Who receives the transaction.
+                     * The system on which the action is invoked/receives the data.
                      * 
                      * @param receiver
-                     *     Who receives the transaction
+                     *     Who receives the operation
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -4155,10 +4728,10 @@ public class ExampleScenario extends DomainResource {
                     }
 
                     /**
-                     * A comment to be inserted in the diagram.
+                     * An explanation of what the operation represents and what it does.
                      * 
                      * @param description
-                     *     A comment to be inserted in the diagram
+                     *     Human-friendly description of the operation
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -4172,7 +4745,7 @@ public class ExampleScenario extends DomainResource {
                      * Convenience method for setting {@code initiatorActive}.
                      * 
                      * @param initiatorActive
-                     *     Whether the initiator is deactivated right after the transaction
+                     *     Initiator stays active?
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -4185,10 +4758,10 @@ public class ExampleScenario extends DomainResource {
                     }
 
                     /**
-                     * Whether the initiator is deactivated right after the transaction.
+                     * If false, the initiator is deactivated right after the operation.
                      * 
                      * @param initiatorActive
-                     *     Whether the initiator is deactivated right after the transaction
+                     *     Initiator stays active?
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -4202,7 +4775,7 @@ public class ExampleScenario extends DomainResource {
                      * Convenience method for setting {@code receiverActive}.
                      * 
                      * @param receiverActive
-                     *     Whether the receiver is deactivated right after the transaction
+                     *     Receiver stays active?
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -4215,10 +4788,10 @@ public class ExampleScenario extends DomainResource {
                     }
 
                     /**
-                     * Whether the receiver is deactivated right after the transaction.
+                     * If false, the receiver is deactivated right after the operation.
                      * 
                      * @param receiverActive
-                     *     Whether the receiver is deactivated right after the transaction
+                     *     Receiver stays active?
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -4229,10 +4802,10 @@ public class ExampleScenario extends DomainResource {
                     }
 
                     /**
-                     * Each resource instance used by the initiator.
+                     * A reference to the instance that is transmitted from requester to receiver as part of the invocation of the operation.
                      * 
                      * @param request
-                     *     Each resource instance used by the initiator
+                     *     Instance transmitted on invocation
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -4243,10 +4816,11 @@ public class ExampleScenario extends DomainResource {
                     }
 
                     /**
-                     * Each resource instance used by the responder.
+                     * A reference to the instance that is transmitted from receiver to requester as part of the operation's synchronous 
+                     * response (if any).
                      * 
                      * @param response
-                     *     Each resource instance used by the responder
+                     *     Instance transmitted on invocation response
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -4261,7 +4835,7 @@ public class ExampleScenario extends DomainResource {
                      * 
                      * <p>Required elements:
                      * <ul>
-                     * <li>number</li>
+                     * <li>title</li>
                      * </ul>
                      * 
                      * @return
@@ -4280,15 +4854,14 @@ public class ExampleScenario extends DomainResource {
 
                     protected void validate(Operation operation) {
                         super.validate(operation);
-                        ValidationSupport.requireNonNull(operation.number, "number");
+                        ValidationSupport.requireNonNull(operation.title, "title");
                         ValidationSupport.requireValueOrChildren(operation);
                     }
 
                     protected Builder from(Operation operation) {
                         super.from(operation);
-                        number = operation.number;
                         type = operation.type;
-                        name = operation.name;
+                        title = operation.title;
                         initiator = operation.initiator;
                         receiver = operation.receiver;
                         description = operation.description;
@@ -4302,8 +4875,8 @@ public class ExampleScenario extends DomainResource {
             }
 
             /**
-             * Indicates an alternative step that can be taken instead of the operations on the base step in exceptional/atypical 
-             * circumstances.
+             * Indicates an alternative step that can be taken instead of the sub-process, scenario or operation. E.g. to represent 
+             * non-happy-path/exceptional/atypical circumstances.
              */
             public static class Alternative extends BackboneElement {
                 @Required
@@ -4340,7 +4913,7 @@ public class ExampleScenario extends DomainResource {
                 }
 
                 /**
-                 * What happens in each alternative option.
+                 * Indicates the operation, sub-process or scenario that happens if the alternative option is selected.
                  * 
                  * @return
                  *     An unmodifiable list containing immutable objects of type {@link Step} that may be empty.
@@ -4445,7 +5018,7 @@ public class ExampleScenario extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -4465,7 +5038,7 @@ public class ExampleScenario extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -4490,7 +5063,7 @@ public class ExampleScenario extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -4515,7 +5088,7 @@ public class ExampleScenario extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -4578,7 +5151,7 @@ public class ExampleScenario extends DomainResource {
                      * A human-readable description of the alternative explaining when the alternative should occur rather than the base step.
                      * 
                      * @param description
-                     *     A human-readable description of each option
+                     *     Human-readable description of option
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -4589,13 +5162,13 @@ public class ExampleScenario extends DomainResource {
                     }
 
                     /**
-                     * What happens in each alternative option.
+                     * Indicates the operation, sub-process or scenario that happens if the alternative option is selected.
                      * 
                      * <p>Adds new element(s) to the existing list.
                      * If any of the elements are null, calling {@link #build()} will fail.
                      * 
                      * @param step
-                     *     What happens in each alternative option
+                     *     Alternative action(s)
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -4608,13 +5181,13 @@ public class ExampleScenario extends DomainResource {
                     }
 
                     /**
-                     * What happens in each alternative option.
+                     * Indicates the operation, sub-process or scenario that happens if the alternative option is selected.
                      * 
                      * <p>Replaces the existing list with a new one containing elements from the Collection.
                      * If any of the elements are null, calling {@link #build()} will fail.
                      * 
                      * @param step
-                     *     What happens in each alternative option
+                     *     Alternative action(s)
                      * 
                      * @return
                      *     A reference to this Builder instance

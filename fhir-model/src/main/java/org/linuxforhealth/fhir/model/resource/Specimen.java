@@ -18,11 +18,13 @@ import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
+import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.Annotation;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Duration;
 import org.linuxforhealth.fhir.model.type.Element;
@@ -36,6 +38,7 @@ import org.linuxforhealth.fhir.model.type.SimpleQuantity;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
+import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
 import org.linuxforhealth.fhir.model.type.code.SpecimenStatus;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
@@ -53,6 +56,15 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 @Constraint(
     id = "specimen-0",
     level = "Warning",
+    location = "(base)",
+    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/specimen-role",
+    expression = "role.exists() implies (role.all(memberOf('http://hl7.org/fhir/ValueSet/specimen-role', 'preferred')))",
+    source = "http://hl7.org/fhir/StructureDefinition/Specimen",
+    generated = true
+)
+@Constraint(
+    id = "specimen-1",
+    level = "Warning",
     location = "collection.fastingStatus",
     description = "SHALL, if possible, contain a code from value set http://terminology.hl7.org/ValueSet/v2-0916",
     expression = "$this.as(CodeableConcept).memberOf('http://terminology.hl7.org/ValueSet/v2-0916', 'extensible')",
@@ -60,7 +72,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "specimen-1",
+    id = "specimen-2",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://terminology.hl7.org/ValueSet/v2-0493",
@@ -79,7 +91,7 @@ public class Specimen extends DomainResource {
         bindingName = "SpecimenStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "Codes providing the status/availability of a specimen.",
-        valueSet = "http://hl7.org/fhir/ValueSet/specimen-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/specimen-status|5.0.0"
     )
     private final SpecimenStatus status;
     @Summary
@@ -91,7 +103,7 @@ public class Specimen extends DomainResource {
     )
     private final CodeableConcept type;
     @Summary
-    @ReferenceTarget({ "Patient", "Group", "Device", "Substance", "Location" })
+    @ReferenceTarget({ "Patient", "Group", "Device", "BiologicallyDerivedProduct", "Substance", "Location" })
     private final Reference subject;
     @Summary
     private final DateTime receivedTime;
@@ -99,6 +111,22 @@ public class Specimen extends DomainResource {
     private final List<Reference> parent;
     @ReferenceTarget({ "ServiceRequest" })
     private final List<Reference> request;
+    @Summary
+    @Binding(
+        bindingName = "PublicationStatus",
+        strength = BindingStrength.Value.REQUIRED,
+        description = "Codes for the combined status of a specimen.",
+        valueSet = "http://hl7.org/fhir/ValueSet/specimen-combined|5.0.0"
+    )
+    private final PublicationStatus combined;
+    @Binding(
+        bindingName = "SpecimenRole",
+        strength = BindingStrength.Value.PREFERRED,
+        description = "Codes describing specimen role.",
+        valueSet = "http://hl7.org/fhir/ValueSet/specimen-role"
+    )
+    private final List<CodeableConcept> role;
+    private final List<Feature> feature;
     private final Collection collection;
     private final List<Processing> processing;
     private final List<Container> container;
@@ -122,6 +150,9 @@ public class Specimen extends DomainResource {
         receivedTime = builder.receivedTime;
         parent = Collections.unmodifiableList(builder.parent);
         request = Collections.unmodifiableList(builder.request);
+        combined = builder.combined;
+        role = Collections.unmodifiableList(builder.role);
+        feature = Collections.unmodifiableList(builder.feature);
         collection = builder.collection;
         processing = Collections.unmodifiableList(builder.processing);
         container = Collections.unmodifiableList(builder.container);
@@ -172,7 +203,7 @@ public class Specimen extends DomainResource {
 
     /**
      * Where the specimen came from. This may be from patient(s), from a location (e.g., the source of an environmental 
-     * sample), or a sampling of a substance or a device.
+     * sample), or a sampling of a substance, a biologically-derived product, or a device.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
@@ -182,7 +213,7 @@ public class Specimen extends DomainResource {
     }
 
     /**
-     * Time when specimen was received for processing or testing.
+     * Time when specimen is received by the testing laboratory for processing or testing.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -210,6 +241,38 @@ public class Specimen extends DomainResource {
      */
     public List<Reference> getRequest() {
         return request;
+    }
+
+    /**
+     * This element signifies if the specimen is part of a group or pooled.
+     * 
+     * @return
+     *     An immutable object of type {@link PublicationStatus} that may be null.
+     */
+    public PublicationStatus getCombined() {
+        return combined;
+    }
+
+    /**
+     * The role or reason for the specimen in the testing workflow.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     */
+    public List<CodeableConcept> getRole() {
+        return role;
+    }
+
+    /**
+     * A physical feature or landmark on a specimen, highlighted for context by the collector of the specimen (e.g. surgeon), 
+     * that identifies the type of feature as well as its meaning (e.g. the red ink indicating the resection margin of the 
+     * right lobe of the excised prostate tissue or wire loop at radiologically suspected tumor location).
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Feature} that may be empty.
+     */
+    public List<Feature> getFeature() {
+        return feature;
     }
 
     /**
@@ -275,6 +338,9 @@ public class Specimen extends DomainResource {
             (receivedTime != null) || 
             !parent.isEmpty() || 
             !request.isEmpty() || 
+            (combined != null) || 
+            !role.isEmpty() || 
+            !feature.isEmpty() || 
             (collection != null) || 
             !processing.isEmpty() || 
             !container.isEmpty() || 
@@ -304,6 +370,9 @@ public class Specimen extends DomainResource {
                 accept(receivedTime, "receivedTime", visitor);
                 accept(parent, "parent", visitor, Reference.class);
                 accept(request, "request", visitor, Reference.class);
+                accept(combined, "combined", visitor);
+                accept(role, "role", visitor, CodeableConcept.class);
+                accept(feature, "feature", visitor, Feature.class);
                 accept(collection, "collection", visitor);
                 accept(processing, "processing", visitor, Processing.class);
                 accept(container, "container", visitor, Container.class);
@@ -343,6 +412,9 @@ public class Specimen extends DomainResource {
             Objects.equals(receivedTime, other.receivedTime) && 
             Objects.equals(parent, other.parent) && 
             Objects.equals(request, other.request) && 
+            Objects.equals(combined, other.combined) && 
+            Objects.equals(role, other.role) && 
+            Objects.equals(feature, other.feature) && 
             Objects.equals(collection, other.collection) && 
             Objects.equals(processing, other.processing) && 
             Objects.equals(container, other.container) && 
@@ -370,6 +442,9 @@ public class Specimen extends DomainResource {
                 receivedTime, 
                 parent, 
                 request, 
+                combined, 
+                role, 
+                feature, 
                 collection, 
                 processing, 
                 container, 
@@ -398,6 +473,9 @@ public class Specimen extends DomainResource {
         private DateTime receivedTime;
         private List<Reference> parent = new ArrayList<>();
         private List<Reference> request = new ArrayList<>();
+        private PublicationStatus combined;
+        private List<CodeableConcept> role = new ArrayList<>();
+        private List<Feature> feature = new ArrayList<>();
         private Collection collection;
         private List<Processing> processing = new ArrayList<>();
         private List<Container> container = new ArrayList<>();
@@ -486,7 +564,8 @@ public class Specimen extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -504,7 +583,8 @@ public class Specimen extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -525,7 +605,7 @@ public class Specimen extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -545,7 +625,7 @@ public class Specimen extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -570,9 +650,9 @@ public class Specimen extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -595,9 +675,9 @@ public class Specimen extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -703,20 +783,21 @@ public class Specimen extends DomainResource {
 
         /**
          * Where the specimen came from. This may be from patient(s), from a location (e.g., the source of an environmental 
-         * sample), or a sampling of a substance or a device.
+         * sample), or a sampling of a substance, a biologically-derived product, or a device.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
          * <li>{@link Patient}</li>
          * <li>{@link Group}</li>
          * <li>{@link Device}</li>
+         * <li>{@link BiologicallyDerivedProduct}</li>
          * <li>{@link Substance}</li>
          * <li>{@link Location}</li>
          * </ul>
          * 
          * @param subject
          *     Where the specimen came from. This may be from patient(s), from a location (e.g., the source of an environmental 
-         *     sample), or a sampling of a substance or a device
+         *     sample), or a sampling of a substance, a biologically-derived product, or a device
          * 
          * @return
          *     A reference to this Builder instance
@@ -727,10 +808,10 @@ public class Specimen extends DomainResource {
         }
 
         /**
-         * Time when specimen was received for processing or testing.
+         * Time when specimen is received by the testing laboratory for processing or testing.
          * 
          * @param receivedTime
-         *     The time when specimen was received for processing
+         *     The time when specimen is received by the testing laboratory
          * 
          * @return
          *     A reference to this Builder instance
@@ -837,6 +918,102 @@ public class Specimen extends DomainResource {
          */
         public Builder request(java.util.Collection<Reference> request) {
             this.request = new ArrayList<>(request);
+            return this;
+        }
+
+        /**
+         * This element signifies if the specimen is part of a group or pooled.
+         * 
+         * @param combined
+         *     grouped | pooled
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder combined(PublicationStatus combined) {
+            this.combined = combined;
+            return this;
+        }
+
+        /**
+         * The role or reason for the specimen in the testing workflow.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param role
+         *     The role the specimen serves
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder role(CodeableConcept... role) {
+            for (CodeableConcept value : role) {
+                this.role.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The role or reason for the specimen in the testing workflow.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param role
+         *     The role the specimen serves
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder role(java.util.Collection<CodeableConcept> role) {
+            this.role = new ArrayList<>(role);
+            return this;
+        }
+
+        /**
+         * A physical feature or landmark on a specimen, highlighted for context by the collector of the specimen (e.g. surgeon), 
+         * that identifies the type of feature as well as its meaning (e.g. the red ink indicating the resection margin of the 
+         * right lobe of the excised prostate tissue or wire loop at radiologically suspected tumor location).
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param feature
+         *     The physical feature of a specimen
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder feature(Feature... feature) {
+            for (Feature value : feature) {
+                this.feature.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A physical feature or landmark on a specimen, highlighted for context by the collector of the specimen (e.g. surgeon), 
+         * that identifies the type of feature as well as its meaning (e.g. the red ink indicating the resection margin of the 
+         * right lobe of the excised prostate tissue or wire loop at radiologically suspected tumor location).
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param feature
+         *     The physical feature of a specimen
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder feature(java.util.Collection<Feature> feature) {
+            this.feature = new ArrayList<>(feature);
             return this;
         }
 
@@ -1036,11 +1213,13 @@ public class Specimen extends DomainResource {
             ValidationSupport.checkList(specimen.identifier, "identifier", Identifier.class);
             ValidationSupport.checkList(specimen.parent, "parent", Reference.class);
             ValidationSupport.checkList(specimen.request, "request", Reference.class);
+            ValidationSupport.checkList(specimen.role, "role", CodeableConcept.class);
+            ValidationSupport.checkList(specimen.feature, "feature", Feature.class);
             ValidationSupport.checkList(specimen.processing, "processing", Processing.class);
             ValidationSupport.checkList(specimen.container, "container", Container.class);
             ValidationSupport.checkList(specimen.condition, "condition", CodeableConcept.class);
             ValidationSupport.checkList(specimen.note, "note", Annotation.class);
-            ValidationSupport.checkReferenceType(specimen.subject, "subject", "Patient", "Group", "Device", "Substance", "Location");
+            ValidationSupport.checkReferenceType(specimen.subject, "subject", "Patient", "Group", "Device", "BiologicallyDerivedProduct", "Substance", "Location");
             ValidationSupport.checkReferenceType(specimen.parent, "parent", "Specimen");
             ValidationSupport.checkReferenceType(specimen.request, "request", "ServiceRequest");
         }
@@ -1055,6 +1234,9 @@ public class Specimen extends DomainResource {
             receivedTime = specimen.receivedTime;
             parent.addAll(specimen.parent);
             request.addAll(specimen.request);
+            combined = specimen.combined;
+            role.addAll(specimen.role);
+            feature.addAll(specimen.feature);
             collection = specimen.collection;
             processing.addAll(specimen.processing);
             container.addAll(specimen.container);
@@ -1065,15 +1247,332 @@ public class Specimen extends DomainResource {
     }
 
     /**
+     * A physical feature or landmark on a specimen, highlighted for context by the collector of the specimen (e.g. surgeon), 
+     * that identifies the type of feature as well as its meaning (e.g. the red ink indicating the resection margin of the 
+     * right lobe of the excised prostate tissue or wire loop at radiologically suspected tumor location).
+     */
+    public static class Feature extends BackboneElement {
+        @Binding(
+            bindingName = "SpecimenFeatureType",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "SNOMED CT Body site concepts",
+            valueSet = "http://hl7.org/fhir/ValueSet/body-site"
+        )
+        @Required
+        private final CodeableConcept type;
+        @Required
+        private final String description;
+
+        private Feature(Builder builder) {
+            super(builder);
+            type = builder.type;
+            description = builder.description;
+        }
+
+        /**
+         * The landmark or feature being highlighted.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that is non-null.
+         */
+        public CodeableConcept getType() {
+            return type;
+        }
+
+        /**
+         * Description of the feature of the specimen.
+         * 
+         * @return
+         *     An immutable object of type {@link String} that is non-null.
+         */
+        public String getDescription() {
+            return description;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (type != null) || 
+                (description != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(type, "type", visitor);
+                    accept(description, "description", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Feature other = (Feature) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(type, other.type) && 
+                Objects.equals(description, other.description);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    type, 
+                    description);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private CodeableConcept type;
+            private String description;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(java.util.Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(java.util.Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * The landmark or feature being highlighted.
+             * 
+             * <p>This element is required.
+             * 
+             * @param type
+             *     Highlighted feature
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder type(CodeableConcept type) {
+                this.type = type;
+                return this;
+            }
+
+            /**
+             * Convenience method for setting {@code description}.
+             * 
+             * <p>This element is required.
+             * 
+             * @param description
+             *     Information about the feature
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #description(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder description(java.lang.String description) {
+                this.description = (description == null) ? null : String.of(description);
+                return this;
+            }
+
+            /**
+             * Description of the feature of the specimen.
+             * 
+             * <p>This element is required.
+             * 
+             * @param description
+             *     Information about the feature
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder description(String description) {
+                this.description = description;
+                return this;
+            }
+
+            /**
+             * Build the {@link Feature}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>type</li>
+             * <li>description</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link Feature}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Feature per the base specification
+             */
+            @Override
+            public Feature build() {
+                Feature feature = new Feature(this);
+                if (validating) {
+                    validate(feature);
+                }
+                return feature;
+            }
+
+            protected void validate(Feature feature) {
+                super.validate(feature);
+                ValidationSupport.requireNonNull(feature.type, "type");
+                ValidationSupport.requireNonNull(feature.description, "description");
+                ValidationSupport.requireValueOrChildren(feature);
+            }
+
+            protected Builder from(Feature feature) {
+                super.from(feature);
+                type = feature.type;
+                description = feature.description;
+                return this;
+            }
+        }
+    }
+
+    /**
      * Details concerning the specimen collection.
      */
     public static class Collection extends BackboneElement {
         @Summary
-        @ReferenceTarget({ "Practitioner", "PractitionerRole" })
+        @ReferenceTarget({ "Practitioner", "PractitionerRole", "Patient", "RelatedPerson" })
         private final Reference collector;
         @Summary
         @Choice({ DateTime.class, Period.class })
-        private final Element collected;
+        private final org.linuxforhealth.fhir.model.type.Element collected;
         @Summary
         private final Duration duration;
         private final SimpleQuantity quantity;
@@ -1085,12 +1584,20 @@ public class Specimen extends DomainResource {
         )
         private final CodeableConcept method;
         @Binding(
+            bindingName = "SpecimenCollectionDevice",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "The device that was used to obtain the specimen (e.g. a catheter or catheter part used to draw the blood via a central line)."
+        )
+        private final CodeableReference device;
+        @ReferenceTarget({ "Procedure" })
+        private final Reference procedure;
+        @Binding(
             bindingName = "BodySite",
             strength = BindingStrength.Value.EXAMPLE,
             description = "SNOMED CT Body site concepts",
             valueSet = "http://hl7.org/fhir/ValueSet/body-site"
         )
-        private final CodeableConcept bodySite;
+        private final CodeableReference bodySite;
         @Summary
         @Choice({ CodeableConcept.class, Duration.class })
         @Binding(
@@ -1099,7 +1606,7 @@ public class Specimen extends DomainResource {
             description = "Codes describing the fasting status of the patient.",
             valueSet = "http://terminology.hl7.org/ValueSet/v2-0916"
         )
-        private final Element fastingStatus;
+        private final org.linuxforhealth.fhir.model.type.Element fastingStatus;
 
         private Collection(Builder builder) {
             super(builder);
@@ -1108,6 +1615,8 @@ public class Specimen extends DomainResource {
             duration = builder.duration;
             quantity = builder.quantity;
             method = builder.method;
+            device = builder.device;
+            procedure = builder.procedure;
             bodySite = builder.bodySite;
             fastingStatus = builder.fastingStatus;
         }
@@ -1128,7 +1637,7 @@ public class Specimen extends DomainResource {
          * @return
          *     An immutable object of type {@link DateTime} or {@link Period} that may be null.
          */
-        public Element getCollected() {
+        public org.linuxforhealth.fhir.model.type.Element getCollected() {
             return collected;
         }
 
@@ -1164,13 +1673,34 @@ public class Specimen extends DomainResource {
         }
 
         /**
+         * A coded value specifying the technique that is used to perform the procedure.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableReference} that may be null.
+         */
+        public CodeableReference getDevice() {
+            return device;
+        }
+
+        /**
+         * The procedure event during which the specimen was collected (e.g. the surgery leading to the collection of a pathology 
+         * sample).
+         * 
+         * @return
+         *     An immutable object of type {@link Reference} that may be null.
+         */
+        public Reference getProcedure() {
+            return procedure;
+        }
+
+        /**
          * Anatomical location from which the specimen was collected (if subject is a patient). This is the target site. This 
          * element is not used for environmental specimens.
          * 
          * @return
-         *     An immutable object of type {@link CodeableConcept} that may be null.
+         *     An immutable object of type {@link CodeableReference} that may be null.
          */
-        public CodeableConcept getBodySite() {
+        public CodeableReference getBodySite() {
             return bodySite;
         }
 
@@ -1180,7 +1710,7 @@ public class Specimen extends DomainResource {
          * @return
          *     An immutable object of type {@link CodeableConcept} or {@link Duration} that may be null.
          */
-        public Element getFastingStatus() {
+        public org.linuxforhealth.fhir.model.type.Element getFastingStatus() {
             return fastingStatus;
         }
 
@@ -1192,6 +1722,8 @@ public class Specimen extends DomainResource {
                 (duration != null) || 
                 (quantity != null) || 
                 (method != null) || 
+                (device != null) || 
+                (procedure != null) || 
                 (bodySite != null) || 
                 (fastingStatus != null);
         }
@@ -1210,6 +1742,8 @@ public class Specimen extends DomainResource {
                     accept(duration, "duration", visitor);
                     accept(quantity, "quantity", visitor);
                     accept(method, "method", visitor);
+                    accept(device, "device", visitor);
+                    accept(procedure, "procedure", visitor);
                     accept(bodySite, "bodySite", visitor);
                     accept(fastingStatus, "fastingStatus", visitor);
                 }
@@ -1238,6 +1772,8 @@ public class Specimen extends DomainResource {
                 Objects.equals(duration, other.duration) && 
                 Objects.equals(quantity, other.quantity) && 
                 Objects.equals(method, other.method) && 
+                Objects.equals(device, other.device) && 
+                Objects.equals(procedure, other.procedure) && 
                 Objects.equals(bodySite, other.bodySite) && 
                 Objects.equals(fastingStatus, other.fastingStatus);
         }
@@ -1254,6 +1790,8 @@ public class Specimen extends DomainResource {
                     duration, 
                     quantity, 
                     method, 
+                    device, 
+                    procedure, 
                     bodySite, 
                     fastingStatus);
                 hashCode = result;
@@ -1272,12 +1810,14 @@ public class Specimen extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private Reference collector;
-            private Element collected;
+            private org.linuxforhealth.fhir.model.type.Element collected;
             private Duration duration;
             private SimpleQuantity quantity;
             private CodeableConcept method;
-            private CodeableConcept bodySite;
-            private Element fastingStatus;
+            private CodeableReference device;
+            private Reference procedure;
+            private CodeableReference bodySite;
+            private org.linuxforhealth.fhir.model.type.Element fastingStatus;
 
             private Builder() {
                 super();
@@ -1300,7 +1840,7 @@ public class Specimen extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1320,7 +1860,7 @@ public class Specimen extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1345,7 +1885,7 @@ public class Specimen extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1370,7 +1910,7 @@ public class Specimen extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1401,6 +1941,8 @@ public class Specimen extends DomainResource {
              * <ul>
              * <li>{@link Practitioner}</li>
              * <li>{@link PractitionerRole}</li>
+             * <li>{@link Patient}</li>
+             * <li>{@link RelatedPerson}</li>
              * </ul>
              * 
              * @param collector
@@ -1429,7 +1971,7 @@ public class Specimen extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder collected(Element collected) {
+            public Builder collected(org.linuxforhealth.fhir.model.type.Element collected) {
                 this.collected = collected;
                 return this;
             }
@@ -1478,6 +2020,40 @@ public class Specimen extends DomainResource {
             }
 
             /**
+             * A coded value specifying the technique that is used to perform the procedure.
+             * 
+             * @param device
+             *     Device used to perform collection
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder device(CodeableReference device) {
+                this.device = device;
+                return this;
+            }
+
+            /**
+             * The procedure event during which the specimen was collected (e.g. the surgery leading to the collection of a pathology 
+             * sample).
+             * 
+             * <p>Allowed resource types for this reference:
+             * <ul>
+             * <li>{@link Procedure}</li>
+             * </ul>
+             * 
+             * @param procedure
+             *     The procedure that collects the specimen
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder procedure(Reference procedure) {
+                this.procedure = procedure;
+                return this;
+            }
+
+            /**
              * Anatomical location from which the specimen was collected (if subject is a patient). This is the target site. This 
              * element is not used for environmental specimens.
              * 
@@ -1487,7 +2063,7 @@ public class Specimen extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder bodySite(CodeableConcept bodySite) {
+            public Builder bodySite(CodeableReference bodySite) {
                 this.bodySite = bodySite;
                 return this;
             }
@@ -1507,7 +2083,7 @@ public class Specimen extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder fastingStatus(Element fastingStatus) {
+            public Builder fastingStatus(org.linuxforhealth.fhir.model.type.Element fastingStatus) {
                 this.fastingStatus = fastingStatus;
                 return this;
             }
@@ -1533,7 +2109,8 @@ public class Specimen extends DomainResource {
                 super.validate(collection);
                 ValidationSupport.choiceElement(collection.collected, "collected", DateTime.class, Period.class);
                 ValidationSupport.choiceElement(collection.fastingStatus, "fastingStatus", CodeableConcept.class, Duration.class);
-                ValidationSupport.checkReferenceType(collection.collector, "collector", "Practitioner", "PractitionerRole");
+                ValidationSupport.checkReferenceType(collection.collector, "collector", "Practitioner", "PractitionerRole", "Patient", "RelatedPerson");
+                ValidationSupport.checkReferenceType(collection.procedure, "procedure", "Procedure");
                 ValidationSupport.requireValueOrChildren(collection);
             }
 
@@ -1544,6 +2121,8 @@ public class Specimen extends DomainResource {
                 duration = collection.duration;
                 quantity = collection.quantity;
                 method = collection.method;
+                device = collection.device;
+                procedure = collection.procedure;
                 bodySite = collection.bodySite;
                 fastingStatus = collection.fastingStatus;
                 return this;
@@ -1557,21 +2136,21 @@ public class Specimen extends DomainResource {
     public static class Processing extends BackboneElement {
         private final String description;
         @Binding(
-            bindingName = "SpecimenProcessingProcedure",
+            bindingName = "SpecimenProcessingMethod",
             strength = BindingStrength.Value.EXAMPLE,
             description = "Type indicating the technique used to process the specimen.",
-            valueSet = "http://hl7.org/fhir/ValueSet/specimen-processing-procedure"
+            valueSet = "http://hl7.org/fhir/ValueSet/specimen-processing-method"
         )
-        private final CodeableConcept procedure;
+        private final CodeableConcept method;
         @ReferenceTarget({ "Substance" })
         private final List<Reference> additive;
         @Choice({ DateTime.class, Period.class })
-        private final Element time;
+        private final org.linuxforhealth.fhir.model.type.Element time;
 
         private Processing(Builder builder) {
             super(builder);
             description = builder.description;
-            procedure = builder.procedure;
+            method = builder.method;
             additive = Collections.unmodifiableList(builder.additive);
             time = builder.time;
         }
@@ -1587,13 +2166,13 @@ public class Specimen extends DomainResource {
         }
 
         /**
-         * A coded value specifying the procedure used to process the specimen.
+         * A coded value specifying the method used to process the specimen.
          * 
          * @return
          *     An immutable object of type {@link CodeableConcept} that may be null.
          */
-        public CodeableConcept getProcedure() {
-            return procedure;
+        public CodeableConcept getMethod() {
+            return method;
         }
 
         /**
@@ -1613,7 +2192,7 @@ public class Specimen extends DomainResource {
          * @return
          *     An immutable object of type {@link DateTime} or {@link Period} that may be null.
          */
-        public Element getTime() {
+        public org.linuxforhealth.fhir.model.type.Element getTime() {
             return time;
         }
 
@@ -1621,7 +2200,7 @@ public class Specimen extends DomainResource {
         public boolean hasChildren() {
             return super.hasChildren() || 
                 (description != null) || 
-                (procedure != null) || 
+                (method != null) || 
                 !additive.isEmpty() || 
                 (time != null);
         }
@@ -1636,7 +2215,7 @@ public class Specimen extends DomainResource {
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(description, "description", visitor);
-                    accept(procedure, "procedure", visitor);
+                    accept(method, "method", visitor);
                     accept(additive, "additive", visitor, Reference.class);
                     accept(time, "time", visitor);
                 }
@@ -1661,7 +2240,7 @@ public class Specimen extends DomainResource {
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(description, other.description) && 
-                Objects.equals(procedure, other.procedure) && 
+                Objects.equals(method, other.method) && 
                 Objects.equals(additive, other.additive) && 
                 Objects.equals(time, other.time);
         }
@@ -1674,7 +2253,7 @@ public class Specimen extends DomainResource {
                     extension, 
                     modifierExtension, 
                     description, 
-                    procedure, 
+                    method, 
                     additive, 
                     time);
                 hashCode = result;
@@ -1693,9 +2272,9 @@ public class Specimen extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private String description;
-            private CodeableConcept procedure;
+            private CodeableConcept method;
             private List<Reference> additive = new ArrayList<>();
-            private Element time;
+            private org.linuxforhealth.fhir.model.type.Element time;
 
             private Builder() {
                 super();
@@ -1718,7 +2297,7 @@ public class Specimen extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1738,7 +2317,7 @@ public class Specimen extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1763,7 +2342,7 @@ public class Specimen extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1788,7 +2367,7 @@ public class Specimen extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1843,16 +2422,16 @@ public class Specimen extends DomainResource {
             }
 
             /**
-             * A coded value specifying the procedure used to process the specimen.
+             * A coded value specifying the method used to process the specimen.
              * 
-             * @param procedure
+             * @param method
              *     Indicates the treatment step applied to the specimen
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder procedure(CodeableConcept procedure) {
-                this.procedure = procedure;
+            public Builder method(CodeableConcept method) {
+                this.method = method;
                 return this;
             }
 
@@ -1921,7 +2500,7 @@ public class Specimen extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder time(Element time) {
+            public Builder time(org.linuxforhealth.fhir.model.type.Element time) {
                 this.time = time;
                 return this;
             }
@@ -1954,7 +2533,7 @@ public class Specimen extends DomainResource {
             protected Builder from(Processing processing) {
                 super.from(processing);
                 description = processing.description;
-                procedure = processing.procedure;
+                method = processing.method;
                 additive.addAll(processing.additive);
                 time = processing.time;
                 return this;
@@ -1967,77 +2546,39 @@ public class Specimen extends DomainResource {
      * addressed here.
      */
     public static class Container extends BackboneElement {
-        @Summary
-        private final List<Identifier> identifier;
-        private final String description;
-        @Binding(
-            bindingName = "SpecimenContainerType",
-            strength = BindingStrength.Value.EXAMPLE,
-            description = "Type of specimen container.",
-            valueSet = "http://hl7.org/fhir/ValueSet/specimen-container-type"
-        )
-        private final CodeableConcept type;
-        private final SimpleQuantity capacity;
+        @ReferenceTarget({ "Device" })
+        @Required
+        private final Reference device;
+        @ReferenceTarget({ "Location" })
+        private final Reference location;
         private final SimpleQuantity specimenQuantity;
-        @ReferenceTarget({ "Substance" })
-        @Choice({ CodeableConcept.class, Reference.class })
-        @Binding(
-            bindingName = "SpecimenContainerAdditive",
-            strength = BindingStrength.Value.EXAMPLE,
-            description = "Substance added to specimen container.",
-            valueSet = "http://terminology.hl7.org/ValueSet/v2-0371"
-        )
-        private final Element additive;
 
         private Container(Builder builder) {
             super(builder);
-            identifier = Collections.unmodifiableList(builder.identifier);
-            description = builder.description;
-            type = builder.type;
-            capacity = builder.capacity;
+            device = builder.device;
+            location = builder.location;
             specimenQuantity = builder.specimenQuantity;
-            additive = builder.additive;
         }
 
         /**
-         * Id for container. There may be multiple; a manufacturer's bar code, lab assigned identifier, etc. The container ID may 
-         * differ from the specimen id in some circumstances.
+         * The device resource for the the container holding the specimen. If the container is in a holder then the referenced 
+         * device will point to a parent device.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
+         *     An immutable object of type {@link Reference} that is non-null.
          */
-        public List<Identifier> getIdentifier() {
-            return identifier;
+        public Reference getDevice() {
+            return device;
         }
 
         /**
-         * Textual description of the container.
+         * The location of the container holding the specimen.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link Reference} that may be null.
          */
-        public String getDescription() {
-            return description;
-        }
-
-        /**
-         * The type of container associated with the specimen (e.g. slide, aliquot, etc.).
-         * 
-         * @return
-         *     An immutable object of type {@link CodeableConcept} that may be null.
-         */
-        public CodeableConcept getType() {
-            return type;
-        }
-
-        /**
-         * The capacity (volume or other measure) the container may contain.
-         * 
-         * @return
-         *     An immutable object of type {@link SimpleQuantity} that may be null.
-         */
-        public SimpleQuantity getCapacity() {
-            return capacity;
+        public Reference getLocation() {
+            return location;
         }
 
         /**
@@ -2051,25 +2592,12 @@ public class Specimen extends DomainResource {
             return specimenQuantity;
         }
 
-        /**
-         * Introduced substance to preserve, maintain or enhance the specimen. Examples: Formalin, Citrate, EDTA.
-         * 
-         * @return
-         *     An immutable object of type {@link CodeableConcept} or {@link Reference} that may be null.
-         */
-        public Element getAdditive() {
-            return additive;
-        }
-
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                !identifier.isEmpty() || 
-                (description != null) || 
-                (type != null) || 
-                (capacity != null) || 
-                (specimenQuantity != null) || 
-                (additive != null);
+                (device != null) || 
+                (location != null) || 
+                (specimenQuantity != null);
         }
 
         @Override
@@ -2081,12 +2609,9 @@ public class Specimen extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(identifier, "identifier", visitor, Identifier.class);
-                    accept(description, "description", visitor);
-                    accept(type, "type", visitor);
-                    accept(capacity, "capacity", visitor);
+                    accept(device, "device", visitor);
+                    accept(location, "location", visitor);
                     accept(specimenQuantity, "specimenQuantity", visitor);
-                    accept(additive, "additive", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -2108,12 +2633,9 @@ public class Specimen extends DomainResource {
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(identifier, other.identifier) && 
-                Objects.equals(description, other.description) && 
-                Objects.equals(type, other.type) && 
-                Objects.equals(capacity, other.capacity) && 
-                Objects.equals(specimenQuantity, other.specimenQuantity) && 
-                Objects.equals(additive, other.additive);
+                Objects.equals(device, other.device) && 
+                Objects.equals(location, other.location) && 
+                Objects.equals(specimenQuantity, other.specimenQuantity);
         }
 
         @Override
@@ -2123,12 +2645,9 @@ public class Specimen extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    identifier, 
-                    description, 
-                    type, 
-                    capacity, 
-                    specimenQuantity, 
-                    additive);
+                    device, 
+                    location, 
+                    specimenQuantity);
                 hashCode = result;
             }
             return result;
@@ -2144,12 +2663,9 @@ public class Specimen extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private List<Identifier> identifier = new ArrayList<>();
-            private String description;
-            private CodeableConcept type;
-            private SimpleQuantity capacity;
+            private Reference device;
+            private Reference location;
             private SimpleQuantity specimenQuantity;
-            private Element additive;
 
             private Builder() {
                 super();
@@ -2172,7 +2688,7 @@ public class Specimen extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2192,7 +2708,7 @@ public class Specimen extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2217,7 +2733,7 @@ public class Specimen extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2242,7 +2758,7 @@ public class Specimen extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2267,101 +2783,43 @@ public class Specimen extends DomainResource {
             }
 
             /**
-             * Id for container. There may be multiple; a manufacturer's bar code, lab assigned identifier, etc. The container ID may 
-             * differ from the specimen id in some circumstances.
+             * The device resource for the the container holding the specimen. If the container is in a holder then the referenced 
+             * device will point to a parent device.
              * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
+             * <p>This element is required.
              * 
-             * @param identifier
-             *     Id for the container
+             * <p>Allowed resource types for this reference:
+             * <ul>
+             * <li>{@link Device}</li>
+             * </ul>
+             * 
+             * @param device
+             *     Device resource for the container
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder identifier(Identifier... identifier) {
-                for (Identifier value : identifier) {
-                    this.identifier.add(value);
-                }
+            public Builder device(Reference device) {
+                this.device = device;
                 return this;
             }
 
             /**
-             * Id for container. There may be multiple; a manufacturer's bar code, lab assigned identifier, etc. The container ID may 
-             * differ from the specimen id in some circumstances.
+             * The location of the container holding the specimen.
              * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
+             * <p>Allowed resource types for this reference:
+             * <ul>
+             * <li>{@link Location}</li>
+             * </ul>
              * 
-             * @param identifier
-             *     Id for the container
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            public Builder identifier(java.util.Collection<Identifier> identifier) {
-                this.identifier = new ArrayList<>(identifier);
-                return this;
-            }
-
-            /**
-             * Convenience method for setting {@code description}.
-             * 
-             * @param description
-             *     Textual description of the container
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #description(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder description(java.lang.String description) {
-                this.description = (description == null) ? null : String.of(description);
-                return this;
-            }
-
-            /**
-             * Textual description of the container.
-             * 
-             * @param description
-             *     Textual description of the container
+             * @param location
+             *     Where the container is
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder description(String description) {
-                this.description = description;
-                return this;
-            }
-
-            /**
-             * The type of container associated with the specimen (e.g. slide, aliquot, etc.).
-             * 
-             * @param type
-             *     Kind of container directly associated with specimen
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder type(CodeableConcept type) {
-                this.type = type;
-                return this;
-            }
-
-            /**
-             * The capacity (volume or other measure) the container may contain.
-             * 
-             * @param capacity
-             *     Container volume or size
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder capacity(SimpleQuantity capacity) {
-                this.capacity = capacity;
+            public Builder location(Reference location) {
+                this.location = location;
                 return this;
             }
 
@@ -2381,32 +2839,12 @@ public class Specimen extends DomainResource {
             }
 
             /**
-             * Introduced substance to preserve, maintain or enhance the specimen. Examples: Formalin, Citrate, EDTA.
-             * 
-             * <p>This is a choice element with the following allowed types:
-             * <ul>
-             * <li>{@link CodeableConcept}</li>
-             * <li>{@link Reference}</li>
-             * </ul>
-             * 
-             * When of type {@link Reference}, the allowed resource types for this reference are:
-             * <ul>
-             * <li>{@link Substance}</li>
-             * </ul>
-             * 
-             * @param additive
-             *     Additive associated with container
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder additive(Element additive) {
-                this.additive = additive;
-                return this;
-            }
-
-            /**
              * Build the {@link Container}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>device</li>
+             * </ul>
              * 
              * @return
              *     An immutable object of type {@link Container}
@@ -2424,20 +2862,17 @@ public class Specimen extends DomainResource {
 
             protected void validate(Container container) {
                 super.validate(container);
-                ValidationSupport.checkList(container.identifier, "identifier", Identifier.class);
-                ValidationSupport.choiceElement(container.additive, "additive", CodeableConcept.class, Reference.class);
-                ValidationSupport.checkReferenceType(container.additive, "additive", "Substance");
+                ValidationSupport.requireNonNull(container.device, "device");
+                ValidationSupport.checkReferenceType(container.device, "device", "Device");
+                ValidationSupport.checkReferenceType(container.location, "location", "Location");
                 ValidationSupport.requireValueOrChildren(container);
             }
 
             protected Builder from(Container container) {
                 super.from(container);
-                identifier.addAll(container.identifier);
-                description = container.description;
-                type = container.type;
-                capacity = container.capacity;
+                device = container.device;
+                location = container.location;
                 specimenQuantity = container.specimenQuantity;
-                additive = container.additive;
                 return this;
             }
         }

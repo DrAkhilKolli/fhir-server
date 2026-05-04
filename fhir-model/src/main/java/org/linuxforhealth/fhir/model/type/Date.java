@@ -20,11 +20,11 @@ import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
- * A date or partial date (e.g. just year or year + month). There is no time zone. The format is a union of the schema 
+ * A date or partial date (e.g. just year or year + month). There is no UTC offset. The format is a union of the schema 
  * types gYear, gYearMonth and date. Dates SHALL be valid dates.
  */
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Date extends Element {
+public class Date extends PrimitiveType {
     public static final DateTimeFormatter PARSER_FORMATTER = DateTimeFormatter.ofPattern("[yyyy[-MM[-dd]]]");
 
     private final TemporalAccessor value;
@@ -133,7 +133,7 @@ public class Date extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends PrimitiveType.Builder {
         private TemporalAccessor value;
 
         private Builder() {
@@ -156,7 +156,7 @@ public class Date extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -176,7 +176,7 @@ public class Date extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 

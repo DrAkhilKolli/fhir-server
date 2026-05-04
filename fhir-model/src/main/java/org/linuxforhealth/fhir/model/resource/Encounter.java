@@ -23,16 +23,17 @@ import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
-import org.linuxforhealth.fhir.model.type.Coding;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
+import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Duration;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
-import org.linuxforhealth.fhir.model.type.PositiveInt;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.Uri;
+import org.linuxforhealth.fhir.model.type.VirtualServiceDetail;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.EncounterLocationStatus;
 import org.linuxforhealth.fhir.model.type.code.EncounterStatus;
@@ -42,34 +43,42 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
  * An interaction between a patient and healthcare provider(s) for the purpose of providing healthcare service(s) or 
- * assessing the health status of a patient.
+ * assessing the health status of a patient. Encounter is primarily used to record information about the actual 
+ * activities that occurred, where Appointment is used to record planned activities.
  * 
- * <p>Maturity level: FMM2 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 2,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "encounter-0",
+    id = "enc-1",
+    level = "Rule",
+    location = "Encounter.participant",
+    description = "A type must be provided when no explicit actor is specified",
+    expression = "actor.exists() or type.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/Encounter"
+)
+@Constraint(
+    id = "enc-2",
+    level = "Rule",
+    location = "Encounter.participant",
+    description = "A type cannot be provided for a patient or group participant",
+    expression = "actor.exists(resolve() is Patient or resolve() is Group) implies type.exists().not()",
+    source = "http://hl7.org/fhir/StructureDefinition/Encounter"
+)
+@Constraint(
+    id = "encounter-3",
     level = "Warning",
     location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://terminology.hl7.org/ValueSet/v3-ActEncounterCode",
-    expression = "class.exists() and class.memberOf('http://terminology.hl7.org/ValueSet/v3-ActEncounterCode', 'extensible')",
+    description = "SHOULD contain a code from value set http://terminology.hl7.org/ValueSet/encounter-class",
+    expression = "class.exists() implies (class.all(memberOf('http://terminology.hl7.org/ValueSet/encounter-class', 'preferred')))",
     source = "http://hl7.org/fhir/StructureDefinition/Encounter",
     generated = true
 )
 @Constraint(
-    id = "encounter-1",
-    level = "Warning",
-    location = "classHistory.class",
-    description = "SHALL, if possible, contain a code from value set http://terminology.hl7.org/ValueSet/v3-ActEncounterCode",
-    expression = "$this.memberOf('http://terminology.hl7.org/ValueSet/v3-ActEncounterCode', 'extensible')",
-    source = "http://hl7.org/fhir/StructureDefinition/Encounter",
-    generated = true
-)
-@Constraint(
-    id = "encounter-2",
+    id = "encounter-4",
     level = "Warning",
     location = "participant.type",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/encounter-participant-type",
@@ -78,47 +87,47 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "encounter-3",
-    level = "Warning",
-    location = "(base)",
-    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/encounter-reason",
-    expression = "reasonCode.exists() implies (reasonCode.all(memberOf('http://hl7.org/fhir/ValueSet/encounter-reason', 'preferred')))",
-    source = "http://hl7.org/fhir/StructureDefinition/Encounter",
-    generated = true
-)
-@Constraint(
-    id = "encounter-4",
-    level = "Warning",
-    location = "diagnosis.use",
-    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/diagnosis-role",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/diagnosis-role', 'preferred')",
-    source = "http://hl7.org/fhir/StructureDefinition/Encounter",
-    generated = true
-)
-@Constraint(
     id = "encounter-5",
     level = "Warning",
-    location = "hospitalization.admitSource",
-    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/encounter-admit-source",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/encounter-admit-source', 'preferred')",
+    location = "reason.value",
+    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/encounter-reason",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/encounter-reason', 'preferred')",
     source = "http://hl7.org/fhir/StructureDefinition/Encounter",
     generated = true
 )
 @Constraint(
     id = "encounter-6",
     level = "Warning",
-    location = "hospitalization.specialCourtesy",
-    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/encounter-special-courtesy",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/encounter-special-courtesy', 'preferred')",
+    location = "diagnosis.use",
+    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/encounter-diagnosis-use",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/encounter-diagnosis-use', 'preferred')",
     source = "http://hl7.org/fhir/StructureDefinition/Encounter",
     generated = true
 )
 @Constraint(
     id = "encounter-7",
     level = "Warning",
-    location = "hospitalization.specialArrangement",
+    location = "(base)",
     description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/encounter-special-arrangements",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/encounter-special-arrangements', 'preferred')",
+    expression = "specialArrangement.exists() implies (specialArrangement.all(memberOf('http://hl7.org/fhir/ValueSet/encounter-special-arrangements', 'preferred')))",
+    source = "http://hl7.org/fhir/StructureDefinition/Encounter",
+    generated = true
+)
+@Constraint(
+    id = "encounter-8",
+    level = "Warning",
+    location = "(base)",
+    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/encounter-special-courtesy",
+    expression = "specialCourtesy.exists() implies (specialCourtesy.all(memberOf('http://hl7.org/fhir/ValueSet/encounter-special-courtesy', 'preferred')))",
+    source = "http://hl7.org/fhir/StructureDefinition/Encounter",
+    generated = true
+)
+@Constraint(
+    id = "encounter-9",
+    level = "Warning",
+    location = "admission.admitSource",
+    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/encounter-admit-source",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/encounter-admit-source', 'preferred')",
     source = "http://hl7.org/fhir/StructureDefinition/Encounter",
     generated = true
 )
@@ -131,21 +140,25 @@ public class Encounter extends DomainResource {
         bindingName = "EncounterStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "Current state of the encounter.",
-        valueSet = "http://hl7.org/fhir/ValueSet/encounter-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/encounter-status|5.0.0"
     )
     @Required
     private final EncounterStatus status;
-    private final List<StatusHistory> statusHistory;
     @Summary
     @Binding(
         bindingName = "EncounterClass",
-        strength = BindingStrength.Value.EXTENSIBLE,
+        strength = BindingStrength.Value.PREFERRED,
         description = "Classification of the encounter.",
-        valueSet = "http://terminology.hl7.org/ValueSet/v3-ActEncounterCode"
+        valueSet = "http://terminology.hl7.org/ValueSet/encounter-class"
     )
-    @Required
-    private final Coding clazz;
-    private final List<ClassHistory> classHistory;
+    private final List<CodeableConcept> clazz;
+    @Binding(
+        bindingName = "Priority",
+        strength = BindingStrength.Value.EXAMPLE,
+        description = "Indicates the urgency of the encounter.",
+        valueSet = "http://terminology.hl7.org/ValueSet/v3-ActPriority"
+    )
+    private final CodeableConcept priority;
     @Summary
     @Binding(
         bindingName = "EncounterType",
@@ -161,76 +174,98 @@ public class Encounter extends DomainResource {
         description = "Broad categorization of the service that is to be provided.",
         valueSet = "http://hl7.org/fhir/ValueSet/service-type"
     )
-    private final CodeableConcept serviceType;
-    @Binding(
-        bindingName = "Priority",
-        strength = BindingStrength.Value.EXAMPLE,
-        description = "Indicates the urgency of the encounter.",
-        valueSet = "http://terminology.hl7.org/ValueSet/v3-ActPriority"
-    )
-    private final CodeableConcept priority;
+    private final List<CodeableReference> serviceType;
     @Summary
     @ReferenceTarget({ "Patient", "Group" })
     private final Reference subject;
+    @Binding(
+        bindingName = "SubjectStatus",
+        strength = BindingStrength.Value.EXAMPLE,
+        description = "Current status of the subject  within the encounter.",
+        valueSet = "http://hl7.org/fhir/ValueSet/encounter-subject-status"
+    )
+    private final CodeableConcept subjectStatus;
     @Summary
     @ReferenceTarget({ "EpisodeOfCare" })
     private final List<Reference> episodeOfCare;
-    @ReferenceTarget({ "ServiceRequest" })
+    @ReferenceTarget({ "CarePlan", "DeviceRequest", "MedicationRequest", "ServiceRequest" })
     private final List<Reference> basedOn;
+    @ReferenceTarget({ "CareTeam" })
+    private final List<Reference> careTeam;
+    @ReferenceTarget({ "Encounter" })
+    private final Reference partOf;
+    @ReferenceTarget({ "Organization" })
+    private final Reference serviceProvider;
     @Summary
     private final List<Participant> participant;
     @Summary
     @ReferenceTarget({ "Appointment" })
     private final List<Reference> appointment;
-    private final Period period;
+    private final List<VirtualServiceDetail> virtualService;
+    private final Period actualPeriod;
+    private final DateTime plannedStartDate;
+    private final DateTime plannedEndDate;
     private final Duration length;
     @Summary
-    @Binding(
-        bindingName = "EncounterReason",
-        strength = BindingStrength.Value.PREFERRED,
-        description = "Reason why the encounter takes place.",
-        valueSet = "http://hl7.org/fhir/ValueSet/encounter-reason"
-    )
-    private final List<CodeableConcept> reasonCode;
-    @Summary
-    @ReferenceTarget({ "Condition", "Procedure", "Observation", "ImmunizationRecommendation" })
-    private final List<Reference> reasonReference;
+    private final List<Reason> reason;
     @Summary
     private final List<Diagnosis> diagnosis;
     @ReferenceTarget({ "Account" })
     private final List<Reference> account;
-    private final Hospitalization hospitalization;
+    @Binding(
+        bindingName = "PatientDiet",
+        strength = BindingStrength.Value.EXAMPLE,
+        description = "Medical, cultural or ethical food preferences to help with catering requirements.",
+        valueSet = "http://hl7.org/fhir/ValueSet/encounter-diet"
+    )
+    private final List<CodeableConcept> dietPreference;
+    @Binding(
+        bindingName = "Arrangements",
+        strength = BindingStrength.Value.PREFERRED,
+        description = "Special arrangements.",
+        valueSet = "http://hl7.org/fhir/ValueSet/encounter-special-arrangements"
+    )
+    private final List<CodeableConcept> specialArrangement;
+    @Binding(
+        bindingName = "Courtesies",
+        strength = BindingStrength.Value.PREFERRED,
+        description = "Special courtesies.",
+        valueSet = "http://hl7.org/fhir/ValueSet/encounter-special-courtesy"
+    )
+    private final List<CodeableConcept> specialCourtesy;
+    private final Admission admission;
     private final List<Location> location;
-    @ReferenceTarget({ "Organization" })
-    private final Reference serviceProvider;
-    @ReferenceTarget({ "Encounter" })
-    private final Reference partOf;
 
     private Encounter(Builder builder) {
         super(builder);
         identifier = Collections.unmodifiableList(builder.identifier);
         status = builder.status;
-        statusHistory = Collections.unmodifiableList(builder.statusHistory);
-        clazz = builder.clazz;
-        classHistory = Collections.unmodifiableList(builder.classHistory);
-        type = Collections.unmodifiableList(builder.type);
-        serviceType = builder.serviceType;
+        clazz = Collections.unmodifiableList(builder.clazz);
         priority = builder.priority;
+        type = Collections.unmodifiableList(builder.type);
+        serviceType = Collections.unmodifiableList(builder.serviceType);
         subject = builder.subject;
+        subjectStatus = builder.subjectStatus;
         episodeOfCare = Collections.unmodifiableList(builder.episodeOfCare);
         basedOn = Collections.unmodifiableList(builder.basedOn);
+        careTeam = Collections.unmodifiableList(builder.careTeam);
+        partOf = builder.partOf;
+        serviceProvider = builder.serviceProvider;
         participant = Collections.unmodifiableList(builder.participant);
         appointment = Collections.unmodifiableList(builder.appointment);
-        period = builder.period;
+        virtualService = Collections.unmodifiableList(builder.virtualService);
+        actualPeriod = builder.actualPeriod;
+        plannedStartDate = builder.plannedStartDate;
+        plannedEndDate = builder.plannedEndDate;
         length = builder.length;
-        reasonCode = Collections.unmodifiableList(builder.reasonCode);
-        reasonReference = Collections.unmodifiableList(builder.reasonReference);
+        reason = Collections.unmodifiableList(builder.reason);
         diagnosis = Collections.unmodifiableList(builder.diagnosis);
         account = Collections.unmodifiableList(builder.account);
-        hospitalization = builder.hospitalization;
+        dietPreference = Collections.unmodifiableList(builder.dietPreference);
+        specialArrangement = Collections.unmodifiableList(builder.specialArrangement);
+        specialCourtesy = Collections.unmodifiableList(builder.specialCourtesy);
+        admission = builder.admission;
         location = Collections.unmodifiableList(builder.location);
-        serviceProvider = builder.serviceProvider;
-        partOf = builder.partOf;
     }
 
     /**
@@ -244,7 +279,7 @@ public class Encounter extends DomainResource {
     }
 
     /**
-     * planned | arrived | triaged | in-progress | onleave | finished | cancelled +.
+     * The current state of the encounter (not the state of the patient within the encounter - that is subjectState).
      * 
      * @return
      *     An immutable object of type {@link EncounterStatus} that is non-null.
@@ -254,39 +289,24 @@ public class Encounter extends DomainResource {
     }
 
     /**
-     * The status history permits the encounter resource to contain the status history without needing to read through the 
-     * historical versions of the resource, or even have the server store them.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link StatusHistory} that may be empty.
-     */
-    public List<StatusHistory> getStatusHistory() {
-        return statusHistory;
-    }
-
-    /**
      * Concepts representing classification of patient encounter such as ambulatory (outpatient), inpatient, emergency, home 
      * health or others due to local variations.
      * 
      * @return
-     *     An immutable object of type {@link Coding} that is non-null.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
      */
-    public Coding getClazz() {
+    public List<CodeableConcept> getClazz() {
         return clazz;
     }
 
     /**
-     * The class history permits the tracking of the encounters transitions without needing to go through the resource 
-     * history. This would be used for a case where an admission starts of as an emergency encounter, then transitions into 
-     * an inpatient scenario. Doing this and not restarting a new encounter ensures that any lab/diagnostic results can more 
-     * easily follow the patient and not require re-processing and not get lost or cancelled during a kind of discharge from 
-     * emergency to inpatient.
+     * Indicates the urgency of the encounter.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link ClassHistory} that may be empty.
+     *     An immutable object of type {@link CodeableConcept} that may be null.
      */
-    public List<ClassHistory> getClassHistory() {
-        return classHistory;
+    public CodeableConcept getPriority() {
+        return priority;
     }
 
     /**
@@ -303,30 +323,32 @@ public class Encounter extends DomainResource {
      * Broad categorization of the service that is to be provided (e.g. cardiology).
      * 
      * @return
-     *     An immutable object of type {@link CodeableConcept} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public CodeableConcept getServiceType() {
+    public List<CodeableReference> getServiceType() {
         return serviceType;
     }
 
     /**
-     * Indicates the urgency of the encounter.
-     * 
-     * @return
-     *     An immutable object of type {@link CodeableConcept} that may be null.
-     */
-    public CodeableConcept getPriority() {
-        return priority;
-    }
-
-    /**
-     * The patient or group present at the encounter.
+     * The patient or group related to this encounter. In some use-cases the patient MAY not be present, such as a case 
+     * meeting about a patient between several practitioners or a careteam.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
      */
     public Reference getSubject() {
         return subject;
+    }
+
+    /**
+     * The subjectStatus value can be used to track the patient's status within the encounter. It details whether the patient 
+     * has arrived or departed, has been triaged or is currently in a waiting status.
+     * 
+     * @return
+     *     An immutable object of type {@link CodeableConcept} that may be null.
+     */
+    public CodeableConcept getSubjectStatus() {
+        return subjectStatus;
     }
 
     /**
@@ -354,6 +376,40 @@ public class Encounter extends DomainResource {
     }
 
     /**
+     * The group(s) of individuals, organizations that are allocated to participate in this encounter. The participants 
+     * backbone will record the actuals of when these individuals participated during the encounter.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getCareTeam() {
+        return careTeam;
+    }
+
+    /**
+     * Another Encounter of which this encounter is a part of (administratively or in time).
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getPartOf() {
+        return partOf;
+    }
+
+    /**
+     * The organization that is primarily responsible for this Encounter's services. This MAY be the same as the organization 
+     * on the Patient record, however it could be different, such as if the actor performing the services was from an 
+     * external organization (which may be billed seperately) for an external consultation. Refer to the colonoscopy example 
+     * on the Encounter examples tab.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getServiceProvider() {
+        return serviceProvider;
+    }
+
+    /**
      * The list of people responsible for providing the service.
      * 
      * @return
@@ -374,17 +430,48 @@ public class Encounter extends DomainResource {
     }
 
     /**
-     * The start and end time of the encounter.
+     * Connection details of a virtual service (e.g. conference call).
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link VirtualServiceDetail} that may be empty.
+     */
+    public List<VirtualServiceDetail> getVirtualService() {
+        return virtualService;
+    }
+
+    /**
+     * The actual start and end time of the encounter.
      * 
      * @return
      *     An immutable object of type {@link Period} that may be null.
      */
-    public Period getPeriod() {
-        return period;
+    public Period getActualPeriod() {
+        return actualPeriod;
     }
 
     /**
-     * Quantity of time the encounter lasted. This excludes the time during leaves of absence.
+     * The planned start date/time (or admission date) of the encounter.
+     * 
+     * @return
+     *     An immutable object of type {@link DateTime} that may be null.
+     */
+    public DateTime getPlannedStartDate() {
+        return plannedStartDate;
+    }
+
+    /**
+     * The planned end date/time (or discharge date) of the encounter.
+     * 
+     * @return
+     *     An immutable object of type {@link DateTime} that may be null.
+     */
+    public DateTime getPlannedEndDate() {
+        return plannedEndDate;
+    }
+
+    /**
+     * Actual quantity of time the encounter lasted. This excludes the time during leaves of absence.When missing it is the 
+     * time in between the start and end values.
      * 
      * @return
      *     An immutable object of type {@link Duration} that may be null.
@@ -394,25 +481,13 @@ public class Encounter extends DomainResource {
     }
 
     /**
-     * Reason the encounter takes place, expressed as a code. For admissions, this can be used for a coded admission 
-     * diagnosis.
+     * The list of medical reasons that are expected to be addressed during the episode of care.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link Reason} that may be empty.
      */
-    public List<CodeableConcept> getReasonCode() {
-        return reasonCode;
-    }
-
-    /**
-     * Reason the encounter takes place, expressed as a code. For admissions, this can be used for a coded admission 
-     * diagnosis.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-     */
-    public List<Reference> getReasonReference() {
-        return reasonReference;
+    public List<Reason> getReason() {
+        return reason;
     }
 
     /**
@@ -436,13 +511,45 @@ public class Encounter extends DomainResource {
     }
 
     /**
-     * Details about the admission to a healthcare service.
+     * Diet preferences reported by the patient.
      * 
      * @return
-     *     An immutable object of type {@link Hospitalization} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
      */
-    public Hospitalization getHospitalization() {
-        return hospitalization;
+    public List<CodeableConcept> getDietPreference() {
+        return dietPreference;
+    }
+
+    /**
+     * Any special requests that have been made for this encounter, such as the provision of specific equipment or other 
+     * things.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     */
+    public List<CodeableConcept> getSpecialArrangement() {
+        return specialArrangement;
+    }
+
+    /**
+     * Special courtesies that may be provided to the patient during the encounter (VIP, board member, professional courtesy).
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     */
+    public List<CodeableConcept> getSpecialCourtesy() {
+        return specialCourtesy;
+    }
+
+    /**
+     * Details about the stay during which a healthcare service is provided.This does not describe the event of admitting 
+     * the patient, but rather any information that is relevant from the time of admittance until the time of discharge.
+     * 
+     * @return
+     *     An immutable object of type {@link Admission} that may be null.
+     */
+    public Admission getAdmission() {
+        return admission;
     }
 
     /**
@@ -455,55 +562,37 @@ public class Encounter extends DomainResource {
         return location;
     }
 
-    /**
-     * The organization that is primarily responsible for this Encounter's services. This MAY be the same as the organization 
-     * on the Patient record, however it could be different, such as if the actor performing the services was from an 
-     * external organization (which may be billed seperately) for an external consultation. Refer to the example bundle 
-     * showing an abbreviated set of Encounters for a colonoscopy.
-     * 
-     * @return
-     *     An immutable object of type {@link Reference} that may be null.
-     */
-    public Reference getServiceProvider() {
-        return serviceProvider;
-    }
-
-    /**
-     * Another Encounter of which this encounter is a part of (administratively or in time).
-     * 
-     * @return
-     *     An immutable object of type {@link Reference} that may be null.
-     */
-    public Reference getPartOf() {
-        return partOf;
-    }
-
     @Override
     public boolean hasChildren() {
         return super.hasChildren() || 
             !identifier.isEmpty() || 
             (status != null) || 
-            !statusHistory.isEmpty() || 
-            (clazz != null) || 
-            !classHistory.isEmpty() || 
-            !type.isEmpty() || 
-            (serviceType != null) || 
+            !clazz.isEmpty() || 
             (priority != null) || 
+            !type.isEmpty() || 
+            !serviceType.isEmpty() || 
             (subject != null) || 
+            (subjectStatus != null) || 
             !episodeOfCare.isEmpty() || 
             !basedOn.isEmpty() || 
+            !careTeam.isEmpty() || 
+            (partOf != null) || 
+            (serviceProvider != null) || 
             !participant.isEmpty() || 
             !appointment.isEmpty() || 
-            (period != null) || 
+            !virtualService.isEmpty() || 
+            (actualPeriod != null) || 
+            (plannedStartDate != null) || 
+            (plannedEndDate != null) || 
             (length != null) || 
-            !reasonCode.isEmpty() || 
-            !reasonReference.isEmpty() || 
+            !reason.isEmpty() || 
             !diagnosis.isEmpty() || 
             !account.isEmpty() || 
-            (hospitalization != null) || 
-            !location.isEmpty() || 
-            (serviceProvider != null) || 
-            (partOf != null);
+            !dietPreference.isEmpty() || 
+            !specialArrangement.isEmpty() || 
+            !specialCourtesy.isEmpty() || 
+            (admission != null) || 
+            !location.isEmpty();
     }
 
     @Override
@@ -522,27 +611,32 @@ public class Encounter extends DomainResource {
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(status, "status", visitor);
-                accept(statusHistory, "statusHistory", visitor, StatusHistory.class);
-                accept(clazz, "class", visitor);
-                accept(classHistory, "classHistory", visitor, ClassHistory.class);
-                accept(type, "type", visitor, CodeableConcept.class);
-                accept(serviceType, "serviceType", visitor);
+                accept(clazz, "class", visitor, CodeableConcept.class);
                 accept(priority, "priority", visitor);
+                accept(type, "type", visitor, CodeableConcept.class);
+                accept(serviceType, "serviceType", visitor, CodeableReference.class);
                 accept(subject, "subject", visitor);
+                accept(subjectStatus, "subjectStatus", visitor);
                 accept(episodeOfCare, "episodeOfCare", visitor, Reference.class);
                 accept(basedOn, "basedOn", visitor, Reference.class);
+                accept(careTeam, "careTeam", visitor, Reference.class);
+                accept(partOf, "partOf", visitor);
+                accept(serviceProvider, "serviceProvider", visitor);
                 accept(participant, "participant", visitor, Participant.class);
                 accept(appointment, "appointment", visitor, Reference.class);
-                accept(period, "period", visitor);
+                accept(virtualService, "virtualService", visitor, VirtualServiceDetail.class);
+                accept(actualPeriod, "actualPeriod", visitor);
+                accept(plannedStartDate, "plannedStartDate", visitor);
+                accept(plannedEndDate, "plannedEndDate", visitor);
                 accept(length, "length", visitor);
-                accept(reasonCode, "reasonCode", visitor, CodeableConcept.class);
-                accept(reasonReference, "reasonReference", visitor, Reference.class);
+                accept(reason, "reason", visitor, Reason.class);
                 accept(diagnosis, "diagnosis", visitor, Diagnosis.class);
                 accept(account, "account", visitor, Reference.class);
-                accept(hospitalization, "hospitalization", visitor);
+                accept(dietPreference, "dietPreference", visitor, CodeableConcept.class);
+                accept(specialArrangement, "specialArrangement", visitor, CodeableConcept.class);
+                accept(specialCourtesy, "specialCourtesy", visitor, CodeableConcept.class);
+                accept(admission, "admission", visitor);
                 accept(location, "location", visitor, Location.class);
-                accept(serviceProvider, "serviceProvider", visitor);
-                accept(partOf, "partOf", visitor);
             }
             visitor.visitEnd(elementName, elementIndex, this);
             visitor.postVisit(this);
@@ -571,27 +665,32 @@ public class Encounter extends DomainResource {
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(status, other.status) && 
-            Objects.equals(statusHistory, other.statusHistory) && 
             Objects.equals(clazz, other.clazz) && 
-            Objects.equals(classHistory, other.classHistory) && 
+            Objects.equals(priority, other.priority) && 
             Objects.equals(type, other.type) && 
             Objects.equals(serviceType, other.serviceType) && 
-            Objects.equals(priority, other.priority) && 
             Objects.equals(subject, other.subject) && 
+            Objects.equals(subjectStatus, other.subjectStatus) && 
             Objects.equals(episodeOfCare, other.episodeOfCare) && 
             Objects.equals(basedOn, other.basedOn) && 
+            Objects.equals(careTeam, other.careTeam) && 
+            Objects.equals(partOf, other.partOf) && 
+            Objects.equals(serviceProvider, other.serviceProvider) && 
             Objects.equals(participant, other.participant) && 
             Objects.equals(appointment, other.appointment) && 
-            Objects.equals(period, other.period) && 
+            Objects.equals(virtualService, other.virtualService) && 
+            Objects.equals(actualPeriod, other.actualPeriod) && 
+            Objects.equals(plannedStartDate, other.plannedStartDate) && 
+            Objects.equals(plannedEndDate, other.plannedEndDate) && 
             Objects.equals(length, other.length) && 
-            Objects.equals(reasonCode, other.reasonCode) && 
-            Objects.equals(reasonReference, other.reasonReference) && 
+            Objects.equals(reason, other.reason) && 
             Objects.equals(diagnosis, other.diagnosis) && 
             Objects.equals(account, other.account) && 
-            Objects.equals(hospitalization, other.hospitalization) && 
-            Objects.equals(location, other.location) && 
-            Objects.equals(serviceProvider, other.serviceProvider) && 
-            Objects.equals(partOf, other.partOf);
+            Objects.equals(dietPreference, other.dietPreference) && 
+            Objects.equals(specialArrangement, other.specialArrangement) && 
+            Objects.equals(specialCourtesy, other.specialCourtesy) && 
+            Objects.equals(admission, other.admission) && 
+            Objects.equals(location, other.location);
     }
 
     @Override
@@ -608,27 +707,32 @@ public class Encounter extends DomainResource {
                 modifierExtension, 
                 identifier, 
                 status, 
-                statusHistory, 
                 clazz, 
-                classHistory, 
+                priority, 
                 type, 
                 serviceType, 
-                priority, 
                 subject, 
+                subjectStatus, 
                 episodeOfCare, 
                 basedOn, 
+                careTeam, 
+                partOf, 
+                serviceProvider, 
                 participant, 
                 appointment, 
-                period, 
+                virtualService, 
+                actualPeriod, 
+                plannedStartDate, 
+                plannedEndDate, 
                 length, 
-                reasonCode, 
-                reasonReference, 
+                reason, 
                 diagnosis, 
                 account, 
-                hospitalization, 
-                location, 
-                serviceProvider, 
-                partOf);
+                dietPreference, 
+                specialArrangement, 
+                specialCourtesy, 
+                admission, 
+                location);
             hashCode = result;
         }
         return result;
@@ -646,27 +750,32 @@ public class Encounter extends DomainResource {
     public static class Builder extends DomainResource.Builder {
         private List<Identifier> identifier = new ArrayList<>();
         private EncounterStatus status;
-        private List<StatusHistory> statusHistory = new ArrayList<>();
-        private Coding clazz;
-        private List<ClassHistory> classHistory = new ArrayList<>();
-        private List<CodeableConcept> type = new ArrayList<>();
-        private CodeableConcept serviceType;
+        private List<CodeableConcept> clazz = new ArrayList<>();
         private CodeableConcept priority;
+        private List<CodeableConcept> type = new ArrayList<>();
+        private List<CodeableReference> serviceType = new ArrayList<>();
         private Reference subject;
+        private CodeableConcept subjectStatus;
         private List<Reference> episodeOfCare = new ArrayList<>();
         private List<Reference> basedOn = new ArrayList<>();
+        private List<Reference> careTeam = new ArrayList<>();
+        private Reference partOf;
+        private Reference serviceProvider;
         private List<Participant> participant = new ArrayList<>();
         private List<Reference> appointment = new ArrayList<>();
-        private Period period;
+        private List<VirtualServiceDetail> virtualService = new ArrayList<>();
+        private Period actualPeriod;
+        private DateTime plannedStartDate;
+        private DateTime plannedEndDate;
         private Duration length;
-        private List<CodeableConcept> reasonCode = new ArrayList<>();
-        private List<Reference> reasonReference = new ArrayList<>();
+        private List<Reason> reason = new ArrayList<>();
         private List<Diagnosis> diagnosis = new ArrayList<>();
         private List<Reference> account = new ArrayList<>();
-        private Hospitalization hospitalization;
+        private List<CodeableConcept> dietPreference = new ArrayList<>();
+        private List<CodeableConcept> specialArrangement = new ArrayList<>();
+        private List<CodeableConcept> specialCourtesy = new ArrayList<>();
+        private Admission admission;
         private List<Location> location = new ArrayList<>();
-        private Reference serviceProvider;
-        private Reference partOf;
 
         private Builder() {
             super();
@@ -750,7 +859,8 @@ public class Encounter extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -768,7 +878,8 @@ public class Encounter extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -789,7 +900,7 @@ public class Encounter extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -809,7 +920,7 @@ public class Encounter extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -834,9 +945,9 @@ public class Encounter extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -859,9 +970,9 @@ public class Encounter extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -923,12 +1034,12 @@ public class Encounter extends DomainResource {
         }
 
         /**
-         * planned | arrived | triaged | in-progress | onleave | finished | cancelled +.
+         * The current state of the encounter (not the state of the patient within the encounter - that is subjectState).
          * 
          * <p>This element is required.
          * 
          * @param status
-         *     planned | arrived | triaged | in-progress | onleave | finished | cancelled +
+         *     planned | in-progress | on-hold | discharged | completed | cancelled | discontinued | entered-in-error | unknown
          * 
          * @return
          *     A reference to this Builder instance
@@ -939,43 +1050,22 @@ public class Encounter extends DomainResource {
         }
 
         /**
-         * The status history permits the encounter resource to contain the status history without needing to read through the 
-         * historical versions of the resource, or even have the server store them.
+         * Concepts representing classification of patient encounter such as ambulatory (outpatient), inpatient, emergency, home 
+         * health or others due to local variations.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param statusHistory
-         *     List of past encounter statuses
+         * @param clazz
+         *     Classification of patient encounter context - e.g. Inpatient, outpatient
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder statusHistory(StatusHistory... statusHistory) {
-            for (StatusHistory value : statusHistory) {
-                this.statusHistory.add(value);
+        public Builder clazz(CodeableConcept... clazz) {
+            for (CodeableConcept value : clazz) {
+                this.clazz.add(value);
             }
-            return this;
-        }
-
-        /**
-         * The status history permits the encounter resource to contain the status history without needing to read through the 
-         * historical versions of the resource, or even have the server store them.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param statusHistory
-         *     List of past encounter statuses
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder statusHistory(Collection<StatusHistory> statusHistory) {
-            this.statusHistory = new ArrayList<>(statusHistory);
             return this;
         }
 
@@ -983,54 +1073,11 @@ public class Encounter extends DomainResource {
          * Concepts representing classification of patient encounter such as ambulatory (outpatient), inpatient, emergency, home 
          * health or others due to local variations.
          * 
-         * <p>This element is required.
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param clazz
-         *     Classification of patient encounter
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder clazz(Coding clazz) {
-            this.clazz = clazz;
-            return this;
-        }
-
-        /**
-         * The class history permits the tracking of the encounters transitions without needing to go through the resource 
-         * history. This would be used for a case where an admission starts of as an emergency encounter, then transitions into 
-         * an inpatient scenario. Doing this and not restarting a new encounter ensures that any lab/diagnostic results can more 
-         * easily follow the patient and not require re-processing and not get lost or cancelled during a kind of discharge from 
-         * emergency to inpatient.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param classHistory
-         *     List of past encounter classes
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder classHistory(ClassHistory... classHistory) {
-            for (ClassHistory value : classHistory) {
-                this.classHistory.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * The class history permits the tracking of the encounters transitions without needing to go through the resource 
-         * history. This would be used for a case where an admission starts of as an emergency encounter, then transitions into 
-         * an inpatient scenario. Doing this and not restarting a new encounter ensures that any lab/diagnostic results can more 
-         * easily follow the patient and not require re-processing and not get lost or cancelled during a kind of discharge from 
-         * emergency to inpatient.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param classHistory
-         *     List of past encounter classes
+         *     Classification of patient encounter context - e.g. Inpatient, outpatient
          * 
          * @return
          *     A reference to this Builder instance
@@ -1038,61 +1085,8 @@ public class Encounter extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder classHistory(Collection<ClassHistory> classHistory) {
-            this.classHistory = new ArrayList<>(classHistory);
-            return this;
-        }
-
-        /**
-         * Specific type of encounter (e.g. e-mail consultation, surgical day-care, skilled nursing, rehabilitation).
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param type
-         *     Specific type of encounter
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder type(CodeableConcept... type) {
-            for (CodeableConcept value : type) {
-                this.type.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Specific type of encounter (e.g. e-mail consultation, surgical day-care, skilled nursing, rehabilitation).
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * @param type
-         *     Specific type of encounter
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder type(Collection<CodeableConcept> type) {
-            this.type = new ArrayList<>(type);
-            return this;
-        }
-
-        /**
-         * Broad categorization of the service that is to be provided (e.g. cardiology).
-         * 
-         * @param serviceType
-         *     Specific type of service
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder serviceType(CodeableConcept serviceType) {
-            this.serviceType = serviceType;
+        public Builder clazz(Collection<CodeableConcept> clazz) {
+            this.clazz = new ArrayList<>(clazz);
             return this;
         }
 
@@ -1111,7 +1105,86 @@ public class Encounter extends DomainResource {
         }
 
         /**
-         * The patient or group present at the encounter.
+         * Specific type of encounter (e.g. e-mail consultation, surgical day-care, skilled nursing, rehabilitation).
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param type
+         *     Specific type of encounter (e.g. e-mail consultation, surgical day-care, ...)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder type(CodeableConcept... type) {
+            for (CodeableConcept value : type) {
+                this.type.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Specific type of encounter (e.g. e-mail consultation, surgical day-care, skilled nursing, rehabilitation).
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param type
+         *     Specific type of encounter (e.g. e-mail consultation, surgical day-care, ...)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder type(Collection<CodeableConcept> type) {
+            this.type = new ArrayList<>(type);
+            return this;
+        }
+
+        /**
+         * Broad categorization of the service that is to be provided (e.g. cardiology).
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param serviceType
+         *     Specific type of service
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder serviceType(CodeableReference... serviceType) {
+            for (CodeableReference value : serviceType) {
+                this.serviceType.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Broad categorization of the service that is to be provided (e.g. cardiology).
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param serviceType
+         *     Specific type of service
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder serviceType(Collection<CodeableReference> serviceType) {
+            this.serviceType = new ArrayList<>(serviceType);
+            return this;
+        }
+
+        /**
+         * The patient or group related to this encounter. In some use-cases the patient MAY not be present, such as a case 
+         * meeting about a patient between several practitioners or a careteam.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
@@ -1120,13 +1193,28 @@ public class Encounter extends DomainResource {
          * </ul>
          * 
          * @param subject
-         *     The patient or group present at the encounter
+         *     The patient or group related to this encounter
          * 
          * @return
          *     A reference to this Builder instance
          */
         public Builder subject(Reference subject) {
             this.subject = subject;
+            return this;
+        }
+
+        /**
+         * The subjectStatus value can be used to track the patient's status within the encounter. It details whether the patient 
+         * has arrived or departed, has been triaged or is currently in a waiting status.
+         * 
+         * @param subjectStatus
+         *     The current status of the subject in relation to the Encounter
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder subjectStatus(CodeableConcept subjectStatus) {
+            this.subjectStatus = subjectStatus;
             return this;
         }
 
@@ -1195,11 +1283,14 @@ public class Encounter extends DomainResource {
          * 
          * <p>Allowed resource types for the references:
          * <ul>
+         * <li>{@link CarePlan}</li>
+         * <li>{@link DeviceRequest}</li>
+         * <li>{@link MedicationRequest}</li>
          * <li>{@link ServiceRequest}</li>
          * </ul>
          * 
          * @param basedOn
-         *     The ServiceRequest that initiated this encounter
+         *     The request that initiated this encounter
          * 
          * @return
          *     A reference to this Builder instance
@@ -1219,11 +1310,14 @@ public class Encounter extends DomainResource {
          * 
          * <p>Allowed resource types for the references:
          * <ul>
+         * <li>{@link CarePlan}</li>
+         * <li>{@link DeviceRequest}</li>
+         * <li>{@link MedicationRequest}</li>
          * <li>{@link ServiceRequest}</li>
          * </ul>
          * 
          * @param basedOn
-         *     The ServiceRequest that initiated this encounter
+         *     The request that initiated this encounter
          * 
          * @return
          *     A reference to this Builder instance
@@ -1233,6 +1327,98 @@ public class Encounter extends DomainResource {
          */
         public Builder basedOn(Collection<Reference> basedOn) {
             this.basedOn = new ArrayList<>(basedOn);
+            return this;
+        }
+
+        /**
+         * The group(s) of individuals, organizations that are allocated to participate in this encounter. The participants 
+         * backbone will record the actuals of when these individuals participated during the encounter.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link CareTeam}</li>
+         * </ul>
+         * 
+         * @param careTeam
+         *     The group(s) that are allocated to participate in this encounter
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder careTeam(Reference... careTeam) {
+            for (Reference value : careTeam) {
+                this.careTeam.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The group(s) of individuals, organizations that are allocated to participate in this encounter. The participants 
+         * backbone will record the actuals of when these individuals participated during the encounter.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link CareTeam}</li>
+         * </ul>
+         * 
+         * @param careTeam
+         *     The group(s) that are allocated to participate in this encounter
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder careTeam(Collection<Reference> careTeam) {
+            this.careTeam = new ArrayList<>(careTeam);
+            return this;
+        }
+
+        /**
+         * Another Encounter of which this encounter is a part of (administratively or in time).
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link Encounter}</li>
+         * </ul>
+         * 
+         * @param partOf
+         *     Another Encounter this encounter is part of
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder partOf(Reference partOf) {
+            this.partOf = partOf;
+            return this;
+        }
+
+        /**
+         * The organization that is primarily responsible for this Encounter's services. This MAY be the same as the organization 
+         * on the Patient record, however it could be different, such as if the actor performing the services was from an 
+         * external organization (which may be billed seperately) for an external consultation. Refer to the colonoscopy example 
+         * on the Encounter examples tab.
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link Organization}</li>
+         * </ul>
+         * 
+         * @param serviceProvider
+         *     The organization (facility) responsible for this encounter
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder serviceProvider(Reference serviceProvider) {
+            this.serviceProvider = serviceProvider;
             return this;
         }
 
@@ -1325,24 +1511,92 @@ public class Encounter extends DomainResource {
         }
 
         /**
-         * The start and end time of the encounter.
+         * Connection details of a virtual service (e.g. conference call).
          * 
-         * @param period
-         *     The start and end time of the encounter
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param virtualService
+         *     Connection details of a virtual service (e.g. conference call)
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder period(Period period) {
-            this.period = period;
+        public Builder virtualService(VirtualServiceDetail... virtualService) {
+            for (VirtualServiceDetail value : virtualService) {
+                this.virtualService.add(value);
+            }
             return this;
         }
 
         /**
-         * Quantity of time the encounter lasted. This excludes the time during leaves of absence.
+         * Connection details of a virtual service (e.g. conference call).
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param virtualService
+         *     Connection details of a virtual service (e.g. conference call)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder virtualService(Collection<VirtualServiceDetail> virtualService) {
+            this.virtualService = new ArrayList<>(virtualService);
+            return this;
+        }
+
+        /**
+         * The actual start and end time of the encounter.
+         * 
+         * @param actualPeriod
+         *     The actual start and end time of the encounter
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder actualPeriod(Period actualPeriod) {
+            this.actualPeriod = actualPeriod;
+            return this;
+        }
+
+        /**
+         * The planned start date/time (or admission date) of the encounter.
+         * 
+         * @param plannedStartDate
+         *     The planned start date/time (or admission date) of the encounter
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder plannedStartDate(DateTime plannedStartDate) {
+            this.plannedStartDate = plannedStartDate;
+            return this;
+        }
+
+        /**
+         * The planned end date/time (or discharge date) of the encounter.
+         * 
+         * @param plannedEndDate
+         *     The planned end date/time (or discharge date) of the encounter
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder plannedEndDate(DateTime plannedEndDate) {
+            this.plannedEndDate = plannedEndDate;
+            return this;
+        }
+
+        /**
+         * Actual quantity of time the encounter lasted. This excludes the time during leaves of absence.When missing it is the 
+         * time in between the start and end values.
          * 
          * @param length
-         *     Quantity of time the encounter lasted (less time absent)
+         *     Actual quantity of time the encounter lasted (less time absent)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1353,34 +1607,32 @@ public class Encounter extends DomainResource {
         }
 
         /**
-         * Reason the encounter takes place, expressed as a code. For admissions, this can be used for a coded admission 
-         * diagnosis.
+         * The list of medical reasons that are expected to be addressed during the episode of care.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
-         *     Coded reason the encounter takes place
+         * @param reason
+         *     The list of medical reasons that are expected to be addressed during the episode of care
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder reasonCode(CodeableConcept... reasonCode) {
-            for (CodeableConcept value : reasonCode) {
-                this.reasonCode.add(value);
+        public Builder reason(Reason... reason) {
+            for (Reason value : reason) {
+                this.reason.add(value);
             }
             return this;
         }
 
         /**
-         * Reason the encounter takes place, expressed as a code. For admissions, this can be used for a coded admission 
-         * diagnosis.
+         * The list of medical reasons that are expected to be addressed during the episode of care.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
-         *     Coded reason the encounter takes place
+         * @param reason
+         *     The list of medical reasons that are expected to be addressed during the episode of care
          * 
          * @return
          *     A reference to this Builder instance
@@ -1388,65 +1640,8 @@ public class Encounter extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder reasonCode(Collection<CodeableConcept> reasonCode) {
-            this.reasonCode = new ArrayList<>(reasonCode);
-            return this;
-        }
-
-        /**
-         * Reason the encounter takes place, expressed as a code. For admissions, this can be used for a coded admission 
-         * diagnosis.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Procedure}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link ImmunizationRecommendation}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Reason the encounter takes place (reference)
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder reasonReference(Reference... reasonReference) {
-            for (Reference value : reasonReference) {
-                this.reasonReference.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Reason the encounter takes place, expressed as a code. For admissions, this can be used for a coded admission 
-         * diagnosis.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Procedure}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link ImmunizationRecommendation}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Reason the encounter takes place (reference)
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder reasonReference(Collection<Reference> reasonReference) {
-            this.reasonReference = new ArrayList<>(reasonReference);
+        public Builder reason(Collection<Reason> reason) {
+            this.reason = new ArrayList<>(reason);
             return this;
         }
 
@@ -1539,16 +1734,136 @@ public class Encounter extends DomainResource {
         }
 
         /**
-         * Details about the admission to a healthcare service.
+         * Diet preferences reported by the patient.
          * 
-         * @param hospitalization
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param dietPreference
+         *     Diet preferences reported by the patient
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder dietPreference(CodeableConcept... dietPreference) {
+            for (CodeableConcept value : dietPreference) {
+                this.dietPreference.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Diet preferences reported by the patient.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param dietPreference
+         *     Diet preferences reported by the patient
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder dietPreference(Collection<CodeableConcept> dietPreference) {
+            this.dietPreference = new ArrayList<>(dietPreference);
+            return this;
+        }
+
+        /**
+         * Any special requests that have been made for this encounter, such as the provision of specific equipment or other 
+         * things.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param specialArrangement
+         *     Wheelchair, translator, stretcher, etc
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder specialArrangement(CodeableConcept... specialArrangement) {
+            for (CodeableConcept value : specialArrangement) {
+                this.specialArrangement.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Any special requests that have been made for this encounter, such as the provision of specific equipment or other 
+         * things.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param specialArrangement
+         *     Wheelchair, translator, stretcher, etc
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder specialArrangement(Collection<CodeableConcept> specialArrangement) {
+            this.specialArrangement = new ArrayList<>(specialArrangement);
+            return this;
+        }
+
+        /**
+         * Special courtesies that may be provided to the patient during the encounter (VIP, board member, professional courtesy).
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param specialCourtesy
+         *     Special courtesies (VIP, board member)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder specialCourtesy(CodeableConcept... specialCourtesy) {
+            for (CodeableConcept value : specialCourtesy) {
+                this.specialCourtesy.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Special courtesies that may be provided to the patient during the encounter (VIP, board member, professional courtesy).
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param specialCourtesy
+         *     Special courtesies (VIP, board member)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder specialCourtesy(Collection<CodeableConcept> specialCourtesy) {
+            this.specialCourtesy = new ArrayList<>(specialCourtesy);
+            return this;
+        }
+
+        /**
+         * Details about the stay during which a healthcare service is provided.This does not describe the event of admitting 
+         * the patient, but rather any information that is relevant from the time of admittance until the time of discharge.
+         * 
+         * @param admission
          *     Details about the admission to a healthcare service
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder hospitalization(Hospitalization hospitalization) {
-            this.hospitalization = hospitalization;
+        public Builder admission(Admission admission) {
+            this.admission = admission;
             return this;
         }
 
@@ -1592,53 +1907,11 @@ public class Encounter extends DomainResource {
         }
 
         /**
-         * The organization that is primarily responsible for this Encounter's services. This MAY be the same as the organization 
-         * on the Patient record, however it could be different, such as if the actor performing the services was from an 
-         * external organization (which may be billed seperately) for an external consultation. Refer to the example bundle 
-         * showing an abbreviated set of Encounters for a colonoscopy.
-         * 
-         * <p>Allowed resource types for this reference:
-         * <ul>
-         * <li>{@link Organization}</li>
-         * </ul>
-         * 
-         * @param serviceProvider
-         *     The organization (facility) responsible for this encounter
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder serviceProvider(Reference serviceProvider) {
-            this.serviceProvider = serviceProvider;
-            return this;
-        }
-
-        /**
-         * Another Encounter of which this encounter is a part of (administratively or in time).
-         * 
-         * <p>Allowed resource types for this reference:
-         * <ul>
-         * <li>{@link Encounter}</li>
-         * </ul>
-         * 
-         * @param partOf
-         *     Another Encounter this encounter is part of
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder partOf(Reference partOf) {
-            this.partOf = partOf;
-            return this;
-        }
-
-        /**
          * Build the {@link Encounter}
          * 
          * <p>Required elements:
          * <ul>
          * <li>status</li>
-         * <li>class</li>
          * </ul>
          * 
          * @return
@@ -1659,654 +1932,63 @@ public class Encounter extends DomainResource {
             super.validate(encounter);
             ValidationSupport.checkList(encounter.identifier, "identifier", Identifier.class);
             ValidationSupport.requireNonNull(encounter.status, "status");
-            ValidationSupport.checkList(encounter.statusHistory, "statusHistory", StatusHistory.class);
-            ValidationSupport.requireNonNull(encounter.clazz, "class");
-            ValidationSupport.checkList(encounter.classHistory, "classHistory", ClassHistory.class);
+            ValidationSupport.checkList(encounter.clazz, "class", CodeableConcept.class);
             ValidationSupport.checkList(encounter.type, "type", CodeableConcept.class);
+            ValidationSupport.checkList(encounter.serviceType, "serviceType", CodeableReference.class);
             ValidationSupport.checkList(encounter.episodeOfCare, "episodeOfCare", Reference.class);
             ValidationSupport.checkList(encounter.basedOn, "basedOn", Reference.class);
+            ValidationSupport.checkList(encounter.careTeam, "careTeam", Reference.class);
             ValidationSupport.checkList(encounter.participant, "participant", Participant.class);
             ValidationSupport.checkList(encounter.appointment, "appointment", Reference.class);
-            ValidationSupport.checkList(encounter.reasonCode, "reasonCode", CodeableConcept.class);
-            ValidationSupport.checkList(encounter.reasonReference, "reasonReference", Reference.class);
+            ValidationSupport.checkList(encounter.virtualService, "virtualService", VirtualServiceDetail.class);
+            ValidationSupport.checkList(encounter.reason, "reason", Reason.class);
             ValidationSupport.checkList(encounter.diagnosis, "diagnosis", Diagnosis.class);
             ValidationSupport.checkList(encounter.account, "account", Reference.class);
+            ValidationSupport.checkList(encounter.dietPreference, "dietPreference", CodeableConcept.class);
+            ValidationSupport.checkList(encounter.specialArrangement, "specialArrangement", CodeableConcept.class);
+            ValidationSupport.checkList(encounter.specialCourtesy, "specialCourtesy", CodeableConcept.class);
             ValidationSupport.checkList(encounter.location, "location", Location.class);
             ValidationSupport.checkReferenceType(encounter.subject, "subject", "Patient", "Group");
             ValidationSupport.checkReferenceType(encounter.episodeOfCare, "episodeOfCare", "EpisodeOfCare");
-            ValidationSupport.checkReferenceType(encounter.basedOn, "basedOn", "ServiceRequest");
-            ValidationSupport.checkReferenceType(encounter.appointment, "appointment", "Appointment");
-            ValidationSupport.checkReferenceType(encounter.reasonReference, "reasonReference", "Condition", "Procedure", "Observation", "ImmunizationRecommendation");
-            ValidationSupport.checkReferenceType(encounter.account, "account", "Account");
-            ValidationSupport.checkReferenceType(encounter.serviceProvider, "serviceProvider", "Organization");
+            ValidationSupport.checkReferenceType(encounter.basedOn, "basedOn", "CarePlan", "DeviceRequest", "MedicationRequest", "ServiceRequest");
+            ValidationSupport.checkReferenceType(encounter.careTeam, "careTeam", "CareTeam");
             ValidationSupport.checkReferenceType(encounter.partOf, "partOf", "Encounter");
+            ValidationSupport.checkReferenceType(encounter.serviceProvider, "serviceProvider", "Organization");
+            ValidationSupport.checkReferenceType(encounter.appointment, "appointment", "Appointment");
+            ValidationSupport.checkReferenceType(encounter.account, "account", "Account");
         }
 
         protected Builder from(Encounter encounter) {
             super.from(encounter);
             identifier.addAll(encounter.identifier);
             status = encounter.status;
-            statusHistory.addAll(encounter.statusHistory);
-            clazz = encounter.clazz;
-            classHistory.addAll(encounter.classHistory);
-            type.addAll(encounter.type);
-            serviceType = encounter.serviceType;
+            clazz.addAll(encounter.clazz);
             priority = encounter.priority;
+            type.addAll(encounter.type);
+            serviceType.addAll(encounter.serviceType);
             subject = encounter.subject;
+            subjectStatus = encounter.subjectStatus;
             episodeOfCare.addAll(encounter.episodeOfCare);
             basedOn.addAll(encounter.basedOn);
+            careTeam.addAll(encounter.careTeam);
+            partOf = encounter.partOf;
+            serviceProvider = encounter.serviceProvider;
             participant.addAll(encounter.participant);
             appointment.addAll(encounter.appointment);
-            period = encounter.period;
+            virtualService.addAll(encounter.virtualService);
+            actualPeriod = encounter.actualPeriod;
+            plannedStartDate = encounter.plannedStartDate;
+            plannedEndDate = encounter.plannedEndDate;
             length = encounter.length;
-            reasonCode.addAll(encounter.reasonCode);
-            reasonReference.addAll(encounter.reasonReference);
+            reason.addAll(encounter.reason);
             diagnosis.addAll(encounter.diagnosis);
             account.addAll(encounter.account);
-            hospitalization = encounter.hospitalization;
+            dietPreference.addAll(encounter.dietPreference);
+            specialArrangement.addAll(encounter.specialArrangement);
+            specialCourtesy.addAll(encounter.specialCourtesy);
+            admission = encounter.admission;
             location.addAll(encounter.location);
-            serviceProvider = encounter.serviceProvider;
-            partOf = encounter.partOf;
             return this;
-        }
-    }
-
-    /**
-     * The status history permits the encounter resource to contain the status history without needing to read through the 
-     * historical versions of the resource, or even have the server store them.
-     */
-    public static class StatusHistory extends BackboneElement {
-        @Binding(
-            bindingName = "EncounterStatus",
-            strength = BindingStrength.Value.REQUIRED,
-            description = "Current state of the encounter.",
-            valueSet = "http://hl7.org/fhir/ValueSet/encounter-status|4.3.0"
-        )
-        @Required
-        private final EncounterStatus status;
-        @Required
-        private final Period period;
-
-        private StatusHistory(Builder builder) {
-            super(builder);
-            status = builder.status;
-            period = builder.period;
-        }
-
-        /**
-         * planned | arrived | triaged | in-progress | onleave | finished | cancelled +.
-         * 
-         * @return
-         *     An immutable object of type {@link EncounterStatus} that is non-null.
-         */
-        public EncounterStatus getStatus() {
-            return status;
-        }
-
-        /**
-         * The time that the episode was in the specified status.
-         * 
-         * @return
-         *     An immutable object of type {@link Period} that is non-null.
-         */
-        public Period getPeriod() {
-            return period;
-        }
-
-        @Override
-        public boolean hasChildren() {
-            return super.hasChildren() || 
-                (status != null) || 
-                (period != null);
-        }
-
-        @Override
-        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-            if (visitor.preVisit(this)) {
-                visitor.visitStart(elementName, elementIndex, this);
-                if (visitor.visit(elementName, elementIndex, this)) {
-                    // visit children
-                    accept(id, "id", visitor);
-                    accept(extension, "extension", visitor, Extension.class);
-                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(status, "status", visitor);
-                    accept(period, "period", visitor);
-                }
-                visitor.visitEnd(elementName, elementIndex, this);
-                visitor.postVisit(this);
-            }
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            StatusHistory other = (StatusHistory) obj;
-            return Objects.equals(id, other.id) && 
-                Objects.equals(extension, other.extension) && 
-                Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(status, other.status) && 
-                Objects.equals(period, other.period);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = hashCode;
-            if (result == 0) {
-                result = Objects.hash(id, 
-                    extension, 
-                    modifierExtension, 
-                    status, 
-                    period);
-                hashCode = result;
-            }
-            return result;
-        }
-
-        @Override
-        public Builder toBuilder() {
-            return new Builder().from(this);
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public static class Builder extends BackboneElement.Builder {
-            private EncounterStatus status;
-            private Period period;
-
-            private Builder() {
-                super();
-            }
-
-            /**
-             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-             * contain spaces.
-             * 
-             * @param id
-             *     Unique id for inter-element referencing
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder id(java.lang.String id) {
-                return (Builder) super.id(id);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder extension(Extension... extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder extension(Collection<Extension> extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder modifierExtension(Extension... modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * planned | arrived | triaged | in-progress | onleave | finished | cancelled +.
-             * 
-             * <p>This element is required.
-             * 
-             * @param status
-             *     planned | arrived | triaged | in-progress | onleave | finished | cancelled +
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder status(EncounterStatus status) {
-                this.status = status;
-                return this;
-            }
-
-            /**
-             * The time that the episode was in the specified status.
-             * 
-             * <p>This element is required.
-             * 
-             * @param period
-             *     The time that the episode was in the specified status
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder period(Period period) {
-                this.period = period;
-                return this;
-            }
-
-            /**
-             * Build the {@link StatusHistory}
-             * 
-             * <p>Required elements:
-             * <ul>
-             * <li>status</li>
-             * <li>period</li>
-             * </ul>
-             * 
-             * @return
-             *     An immutable object of type {@link StatusHistory}
-             * @throws IllegalStateException
-             *     if the current state cannot be built into a valid StatusHistory per the base specification
-             */
-            @Override
-            public StatusHistory build() {
-                StatusHistory statusHistory = new StatusHistory(this);
-                if (validating) {
-                    validate(statusHistory);
-                }
-                return statusHistory;
-            }
-
-            protected void validate(StatusHistory statusHistory) {
-                super.validate(statusHistory);
-                ValidationSupport.requireNonNull(statusHistory.status, "status");
-                ValidationSupport.requireNonNull(statusHistory.period, "period");
-                ValidationSupport.requireValueOrChildren(statusHistory);
-            }
-
-            protected Builder from(StatusHistory statusHistory) {
-                super.from(statusHistory);
-                status = statusHistory.status;
-                period = statusHistory.period;
-                return this;
-            }
-        }
-    }
-
-    /**
-     * The class history permits the tracking of the encounters transitions without needing to go through the resource 
-     * history. This would be used for a case where an admission starts of as an emergency encounter, then transitions into 
-     * an inpatient scenario. Doing this and not restarting a new encounter ensures that any lab/diagnostic results can more 
-     * easily follow the patient and not require re-processing and not get lost or cancelled during a kind of discharge from 
-     * emergency to inpatient.
-     */
-    public static class ClassHistory extends BackboneElement {
-        @Binding(
-            bindingName = "EncounterClass",
-            strength = BindingStrength.Value.EXTENSIBLE,
-            description = "Classification of the encounter.",
-            valueSet = "http://terminology.hl7.org/ValueSet/v3-ActEncounterCode"
-        )
-        @Required
-        private final Coding clazz;
-        @Required
-        private final Period period;
-
-        private ClassHistory(Builder builder) {
-            super(builder);
-            clazz = builder.clazz;
-            period = builder.period;
-        }
-
-        /**
-         * inpatient | outpatient | ambulatory | emergency +.
-         * 
-         * @return
-         *     An immutable object of type {@link Coding} that is non-null.
-         */
-        public Coding getClazz() {
-            return clazz;
-        }
-
-        /**
-         * The time that the episode was in the specified class.
-         * 
-         * @return
-         *     An immutable object of type {@link Period} that is non-null.
-         */
-        public Period getPeriod() {
-            return period;
-        }
-
-        @Override
-        public boolean hasChildren() {
-            return super.hasChildren() || 
-                (clazz != null) || 
-                (period != null);
-        }
-
-        @Override
-        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-            if (visitor.preVisit(this)) {
-                visitor.visitStart(elementName, elementIndex, this);
-                if (visitor.visit(elementName, elementIndex, this)) {
-                    // visit children
-                    accept(id, "id", visitor);
-                    accept(extension, "extension", visitor, Extension.class);
-                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(clazz, "class", visitor);
-                    accept(period, "period", visitor);
-                }
-                visitor.visitEnd(elementName, elementIndex, this);
-                visitor.postVisit(this);
-            }
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            ClassHistory other = (ClassHistory) obj;
-            return Objects.equals(id, other.id) && 
-                Objects.equals(extension, other.extension) && 
-                Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(clazz, other.clazz) && 
-                Objects.equals(period, other.period);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = hashCode;
-            if (result == 0) {
-                result = Objects.hash(id, 
-                    extension, 
-                    modifierExtension, 
-                    clazz, 
-                    period);
-                hashCode = result;
-            }
-            return result;
-        }
-
-        @Override
-        public Builder toBuilder() {
-            return new Builder().from(this);
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public static class Builder extends BackboneElement.Builder {
-            private Coding clazz;
-            private Period period;
-
-            private Builder() {
-                super();
-            }
-
-            /**
-             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-             * contain spaces.
-             * 
-             * @param id
-             *     Unique id for inter-element referencing
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder id(java.lang.String id) {
-                return (Builder) super.id(id);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder extension(Extension... extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder extension(Collection<Extension> extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder modifierExtension(Extension... modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * inpatient | outpatient | ambulatory | emergency +.
-             * 
-             * <p>This element is required.
-             * 
-             * @param clazz
-             *     inpatient | outpatient | ambulatory | emergency +
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder clazz(Coding clazz) {
-                this.clazz = clazz;
-                return this;
-            }
-
-            /**
-             * The time that the episode was in the specified class.
-             * 
-             * <p>This element is required.
-             * 
-             * @param period
-             *     The time that the episode was in the specified class
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder period(Period period) {
-                this.period = period;
-                return this;
-            }
-
-            /**
-             * Build the {@link ClassHistory}
-             * 
-             * <p>Required elements:
-             * <ul>
-             * <li>class</li>
-             * <li>period</li>
-             * </ul>
-             * 
-             * @return
-             *     An immutable object of type {@link ClassHistory}
-             * @throws IllegalStateException
-             *     if the current state cannot be built into a valid ClassHistory per the base specification
-             */
-            @Override
-            public ClassHistory build() {
-                ClassHistory classHistory = new ClassHistory(this);
-                if (validating) {
-                    validate(classHistory);
-                }
-                return classHistory;
-            }
-
-            protected void validate(ClassHistory classHistory) {
-                super.validate(classHistory);
-                ValidationSupport.requireNonNull(classHistory.clazz, "class");
-                ValidationSupport.requireNonNull(classHistory.period, "period");
-                ValidationSupport.requireValueOrChildren(classHistory);
-            }
-
-            protected Builder from(ClassHistory classHistory) {
-                super.from(classHistory);
-                clazz = classHistory.clazz;
-                period = classHistory.period;
-                return this;
-            }
         }
     }
 
@@ -2324,14 +2006,14 @@ public class Encounter extends DomainResource {
         private final List<CodeableConcept> type;
         private final Period period;
         @Summary
-        @ReferenceTarget({ "Practitioner", "PractitionerRole", "RelatedPerson" })
-        private final Reference individual;
+        @ReferenceTarget({ "Patient", "Group", "RelatedPerson", "Practitioner", "PractitionerRole", "Device", "HealthcareService" })
+        private final Reference actor;
 
         private Participant(Builder builder) {
             super(builder);
             type = Collections.unmodifiableList(builder.type);
             period = builder.period;
-            individual = builder.individual;
+            actor = builder.actor;
         }
 
         /**
@@ -2356,13 +2038,15 @@ public class Encounter extends DomainResource {
         }
 
         /**
-         * Persons involved in the encounter other than the patient.
+         * Person involved in the encounter, the patient/group is also included here to indicate that the patient was actually 
+         * participating in the encounter. Not including the patient here covers use cases such as a case meeting between 
+         * practitioners about a patient - non contact times.
          * 
          * @return
          *     An immutable object of type {@link Reference} that may be null.
          */
-        public Reference getIndividual() {
-            return individual;
+        public Reference getActor() {
+            return actor;
         }
 
         @Override
@@ -2370,7 +2054,7 @@ public class Encounter extends DomainResource {
             return super.hasChildren() || 
                 !type.isEmpty() || 
                 (period != null) || 
-                (individual != null);
+                (actor != null);
         }
 
         @Override
@@ -2384,7 +2068,7 @@ public class Encounter extends DomainResource {
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(type, "type", visitor, CodeableConcept.class);
                     accept(period, "period", visitor);
-                    accept(individual, "individual", visitor);
+                    accept(actor, "actor", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -2408,7 +2092,7 @@ public class Encounter extends DomainResource {
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(type, other.type) && 
                 Objects.equals(period, other.period) && 
-                Objects.equals(individual, other.individual);
+                Objects.equals(actor, other.actor);
         }
 
         @Override
@@ -2420,7 +2104,7 @@ public class Encounter extends DomainResource {
                     modifierExtension, 
                     type, 
                     period, 
-                    individual);
+                    actor);
                 hashCode = result;
             }
             return result;
@@ -2438,7 +2122,7 @@ public class Encounter extends DomainResource {
         public static class Builder extends BackboneElement.Builder {
             private List<CodeableConcept> type = new ArrayList<>();
             private Period period;
-            private Reference individual;
+            private Reference actor;
 
             private Builder() {
                 super();
@@ -2461,7 +2145,7 @@ public class Encounter extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2481,7 +2165,7 @@ public class Encounter extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2506,7 +2190,7 @@ public class Encounter extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2531,7 +2215,7 @@ public class Encounter extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2610,23 +2294,29 @@ public class Encounter extends DomainResource {
             }
 
             /**
-             * Persons involved in the encounter other than the patient.
+             * Person involved in the encounter, the patient/group is also included here to indicate that the patient was actually 
+             * participating in the encounter. Not including the patient here covers use cases such as a case meeting between 
+             * practitioners about a patient - non contact times.
              * 
              * <p>Allowed resource types for this reference:
              * <ul>
+             * <li>{@link Patient}</li>
+             * <li>{@link Group}</li>
+             * <li>{@link RelatedPerson}</li>
              * <li>{@link Practitioner}</li>
              * <li>{@link PractitionerRole}</li>
-             * <li>{@link RelatedPerson}</li>
+             * <li>{@link Device}</li>
+             * <li>{@link HealthcareService}</li>
              * </ul>
              * 
-             * @param individual
-             *     Persons involved in the encounter other than the patient
+             * @param actor
+             *     The individual, device, or service participating in the encounter
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder individual(Reference individual) {
-                this.individual = individual;
+            public Builder actor(Reference actor) {
+                this.actor = actor;
                 return this;
             }
 
@@ -2650,7 +2340,7 @@ public class Encounter extends DomainResource {
             protected void validate(Participant participant) {
                 super.validate(participant);
                 ValidationSupport.checkList(participant.type, "type", CodeableConcept.class);
-                ValidationSupport.checkReferenceType(participant.individual, "individual", "Practitioner", "PractitionerRole", "RelatedPerson");
+                ValidationSupport.checkReferenceType(participant.actor, "actor", "Patient", "Group", "RelatedPerson", "Practitioner", "PractitionerRole", "Device", "HealthcareService");
                 ValidationSupport.requireValueOrChildren(participant);
             }
 
@@ -2658,74 +2348,64 @@ public class Encounter extends DomainResource {
                 super.from(participant);
                 type.addAll(participant.type);
                 period = participant.period;
-                individual = participant.individual;
+                actor = participant.actor;
                 return this;
             }
         }
     }
 
     /**
-     * The list of diagnosis relevant to this encounter.
+     * The list of medical reasons that are expected to be addressed during the episode of care.
      */
-    public static class Diagnosis extends BackboneElement {
+    public static class Reason extends BackboneElement {
         @Summary
-        @ReferenceTarget({ "Condition", "Procedure" })
-        @Required
-        private final Reference condition;
         @Binding(
-            bindingName = "DiagnosisRole",
-            strength = BindingStrength.Value.PREFERRED,
-            description = "The type of diagnosis this condition represents.",
-            valueSet = "http://hl7.org/fhir/ValueSet/diagnosis-role"
+            bindingName = "reason-use",
+            strength = BindingStrength.Value.EXAMPLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/encounter-reason-use"
         )
-        private final CodeableConcept use;
-        private final PositiveInt rank;
+        private final List<CodeableConcept> use;
+        @Summary
+        @Binding(
+            bindingName = "EncounterReason",
+            strength = BindingStrength.Value.PREFERRED,
+            description = "Reason why the encounter takes place.",
+            valueSet = "http://hl7.org/fhir/ValueSet/encounter-reason"
+        )
+        private final List<CodeableReference> value;
 
-        private Diagnosis(Builder builder) {
+        private Reason(Builder builder) {
             super(builder);
-            condition = builder.condition;
-            use = builder.use;
-            rank = builder.rank;
+            use = Collections.unmodifiableList(builder.use);
+            value = Collections.unmodifiableList(builder.value);
         }
 
         /**
-         * Reason the encounter takes place, as specified using information from another resource. For admissions, this is the 
-         * admission diagnosis. The indication will typically be a Condition (with other resources referenced in the evidence.
-         * detail), or a Procedure.
+         * What the reason value should be used as e.g. Chief Complaint, Health Concern, Health Maintenance (including screening).
          * 
          * @return
-         *     An immutable object of type {@link Reference} that is non-null.
+         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
          */
-        public Reference getCondition() {
-            return condition;
-        }
-
-        /**
-         * Role that this diagnosis has within the encounter (e.g. admission, billing, discharge …).
-         * 
-         * @return
-         *     An immutable object of type {@link CodeableConcept} that may be null.
-         */
-        public CodeableConcept getUse() {
+        public List<CodeableConcept> getUse() {
             return use;
         }
 
         /**
-         * Ranking of the diagnosis (for each role type).
+         * Reason the encounter takes place, expressed as a code or a reference to another resource. For admissions, this can be 
+         * used for a coded admission diagnosis.
          * 
          * @return
-         *     An immutable object of type {@link PositiveInt} that may be null.
+         *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
          */
-        public PositiveInt getRank() {
-            return rank;
+        public List<CodeableReference> getValue() {
+            return value;
         }
 
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                (condition != null) || 
-                (use != null) || 
-                (rank != null);
+                !use.isEmpty() || 
+                !value.isEmpty();
         }
 
         @Override
@@ -2737,9 +2417,8 @@ public class Encounter extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(condition, "condition", visitor);
-                    accept(use, "use", visitor);
-                    accept(rank, "rank", visitor);
+                    accept(use, "use", visitor, CodeableConcept.class);
+                    accept(value, "value", visitor, CodeableReference.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -2757,13 +2436,12 @@ public class Encounter extends DomainResource {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            Diagnosis other = (Diagnosis) obj;
+            Reason other = (Reason) obj;
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(condition, other.condition) && 
                 Objects.equals(use, other.use) && 
-                Objects.equals(rank, other.rank);
+                Objects.equals(value, other.value);
         }
 
         @Override
@@ -2773,9 +2451,8 @@ public class Encounter extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    condition, 
                     use, 
-                    rank);
+                    value);
                 hashCode = result;
             }
             return result;
@@ -2791,9 +2468,8 @@ public class Encounter extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private Reference condition;
-            private CodeableConcept use;
-            private PositiveInt rank;
+            private List<CodeableConcept> use = new ArrayList<>();
+            private List<CodeableReference> value = new ArrayList<>();
 
             private Builder() {
                 super();
@@ -2816,7 +2492,7 @@ public class Encounter extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2836,7 +2512,7 @@ public class Encounter extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2861,7 +2537,7 @@ public class Encounter extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2886,7 +2562,7 @@ public class Encounter extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2911,31 +2587,395 @@ public class Encounter extends DomainResource {
             }
 
             /**
-             * Reason the encounter takes place, as specified using information from another resource. For admissions, this is the 
-             * admission diagnosis. The indication will typically be a Condition (with other resources referenced in the evidence.
-             * detail), or a Procedure.
+             * What the reason value should be used as e.g. Chief Complaint, Health Concern, Health Maintenance (including screening).
              * 
-             * <p>This element is required.
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
              * 
-             * <p>Allowed resource types for this reference:
-             * <ul>
-             * <li>{@link Condition}</li>
-             * <li>{@link Procedure}</li>
-             * </ul>
-             * 
-             * @param condition
-             *     The diagnosis or procedure relevant to the encounter
+             * @param use
+             *     What the reason value should be used for/as
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder condition(Reference condition) {
-                this.condition = condition;
+            public Builder use(CodeableConcept... use) {
+                for (CodeableConcept value : use) {
+                    this.use.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * What the reason value should be used as e.g. Chief Complaint, Health Concern, Health Maintenance (including screening).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param use
+             *     What the reason value should be used for/as
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder use(Collection<CodeableConcept> use) {
+                this.use = new ArrayList<>(use);
+                return this;
+            }
+
+            /**
+             * Reason the encounter takes place, expressed as a code or a reference to another resource. For admissions, this can be 
+             * used for a coded admission diagnosis.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param value
+             *     Reason the encounter takes place (core or reference)
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder value(CodeableReference... value) {
+                for (CodeableReference _value : value) {
+                    this.value.add(_value);
+                }
+                return this;
+            }
+
+            /**
+             * Reason the encounter takes place, expressed as a code or a reference to another resource. For admissions, this can be 
+             * used for a coded admission diagnosis.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param value
+             *     Reason the encounter takes place (core or reference)
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder value(Collection<CodeableReference> value) {
+                this.value = new ArrayList<>(value);
+                return this;
+            }
+
+            /**
+             * Build the {@link Reason}
+             * 
+             * @return
+             *     An immutable object of type {@link Reason}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Reason per the base specification
+             */
+            @Override
+            public Reason build() {
+                Reason reason = new Reason(this);
+                if (validating) {
+                    validate(reason);
+                }
+                return reason;
+            }
+
+            protected void validate(Reason reason) {
+                super.validate(reason);
+                ValidationSupport.checkList(reason.use, "use", CodeableConcept.class);
+                ValidationSupport.checkList(reason.value, "value", CodeableReference.class);
+                ValidationSupport.requireValueOrChildren(reason);
+            }
+
+            protected Builder from(Reason reason) {
+                super.from(reason);
+                use.addAll(reason.use);
+                value.addAll(reason.value);
+                return this;
+            }
+        }
+    }
+
+    /**
+     * The list of diagnosis relevant to this encounter.
+     */
+    public static class Diagnosis extends BackboneElement {
+        @Summary
+        @Binding(
+            bindingName = "condition-code",
+            strength = BindingStrength.Value.EXAMPLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/condition-code"
+        )
+        private final List<CodeableReference> condition;
+        @Binding(
+            bindingName = "DiagnosisUse",
+            strength = BindingStrength.Value.PREFERRED,
+            description = "The type of diagnosis this condition represents.",
+            valueSet = "http://hl7.org/fhir/ValueSet/encounter-diagnosis-use"
+        )
+        private final List<CodeableConcept> use;
+
+        private Diagnosis(Builder builder) {
+            super(builder);
+            condition = Collections.unmodifiableList(builder.condition);
+            use = Collections.unmodifiableList(builder.use);
+        }
+
+        /**
+         * The coded diagnosis or a reference to a Condition (with other resources referenced in the evidence.detail), the use 
+         * property will indicate the purpose of this specific diagnosis.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
+         */
+        public List<CodeableReference> getCondition() {
+            return condition;
+        }
+
+        /**
+         * Role that this diagnosis has within the encounter (e.g. admission, billing, discharge …).
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+         */
+        public List<CodeableConcept> getUse() {
+            return use;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                !condition.isEmpty() || 
+                !use.isEmpty();
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(condition, "condition", visitor, CodeableReference.class);
+                    accept(use, "use", visitor, CodeableConcept.class);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Diagnosis other = (Diagnosis) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(condition, other.condition) && 
+                Objects.equals(use, other.use);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    condition, 
+                    use);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private List<CodeableReference> condition = new ArrayList<>();
+            private List<CodeableConcept> use = new ArrayList<>();
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * The coded diagnosis or a reference to a Condition (with other resources referenced in the evidence.detail), the use 
+             * property will indicate the purpose of this specific diagnosis.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param condition
+             *     The diagnosis relevant to the encounter
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder condition(CodeableReference... condition) {
+                for (CodeableReference value : condition) {
+                    this.condition.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * The coded diagnosis or a reference to a Condition (with other resources referenced in the evidence.detail), the use 
+             * property will indicate the purpose of this specific diagnosis.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param condition
+             *     The diagnosis relevant to the encounter
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder condition(Collection<CodeableReference> condition) {
+                this.condition = new ArrayList<>(condition);
                 return this;
             }
 
             /**
              * Role that this diagnosis has within the encounter (e.g. admission, billing, discharge …).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param use
              *     Role that this diagnosis has within the encounter (e.g. admission, billing, discharge …)
@@ -2943,32 +2983,35 @@ public class Encounter extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder use(CodeableConcept use) {
-                this.use = use;
+            public Builder use(CodeableConcept... use) {
+                for (CodeableConcept value : use) {
+                    this.use.add(value);
+                }
                 return this;
             }
 
             /**
-             * Ranking of the diagnosis (for each role type).
+             * Role that this diagnosis has within the encounter (e.g. admission, billing, discharge …).
              * 
-             * @param rank
-             *     Ranking of the diagnosis (for each role type)
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param use
+             *     Role that this diagnosis has within the encounter (e.g. admission, billing, discharge …)
              * 
              * @return
              *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
              */
-            public Builder rank(PositiveInt rank) {
-                this.rank = rank;
+            public Builder use(Collection<CodeableConcept> use) {
+                this.use = new ArrayList<>(use);
                 return this;
             }
 
             /**
              * Build the {@link Diagnosis}
-             * 
-             * <p>Required elements:
-             * <ul>
-             * <li>condition</li>
-             * </ul>
              * 
              * @return
              *     An immutable object of type {@link Diagnosis}
@@ -2986,25 +3029,25 @@ public class Encounter extends DomainResource {
 
             protected void validate(Diagnosis diagnosis) {
                 super.validate(diagnosis);
-                ValidationSupport.requireNonNull(diagnosis.condition, "condition");
-                ValidationSupport.checkReferenceType(diagnosis.condition, "condition", "Condition", "Procedure");
+                ValidationSupport.checkList(diagnosis.condition, "condition", CodeableReference.class);
+                ValidationSupport.checkList(diagnosis.use, "use", CodeableConcept.class);
                 ValidationSupport.requireValueOrChildren(diagnosis);
             }
 
             protected Builder from(Diagnosis diagnosis) {
                 super.from(diagnosis);
-                condition = diagnosis.condition;
-                use = diagnosis.use;
-                rank = diagnosis.rank;
+                condition.addAll(diagnosis.condition);
+                use.addAll(diagnosis.use);
                 return this;
             }
         }
     }
 
     /**
-     * Details about the admission to a healthcare service.
+     * Details about the stay during which a healthcare service is provided.This does not describe the event of admitting 
+     * the patient, but rather any information that is relevant from the time of admittance until the time of discharge.
      */
-    public static class Hospitalization extends BackboneElement {
+    public static class Admission extends BackboneElement {
         private final Identifier preAdmissionIdentifier;
         @ReferenceTarget({ "Location", "Organization" })
         private final Reference origin;
@@ -3018,31 +3061,10 @@ public class Encounter extends DomainResource {
         @Binding(
             bindingName = "ReAdmissionType",
             strength = BindingStrength.Value.EXAMPLE,
-            description = "The reason for re-admission of this hospitalization encounter.",
+            description = "The reason for re-admission of this admission encounter.",
             valueSet = "http://terminology.hl7.org/ValueSet/v2-0092"
         )
         private final CodeableConcept reAdmission;
-        @Binding(
-            bindingName = "PatientDiet",
-            strength = BindingStrength.Value.EXAMPLE,
-            description = "Medical, cultural or ethical food preferences to help with catering requirements.",
-            valueSet = "http://hl7.org/fhir/ValueSet/encounter-diet"
-        )
-        private final List<CodeableConcept> dietPreference;
-        @Binding(
-            bindingName = "Courtesies",
-            strength = BindingStrength.Value.PREFERRED,
-            description = "Special courtesies.",
-            valueSet = "http://hl7.org/fhir/ValueSet/encounter-special-courtesy"
-        )
-        private final List<CodeableConcept> specialCourtesy;
-        @Binding(
-            bindingName = "Arrangements",
-            strength = BindingStrength.Value.PREFERRED,
-            description = "Special arrangements.",
-            valueSet = "http://hl7.org/fhir/ValueSet/encounter-special-arrangements"
-        )
-        private final List<CodeableConcept> specialArrangement;
         @ReferenceTarget({ "Location", "Organization" })
         private final Reference destination;
         @Binding(
@@ -3053,15 +3075,12 @@ public class Encounter extends DomainResource {
         )
         private final CodeableConcept dischargeDisposition;
 
-        private Hospitalization(Builder builder) {
+        private Admission(Builder builder) {
             super(builder);
             preAdmissionIdentifier = builder.preAdmissionIdentifier;
             origin = builder.origin;
             admitSource = builder.admitSource;
             reAdmission = builder.reAdmission;
-            dietPreference = Collections.unmodifiableList(builder.dietPreference);
-            specialCourtesy = Collections.unmodifiableList(builder.specialCourtesy);
-            specialArrangement = Collections.unmodifiableList(builder.specialArrangement);
             destination = builder.destination;
             dischargeDisposition = builder.dischargeDisposition;
         }
@@ -3097,44 +3116,14 @@ public class Encounter extends DomainResource {
         }
 
         /**
-         * Whether this hospitalization is a readmission and why if known.
+         * Indicates that this encounter is directly related to a prior admission, often because the conditions addressed in the 
+         * prior admission were not fully addressed.
          * 
          * @return
          *     An immutable object of type {@link CodeableConcept} that may be null.
          */
         public CodeableConcept getReAdmission() {
             return reAdmission;
-        }
-
-        /**
-         * Diet preferences reported by the patient.
-         * 
-         * @return
-         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
-         */
-        public List<CodeableConcept> getDietPreference() {
-            return dietPreference;
-        }
-
-        /**
-         * Special courtesies (VIP, board member).
-         * 
-         * @return
-         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
-         */
-        public List<CodeableConcept> getSpecialCourtesy() {
-            return specialCourtesy;
-        }
-
-        /**
-         * Any special requests that have been made for this hospitalization encounter, such as the provision of specific 
-         * equipment or other things.
-         * 
-         * @return
-         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
-         */
-        public List<CodeableConcept> getSpecialArrangement() {
-            return specialArrangement;
         }
 
         /**
@@ -3164,9 +3153,6 @@ public class Encounter extends DomainResource {
                 (origin != null) || 
                 (admitSource != null) || 
                 (reAdmission != null) || 
-                !dietPreference.isEmpty() || 
-                !specialCourtesy.isEmpty() || 
-                !specialArrangement.isEmpty() || 
                 (destination != null) || 
                 (dischargeDisposition != null);
         }
@@ -3184,9 +3170,6 @@ public class Encounter extends DomainResource {
                     accept(origin, "origin", visitor);
                     accept(admitSource, "admitSource", visitor);
                     accept(reAdmission, "reAdmission", visitor);
-                    accept(dietPreference, "dietPreference", visitor, CodeableConcept.class);
-                    accept(specialCourtesy, "specialCourtesy", visitor, CodeableConcept.class);
-                    accept(specialArrangement, "specialArrangement", visitor, CodeableConcept.class);
                     accept(destination, "destination", visitor);
                     accept(dischargeDisposition, "dischargeDisposition", visitor);
                 }
@@ -3206,7 +3189,7 @@ public class Encounter extends DomainResource {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            Hospitalization other = (Hospitalization) obj;
+            Admission other = (Admission) obj;
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
@@ -3214,9 +3197,6 @@ public class Encounter extends DomainResource {
                 Objects.equals(origin, other.origin) && 
                 Objects.equals(admitSource, other.admitSource) && 
                 Objects.equals(reAdmission, other.reAdmission) && 
-                Objects.equals(dietPreference, other.dietPreference) && 
-                Objects.equals(specialCourtesy, other.specialCourtesy) && 
-                Objects.equals(specialArrangement, other.specialArrangement) && 
                 Objects.equals(destination, other.destination) && 
                 Objects.equals(dischargeDisposition, other.dischargeDisposition);
         }
@@ -3232,9 +3212,6 @@ public class Encounter extends DomainResource {
                     origin, 
                     admitSource, 
                     reAdmission, 
-                    dietPreference, 
-                    specialCourtesy, 
-                    specialArrangement, 
                     destination, 
                     dischargeDisposition);
                 hashCode = result;
@@ -3256,9 +3233,6 @@ public class Encounter extends DomainResource {
             private Reference origin;
             private CodeableConcept admitSource;
             private CodeableConcept reAdmission;
-            private List<CodeableConcept> dietPreference = new ArrayList<>();
-            private List<CodeableConcept> specialCourtesy = new ArrayList<>();
-            private List<CodeableConcept> specialArrangement = new ArrayList<>();
             private Reference destination;
             private CodeableConcept dischargeDisposition;
 
@@ -3283,7 +3257,7 @@ public class Encounter extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3303,7 +3277,7 @@ public class Encounter extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3328,7 +3302,7 @@ public class Encounter extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3353,7 +3327,7 @@ public class Encounter extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3426,136 +3400,17 @@ public class Encounter extends DomainResource {
             }
 
             /**
-             * Whether this hospitalization is a readmission and why if known.
+             * Indicates that this encounter is directly related to a prior admission, often because the conditions addressed in the 
+             * prior admission were not fully addressed.
              * 
              * @param reAdmission
-             *     The type of hospital re-admission that has occurred (if any). If the value is absent, then this is not identified as a 
-             *     readmission
+             *     Indicates that the patient is being re-admitted
              * 
              * @return
              *     A reference to this Builder instance
              */
             public Builder reAdmission(CodeableConcept reAdmission) {
                 this.reAdmission = reAdmission;
-                return this;
-            }
-
-            /**
-             * Diet preferences reported by the patient.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param dietPreference
-             *     Diet preferences reported by the patient
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder dietPreference(CodeableConcept... dietPreference) {
-                for (CodeableConcept value : dietPreference) {
-                    this.dietPreference.add(value);
-                }
-                return this;
-            }
-
-            /**
-             * Diet preferences reported by the patient.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param dietPreference
-             *     Diet preferences reported by the patient
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            public Builder dietPreference(Collection<CodeableConcept> dietPreference) {
-                this.dietPreference = new ArrayList<>(dietPreference);
-                return this;
-            }
-
-            /**
-             * Special courtesies (VIP, board member).
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param specialCourtesy
-             *     Special courtesies (VIP, board member)
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder specialCourtesy(CodeableConcept... specialCourtesy) {
-                for (CodeableConcept value : specialCourtesy) {
-                    this.specialCourtesy.add(value);
-                }
-                return this;
-            }
-
-            /**
-             * Special courtesies (VIP, board member).
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param specialCourtesy
-             *     Special courtesies (VIP, board member)
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            public Builder specialCourtesy(Collection<CodeableConcept> specialCourtesy) {
-                this.specialCourtesy = new ArrayList<>(specialCourtesy);
-                return this;
-            }
-
-            /**
-             * Any special requests that have been made for this hospitalization encounter, such as the provision of specific 
-             * equipment or other things.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param specialArrangement
-             *     Wheelchair, translator, stretcher, etc.
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder specialArrangement(CodeableConcept... specialArrangement) {
-                for (CodeableConcept value : specialArrangement) {
-                    this.specialArrangement.add(value);
-                }
-                return this;
-            }
-
-            /**
-             * Any special requests that have been made for this hospitalization encounter, such as the provision of specific 
-             * equipment or other things.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param specialArrangement
-             *     Wheelchair, translator, stretcher, etc.
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            public Builder specialArrangement(Collection<CodeableConcept> specialArrangement) {
-                this.specialArrangement = new ArrayList<>(specialArrangement);
                 return this;
             }
 
@@ -3594,43 +3449,37 @@ public class Encounter extends DomainResource {
             }
 
             /**
-             * Build the {@link Hospitalization}
+             * Build the {@link Admission}
              * 
              * @return
-             *     An immutable object of type {@link Hospitalization}
+             *     An immutable object of type {@link Admission}
              * @throws IllegalStateException
-             *     if the current state cannot be built into a valid Hospitalization per the base specification
+             *     if the current state cannot be built into a valid Admission per the base specification
              */
             @Override
-            public Hospitalization build() {
-                Hospitalization hospitalization = new Hospitalization(this);
+            public Admission build() {
+                Admission admission = new Admission(this);
                 if (validating) {
-                    validate(hospitalization);
+                    validate(admission);
                 }
-                return hospitalization;
+                return admission;
             }
 
-            protected void validate(Hospitalization hospitalization) {
-                super.validate(hospitalization);
-                ValidationSupport.checkList(hospitalization.dietPreference, "dietPreference", CodeableConcept.class);
-                ValidationSupport.checkList(hospitalization.specialCourtesy, "specialCourtesy", CodeableConcept.class);
-                ValidationSupport.checkList(hospitalization.specialArrangement, "specialArrangement", CodeableConcept.class);
-                ValidationSupport.checkReferenceType(hospitalization.origin, "origin", "Location", "Organization");
-                ValidationSupport.checkReferenceType(hospitalization.destination, "destination", "Location", "Organization");
-                ValidationSupport.requireValueOrChildren(hospitalization);
+            protected void validate(Admission admission) {
+                super.validate(admission);
+                ValidationSupport.checkReferenceType(admission.origin, "origin", "Location", "Organization");
+                ValidationSupport.checkReferenceType(admission.destination, "destination", "Location", "Organization");
+                ValidationSupport.requireValueOrChildren(admission);
             }
 
-            protected Builder from(Hospitalization hospitalization) {
-                super.from(hospitalization);
-                preAdmissionIdentifier = hospitalization.preAdmissionIdentifier;
-                origin = hospitalization.origin;
-                admitSource = hospitalization.admitSource;
-                reAdmission = hospitalization.reAdmission;
-                dietPreference.addAll(hospitalization.dietPreference);
-                specialCourtesy.addAll(hospitalization.specialCourtesy);
-                specialArrangement.addAll(hospitalization.specialArrangement);
-                destination = hospitalization.destination;
-                dischargeDisposition = hospitalization.dischargeDisposition;
+            protected Builder from(Admission admission) {
+                super.from(admission);
+                preAdmissionIdentifier = admission.preAdmissionIdentifier;
+                origin = admission.origin;
+                admitSource = admission.admitSource;
+                reAdmission = admission.reAdmission;
+                destination = admission.destination;
+                dischargeDisposition = admission.dischargeDisposition;
                 return this;
             }
         }
@@ -3647,23 +3496,23 @@ public class Encounter extends DomainResource {
             bindingName = "EncounterLocationStatus",
             strength = BindingStrength.Value.REQUIRED,
             description = "The status of the location.",
-            valueSet = "http://hl7.org/fhir/ValueSet/encounter-location-status|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/encounter-location-status|5.0.0"
         )
         private final EncounterLocationStatus status;
         @Binding(
-            bindingName = "PhysicalType",
+            bindingName = "LocationForm",
             strength = BindingStrength.Value.EXAMPLE,
             description = "Physical form of the location.",
-            valueSet = "http://hl7.org/fhir/ValueSet/location-physical-type"
+            valueSet = "http://hl7.org/fhir/ValueSet/location-form"
         )
-        private final CodeableConcept physicalType;
+        private final CodeableConcept form;
         private final Period period;
 
         private Location(Builder builder) {
             super(builder);
             location = builder.location;
             status = builder.status;
-            physicalType = builder.physicalType;
+            form = builder.form;
             period = builder.period;
         }
 
@@ -3695,8 +3544,8 @@ public class Encounter extends DomainResource {
          * @return
          *     An immutable object of type {@link CodeableConcept} that may be null.
          */
-        public CodeableConcept getPhysicalType() {
-            return physicalType;
+        public CodeableConcept getForm() {
+            return form;
         }
 
         /**
@@ -3714,7 +3563,7 @@ public class Encounter extends DomainResource {
             return super.hasChildren() || 
                 (location != null) || 
                 (status != null) || 
-                (physicalType != null) || 
+                (form != null) || 
                 (period != null);
         }
 
@@ -3729,7 +3578,7 @@ public class Encounter extends DomainResource {
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(location, "location", visitor);
                     accept(status, "status", visitor);
-                    accept(physicalType, "physicalType", visitor);
+                    accept(form, "form", visitor);
                     accept(period, "period", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
@@ -3754,7 +3603,7 @@ public class Encounter extends DomainResource {
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(location, other.location) && 
                 Objects.equals(status, other.status) && 
-                Objects.equals(physicalType, other.physicalType) && 
+                Objects.equals(form, other.form) && 
                 Objects.equals(period, other.period);
         }
 
@@ -3767,7 +3616,7 @@ public class Encounter extends DomainResource {
                     modifierExtension, 
                     location, 
                     status, 
-                    physicalType, 
+                    form, 
                     period);
                 hashCode = result;
             }
@@ -3786,7 +3635,7 @@ public class Encounter extends DomainResource {
         public static class Builder extends BackboneElement.Builder {
             private Reference location;
             private EncounterLocationStatus status;
-            private CodeableConcept physicalType;
+            private CodeableConcept form;
             private Period period;
 
             private Builder() {
@@ -3810,7 +3659,7 @@ public class Encounter extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3830,7 +3679,7 @@ public class Encounter extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3855,7 +3704,7 @@ public class Encounter extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3880,7 +3729,7 @@ public class Encounter extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3944,14 +3793,14 @@ public class Encounter extends DomainResource {
              * This will be used to specify the required levels (bed/ward/room/etc.) desired to be recorded to simplify either 
              * messaging or query.
              * 
-             * @param physicalType
-             *     The physical type of the location (usually the level in the location hierachy - bed room ward etc.)
+             * @param form
+             *     The physical type of the location (usually the level in the location hierarchy - bed, room, ward, virtual etc.)
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder physicalType(CodeableConcept physicalType) {
-                this.physicalType = physicalType;
+            public Builder form(CodeableConcept form) {
+                this.form = form;
                 return this;
             }
 
@@ -4002,7 +3851,7 @@ public class Encounter extends DomainResource {
                 super.from(location);
                 this.location = location.location;
                 status = location.status;
-                physicalType = location.physicalType;
+                form = location.form;
                 period = location.period;
                 return this;
             }

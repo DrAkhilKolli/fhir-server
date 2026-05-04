@@ -22,21 +22,21 @@ public class DeviceMetricCategory extends Code {
     /**
      * Measurement
      * 
-     * <p>DeviceObservations generated for this DeviceMetric are measured.
+     * <p>Observations generated for this DeviceMetric are measured.
      */
     public static final DeviceMetricCategory MEASUREMENT = DeviceMetricCategory.builder().value(Value.MEASUREMENT).build();
 
     /**
      * Setting
      * 
-     * <p>DeviceObservations generated for this DeviceMetric is a setting that will influence the behavior of the Device.
+     * <p>Observations generated for this DeviceMetric is a setting that will influence the behavior of the Device.
      */
     public static final DeviceMetricCategory SETTING = DeviceMetricCategory.builder().value(Value.SETTING).build();
 
     /**
      * Calculation
      * 
-     * <p>DeviceObservations generated for this DeviceMetric are calculated.
+     * <p>Observations generated for this DeviceMetric are calculated.
      */
     public static final DeviceMetricCategory CALCULATION = DeviceMetricCategory.builder().value(Value.CALCULATION).build();
 
@@ -208,21 +208,21 @@ public class DeviceMetricCategory extends Code {
         /**
          * Measurement
          * 
-         * <p>DeviceObservations generated for this DeviceMetric are measured.
+         * <p>Observations generated for this DeviceMetric are measured.
          */
         MEASUREMENT("measurement"),
 
         /**
          * Setting
          * 
-         * <p>DeviceObservations generated for this DeviceMetric is a setting that will influence the behavior of the Device.
+         * <p>Observations generated for this DeviceMetric is a setting that will influence the behavior of the Device.
          */
         SETTING("setting"),
 
         /**
          * Calculation
          * 
-         * <p>DeviceObservations generated for this DeviceMetric are calculated.
+         * <p>Observations generated for this DeviceMetric are calculated.
          */
         CALCULATION("calculation"),
 

@@ -16,7 +16,7 @@ import java.util.Objects;
 
 import javax.annotation.Generated;
 
-@System("http://terminology.hl7.org/CodeSystem/medicationdispense-status")
+@System("http://hl7.org/fhir/CodeSystem/medicationdispense-status")
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class MedicationDispenseStatus extends Code {
     /**

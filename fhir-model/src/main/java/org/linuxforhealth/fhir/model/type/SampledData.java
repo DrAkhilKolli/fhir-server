@@ -11,8 +11,11 @@ import java.util.Objects;
 
 import javax.annotation.Generated;
 
+import org.linuxforhealth.fhir.model.annotation.Binding;
+import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
+import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
@@ -20,14 +23,30 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * A series of measurements taken by a device, with upper and lower limits. There may be more than one dimension in the 
  * data.
  */
+@Constraint(
+    id = "sdd-1",
+    level = "Rule",
+    location = "(base)",
+    description = "A SampledData SAHLL have either an interval and offsets but not both",
+    expression = "interval.exists().not() xor offsets.exists().not()",
+    source = "http://hl7.org/fhir/StructureDefinition/SampledData"
+)
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class SampledData extends Element {
+public class SampledData extends DataType {
     @Summary
     @Required
     private final SimpleQuantity origin;
     @Summary
+    private final Decimal interval;
+    @Summary
+    @Binding(
+        bindingName = "Units",
+        strength = BindingStrength.Value.REQUIRED,
+        description = "Units of measure allowed for an element.",
+        valueSet = "http://hl7.org/fhir/ValueSet/ucum-units|5.0.0"
+    )
     @Required
-    private final Decimal period;
+    private final Code intervalUnit;
     @Summary
     private final Decimal factor;
     @Summary
@@ -37,16 +56,21 @@ public class SampledData extends Element {
     @Summary
     @Required
     private final PositiveInt dimensions;
+    private final Canonical codeMap;
+    private final String offsets;
     private final String data;
 
     private SampledData(Builder builder) {
         super(builder);
         origin = builder.origin;
-        period = builder.period;
+        interval = builder.interval;
+        intervalUnit = builder.intervalUnit;
         factor = builder.factor;
         lowerLimit = builder.lowerLimit;
         upperLimit = builder.upperLimit;
         dimensions = builder.dimensions;
+        codeMap = builder.codeMap;
+        offsets = builder.offsets;
         data = builder.data;
     }
 
@@ -62,13 +86,23 @@ public class SampledData extends Element {
     }
 
     /**
-     * The length of time between sampling times, measured in milliseconds.
+     * Amount of intervalUnits between samples, e.g. milliseconds for time-based sampling.
      * 
      * @return
-     *     An immutable object of type {@link Decimal} that is non-null.
+     *     An immutable object of type {@link Decimal} that may be null.
      */
-    public Decimal getPeriod() {
-        return period;
+    public Decimal getInterval() {
+        return interval;
+    }
+
+    /**
+     * The measurement unit in which the sample interval is expressed.
+     * 
+     * @return
+     *     An immutable object of type {@link Code} that is non-null.
+     */
+    public Code getIntervalUnit() {
+        return intervalUnit;
     }
 
     /**
@@ -115,8 +149,31 @@ public class SampledData extends Element {
     }
 
     /**
-     * A series of data points which are decimal values separated by a single space (character u20). The special values "E" 
-     * (error), "L" (below detection limit) and "U" (above detection limit) can also be used in place of a decimal value.
+     * Reference to ConceptMap that defines the codes used in the data.
+     * 
+     * @return
+     *     An immutable object of type {@link Canonical} that may be null.
+     */
+    public Canonical getCodeMap() {
+        return codeMap;
+    }
+
+    /**
+     * A series of data points which are decimal values separated by a single space (character u20). The units in which the 
+     * offsets are expressed are found in intervalUnit. The absolute point at which the measurements begin SHALL be conveyed 
+     * outside the scope of this datatype, e.g. Observation.effectiveDateTime for a timing offset.
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getOffsets() {
+        return offsets;
+    }
+
+    /**
+     * A series of data points which are decimal values or codes separated by a single space (character u20). The special 
+     * codes "E" (error), "L" (below detection limit) and "U" (above detection limit) are also defined for used in place of 
+     * decimal values.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -129,11 +186,14 @@ public class SampledData extends Element {
     public boolean hasChildren() {
         return super.hasChildren() || 
             (origin != null) || 
-            (period != null) || 
+            (interval != null) || 
+            (intervalUnit != null) || 
             (factor != null) || 
             (lowerLimit != null) || 
             (upperLimit != null) || 
             (dimensions != null) || 
+            (codeMap != null) || 
+            (offsets != null) || 
             (data != null);
     }
 
@@ -146,11 +206,14 @@ public class SampledData extends Element {
                 accept(id, "id", visitor);
                 accept(extension, "extension", visitor, Extension.class);
                 accept(origin, "origin", visitor);
-                accept(period, "period", visitor);
+                accept(interval, "interval", visitor);
+                accept(intervalUnit, "intervalUnit", visitor);
                 accept(factor, "factor", visitor);
                 accept(lowerLimit, "lowerLimit", visitor);
                 accept(upperLimit, "upperLimit", visitor);
                 accept(dimensions, "dimensions", visitor);
+                accept(codeMap, "codeMap", visitor);
+                accept(offsets, "offsets", visitor);
                 accept(data, "data", visitor);
             }
             visitor.visitEnd(elementName, elementIndex, this);
@@ -173,11 +236,14 @@ public class SampledData extends Element {
         return Objects.equals(id, other.id) && 
             Objects.equals(extension, other.extension) && 
             Objects.equals(origin, other.origin) && 
-            Objects.equals(period, other.period) && 
+            Objects.equals(interval, other.interval) && 
+            Objects.equals(intervalUnit, other.intervalUnit) && 
             Objects.equals(factor, other.factor) && 
             Objects.equals(lowerLimit, other.lowerLimit) && 
             Objects.equals(upperLimit, other.upperLimit) && 
             Objects.equals(dimensions, other.dimensions) && 
+            Objects.equals(codeMap, other.codeMap) && 
+            Objects.equals(offsets, other.offsets) && 
             Objects.equals(data, other.data);
     }
 
@@ -188,11 +254,14 @@ public class SampledData extends Element {
             result = Objects.hash(id, 
                 extension, 
                 origin, 
-                period, 
+                interval, 
+                intervalUnit, 
                 factor, 
                 lowerLimit, 
                 upperLimit, 
                 dimensions, 
+                codeMap, 
+                offsets, 
                 data);
             hashCode = result;
         }
@@ -208,13 +277,16 @@ public class SampledData extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private SimpleQuantity origin;
-        private Decimal period;
+        private Decimal interval;
+        private Code intervalUnit;
         private Decimal factor;
         private Decimal lowerLimit;
         private Decimal upperLimit;
         private PositiveInt dimensions;
+        private Canonical codeMap;
+        private String offsets;
         private String data;
 
         private Builder() {
@@ -238,7 +310,7 @@ public class SampledData extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -258,7 +330,7 @@ public class SampledData extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -297,18 +369,32 @@ public class SampledData extends Element {
         }
 
         /**
-         * The length of time between sampling times, measured in milliseconds.
+         * Amount of intervalUnits between samples, e.g. milliseconds for time-based sampling.
          * 
-         * <p>This element is required.
-         * 
-         * @param period
-         *     Number of milliseconds between samples
+         * @param interval
+         *     Number of intervalUnits between samples
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder period(Decimal period) {
-            this.period = period;
+        public Builder interval(Decimal interval) {
+            this.interval = interval;
+            return this;
+        }
+
+        /**
+         * The measurement unit in which the sample interval is expressed.
+         * 
+         * <p>This element is required.
+         * 
+         * @param intervalUnit
+         *     The measurement unit of the interval between samples
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder intervalUnit(Code intervalUnit) {
+            this.intervalUnit = intervalUnit;
             return this;
         }
 
@@ -374,10 +460,56 @@ public class SampledData extends Element {
         }
 
         /**
+         * Reference to ConceptMap that defines the codes used in the data.
+         * 
+         * @param codeMap
+         *     Defines the codes used in the data
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder codeMap(Canonical codeMap) {
+            this.codeMap = codeMap;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code offsets}.
+         * 
+         * @param offsets
+         *     Offsets, typically in time, at which data values were taken
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #offsets(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder offsets(java.lang.String offsets) {
+            this.offsets = (offsets == null) ? null : String.of(offsets);
+            return this;
+        }
+
+        /**
+         * A series of data points which are decimal values separated by a single space (character u20). The units in which the 
+         * offsets are expressed are found in intervalUnit. The absolute point at which the measurements begin SHALL be conveyed 
+         * outside the scope of this datatype, e.g. Observation.effectiveDateTime for a timing offset.
+         * 
+         * @param offsets
+         *     Offsets, typically in time, at which data values were taken
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder offsets(String offsets) {
+            this.offsets = offsets;
+            return this;
+        }
+
+        /**
          * Convenience method for setting {@code data}.
          * 
          * @param data
-         *     Decimal values with spaces, or "E" | "U" | "L"
+         *     Decimal values with spaces, or "E" | "U" | "L", or another code
          * 
          * @return
          *     A reference to this Builder instance
@@ -390,11 +522,12 @@ public class SampledData extends Element {
         }
 
         /**
-         * A series of data points which are decimal values separated by a single space (character u20). The special values "E" 
-         * (error), "L" (below detection limit) and "U" (above detection limit) can also be used in place of a decimal value.
+         * A series of data points which are decimal values or codes separated by a single space (character u20). The special 
+         * codes "E" (error), "L" (below detection limit) and "U" (above detection limit) are also defined for used in place of 
+         * decimal values.
          * 
          * @param data
-         *     Decimal values with spaces, or "E" | "U" | "L"
+         *     Decimal values with spaces, or "E" | "U" | "L", or another code
          * 
          * @return
          *     A reference to this Builder instance
@@ -410,7 +543,7 @@ public class SampledData extends Element {
          * <p>Required elements:
          * <ul>
          * <li>origin</li>
-         * <li>period</li>
+         * <li>intervalUnit</li>
          * <li>dimensions</li>
          * </ul>
          * 
@@ -431,19 +564,23 @@ public class SampledData extends Element {
         protected void validate(SampledData sampledData) {
             super.validate(sampledData);
             ValidationSupport.requireNonNull(sampledData.origin, "origin");
-            ValidationSupport.requireNonNull(sampledData.period, "period");
+            ValidationSupport.requireNonNull(sampledData.intervalUnit, "intervalUnit");
             ValidationSupport.requireNonNull(sampledData.dimensions, "dimensions");
+            ValidationSupport.checkValueSetBinding(sampledData.intervalUnit, "intervalUnit", "http://hl7.org/fhir/ValueSet/ucum-units", "http://unitsofmeasure.org");
             ValidationSupport.requireValueOrChildren(sampledData);
         }
 
         protected Builder from(SampledData sampledData) {
             super.from(sampledData);
             origin = sampledData.origin;
-            period = sampledData.period;
+            interval = sampledData.interval;
+            intervalUnit = sampledData.intervalUnit;
             factor = sampledData.factor;
             lowerLimit = sampledData.lowerLimit;
             upperLimit = sampledData.upperLimit;
             dimensions = sampledData.dimensions;
+            codeMap = sampledData.codeMap;
+            offsets = sampledData.offsets;
             data = sampledData.data;
             return this;
         }

@@ -15,7 +15,7 @@ import org.linuxforhealth.fhir.model.annotation.Binding;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
-import org.linuxforhealth.fhir.model.type.code.FHIRAllTypes;
+import org.linuxforhealth.fhir.model.type.code.FHIRTypes;
 import org.linuxforhealth.fhir.model.type.code.ParameterUse;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
@@ -25,14 +25,15 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * provided by the caller as part of the $evaluate operation. Output parameters are included in the GuidanceResponse.
  */
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class ParameterDefinition extends Element {
+public class ParameterDefinition extends DataType {
     @Summary
     private final Code name;
     @Summary
     @Binding(
         bindingName = "ParameterUse",
         strength = BindingStrength.Value.REQUIRED,
-        valueSet = "http://hl7.org/fhir/ValueSet/operation-parameter-use|4.3.0"
+        description = "Whether the parameter is input or output.",
+        valueSet = "http://hl7.org/fhir/ValueSet/operation-parameter-use|5.0.0"
     )
     @Required
     private final ParameterUse use;
@@ -44,12 +45,13 @@ public class ParameterDefinition extends Element {
     private final String documentation;
     @Summary
     @Binding(
-        bindingName = "FHIRAllTypes",
+        bindingName = "FHIRTypes",
         strength = BindingStrength.Value.REQUIRED,
-        valueSet = "http://hl7.org/fhir/ValueSet/all-types|4.3.0"
+        description = "List of FHIR types (resources, data types).",
+        valueSet = "http://hl7.org/fhir/ValueSet/fhir-types|5.0.0"
     )
     @Required
-    private final FHIRAllTypes type;
+    private final FHIRTypes type;
     @Summary
     private final Canonical profile;
 
@@ -118,9 +120,9 @@ public class ParameterDefinition extends Element {
      * The type of the parameter.
      * 
      * @return
-     *     An immutable object of type {@link FHIRAllTypes} that is non-null.
+     *     An immutable object of type {@link FHIRTypes} that is non-null.
      */
-    public FHIRAllTypes getType() {
+    public FHIRTypes getType() {
         return type;
     }
 
@@ -217,13 +219,13 @@ public class ParameterDefinition extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private Code name;
         private ParameterUse use;
         private Integer min;
         private String max;
         private String documentation;
-        private FHIRAllTypes type;
+        private FHIRTypes type;
         private Canonical profile;
 
         private Builder() {
@@ -247,7 +249,7 @@ public class ParameterDefinition extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -267,7 +269,7 @@ public class ParameterDefinition extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -419,7 +421,7 @@ public class ParameterDefinition extends Element {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder type(FHIRAllTypes type) {
+        public Builder type(FHIRTypes type) {
             this.type = type;
             return this;
         }

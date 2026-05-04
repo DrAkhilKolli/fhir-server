@@ -22,7 +22,7 @@ public class TypeDerivationRule extends Code {
     /**
      * Specialization
      * 
-     * <p>This definition defines a new type that adds additional elements to the base type.
+     * <p>This definition defines a new type that adds additional elements and optionally additional rules to the base type.
      */
     public static final TypeDerivationRule SPECIALIZATION = TypeDerivationRule.builder().value(Value.SPECIALIZATION).build();
 
@@ -190,7 +190,7 @@ public class TypeDerivationRule extends Code {
         /**
          * Specialization
          * 
-         * <p>This definition defines a new type that adds additional elements to the base type.
+         * <p>This definition defines a new type that adds additional elements and optionally additional rules to the base type.
          */
         SPECIALIZATION("specialization"),
 

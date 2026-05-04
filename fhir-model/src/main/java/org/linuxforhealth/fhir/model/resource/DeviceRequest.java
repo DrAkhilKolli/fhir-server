@@ -26,10 +26,12 @@ import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
+import org.linuxforhealth.fhir.model.type.Integer;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
@@ -67,7 +69,8 @@ public class DeviceRequest extends DomainResource {
     @Summary
     private final List<Reference> basedOn;
     @Summary
-    private final List<Reference> priorRequest;
+    @ReferenceTarget({ "DeviceRequest" })
+    private final List<Reference> replaces;
     @Summary
     private final Identifier groupIdentifier;
     @Summary
@@ -75,7 +78,7 @@ public class DeviceRequest extends DomainResource {
         bindingName = "DeviceRequestStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "Codes representing the status of the request.",
-        valueSet = "http://hl7.org/fhir/ValueSet/request-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/request-status|5.0.0"
     )
     private final DeviceRequestStatus status;
     @Summary
@@ -83,7 +86,7 @@ public class DeviceRequest extends DomainResource {
         bindingName = "RequestIntent",
         strength = BindingStrength.Value.REQUIRED,
         description = "The kind of diagnostic request.",
-        valueSet = "http://hl7.org/fhir/ValueSet/request-intent|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/request-intent|5.0.0"
     )
     @Required
     private final RequestIntent intent;
@@ -92,20 +95,21 @@ public class DeviceRequest extends DomainResource {
         bindingName = "RequestPriority",
         strength = BindingStrength.Value.REQUIRED,
         description = "Identifies the level of importance to be assigned to actioning the request.",
-        valueSet = "http://hl7.org/fhir/ValueSet/request-priority|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/request-priority|5.0.0"
     )
     private final RequestPriority priority;
     @Summary
-    @ReferenceTarget({ "Device" })
-    @Choice({ Reference.class, CodeableConcept.class })
+    private final Boolean doNotPerform;
+    @Summary
     @Binding(
         bindingName = "DeviceRequestCode",
         strength = BindingStrength.Value.EXAMPLE,
         description = "Codes for devices that can be requested.",
-        valueSet = "http://hl7.org/fhir/ValueSet/device-kind"
+        valueSet = "http://hl7.org/fhir/ValueSet/device-type"
     )
     @Required
-    private final Element code;
+    private final CodeableReference code;
+    private final Integer quantity;
     private final List<Parameter> parameter;
     @Summary
     @ReferenceTarget({ "Patient", "Group", "Location", "Device" })
@@ -116,23 +120,14 @@ public class DeviceRequest extends DomainResource {
     private final Reference encounter;
     @Summary
     @Choice({ DateTime.class, Period.class, Timing.class })
-    private final Element occurrence;
+    private final org.linuxforhealth.fhir.model.type.Element occurrence;
     @Summary
     private final DateTime authoredOn;
     @Summary
     @ReferenceTarget({ "Device", "Practitioner", "PractitionerRole", "Organization" })
     private final Reference requester;
     @Summary
-    @Binding(
-        bindingName = "DeviceRequestParticipantRole",
-        strength = BindingStrength.Value.EXAMPLE,
-        description = "Indicates specific responsibility of an individual within the care team, such as \"Primary physician\", \"Team coordinator\", \"Caregiver\", etc.",
-        valueSet = "http://hl7.org/fhir/ValueSet/participant-role"
-    )
-    private final CodeableConcept performerType;
-    @Summary
-    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "CareTeam", "HealthcareService", "Patient", "Device", "RelatedPerson" })
-    private final Reference performer;
+    private final CodeableReference performer;
     @Summary
     @Binding(
         bindingName = "DeviceRequestReason",
@@ -140,10 +135,9 @@ public class DeviceRequest extends DomainResource {
         description = "Diagnosis or problem codes justifying the reason for requesting the device.",
         valueSet = "http://hl7.org/fhir/ValueSet/condition-code"
     )
-    private final List<CodeableConcept> reasonCode;
-    @Summary
-    @ReferenceTarget({ "Condition", "Observation", "DiagnosticReport", "DocumentReference" })
-    private final List<Reference> reasonReference;
+    private final List<CodeableReference> reason;
+    private final Boolean asNeeded;
+    private final CodeableConcept asNeededFor;
     @ReferenceTarget({ "Coverage", "ClaimResponse" })
     private final List<Reference> insurance;
     private final List<Reference> supportingInfo;
@@ -157,22 +151,24 @@ public class DeviceRequest extends DomainResource {
         instantiatesCanonical = Collections.unmodifiableList(builder.instantiatesCanonical);
         instantiatesUri = Collections.unmodifiableList(builder.instantiatesUri);
         basedOn = Collections.unmodifiableList(builder.basedOn);
-        priorRequest = Collections.unmodifiableList(builder.priorRequest);
+        replaces = Collections.unmodifiableList(builder.replaces);
         groupIdentifier = builder.groupIdentifier;
         status = builder.status;
         intent = builder.intent;
         priority = builder.priority;
+        doNotPerform = builder.doNotPerform;
         code = builder.code;
+        quantity = builder.quantity;
         parameter = Collections.unmodifiableList(builder.parameter);
         subject = builder.subject;
         encounter = builder.encounter;
         occurrence = builder.occurrence;
         authoredOn = builder.authoredOn;
         requester = builder.requester;
-        performerType = builder.performerType;
         performer = builder.performer;
-        reasonCode = Collections.unmodifiableList(builder.reasonCode);
-        reasonReference = Collections.unmodifiableList(builder.reasonReference);
+        reason = Collections.unmodifiableList(builder.reason);
+        asNeeded = builder.asNeeded;
+        asNeededFor = builder.asNeededFor;
         insurance = Collections.unmodifiableList(builder.insurance);
         supportingInfo = Collections.unmodifiableList(builder.supportingInfo);
         note = Collections.unmodifiableList(builder.note);
@@ -227,12 +223,15 @@ public class DeviceRequest extends DomainResource {
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
      */
-    public List<Reference> getPriorRequest() {
-        return priorRequest;
+    public List<Reference> getReplaces() {
+        return replaces;
     }
 
     /**
-     * Composite request this is part of.
+     * A shared identifier common to multiple independent Request instances that were activated/authorized more or less 
+     * simultaneously by a single author. The presence of the same identifier on each request ties those requests together 
+     * and may have business ramifications in terms of reporting of results, billing, etc. E.g. a requisition number shared 
+     * by a set of lab tests ordered together, or a prescription number shared by all meds ordered at one time.
      * 
      * @return
      *     An immutable object of type {@link Identifier} that may be null.
@@ -262,7 +261,7 @@ public class DeviceRequest extends DomainResource {
     }
 
     /**
-     * Indicates how quickly the {{title}} should be addressed with respect to other requests.
+     * Indicates how quickly the request should be addressed with respect to other requests.
      * 
      * @return
      *     An immutable object of type {@link RequestPriority} that may be null.
@@ -272,13 +271,35 @@ public class DeviceRequest extends DomainResource {
     }
 
     /**
+     * If true, indicates that the provider is asking for the patient to either stop using or to not start using the 
+     * specified device or category of devices. For example, the patient has undergone surgery and the provider is indicating 
+     * that the patient should not wear contact lenses.
+     * 
+     * @return
+     *     An immutable object of type {@link Boolean} that may be null.
+     */
+    public Boolean getDoNotPerform() {
+        return doNotPerform;
+    }
+
+    /**
      * The details of the device to be used.
      * 
      * @return
-     *     An immutable object of type {@link Reference} or {@link CodeableConcept} that is non-null.
+     *     An immutable object of type {@link CodeableReference} that is non-null.
      */
-    public Element getCode() {
+    public CodeableReference getCode() {
         return code;
+    }
+
+    /**
+     * The number of devices to be provided.
+     * 
+     * @return
+     *     An immutable object of type {@link Integer} that may be null.
+     */
+    public Integer getQuantity() {
+        return quantity;
     }
 
     /**
@@ -319,7 +340,7 @@ public class DeviceRequest extends DomainResource {
      * @return
      *     An immutable object of type {@link DateTime}, {@link Period} or {@link Timing} that may be null.
      */
-    public Element getOccurrence() {
+    public org.linuxforhealth.fhir.model.type.Element getOccurrence() {
         return occurrence;
     }
 
@@ -334,7 +355,7 @@ public class DeviceRequest extends DomainResource {
     }
 
     /**
-     * The individual who initiated the request and has responsibility for its activation.
+     * The individual or entity who initiated the request and has responsibility for its activation.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
@@ -344,22 +365,12 @@ public class DeviceRequest extends DomainResource {
     }
 
     /**
-     * Desired type of performer for doing the diagnostic testing.
+     * The desired individual or entity to provide the device to the subject of the request (e.g., patient, location).
      * 
      * @return
-     *     An immutable object of type {@link CodeableConcept} that may be null.
+     *     An immutable object of type {@link CodeableReference} that may be null.
      */
-    public CodeableConcept getPerformerType() {
-        return performerType;
-    }
-
-    /**
-     * The desired performer for doing the diagnostic testing.
-     * 
-     * @return
-     *     An immutable object of type {@link Reference} that may be null.
-     */
-    public Reference getPerformer() {
+    public CodeableReference getPerformer() {
         return performer;
     }
 
@@ -367,20 +378,30 @@ public class DeviceRequest extends DomainResource {
      * Reason or justification for the use of this device.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<CodeableConcept> getReasonCode() {
-        return reasonCode;
+    public List<CodeableReference> getReason() {
+        return reason;
     }
 
     /**
-     * Reason or justification for the use of this device.
+     * This status is to indicate whether the request is a PRN or may be given as needed.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     *     An immutable object of type {@link Boolean} that may be null.
      */
-    public List<Reference> getReasonReference() {
-        return reasonReference;
+    public Boolean getAsNeeded() {
+        return asNeeded;
+    }
+
+    /**
+     * The reason for using the device.
+     * 
+     * @return
+     *     An immutable object of type {@link CodeableConcept} that may be null.
+     */
+    public CodeableConcept getAsNeededFor() {
+        return asNeededFor;
     }
 
     /**
@@ -433,22 +454,24 @@ public class DeviceRequest extends DomainResource {
             !instantiatesCanonical.isEmpty() || 
             !instantiatesUri.isEmpty() || 
             !basedOn.isEmpty() || 
-            !priorRequest.isEmpty() || 
+            !replaces.isEmpty() || 
             (groupIdentifier != null) || 
             (status != null) || 
             (intent != null) || 
             (priority != null) || 
+            (doNotPerform != null) || 
             (code != null) || 
+            (quantity != null) || 
             !parameter.isEmpty() || 
             (subject != null) || 
             (encounter != null) || 
             (occurrence != null) || 
             (authoredOn != null) || 
             (requester != null) || 
-            (performerType != null) || 
             (performer != null) || 
-            !reasonCode.isEmpty() || 
-            !reasonReference.isEmpty() || 
+            !reason.isEmpty() || 
+            (asNeeded != null) || 
+            (asNeededFor != null) || 
             !insurance.isEmpty() || 
             !supportingInfo.isEmpty() || 
             !note.isEmpty() || 
@@ -473,22 +496,24 @@ public class DeviceRequest extends DomainResource {
                 accept(instantiatesCanonical, "instantiatesCanonical", visitor, Canonical.class);
                 accept(instantiatesUri, "instantiatesUri", visitor, Uri.class);
                 accept(basedOn, "basedOn", visitor, Reference.class);
-                accept(priorRequest, "priorRequest", visitor, Reference.class);
+                accept(replaces, "replaces", visitor, Reference.class);
                 accept(groupIdentifier, "groupIdentifier", visitor);
                 accept(status, "status", visitor);
                 accept(intent, "intent", visitor);
                 accept(priority, "priority", visitor);
+                accept(doNotPerform, "doNotPerform", visitor);
                 accept(code, "code", visitor);
+                accept(quantity, "quantity", visitor);
                 accept(parameter, "parameter", visitor, Parameter.class);
                 accept(subject, "subject", visitor);
                 accept(encounter, "encounter", visitor);
                 accept(occurrence, "occurrence", visitor);
                 accept(authoredOn, "authoredOn", visitor);
                 accept(requester, "requester", visitor);
-                accept(performerType, "performerType", visitor);
                 accept(performer, "performer", visitor);
-                accept(reasonCode, "reasonCode", visitor, CodeableConcept.class);
-                accept(reasonReference, "reasonReference", visitor, Reference.class);
+                accept(reason, "reason", visitor, CodeableReference.class);
+                accept(asNeeded, "asNeeded", visitor);
+                accept(asNeededFor, "asNeededFor", visitor);
                 accept(insurance, "insurance", visitor, Reference.class);
                 accept(supportingInfo, "supportingInfo", visitor, Reference.class);
                 accept(note, "note", visitor, Annotation.class);
@@ -523,22 +548,24 @@ public class DeviceRequest extends DomainResource {
             Objects.equals(instantiatesCanonical, other.instantiatesCanonical) && 
             Objects.equals(instantiatesUri, other.instantiatesUri) && 
             Objects.equals(basedOn, other.basedOn) && 
-            Objects.equals(priorRequest, other.priorRequest) && 
+            Objects.equals(replaces, other.replaces) && 
             Objects.equals(groupIdentifier, other.groupIdentifier) && 
             Objects.equals(status, other.status) && 
             Objects.equals(intent, other.intent) && 
             Objects.equals(priority, other.priority) && 
+            Objects.equals(doNotPerform, other.doNotPerform) && 
             Objects.equals(code, other.code) && 
+            Objects.equals(quantity, other.quantity) && 
             Objects.equals(parameter, other.parameter) && 
             Objects.equals(subject, other.subject) && 
             Objects.equals(encounter, other.encounter) && 
             Objects.equals(occurrence, other.occurrence) && 
             Objects.equals(authoredOn, other.authoredOn) && 
             Objects.equals(requester, other.requester) && 
-            Objects.equals(performerType, other.performerType) && 
             Objects.equals(performer, other.performer) && 
-            Objects.equals(reasonCode, other.reasonCode) && 
-            Objects.equals(reasonReference, other.reasonReference) && 
+            Objects.equals(reason, other.reason) && 
+            Objects.equals(asNeeded, other.asNeeded) && 
+            Objects.equals(asNeededFor, other.asNeededFor) && 
             Objects.equals(insurance, other.insurance) && 
             Objects.equals(supportingInfo, other.supportingInfo) && 
             Objects.equals(note, other.note) && 
@@ -561,22 +588,24 @@ public class DeviceRequest extends DomainResource {
                 instantiatesCanonical, 
                 instantiatesUri, 
                 basedOn, 
-                priorRequest, 
+                replaces, 
                 groupIdentifier, 
                 status, 
                 intent, 
                 priority, 
+                doNotPerform, 
                 code, 
+                quantity, 
                 parameter, 
                 subject, 
                 encounter, 
                 occurrence, 
                 authoredOn, 
                 requester, 
-                performerType, 
                 performer, 
-                reasonCode, 
-                reasonReference, 
+                reason, 
+                asNeeded, 
+                asNeededFor, 
                 insurance, 
                 supportingInfo, 
                 note, 
@@ -600,22 +629,24 @@ public class DeviceRequest extends DomainResource {
         private List<Canonical> instantiatesCanonical = new ArrayList<>();
         private List<Uri> instantiatesUri = new ArrayList<>();
         private List<Reference> basedOn = new ArrayList<>();
-        private List<Reference> priorRequest = new ArrayList<>();
+        private List<Reference> replaces = new ArrayList<>();
         private Identifier groupIdentifier;
         private DeviceRequestStatus status;
         private RequestIntent intent;
         private RequestPriority priority;
-        private Element code;
+        private Boolean doNotPerform;
+        private CodeableReference code;
+        private Integer quantity;
         private List<Parameter> parameter = new ArrayList<>();
         private Reference subject;
         private Reference encounter;
-        private Element occurrence;
+        private org.linuxforhealth.fhir.model.type.Element occurrence;
         private DateTime authoredOn;
         private Reference requester;
-        private CodeableConcept performerType;
-        private Reference performer;
-        private List<CodeableConcept> reasonCode = new ArrayList<>();
-        private List<Reference> reasonReference = new ArrayList<>();
+        private CodeableReference performer;
+        private List<CodeableReference> reason = new ArrayList<>();
+        private Boolean asNeeded;
+        private CodeableConcept asNeededFor;
         private List<Reference> insurance = new ArrayList<>();
         private List<Reference> supportingInfo = new ArrayList<>();
         private List<Annotation> note = new ArrayList<>();
@@ -703,7 +734,8 @@ public class DeviceRequest extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -721,7 +753,8 @@ public class DeviceRequest extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -742,7 +775,7 @@ public class DeviceRequest extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -762,7 +795,7 @@ public class DeviceRequest extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -787,9 +820,9 @@ public class DeviceRequest extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -812,9 +845,9 @@ public class DeviceRequest extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1002,15 +1035,20 @@ public class DeviceRequest extends DomainResource {
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param priorRequest
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link DeviceRequest}</li>
+         * </ul>
+         * 
+         * @param replaces
          *     What request replaces
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder priorRequest(Reference... priorRequest) {
-            for (Reference value : priorRequest) {
-                this.priorRequest.add(value);
+        public Builder replaces(Reference... replaces) {
+            for (Reference value : replaces) {
+                this.replaces.add(value);
             }
             return this;
         }
@@ -1021,7 +1059,12 @@ public class DeviceRequest extends DomainResource {
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param priorRequest
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link DeviceRequest}</li>
+         * </ul>
+         * 
+         * @param replaces
          *     What request replaces
          * 
          * @return
@@ -1030,13 +1073,16 @@ public class DeviceRequest extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder priorRequest(Collection<Reference> priorRequest) {
-            this.priorRequest = new ArrayList<>(priorRequest);
+        public Builder replaces(Collection<Reference> replaces) {
+            this.replaces = new ArrayList<>(replaces);
             return this;
         }
 
         /**
-         * Composite request this is part of.
+         * A shared identifier common to multiple independent Request instances that were activated/authorized more or less 
+         * simultaneously by a single author. The presence of the same identifier on each request ties those requests together 
+         * and may have business ramifications in terms of reporting of results, billing, etc. E.g. a requisition number shared 
+         * by a set of lab tests ordered together, or a prescription number shared by all meds ordered at one time.
          * 
          * @param groupIdentifier
          *     Identifier of composite request
@@ -1080,7 +1126,7 @@ public class DeviceRequest extends DomainResource {
         }
 
         /**
-         * Indicates how quickly the {{title}} should be addressed with respect to other requests.
+         * Indicates how quickly the request should be addressed with respect to other requests.
          * 
          * @param priority
          *     routine | urgent | asap | stat
@@ -1094,20 +1140,41 @@ public class DeviceRequest extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code doNotPerform}.
+         * 
+         * @param doNotPerform
+         *     True if the request is to stop or not to start using the device
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #doNotPerform(org.linuxforhealth.fhir.model.type.Boolean)
+         */
+        public Builder doNotPerform(java.lang.Boolean doNotPerform) {
+            this.doNotPerform = (doNotPerform == null) ? null : Boolean.of(doNotPerform);
+            return this;
+        }
+
+        /**
+         * If true, indicates that the provider is asking for the patient to either stop using or to not start using the 
+         * specified device or category of devices. For example, the patient has undergone surgery and the provider is indicating 
+         * that the patient should not wear contact lenses.
+         * 
+         * @param doNotPerform
+         *     True if the request is to stop or not to start using the device
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder doNotPerform(Boolean doNotPerform) {
+            this.doNotPerform = doNotPerform;
+            return this;
+        }
+
+        /**
          * The details of the device to be used.
          * 
          * <p>This element is required.
-         * 
-         * <p>This is a choice element with the following allowed types:
-         * <ul>
-         * <li>{@link Reference}</li>
-         * <li>{@link CodeableConcept}</li>
-         * </ul>
-         * 
-         * When of type {@link Reference}, the allowed resource types for this reference are:
-         * <ul>
-         * <li>{@link Device}</li>
-         * </ul>
          * 
          * @param code
          *     Device requested
@@ -1115,8 +1182,38 @@ public class DeviceRequest extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder code(Element code) {
+        public Builder code(CodeableReference code) {
             this.code = code;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code quantity}.
+         * 
+         * @param quantity
+         *     Quantity of devices to supply
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #quantity(org.linuxforhealth.fhir.model.type.Integer)
+         */
+        public Builder quantity(java.lang.Integer quantity) {
+            this.quantity = (quantity == null) ? null : Integer.of(quantity);
+            return this;
+        }
+
+        /**
+         * The number of devices to be provided.
+         * 
+         * @param quantity
+         *     Quantity of devices to supply
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder quantity(Integer quantity) {
+            this.quantity = quantity;
             return this;
         }
 
@@ -1220,7 +1317,7 @@ public class DeviceRequest extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder occurrence(Element occurrence) {
+        public Builder occurrence(org.linuxforhealth.fhir.model.type.Element occurrence) {
             this.occurrence = occurrence;
             return this;
         }
@@ -1240,7 +1337,7 @@ public class DeviceRequest extends DomainResource {
         }
 
         /**
-         * The individual who initiated the request and has responsibility for its activation.
+         * The individual or entity who initiated the request and has responsibility for its activation.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
@@ -1251,7 +1348,7 @@ public class DeviceRequest extends DomainResource {
          * </ul>
          * 
          * @param requester
-         *     Who/what is requesting diagnostics
+         *     Who/what submitted the device request
          * 
          * @return
          *     A reference to this Builder instance
@@ -1262,33 +1359,7 @@ public class DeviceRequest extends DomainResource {
         }
 
         /**
-         * Desired type of performer for doing the diagnostic testing.
-         * 
-         * @param performerType
-         *     Filler role
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder performerType(CodeableConcept performerType) {
-            this.performerType = performerType;
-            return this;
-        }
-
-        /**
-         * The desired performer for doing the diagnostic testing.
-         * 
-         * <p>Allowed resource types for this reference:
-         * <ul>
-         * <li>{@link Practitioner}</li>
-         * <li>{@link PractitionerRole}</li>
-         * <li>{@link Organization}</li>
-         * <li>{@link CareTeam}</li>
-         * <li>{@link HealthcareService}</li>
-         * <li>{@link Patient}</li>
-         * <li>{@link Device}</li>
-         * <li>{@link RelatedPerson}</li>
-         * </ul>
+         * The desired individual or entity to provide the device to the subject of the request (e.g., patient, location).
          * 
          * @param performer
          *     Requested Filler
@@ -1296,7 +1367,7 @@ public class DeviceRequest extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder performer(Reference performer) {
+        public Builder performer(CodeableReference performer) {
             this.performer = performer;
             return this;
         }
@@ -1307,15 +1378,15 @@ public class DeviceRequest extends DomainResource {
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
-         *     Coded Reason for request
+         * @param reason
+         *     Coded/Linked Reason for request
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder reasonCode(CodeableConcept... reasonCode) {
-            for (CodeableConcept value : reasonCode) {
-                this.reasonCode.add(value);
+        public Builder reason(CodeableReference... reason) {
+            for (CodeableReference value : reason) {
+                this.reason.add(value);
             }
             return this;
         }
@@ -1326,8 +1397,8 @@ public class DeviceRequest extends DomainResource {
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
-         *     Coded Reason for request
+         * @param reason
+         *     Coded/Linked Reason for request
          * 
          * @return
          *     A reference to this Builder instance
@@ -1335,63 +1406,52 @@ public class DeviceRequest extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder reasonCode(Collection<CodeableConcept> reasonCode) {
-            this.reasonCode = new ArrayList<>(reasonCode);
+        public Builder reason(Collection<CodeableReference> reason) {
+            this.reason = new ArrayList<>(reason);
             return this;
         }
 
         /**
-         * Reason or justification for the use of this device.
+         * Convenience method for setting {@code asNeeded}.
          * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Linked Reason for request
+         * @param asNeeded
+         *     PRN status of request
          * 
          * @return
          *     A reference to this Builder instance
+         * 
+         * @see #asNeeded(org.linuxforhealth.fhir.model.type.Boolean)
          */
-        public Builder reasonReference(Reference... reasonReference) {
-            for (Reference value : reasonReference) {
-                this.reasonReference.add(value);
-            }
+        public Builder asNeeded(java.lang.Boolean asNeeded) {
+            this.asNeeded = (asNeeded == null) ? null : Boolean.of(asNeeded);
             return this;
         }
 
         /**
-         * Reason or justification for the use of this device.
+         * This status is to indicate whether the request is a PRN or may be given as needed.
          * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Linked Reason for request
+         * @param asNeeded
+         *     PRN status of request
          * 
          * @return
          *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
          */
-        public Builder reasonReference(Collection<Reference> reasonReference) {
-            this.reasonReference = new ArrayList<>(reasonReference);
+        public Builder asNeeded(Boolean asNeeded) {
+            this.asNeeded = asNeeded;
+            return this;
+        }
+
+        /**
+         * The reason for using the device.
+         * 
+         * @param asNeededFor
+         *     Device usage reason
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder asNeededFor(CodeableConcept asNeededFor) {
+            this.asNeededFor = asNeededFor;
             return this;
         }
 
@@ -1609,24 +1669,21 @@ public class DeviceRequest extends DomainResource {
             ValidationSupport.checkList(deviceRequest.instantiatesCanonical, "instantiatesCanonical", Canonical.class);
             ValidationSupport.checkList(deviceRequest.instantiatesUri, "instantiatesUri", Uri.class);
             ValidationSupport.checkList(deviceRequest.basedOn, "basedOn", Reference.class);
-            ValidationSupport.checkList(deviceRequest.priorRequest, "priorRequest", Reference.class);
+            ValidationSupport.checkList(deviceRequest.replaces, "replaces", Reference.class);
             ValidationSupport.requireNonNull(deviceRequest.intent, "intent");
-            ValidationSupport.requireChoiceElement(deviceRequest.code, "code", Reference.class, CodeableConcept.class);
+            ValidationSupport.requireNonNull(deviceRequest.code, "code");
             ValidationSupport.checkList(deviceRequest.parameter, "parameter", Parameter.class);
             ValidationSupport.requireNonNull(deviceRequest.subject, "subject");
             ValidationSupport.choiceElement(deviceRequest.occurrence, "occurrence", DateTime.class, Period.class, Timing.class);
-            ValidationSupport.checkList(deviceRequest.reasonCode, "reasonCode", CodeableConcept.class);
-            ValidationSupport.checkList(deviceRequest.reasonReference, "reasonReference", Reference.class);
+            ValidationSupport.checkList(deviceRequest.reason, "reason", CodeableReference.class);
             ValidationSupport.checkList(deviceRequest.insurance, "insurance", Reference.class);
             ValidationSupport.checkList(deviceRequest.supportingInfo, "supportingInfo", Reference.class);
             ValidationSupport.checkList(deviceRequest.note, "note", Annotation.class);
             ValidationSupport.checkList(deviceRequest.relevantHistory, "relevantHistory", Reference.class);
-            ValidationSupport.checkReferenceType(deviceRequest.code, "code", "Device");
+            ValidationSupport.checkReferenceType(deviceRequest.replaces, "replaces", "DeviceRequest");
             ValidationSupport.checkReferenceType(deviceRequest.subject, "subject", "Patient", "Group", "Location", "Device");
             ValidationSupport.checkReferenceType(deviceRequest.encounter, "encounter", "Encounter");
             ValidationSupport.checkReferenceType(deviceRequest.requester, "requester", "Device", "Practitioner", "PractitionerRole", "Organization");
-            ValidationSupport.checkReferenceType(deviceRequest.performer, "performer", "Practitioner", "PractitionerRole", "Organization", "CareTeam", "HealthcareService", "Patient", "Device", "RelatedPerson");
-            ValidationSupport.checkReferenceType(deviceRequest.reasonReference, "reasonReference", "Condition", "Observation", "DiagnosticReport", "DocumentReference");
             ValidationSupport.checkReferenceType(deviceRequest.insurance, "insurance", "Coverage", "ClaimResponse");
             ValidationSupport.checkReferenceType(deviceRequest.relevantHistory, "relevantHistory", "Provenance");
         }
@@ -1637,22 +1694,24 @@ public class DeviceRequest extends DomainResource {
             instantiatesCanonical.addAll(deviceRequest.instantiatesCanonical);
             instantiatesUri.addAll(deviceRequest.instantiatesUri);
             basedOn.addAll(deviceRequest.basedOn);
-            priorRequest.addAll(deviceRequest.priorRequest);
+            replaces.addAll(deviceRequest.replaces);
             groupIdentifier = deviceRequest.groupIdentifier;
             status = deviceRequest.status;
             intent = deviceRequest.intent;
             priority = deviceRequest.priority;
+            doNotPerform = deviceRequest.doNotPerform;
             code = deviceRequest.code;
+            quantity = deviceRequest.quantity;
             parameter.addAll(deviceRequest.parameter);
             subject = deviceRequest.subject;
             encounter = deviceRequest.encounter;
             occurrence = deviceRequest.occurrence;
             authoredOn = deviceRequest.authoredOn;
             requester = deviceRequest.requester;
-            performerType = deviceRequest.performerType;
             performer = deviceRequest.performer;
-            reasonCode.addAll(deviceRequest.reasonCode);
-            reasonReference.addAll(deviceRequest.reasonReference);
+            reason.addAll(deviceRequest.reason);
+            asNeeded = deviceRequest.asNeeded;
+            asNeededFor = deviceRequest.asNeededFor;
             insurance.addAll(deviceRequest.insurance);
             supportingInfo.addAll(deviceRequest.supportingInfo);
             note.addAll(deviceRequest.note);
@@ -1672,7 +1731,7 @@ public class DeviceRequest extends DomainResource {
         )
         private final CodeableConcept code;
         @Choice({ CodeableConcept.class, Quantity.class, Range.class, Boolean.class })
-        private final Element value;
+        private final org.linuxforhealth.fhir.model.type.Element value;
 
         private Parameter(Builder builder) {
             super(builder);
@@ -1697,7 +1756,7 @@ public class DeviceRequest extends DomainResource {
          *     An immutable object of type {@link CodeableConcept}, {@link Quantity}, {@link Range} or {@link Boolean} that may be 
          *     null.
          */
-        public Element getValue() {
+        public org.linuxforhealth.fhir.model.type.Element getValue() {
             return value;
         }
 
@@ -1769,7 +1828,7 @@ public class DeviceRequest extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private CodeableConcept code;
-            private Element value;
+            private org.linuxforhealth.fhir.model.type.Element value;
 
             private Builder() {
                 super();
@@ -1792,7 +1851,7 @@ public class DeviceRequest extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1812,7 +1871,7 @@ public class DeviceRequest extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1837,7 +1896,7 @@ public class DeviceRequest extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1862,7 +1921,7 @@ public class DeviceRequest extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1933,7 +1992,7 @@ public class DeviceRequest extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder value(Element value) {
+            public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                 this.value = value;
                 return this;
             }

@@ -1,0 +1,5 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Sun May 03 13:33:57 IST 2026
+fhir-core-5.0.0-SNAPSHOT.pom>=
+fhir-core-5.0.0-SNAPSHOT.jar>=
+fhir-core-5.0.0-SNAPSHOT-tests.jar>=

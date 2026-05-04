@@ -22,10 +22,12 @@ import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
+import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
 import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.Element;
+import org.linuxforhealth.fhir.model.type.Expression;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Markdown;
@@ -45,10 +47,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * A single issue - either an indication, contraindication, interaction or an undesirable effect for a medicinal product, 
  * medication, device or procedure.
  * 
- * <p>Maturity level: FMM1 (Trial Use)
+ * <p>Maturity level: FMM2 (Trial Use)
  */
 @Maturity(
-    level = 1,
+    level = 2,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
@@ -104,7 +106,7 @@ public class ClinicalUseDefinition extends DomainResource {
         bindingName = "ClinicalUseDefinitionType",
         strength = BindingStrength.Value.REQUIRED,
         description = "Overall defining type of this clinical use definition.",
-        valueSet = "http://hl7.org/fhir/ValueSet/clinical-use-definition-type|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/clinical-use-definition-type|5.0.0"
     )
     @Required
     private final ClinicalUseDefinitionType type;
@@ -117,7 +119,7 @@ public class ClinicalUseDefinition extends DomainResource {
     )
     private final List<CodeableConcept> category;
     @Summary
-    @ReferenceTarget({ "MedicinalProductDefinition", "Medication", "ActivityDefinition", "PlanDefinition", "Device", "DeviceDefinition", "Substance" })
+    @ReferenceTarget({ "MedicinalProductDefinition", "Medication", "ActivityDefinition", "PlanDefinition", "Device", "DeviceDefinition", "Substance", "NutritionProduct", "BiologicallyDerivedProduct" })
     private final List<Reference> subject;
     @Summary
     @Binding(
@@ -137,6 +139,8 @@ public class ClinicalUseDefinition extends DomainResource {
     @ReferenceTarget({ "Group" })
     private final List<Reference> population;
     @Summary
+    private final List<Canonical> library;
+    @Summary
     private final UndesirableEffect undesirableEffect;
     @Summary
     private final Warning warning;
@@ -152,6 +156,7 @@ public class ClinicalUseDefinition extends DomainResource {
         indication = builder.indication;
         interaction = builder.interaction;
         population = Collections.unmodifiableList(builder.population);
+        library = Collections.unmodifiableList(builder.library);
         undesirableEffect = builder.undesirableEffect;
         warning = builder.warning;
     }
@@ -188,7 +193,7 @@ public class ClinicalUseDefinition extends DomainResource {
     }
 
     /**
-     * The medication or procedure for which this is an indication.
+     * The medication, product, substance, device, procedure etc. for which this is an indication.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
@@ -248,6 +253,16 @@ public class ClinicalUseDefinition extends DomainResource {
     }
 
     /**
+     * Logic used by the clinical use definition.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Canonical} that may be empty.
+     */
+    public List<Canonical> getLibrary() {
+        return library;
+    }
+
+    /**
      * Describe the possible undesirable effects (negative outcomes) from the use of the medicinal product as treatment.
      * 
      * @return
@@ -281,6 +296,7 @@ public class ClinicalUseDefinition extends DomainResource {
             (indication != null) || 
             (interaction != null) || 
             !population.isEmpty() || 
+            !library.isEmpty() || 
             (undesirableEffect != null) || 
             (warning != null);
     }
@@ -308,6 +324,7 @@ public class ClinicalUseDefinition extends DomainResource {
                 accept(indication, "indication", visitor);
                 accept(interaction, "interaction", visitor);
                 accept(population, "population", visitor, Reference.class);
+                accept(library, "library", visitor, Canonical.class);
                 accept(undesirableEffect, "undesirableEffect", visitor);
                 accept(warning, "warning", visitor);
             }
@@ -345,6 +362,7 @@ public class ClinicalUseDefinition extends DomainResource {
             Objects.equals(indication, other.indication) && 
             Objects.equals(interaction, other.interaction) && 
             Objects.equals(population, other.population) && 
+            Objects.equals(library, other.library) && 
             Objects.equals(undesirableEffect, other.undesirableEffect) && 
             Objects.equals(warning, other.warning);
     }
@@ -370,6 +388,7 @@ public class ClinicalUseDefinition extends DomainResource {
                 indication, 
                 interaction, 
                 population, 
+                library, 
                 undesirableEffect, 
                 warning);
             hashCode = result;
@@ -396,6 +415,7 @@ public class ClinicalUseDefinition extends DomainResource {
         private Indication indication;
         private Interaction interaction;
         private List<Reference> population = new ArrayList<>();
+        private List<Canonical> library = new ArrayList<>();
         private UndesirableEffect undesirableEffect;
         private Warning warning;
 
@@ -481,7 +501,8 @@ public class ClinicalUseDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -499,7 +520,8 @@ public class ClinicalUseDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -520,7 +542,7 @@ public class ClinicalUseDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -540,7 +562,7 @@ public class ClinicalUseDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -565,9 +587,9 @@ public class ClinicalUseDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -590,9 +612,9 @@ public class ClinicalUseDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -713,7 +735,7 @@ public class ClinicalUseDefinition extends DomainResource {
         }
 
         /**
-         * The medication or procedure for which this is an indication.
+         * The medication, product, substance, device, procedure etc. for which this is an indication.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -727,10 +749,12 @@ public class ClinicalUseDefinition extends DomainResource {
          * <li>{@link Device}</li>
          * <li>{@link DeviceDefinition}</li>
          * <li>{@link Substance}</li>
+         * <li>{@link NutritionProduct}</li>
+         * <li>{@link BiologicallyDerivedProduct}</li>
          * </ul>
          * 
          * @param subject
-         *     The medication or procedure for which this is an indication
+         *     The medication, product, substance, device, procedure etc. for which this is an indication
          * 
          * @return
          *     A reference to this Builder instance
@@ -743,7 +767,7 @@ public class ClinicalUseDefinition extends DomainResource {
         }
 
         /**
-         * The medication or procedure for which this is an indication.
+         * The medication, product, substance, device, procedure etc. for which this is an indication.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -757,10 +781,12 @@ public class ClinicalUseDefinition extends DomainResource {
          * <li>{@link Device}</li>
          * <li>{@link DeviceDefinition}</li>
          * <li>{@link Substance}</li>
+         * <li>{@link NutritionProduct}</li>
+         * <li>{@link BiologicallyDerivedProduct}</li>
          * </ul>
          * 
          * @param subject
-         *     The medication or procedure for which this is an indication
+         *     The medication, product, substance, device, procedure etc. for which this is an indication
          * 
          * @return
          *     A reference to this Builder instance
@@ -879,6 +905,45 @@ public class ClinicalUseDefinition extends DomainResource {
         }
 
         /**
+         * Logic used by the clinical use definition.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param library
+         *     Logic used by the clinical use definition
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder library(Canonical... library) {
+            for (Canonical value : library) {
+                this.library.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Logic used by the clinical use definition.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param library
+         *     Logic used by the clinical use definition
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder library(Collection<Canonical> library) {
+            this.library = new ArrayList<>(library);
+            return this;
+        }
+
+        /**
          * Describe the possible undesirable effects (negative outcomes) from the use of the medicinal product as treatment.
          * 
          * @param undesirableEffect
@@ -938,7 +1003,8 @@ public class ClinicalUseDefinition extends DomainResource {
             ValidationSupport.checkList(clinicalUseDefinition.category, "category", CodeableConcept.class);
             ValidationSupport.checkList(clinicalUseDefinition.subject, "subject", Reference.class);
             ValidationSupport.checkList(clinicalUseDefinition.population, "population", Reference.class);
-            ValidationSupport.checkReferenceType(clinicalUseDefinition.subject, "subject", "MedicinalProductDefinition", "Medication", "ActivityDefinition", "PlanDefinition", "Device", "DeviceDefinition", "Substance");
+            ValidationSupport.checkList(clinicalUseDefinition.library, "library", Canonical.class);
+            ValidationSupport.checkReferenceType(clinicalUseDefinition.subject, "subject", "MedicinalProductDefinition", "Medication", "ActivityDefinition", "PlanDefinition", "Device", "DeviceDefinition", "Substance", "NutritionProduct", "BiologicallyDerivedProduct");
             ValidationSupport.checkReferenceType(clinicalUseDefinition.population, "population", "Group");
         }
 
@@ -953,6 +1019,7 @@ public class ClinicalUseDefinition extends DomainResource {
             indication = clinicalUseDefinition.indication;
             interaction = clinicalUseDefinition.interaction;
             population.addAll(clinicalUseDefinition.population);
+            library.addAll(clinicalUseDefinition.library);
             undesirableEffect = clinicalUseDefinition.undesirableEffect;
             warning = clinicalUseDefinition.warning;
             return this;
@@ -990,6 +1057,7 @@ public class ClinicalUseDefinition extends DomainResource {
         @Summary
         @ReferenceTarget({ "ClinicalUseDefinition" })
         private final List<Reference> indication;
+        private final Expression applicability;
         @Summary
         private final List<OtherTherapy> otherTherapy;
 
@@ -999,6 +1067,7 @@ public class ClinicalUseDefinition extends DomainResource {
             diseaseStatus = builder.diseaseStatus;
             comorbidity = Collections.unmodifiableList(builder.comorbidity);
             indication = Collections.unmodifiableList(builder.indication);
+            applicability = builder.applicability;
             otherTherapy = Collections.unmodifiableList(builder.otherTherapy);
         }
 
@@ -1043,6 +1112,17 @@ public class ClinicalUseDefinition extends DomainResource {
         }
 
         /**
+         * An expression that returns true or false, indicating whether the indication is applicable or not, after having applied 
+         * its other elements.
+         * 
+         * @return
+         *     An immutable object of type {@link Expression} that may be null.
+         */
+        public Expression getApplicability() {
+            return applicability;
+        }
+
+        /**
          * Information about the use of the medicinal product in relation to other therapies described as part of the 
          * contraindication.
          * 
@@ -1060,6 +1140,7 @@ public class ClinicalUseDefinition extends DomainResource {
                 (diseaseStatus != null) || 
                 !comorbidity.isEmpty() || 
                 !indication.isEmpty() || 
+                (applicability != null) || 
                 !otherTherapy.isEmpty();
         }
 
@@ -1076,6 +1157,7 @@ public class ClinicalUseDefinition extends DomainResource {
                     accept(diseaseStatus, "diseaseStatus", visitor);
                     accept(comorbidity, "comorbidity", visitor, CodeableReference.class);
                     accept(indication, "indication", visitor, Reference.class);
+                    accept(applicability, "applicability", visitor);
                     accept(otherTherapy, "otherTherapy", visitor, OtherTherapy.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
@@ -1102,6 +1184,7 @@ public class ClinicalUseDefinition extends DomainResource {
                 Objects.equals(diseaseStatus, other.diseaseStatus) && 
                 Objects.equals(comorbidity, other.comorbidity) && 
                 Objects.equals(indication, other.indication) && 
+                Objects.equals(applicability, other.applicability) && 
                 Objects.equals(otherTherapy, other.otherTherapy);
         }
 
@@ -1116,6 +1199,7 @@ public class ClinicalUseDefinition extends DomainResource {
                     diseaseStatus, 
                     comorbidity, 
                     indication, 
+                    applicability, 
                     otherTherapy);
                 hashCode = result;
             }
@@ -1136,6 +1220,7 @@ public class ClinicalUseDefinition extends DomainResource {
             private CodeableReference diseaseStatus;
             private List<CodeableReference> comorbidity = new ArrayList<>();
             private List<Reference> indication = new ArrayList<>();
+            private Expression applicability;
             private List<OtherTherapy> otherTherapy = new ArrayList<>();
 
             private Builder() {
@@ -1159,7 +1244,7 @@ public class ClinicalUseDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1179,7 +1264,7 @@ public class ClinicalUseDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1204,7 +1289,7 @@ public class ClinicalUseDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1229,7 +1314,7 @@ public class ClinicalUseDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1370,6 +1455,22 @@ public class ClinicalUseDefinition extends DomainResource {
             }
 
             /**
+             * An expression that returns true or false, indicating whether the indication is applicable or not, after having applied 
+             * its other elements.
+             * 
+             * @param applicability
+             *     An expression that returns true or false, indicating whether the indication is applicable or not, after having applied 
+             *     its other elements
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder applicability(Expression applicability) {
+                this.applicability = applicability;
+                return this;
+            }
+
+            /**
              * Information about the use of the medicinal product in relation to other therapies described as part of the 
              * contraindication.
              * 
@@ -1442,6 +1543,7 @@ public class ClinicalUseDefinition extends DomainResource {
                 diseaseStatus = contraindication.diseaseStatus;
                 comorbidity.addAll(contraindication.comorbidity);
                 indication.addAll(contraindication.indication);
+                applicability = contraindication.applicability;
                 otherTherapy.addAll(contraindication.otherTherapy);
                 return this;
             }
@@ -1469,12 +1571,12 @@ public class ClinicalUseDefinition extends DomainResource {
                 valueSet = "http://hl7.org/fhir/ValueSet/therapy"
             )
             @Required
-            private final CodeableReference therapy;
+            private final CodeableReference treatment;
 
             private OtherTherapy(Builder builder) {
                 super(builder);
                 relationshipType = builder.relationshipType;
-                therapy = builder.therapy;
+                treatment = builder.treatment;
             }
 
             /**
@@ -1488,21 +1590,21 @@ public class ClinicalUseDefinition extends DomainResource {
             }
 
             /**
-             * Reference to a specific medication (active substance, medicinal product or class of products) as part of an indication 
-             * or contraindication.
+             * Reference to a specific medication (active substance, medicinal product or class of products, biological, food etc.) 
+             * as part of an indication or contraindication.
              * 
              * @return
              *     An immutable object of type {@link CodeableReference} that is non-null.
              */
-            public CodeableReference getTherapy() {
-                return therapy;
+            public CodeableReference getTreatment() {
+                return treatment;
             }
 
             @Override
             public boolean hasChildren() {
                 return super.hasChildren() || 
                     (relationshipType != null) || 
-                    (therapy != null);
+                    (treatment != null);
             }
 
             @Override
@@ -1515,7 +1617,7 @@ public class ClinicalUseDefinition extends DomainResource {
                         accept(extension, "extension", visitor, Extension.class);
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                         accept(relationshipType, "relationshipType", visitor);
-                        accept(therapy, "therapy", visitor);
+                        accept(treatment, "treatment", visitor);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
                     visitor.postVisit(this);
@@ -1538,7 +1640,7 @@ public class ClinicalUseDefinition extends DomainResource {
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
                     Objects.equals(relationshipType, other.relationshipType) && 
-                    Objects.equals(therapy, other.therapy);
+                    Objects.equals(treatment, other.treatment);
             }
 
             @Override
@@ -1549,7 +1651,7 @@ public class ClinicalUseDefinition extends DomainResource {
                         extension, 
                         modifierExtension, 
                         relationshipType, 
-                        therapy);
+                        treatment);
                     hashCode = result;
                 }
                 return result;
@@ -1566,7 +1668,7 @@ public class ClinicalUseDefinition extends DomainResource {
 
             public static class Builder extends BackboneElement.Builder {
                 private CodeableConcept relationshipType;
-                private CodeableReference therapy;
+                private CodeableReference treatment;
 
                 private Builder() {
                     super();
@@ -1589,7 +1691,7 @@ public class ClinicalUseDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1609,7 +1711,7 @@ public class ClinicalUseDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1634,7 +1736,7 @@ public class ClinicalUseDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -1659,7 +1761,7 @@ public class ClinicalUseDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -1700,19 +1802,19 @@ public class ClinicalUseDefinition extends DomainResource {
                 }
 
                 /**
-                 * Reference to a specific medication (active substance, medicinal product or class of products) as part of an indication 
-                 * or contraindication.
+                 * Reference to a specific medication (active substance, medicinal product or class of products, biological, food etc.) 
+                 * as part of an indication or contraindication.
                  * 
                  * <p>This element is required.
                  * 
-                 * @param therapy
-                 *     Reference to a specific medication as part of an indication or contraindication
+                 * @param treatment
+                 *     Reference to a specific medication, substance etc. as part of an indication or contraindication
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder therapy(CodeableReference therapy) {
-                    this.therapy = therapy;
+                public Builder treatment(CodeableReference treatment) {
+                    this.treatment = treatment;
                     return this;
                 }
 
@@ -1722,7 +1824,7 @@ public class ClinicalUseDefinition extends DomainResource {
                  * <p>Required elements:
                  * <ul>
                  * <li>relationshipType</li>
-                 * <li>therapy</li>
+                 * <li>treatment</li>
                  * </ul>
                  * 
                  * @return
@@ -1742,14 +1844,14 @@ public class ClinicalUseDefinition extends DomainResource {
                 protected void validate(OtherTherapy otherTherapy) {
                     super.validate(otherTherapy);
                     ValidationSupport.requireNonNull(otherTherapy.relationshipType, "relationshipType");
-                    ValidationSupport.requireNonNull(otherTherapy.therapy, "therapy");
+                    ValidationSupport.requireNonNull(otherTherapy.treatment, "treatment");
                     ValidationSupport.requireValueOrChildren(otherTherapy);
                 }
 
                 protected Builder from(OtherTherapy otherTherapy) {
                     super.from(otherTherapy);
                     relationshipType = otherTherapy.relationshipType;
-                    therapy = otherTherapy.therapy;
+                    treatment = otherTherapy.treatment;
                     return this;
                 }
             }
@@ -1794,10 +1896,11 @@ public class ClinicalUseDefinition extends DomainResource {
         private final CodeableReference intendedEffect;
         @Summary
         @Choice({ Range.class, String.class })
-        private final Element duration;
+        private final org.linuxforhealth.fhir.model.type.Element duration;
         @Summary
         @ReferenceTarget({ "ClinicalUseDefinition" })
         private final List<Reference> undesirableEffect;
+        private final Expression applicability;
         @Summary
         private final List<ClinicalUseDefinition.Contraindication.OtherTherapy> otherTherapy;
 
@@ -1809,6 +1912,7 @@ public class ClinicalUseDefinition extends DomainResource {
             intendedEffect = builder.intendedEffect;
             duration = builder.duration;
             undesirableEffect = Collections.unmodifiableList(builder.undesirableEffect);
+            applicability = builder.applicability;
             otherTherapy = Collections.unmodifiableList(builder.otherTherapy);
         }
 
@@ -1860,7 +1964,7 @@ public class ClinicalUseDefinition extends DomainResource {
          * @return
          *     An immutable object of type {@link Range} or {@link String} that may be null.
          */
-        public Element getDuration() {
+        public org.linuxforhealth.fhir.model.type.Element getDuration() {
             return duration;
         }
 
@@ -1873,6 +1977,17 @@ public class ClinicalUseDefinition extends DomainResource {
          */
         public List<Reference> getUndesirableEffect() {
             return undesirableEffect;
+        }
+
+        /**
+         * An expression that returns true or false, indicating whether the indication is applicable or not, after having applied 
+         * its other elements.
+         * 
+         * @return
+         *     An immutable object of type {@link Expression} that may be null.
+         */
+        public Expression getApplicability() {
+            return applicability;
         }
 
         /**
@@ -1894,6 +2009,7 @@ public class ClinicalUseDefinition extends DomainResource {
                 (intendedEffect != null) || 
                 (duration != null) || 
                 !undesirableEffect.isEmpty() || 
+                (applicability != null) || 
                 !otherTherapy.isEmpty();
         }
 
@@ -1912,6 +2028,7 @@ public class ClinicalUseDefinition extends DomainResource {
                     accept(intendedEffect, "intendedEffect", visitor);
                     accept(duration, "duration", visitor);
                     accept(undesirableEffect, "undesirableEffect", visitor, Reference.class);
+                    accept(applicability, "applicability", visitor);
                     accept(otherTherapy, "otherTherapy", visitor, ClinicalUseDefinition.Contraindication.OtherTherapy.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
@@ -1940,6 +2057,7 @@ public class ClinicalUseDefinition extends DomainResource {
                 Objects.equals(intendedEffect, other.intendedEffect) && 
                 Objects.equals(duration, other.duration) && 
                 Objects.equals(undesirableEffect, other.undesirableEffect) && 
+                Objects.equals(applicability, other.applicability) && 
                 Objects.equals(otherTherapy, other.otherTherapy);
         }
 
@@ -1956,6 +2074,7 @@ public class ClinicalUseDefinition extends DomainResource {
                     intendedEffect, 
                     duration, 
                     undesirableEffect, 
+                    applicability, 
                     otherTherapy);
                 hashCode = result;
             }
@@ -1976,8 +2095,9 @@ public class ClinicalUseDefinition extends DomainResource {
             private CodeableReference diseaseStatus;
             private List<CodeableReference> comorbidity = new ArrayList<>();
             private CodeableReference intendedEffect;
-            private Element duration;
+            private org.linuxforhealth.fhir.model.type.Element duration;
             private List<Reference> undesirableEffect = new ArrayList<>();
+            private Expression applicability;
             private List<ClinicalUseDefinition.Contraindication.OtherTherapy> otherTherapy = new ArrayList<>();
 
             private Builder() {
@@ -2001,7 +2121,7 @@ public class ClinicalUseDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2021,7 +2141,7 @@ public class ClinicalUseDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2046,7 +2166,7 @@ public class ClinicalUseDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2071,7 +2191,7 @@ public class ClinicalUseDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2209,7 +2329,7 @@ public class ClinicalUseDefinition extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder duration(Element duration) {
+            public Builder duration(org.linuxforhealth.fhir.model.type.Element duration) {
                 this.duration = duration;
                 return this;
             }
@@ -2262,6 +2382,22 @@ public class ClinicalUseDefinition extends DomainResource {
              */
             public Builder undesirableEffect(Collection<Reference> undesirableEffect) {
                 this.undesirableEffect = new ArrayList<>(undesirableEffect);
+                return this;
+            }
+
+            /**
+             * An expression that returns true or false, indicating whether the indication is applicable or not, after having applied 
+             * its other elements.
+             * 
+             * @param applicability
+             *     An expression that returns true or false, indicating whether the indication is applicable or not, after having applied 
+             *     its other elements
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder applicability(Expression applicability) {
+                this.applicability = applicability;
                 return this;
             }
 
@@ -2339,6 +2475,7 @@ public class ClinicalUseDefinition extends DomainResource {
                 intendedEffect = indication.intendedEffect;
                 duration = indication.duration;
                 undesirableEffect.addAll(indication.undesirableEffect);
+                applicability = indication.applicability;
                 otherTherapy.addAll(indication.otherTherapy);
                 return this;
             }
@@ -2394,7 +2531,7 @@ public class ClinicalUseDefinition extends DomainResource {
         }
 
         /**
-         * The specific medication, food, substance or laboratory test that interacts.
+         * The specific medication, product, food, substance etc. or laboratory test that interacts.
          * 
          * @return
          *     An unmodifiable list containing immutable objects of type {@link Interactant} that may be empty.
@@ -2549,7 +2686,7 @@ public class ClinicalUseDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2569,7 +2706,7 @@ public class ClinicalUseDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2594,7 +2731,7 @@ public class ClinicalUseDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2619,7 +2756,7 @@ public class ClinicalUseDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2644,13 +2781,13 @@ public class ClinicalUseDefinition extends DomainResource {
             }
 
             /**
-             * The specific medication, food, substance or laboratory test that interacts.
+             * The specific medication, product, food, substance etc. or laboratory test that interacts.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param interactant
-             *     The specific medication, food, substance or laboratory test that interacts
+             *     The specific medication, product, food etc. or laboratory test that interacts
              * 
              * @return
              *     A reference to this Builder instance
@@ -2663,13 +2800,13 @@ public class ClinicalUseDefinition extends DomainResource {
             }
 
             /**
-             * The specific medication, food, substance or laboratory test that interacts.
+             * The specific medication, product, food, substance etc. or laboratory test that interacts.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param interactant
-             *     The specific medication, food, substance or laboratory test that interacts
+             *     The specific medication, product, food etc. or laboratory test that interacts
              * 
              * @return
              *     A reference to this Builder instance
@@ -2799,20 +2936,20 @@ public class ClinicalUseDefinition extends DomainResource {
         }
 
         /**
-         * The specific medication, food, substance or laboratory test that interacts.
+         * The specific medication, product, food, substance etc. or laboratory test that interacts.
          */
         public static class Interactant extends BackboneElement {
             @Summary
-            @ReferenceTarget({ "MedicinalProductDefinition", "Medication", "Substance", "ObservationDefinition" })
+            @ReferenceTarget({ "MedicinalProductDefinition", "Medication", "Substance", "NutritionProduct", "BiologicallyDerivedProduct", "ObservationDefinition" })
             @Choice({ Reference.class, CodeableConcept.class })
             @Binding(
                 bindingName = "Interactant",
                 strength = BindingStrength.Value.EXAMPLE,
-                description = "An interactant - a substance that may have an clinically significant effect on another.",
+                description = "An interactant - a substance that may have a clinically significant effect on another.",
                 valueSet = "http://hl7.org/fhir/ValueSet/interactant"
             )
             @Required
-            private final Element item;
+            private final org.linuxforhealth.fhir.model.type.Element item;
 
             private Interactant(Builder builder) {
                 super(builder);
@@ -2820,12 +2957,12 @@ public class ClinicalUseDefinition extends DomainResource {
             }
 
             /**
-             * The specific medication, food or laboratory test that interacts.
+             * The specific medication, product, food, substance etc. or laboratory test that interacts.
              * 
              * @return
              *     An immutable object of type {@link Reference} or {@link CodeableConcept} that is non-null.
              */
-            public Element getItem() {
+            public org.linuxforhealth.fhir.model.type.Element getItem() {
                 return item;
             }
 
@@ -2892,7 +3029,7 @@ public class ClinicalUseDefinition extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private Element item;
+                private org.linuxforhealth.fhir.model.type.Element item;
 
                 private Builder() {
                     super();
@@ -2915,7 +3052,7 @@ public class ClinicalUseDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2935,7 +3072,7 @@ public class ClinicalUseDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2960,7 +3097,7 @@ public class ClinicalUseDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2985,7 +3122,7 @@ public class ClinicalUseDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3010,7 +3147,7 @@ public class ClinicalUseDefinition extends DomainResource {
                 }
 
                 /**
-                 * The specific medication, food or laboratory test that interacts.
+                 * The specific medication, product, food, substance etc. or laboratory test that interacts.
                  * 
                  * <p>This element is required.
                  * 
@@ -3025,16 +3162,18 @@ public class ClinicalUseDefinition extends DomainResource {
                  * <li>{@link MedicinalProductDefinition}</li>
                  * <li>{@link Medication}</li>
                  * <li>{@link Substance}</li>
+                 * <li>{@link NutritionProduct}</li>
+                 * <li>{@link BiologicallyDerivedProduct}</li>
                  * <li>{@link ObservationDefinition}</li>
                  * </ul>
                  * 
                  * @param item
-                 *     The specific medication, food or laboratory test that interacts
+                 *     The specific medication, product, food etc. or laboratory test that interacts
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder item(Element item) {
+                public Builder item(org.linuxforhealth.fhir.model.type.Element item) {
                     this.item = item;
                     return this;
                 }
@@ -3064,7 +3203,7 @@ public class ClinicalUseDefinition extends DomainResource {
                 protected void validate(Interactant interactant) {
                     super.validate(interactant);
                     ValidationSupport.requireChoiceElement(interactant.item, "item", Reference.class, CodeableConcept.class);
-                    ValidationSupport.checkReferenceType(interactant.item, "item", "MedicinalProductDefinition", "Medication", "Substance", "ObservationDefinition");
+                    ValidationSupport.checkReferenceType(interactant.item, "item", "MedicinalProductDefinition", "Medication", "Substance", "NutritionProduct", "BiologicallyDerivedProduct", "ObservationDefinition");
                     ValidationSupport.requireValueOrChildren(interactant);
                 }
 
@@ -3239,7 +3378,7 @@ public class ClinicalUseDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3259,7 +3398,7 @@ public class ClinicalUseDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3284,7 +3423,7 @@ public class ClinicalUseDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3309,7 +3448,7 @@ public class ClinicalUseDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3541,7 +3680,7 @@ public class ClinicalUseDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3561,7 +3700,7 @@ public class ClinicalUseDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3586,7 +3725,7 @@ public class ClinicalUseDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3611,7 +3750,7 @@ public class ClinicalUseDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 

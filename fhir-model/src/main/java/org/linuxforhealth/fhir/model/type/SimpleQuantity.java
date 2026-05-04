@@ -121,7 +121,7 @@ public class SimpleQuantity extends Quantity {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -141,7 +141,7 @@ public class SimpleQuantity extends Quantity {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -182,7 +182,7 @@ public class SimpleQuantity extends Quantity {
          * <p>This element is prohibited.
          * 
          * @param comparator
-         *     &lt; | &lt;= | &gt;= | &gt; - how to understand the value
+         *     &lt; | &lt;= | &gt;= | &gt; | ad - how to understand the value
          * 
          * @return
          *     A reference to this Builder instance

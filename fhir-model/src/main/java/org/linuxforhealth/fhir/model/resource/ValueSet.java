@@ -37,6 +37,8 @@ import org.linuxforhealth.fhir.model.type.Integer;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
+import org.linuxforhealth.fhir.model.type.Period;
+import org.linuxforhealth.fhir.model.type.RelatedArtifact;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.UsageContext;
@@ -59,11 +61,19 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     status = StandardsStatus.Value.NORMATIVE
 )
 @Constraint(
-    id = "vsd-0",
+    id = "cnl-0",
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
+    source = "http://hl7.org/fhir/StructureDefinition/ValueSet"
+)
+@Constraint(
+    id = "cnl-1",
+    level = "Warning",
+    location = "ValueSet.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
     source = "http://hl7.org/fhir/StructureDefinition/ValueSet"
 )
 @Constraint(
@@ -102,7 +112,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "vsd-9",
     level = "Rule",
     location = "ValueSet.expansion.contains",
-    description = "Must have a code if not abstract",
+    description = "SHALL have a code if not abstract",
     expression = "code.exists() or abstract = true",
     source = "http://hl7.org/fhir/StructureDefinition/ValueSet"
 )
@@ -110,12 +120,29 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "vsd-10",
     level = "Rule",
     location = "ValueSet.expansion.contains",
-    description = "Must have a system if a code is present",
+    description = "SHALL have a system if a code is present",
     expression = "code.empty() or system.exists()",
     source = "http://hl7.org/fhir/StructureDefinition/ValueSet"
 )
 @Constraint(
-    id = "valueSet-11",
+    id = "vsd-11",
+    level = "Rule",
+    location = "ValueSet.compose.include.concept.designation",
+    description = "Must have a value for concept.designation.use if concept.designation.additionalUse is present",
+    expression = "additionalUse.exists() implies use.exists()",
+    source = "http://hl7.org/fhir/StructureDefinition/ValueSet"
+)
+@Constraint(
+    id = "valueSet-12",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/ValueSet",
+    generated = true
+)
+@Constraint(
+    id = "valueSet-13",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
@@ -124,18 +151,18 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "valueSet-12",
+    id = "valueSet-14",
     level = "Warning",
-    location = "compose.include.concept.designation.language",
-    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/languages",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/languages', 'preferred')",
+    location = "compose.include.concept.designation.use",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/designation-use",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/designation-use', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/ValueSet",
     generated = true
 )
 @Constraint(
-    id = "valueSet-13",
+    id = "valueSet-15",
     level = "Warning",
-    location = "compose.include.concept.designation.use",
+    location = "compose.include.concept.designation.additionalUse",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/designation-use",
     expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/designation-use', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/ValueSet",
@@ -150,6 +177,13 @@ public class ValueSet extends DomainResource {
     @Summary
     private final String version;
     @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+    @Summary
     private final String name;
     @Summary
     private final String title;
@@ -158,7 +192,7 @@ public class ValueSet extends DomainResource {
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -185,14 +219,32 @@ public class ValueSet extends DomainResource {
     private final Boolean immutable;
     private final Markdown purpose;
     private final Markdown copyright;
+    private final String copyrightLabel;
+    private final Date approvalDate;
+    private final Date lastReviewDate;
+    @Summary
+    private final Period effectivePeriod;
+    @Binding(
+        bindingName = "DefinitionTopic",
+        strength = BindingStrength.Value.EXAMPLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/definition-topic"
+    )
+    private final List<CodeableConcept> topic;
+    private final List<ContactDetail> author;
+    private final List<ContactDetail> editor;
+    private final List<ContactDetail> reviewer;
+    private final List<ContactDetail> endorser;
+    private final List<RelatedArtifact> relatedArtifact;
     private final Compose compose;
     private final Expansion expansion;
+    private final Scope scope;
 
     private ValueSet(Builder builder) {
         super(builder);
         url = builder.url;
         identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
         title = builder.title;
         status = builder.status;
@@ -206,15 +258,26 @@ public class ValueSet extends DomainResource {
         immutable = builder.immutable;
         purpose = builder.purpose;
         copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
+        approvalDate = builder.approvalDate;
+        lastReviewDate = builder.lastReviewDate;
+        effectivePeriod = builder.effectivePeriod;
+        topic = Collections.unmodifiableList(builder.topic);
+        author = Collections.unmodifiableList(builder.author);
+        editor = Collections.unmodifiableList(builder.editor);
+        reviewer = Collections.unmodifiableList(builder.reviewer);
+        endorser = Collections.unmodifiableList(builder.endorser);
+        relatedArtifact = Collections.unmodifiableList(builder.relatedArtifact);
         compose = builder.compose;
         expansion = builder.expansion;
+        scope = builder.scope;
     }
 
     /**
      * An absolute URI that is used to identify this value set when it is referenced in a specification, model, design or an 
      * instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
-     * which at which an authoritative instance of this value set is (or will be) published. This URL can be the target of a 
-     * canonical reference. It SHALL remain the same when the value set is stored on different servers.
+     * which an authoritative instance of this value set is (or will be) published. This URL can be the target of a canonical 
+     * reference. It SHALL remain the same when the value set is stored on different servers.
      * 
      * @return
      *     An immutable object of type {@link Uri} that may be null.
@@ -245,6 +308,16 @@ public class ValueSet extends DomainResource {
      */
     public String getVersion() {
         return version;
+    }
+
+    /**
+     * Indicates the mechanism used to compare versions to determine which ValueSet is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
     }
 
     /**
@@ -291,7 +364,8 @@ public class ValueSet extends DomainResource {
     }
 
     /**
-     * The date (and optionally time) when the value set was created or revised (e.g. the 'content logical definition').
+     * The date (and optionally time) when the value set metadata or content logical definition (.compose) was created or 
+     * revised.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -301,7 +375,7 @@ public class ValueSet extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the value set.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the value set.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -387,6 +461,113 @@ public class ValueSet extends DomainResource {
     }
 
     /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
+    }
+
+    /**
+     * The date on which the resource content was approved by the publisher. Approval happens once when the content is 
+     * officially approved for usage.
+     * 
+     * @return
+     *     An immutable object of type {@link Date} that may be null.
+     */
+    public Date getApprovalDate() {
+        return approvalDate;
+    }
+
+    /**
+     * The date on which the resource content was last reviewed. Review happens periodically after approval but does not 
+     * change the original approval date.
+     * 
+     * @return
+     *     An immutable object of type {@link Date} that may be null.
+     */
+    public Date getLastReviewDate() {
+        return lastReviewDate;
+    }
+
+    /**
+     * The period during which the ValueSet content was or is planned to be in active use.
+     * 
+     * @return
+     *     An immutable object of type {@link Period} that may be null.
+     */
+    public Period getEffectivePeriod() {
+        return effectivePeriod;
+    }
+
+    /**
+     * Descriptions related to the content of the ValueSet. Topics provide a high-level categorization as well as keywords 
+     * for the ValueSet that can be useful for filtering and searching.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     */
+    public List<CodeableConcept> getTopic() {
+        return topic;
+    }
+
+    /**
+     * An individiual or organization primarily involved in the creation and maintenance of the ValueSet.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
+     */
+    public List<ContactDetail> getAuthor() {
+        return author;
+    }
+
+    /**
+     * An individual or organization primarily responsible for internal coherence of the ValueSet.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
+     */
+    public List<ContactDetail> getEditor() {
+        return editor;
+    }
+
+    /**
+     * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+     * ValueSet.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
+     */
+    public List<ContactDetail> getReviewer() {
+        return reviewer;
+    }
+
+    /**
+     * An individual or organization asserted by the publisher to be responsible for officially endorsing the ValueSet for 
+     * use in some setting.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
+     */
+    public List<ContactDetail> getEndorser() {
+        return endorser;
+    }
+
+    /**
+     * Related artifacts such as additional documentation, justification, dependencies, bibliographic references, and 
+     * predecessor and successor artifacts.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link RelatedArtifact} that may be empty.
+     */
+    public List<RelatedArtifact> getRelatedArtifact() {
+        return relatedArtifact;
+    }
+
+    /**
      * A set of criteria that define the contents of the value set by including or excluding codes selected from the 
      * specified code system(s) that the value set draws from. This is also known as the Content Logical Definition (CLD).
      * 
@@ -408,12 +589,24 @@ public class ValueSet extends DomainResource {
         return expansion;
     }
 
+    /**
+     * Description of the semantic space the Value Set Expansion is intended to cover and should further clarify the text in 
+     * ValueSet.description.
+     * 
+     * @return
+     *     An immutable object of type {@link Scope} that may be null.
+     */
+    public Scope getScope() {
+        return scope;
+    }
+
     @Override
     public boolean hasChildren() {
         return super.hasChildren() || 
             (url != null) || 
             !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
             (title != null) || 
             (status != null) || 
@@ -427,8 +620,19 @@ public class ValueSet extends DomainResource {
             (immutable != null) || 
             (purpose != null) || 
             (copyright != null) || 
+            (copyrightLabel != null) || 
+            (approvalDate != null) || 
+            (lastReviewDate != null) || 
+            (effectivePeriod != null) || 
+            !topic.isEmpty() || 
+            !author.isEmpty() || 
+            !editor.isEmpty() || 
+            !reviewer.isEmpty() || 
+            !endorser.isEmpty() || 
+            !relatedArtifact.isEmpty() || 
             (compose != null) || 
-            (expansion != null);
+            (expansion != null) || 
+            (scope != null);
     }
 
     @Override
@@ -448,6 +652,7 @@ public class ValueSet extends DomainResource {
                 accept(url, "url", visitor);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(status, "status", visitor);
@@ -461,8 +666,19 @@ public class ValueSet extends DomainResource {
                 accept(immutable, "immutable", visitor);
                 accept(purpose, "purpose", visitor);
                 accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
+                accept(approvalDate, "approvalDate", visitor);
+                accept(lastReviewDate, "lastReviewDate", visitor);
+                accept(effectivePeriod, "effectivePeriod", visitor);
+                accept(topic, "topic", visitor, CodeableConcept.class);
+                accept(author, "author", visitor, ContactDetail.class);
+                accept(editor, "editor", visitor, ContactDetail.class);
+                accept(reviewer, "reviewer", visitor, ContactDetail.class);
+                accept(endorser, "endorser", visitor, ContactDetail.class);
+                accept(relatedArtifact, "relatedArtifact", visitor, RelatedArtifact.class);
                 accept(compose, "compose", visitor);
                 accept(expansion, "expansion", visitor);
+                accept(scope, "scope", visitor);
             }
             visitor.visitEnd(elementName, elementIndex, this);
             visitor.postVisit(this);
@@ -492,6 +708,7 @@ public class ValueSet extends DomainResource {
             Objects.equals(url, other.url) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(status, other.status) && 
@@ -505,8 +722,19 @@ public class ValueSet extends DomainResource {
             Objects.equals(immutable, other.immutable) && 
             Objects.equals(purpose, other.purpose) && 
             Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
+            Objects.equals(approvalDate, other.approvalDate) && 
+            Objects.equals(lastReviewDate, other.lastReviewDate) && 
+            Objects.equals(effectivePeriod, other.effectivePeriod) && 
+            Objects.equals(topic, other.topic) && 
+            Objects.equals(author, other.author) && 
+            Objects.equals(editor, other.editor) && 
+            Objects.equals(reviewer, other.reviewer) && 
+            Objects.equals(endorser, other.endorser) && 
+            Objects.equals(relatedArtifact, other.relatedArtifact) && 
             Objects.equals(compose, other.compose) && 
-            Objects.equals(expansion, other.expansion);
+            Objects.equals(expansion, other.expansion) && 
+            Objects.equals(scope, other.scope);
     }
 
     @Override
@@ -524,6 +752,7 @@ public class ValueSet extends DomainResource {
                 url, 
                 identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
                 title, 
                 status, 
@@ -537,8 +766,19 @@ public class ValueSet extends DomainResource {
                 immutable, 
                 purpose, 
                 copyright, 
+                copyrightLabel, 
+                approvalDate, 
+                lastReviewDate, 
+                effectivePeriod, 
+                topic, 
+                author, 
+                editor, 
+                reviewer, 
+                endorser, 
+                relatedArtifact, 
                 compose, 
-                expansion);
+                expansion, 
+                scope);
             hashCode = result;
         }
         return result;
@@ -557,6 +797,7 @@ public class ValueSet extends DomainResource {
         private Uri url;
         private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
         private String title;
         private PublicationStatus status;
@@ -570,8 +811,19 @@ public class ValueSet extends DomainResource {
         private Boolean immutable;
         private Markdown purpose;
         private Markdown copyright;
+        private String copyrightLabel;
+        private Date approvalDate;
+        private Date lastReviewDate;
+        private Period effectivePeriod;
+        private List<CodeableConcept> topic = new ArrayList<>();
+        private List<ContactDetail> author = new ArrayList<>();
+        private List<ContactDetail> editor = new ArrayList<>();
+        private List<ContactDetail> reviewer = new ArrayList<>();
+        private List<ContactDetail> endorser = new ArrayList<>();
+        private List<RelatedArtifact> relatedArtifact = new ArrayList<>();
         private Compose compose;
         private Expansion expansion;
+        private Scope scope;
 
         private Builder() {
             super();
@@ -655,7 +907,8 @@ public class ValueSet extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -673,7 +926,8 @@ public class ValueSet extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -694,7 +948,7 @@ public class ValueSet extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -714,7 +968,7 @@ public class ValueSet extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -739,9 +993,9 @@ public class ValueSet extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -764,9 +1018,9 @@ public class ValueSet extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -791,8 +1045,8 @@ public class ValueSet extends DomainResource {
         /**
          * An absolute URI that is used to identify this value set when it is referenced in a specification, model, design or an 
          * instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
-         * which at which an authoritative instance of this value set is (or will be) published. This URL can be the target of a 
-         * canonical reference. It SHALL remain the same when the value set is stored on different servers.
+         * which an authoritative instance of this value set is (or will be) published. This URL can be the target of a canonical 
+         * reference. It SHALL remain the same when the value set is stored on different servers.
          * 
          * @param url
          *     Canonical identifier for this value set, represented as a URI (globally unique)
@@ -876,6 +1130,42 @@ public class ValueSet extends DomainResource {
          */
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which ValueSet is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
             return this;
         }
 
@@ -989,7 +1279,8 @@ public class ValueSet extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the value set was created or revised (e.g. the 'content logical definition').
+         * The date (and optionally time) when the value set metadata or content logical definition (.compose) was created or 
+         * revised.
          * 
          * @param date
          *     Date last changed
@@ -1006,7 +1297,7 @@ public class ValueSet extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1019,10 +1310,10 @@ public class ValueSet extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the value set.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the value set.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1230,6 +1521,355 @@ public class ValueSet extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code approvalDate}.
+         * 
+         * @param approvalDate
+         *     When the ValueSet was approved by publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #approvalDate(org.linuxforhealth.fhir.model.type.Date)
+         */
+        public Builder approvalDate(java.time.LocalDate approvalDate) {
+            this.approvalDate = (approvalDate == null) ? null : Date.of(approvalDate);
+            return this;
+        }
+
+        /**
+         * The date on which the resource content was approved by the publisher. Approval happens once when the content is 
+         * officially approved for usage.
+         * 
+         * @param approvalDate
+         *     When the ValueSet was approved by publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder approvalDate(Date approvalDate) {
+            this.approvalDate = approvalDate;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code lastReviewDate}.
+         * 
+         * @param lastReviewDate
+         *     When the ValueSet was last reviewed by the publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #lastReviewDate(org.linuxforhealth.fhir.model.type.Date)
+         */
+        public Builder lastReviewDate(java.time.LocalDate lastReviewDate) {
+            this.lastReviewDate = (lastReviewDate == null) ? null : Date.of(lastReviewDate);
+            return this;
+        }
+
+        /**
+         * The date on which the resource content was last reviewed. Review happens periodically after approval but does not 
+         * change the original approval date.
+         * 
+         * @param lastReviewDate
+         *     When the ValueSet was last reviewed by the publisher
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder lastReviewDate(Date lastReviewDate) {
+            this.lastReviewDate = lastReviewDate;
+            return this;
+        }
+
+        /**
+         * The period during which the ValueSet content was or is planned to be in active use.
+         * 
+         * @param effectivePeriod
+         *     When the ValueSet is expected to be used
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder effectivePeriod(Period effectivePeriod) {
+            this.effectivePeriod = effectivePeriod;
+            return this;
+        }
+
+        /**
+         * Descriptions related to the content of the ValueSet. Topics provide a high-level categorization as well as keywords 
+         * for the ValueSet that can be useful for filtering and searching.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param topic
+         *     E.g. Education, Treatment, Assessment, etc
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder topic(CodeableConcept... topic) {
+            for (CodeableConcept value : topic) {
+                this.topic.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Descriptions related to the content of the ValueSet. Topics provide a high-level categorization as well as keywords 
+         * for the ValueSet that can be useful for filtering and searching.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param topic
+         *     E.g. Education, Treatment, Assessment, etc
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder topic(Collection<CodeableConcept> topic) {
+            this.topic = new ArrayList<>(topic);
+            return this;
+        }
+
+        /**
+         * An individiual or organization primarily involved in the creation and maintenance of the ValueSet.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param author
+         *     Who authored the ValueSet
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder author(ContactDetail... author) {
+            for (ContactDetail value : author) {
+                this.author.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * An individiual or organization primarily involved in the creation and maintenance of the ValueSet.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param author
+         *     Who authored the ValueSet
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder author(Collection<ContactDetail> author) {
+            this.author = new ArrayList<>(author);
+            return this;
+        }
+
+        /**
+         * An individual or organization primarily responsible for internal coherence of the ValueSet.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param editor
+         *     Who edited the ValueSet
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder editor(ContactDetail... editor) {
+            for (ContactDetail value : editor) {
+                this.editor.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * An individual or organization primarily responsible for internal coherence of the ValueSet.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param editor
+         *     Who edited the ValueSet
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder editor(Collection<ContactDetail> editor) {
+            this.editor = new ArrayList<>(editor);
+            return this;
+        }
+
+        /**
+         * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+         * ValueSet.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param reviewer
+         *     Who reviewed the ValueSet
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder reviewer(ContactDetail... reviewer) {
+            for (ContactDetail value : reviewer) {
+                this.reviewer.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+         * ValueSet.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param reviewer
+         *     Who reviewed the ValueSet
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder reviewer(Collection<ContactDetail> reviewer) {
+            this.reviewer = new ArrayList<>(reviewer);
+            return this;
+        }
+
+        /**
+         * An individual or organization asserted by the publisher to be responsible for officially endorsing the ValueSet for 
+         * use in some setting.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param endorser
+         *     Who endorsed the ValueSet
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder endorser(ContactDetail... endorser) {
+            for (ContactDetail value : endorser) {
+                this.endorser.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * An individual or organization asserted by the publisher to be responsible for officially endorsing the ValueSet for 
+         * use in some setting.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param endorser
+         *     Who endorsed the ValueSet
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder endorser(Collection<ContactDetail> endorser) {
+            this.endorser = new ArrayList<>(endorser);
+            return this;
+        }
+
+        /**
+         * Related artifacts such as additional documentation, justification, dependencies, bibliographic references, and 
+         * predecessor and successor artifacts.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param relatedArtifact
+         *     Additional documentation, citations, etc
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder relatedArtifact(RelatedArtifact... relatedArtifact) {
+            for (RelatedArtifact value : relatedArtifact) {
+                this.relatedArtifact.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Related artifacts such as additional documentation, justification, dependencies, bibliographic references, and 
+         * predecessor and successor artifacts.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param relatedArtifact
+         *     Additional documentation, citations, etc
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder relatedArtifact(Collection<RelatedArtifact> relatedArtifact) {
+            this.relatedArtifact = new ArrayList<>(relatedArtifact);
+            return this;
+        }
+
+        /**
          * A set of criteria that define the contents of the value set by including or excluding codes selected from the 
          * specified code system(s) that the value set draws from. This is also known as the Content Logical Definition (CLD).
          * 
@@ -1260,6 +1900,22 @@ public class ValueSet extends DomainResource {
         }
 
         /**
+         * Description of the semantic space the Value Set Expansion is intended to cover and should further clarify the text in 
+         * ValueSet.description.
+         * 
+         * @param scope
+         *     Description of the semantic space the Value Set Expansion is intended to cover and should further clarify the text in 
+         *     ValueSet.description
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder scope(Scope scope) {
+            this.scope = scope;
+            return this;
+        }
+
+        /**
          * Build the {@link ValueSet}
          * 
          * <p>Required elements:
@@ -1284,10 +1940,17 @@ public class ValueSet extends DomainResource {
         protected void validate(ValueSet valueSet) {
             super.validate(valueSet);
             ValidationSupport.checkList(valueSet.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(valueSet.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.requireNonNull(valueSet.status, "status");
             ValidationSupport.checkList(valueSet.contact, "contact", ContactDetail.class);
             ValidationSupport.checkList(valueSet.useContext, "useContext", UsageContext.class);
             ValidationSupport.checkList(valueSet.jurisdiction, "jurisdiction", CodeableConcept.class);
+            ValidationSupport.checkList(valueSet.topic, "topic", CodeableConcept.class);
+            ValidationSupport.checkList(valueSet.author, "author", ContactDetail.class);
+            ValidationSupport.checkList(valueSet.editor, "editor", ContactDetail.class);
+            ValidationSupport.checkList(valueSet.reviewer, "reviewer", ContactDetail.class);
+            ValidationSupport.checkList(valueSet.endorser, "endorser", ContactDetail.class);
+            ValidationSupport.checkList(valueSet.relatedArtifact, "relatedArtifact", RelatedArtifact.class);
         }
 
         protected Builder from(ValueSet valueSet) {
@@ -1295,6 +1958,7 @@ public class ValueSet extends DomainResource {
             url = valueSet.url;
             identifier.addAll(valueSet.identifier);
             version = valueSet.version;
+            versionAlgorithm = valueSet.versionAlgorithm;
             name = valueSet.name;
             title = valueSet.title;
             status = valueSet.status;
@@ -1308,8 +1972,19 @@ public class ValueSet extends DomainResource {
             immutable = valueSet.immutable;
             purpose = valueSet.purpose;
             copyright = valueSet.copyright;
+            copyrightLabel = valueSet.copyrightLabel;
+            approvalDate = valueSet.approvalDate;
+            lastReviewDate = valueSet.lastReviewDate;
+            effectivePeriod = valueSet.effectivePeriod;
+            topic.addAll(valueSet.topic);
+            author.addAll(valueSet.author);
+            editor.addAll(valueSet.editor);
+            reviewer.addAll(valueSet.reviewer);
+            endorser.addAll(valueSet.endorser);
+            relatedArtifact.addAll(valueSet.relatedArtifact);
             compose = valueSet.compose;
             expansion = valueSet.expansion;
+            scope = valueSet.scope;
             return this;
         }
     }
@@ -1327,6 +2002,7 @@ public class ValueSet extends DomainResource {
         @Required
         private final List<Include> include;
         private final List<ValueSet.Compose.Include> exclude;
+        private final List<String> property;
 
         private Compose(Builder builder) {
             super(builder);
@@ -1334,6 +2010,7 @@ public class ValueSet extends DomainResource {
             inactive = builder.inactive;
             include = Collections.unmodifiableList(builder.include);
             exclude = Collections.unmodifiableList(builder.exclude);
+            property = Collections.unmodifiableList(builder.property);
         }
 
         /**
@@ -1380,13 +2057,26 @@ public class ValueSet extends DomainResource {
             return exclude;
         }
 
+        /**
+         * A property to return in the expansion, if the client doesn't ask for any particular properties. May be either a code 
+         * from the code system definition (convenient) or a the formal URI that refers to the property. The special value '*' 
+         * means all properties known to the server.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link String} that may be empty.
+         */
+        public List<String> getProperty() {
+            return property;
+        }
+
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
                 (lockedDate != null) || 
                 (inactive != null) || 
                 !include.isEmpty() || 
-                !exclude.isEmpty();
+                !exclude.isEmpty() || 
+                !property.isEmpty();
         }
 
         @Override
@@ -1402,6 +2092,7 @@ public class ValueSet extends DomainResource {
                     accept(inactive, "inactive", visitor);
                     accept(include, "include", visitor, Include.class);
                     accept(exclude, "exclude", visitor, ValueSet.Compose.Include.class);
+                    accept(property, "property", visitor, String.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -1426,7 +2117,8 @@ public class ValueSet extends DomainResource {
                 Objects.equals(lockedDate, other.lockedDate) && 
                 Objects.equals(inactive, other.inactive) && 
                 Objects.equals(include, other.include) && 
-                Objects.equals(exclude, other.exclude);
+                Objects.equals(exclude, other.exclude) && 
+                Objects.equals(property, other.property);
         }
 
         @Override
@@ -1439,7 +2131,8 @@ public class ValueSet extends DomainResource {
                     lockedDate, 
                     inactive, 
                     include, 
-                    exclude);
+                    exclude, 
+                    property);
                 hashCode = result;
             }
             return result;
@@ -1459,6 +2152,7 @@ public class ValueSet extends DomainResource {
             private Boolean inactive;
             private List<Include> include = new ArrayList<>();
             private List<ValueSet.Compose.Include> exclude = new ArrayList<>();
+            private List<String> property = new ArrayList<>();
 
             private Builder() {
                 super();
@@ -1481,7 +2175,7 @@ public class ValueSet extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1501,7 +2195,7 @@ public class ValueSet extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1526,7 +2220,7 @@ public class ValueSet extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1551,7 +2245,7 @@ public class ValueSet extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1722,6 +2416,70 @@ public class ValueSet extends DomainResource {
             }
 
             /**
+             * Convenience method for setting {@code property}.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param property
+             *     Property to return if client doesn't override
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #property(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder property(java.lang.String... property) {
+                for (java.lang.String value : property) {
+                    this.property.add((value == null) ? null : String.of(value));
+                }
+                return this;
+            }
+
+            /**
+             * A property to return in the expansion, if the client doesn't ask for any particular properties. May be either a code 
+             * from the code system definition (convenient) or a the formal URI that refers to the property. The special value '*' 
+             * means all properties known to the server.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param property
+             *     Property to return if client doesn't override
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder property(String... property) {
+                for (String value : property) {
+                    this.property.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * A property to return in the expansion, if the client doesn't ask for any particular properties. May be either a code 
+             * from the code system definition (convenient) or a the formal URI that refers to the property. The special value '*' 
+             * means all properties known to the server.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param property
+             *     Property to return if client doesn't override
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder property(Collection<String> property) {
+                this.property = new ArrayList<>(property);
+                return this;
+            }
+
+            /**
              * Build the {@link Compose}
              * 
              * <p>Required elements:
@@ -1747,6 +2505,7 @@ public class ValueSet extends DomainResource {
                 super.validate(compose);
                 ValidationSupport.checkNonEmptyList(compose.include, "include", Include.class);
                 ValidationSupport.checkList(compose.exclude, "exclude", ValueSet.Compose.Include.class);
+                ValidationSupport.checkList(compose.property, "property", String.class);
                 ValidationSupport.requireValueOrChildren(compose);
             }
 
@@ -1756,6 +2515,7 @@ public class ValueSet extends DomainResource {
                 inactive = compose.inactive;
                 include.addAll(compose.include);
                 exclude.addAll(compose.exclude);
+                property.addAll(compose.property);
                 return this;
             }
         }
@@ -1773,6 +2533,7 @@ public class ValueSet extends DomainResource {
             private final List<Filter> filter;
             @Summary
             private final List<Canonical> valueSet;
+            private final String copyright;
 
             private Include(Builder builder) {
                 super(builder);
@@ -1781,6 +2542,7 @@ public class ValueSet extends DomainResource {
                 concept = Collections.unmodifiableList(builder.concept);
                 filter = Collections.unmodifiableList(builder.filter);
                 valueSet = Collections.unmodifiableList(builder.valueSet);
+                copyright = builder.copyright;
             }
 
             /**
@@ -1814,8 +2576,9 @@ public class ValueSet extends DomainResource {
             }
 
             /**
-             * Select concepts by specify a matching criterion based on the properties (including relationships) defined by the 
-             * system, or on filters defined by the system. If multiple filters are specified, they SHALL all be true.
+             * Select concepts by specifying a matching criterion based on the properties (including relationships) defined by the 
+             * system, or on filters defined by the system. If multiple filters are specified within the include, they SHALL all be 
+             * true.
              * 
              * @return
              *     An unmodifiable list containing immutable objects of type {@link Filter} that may be empty.
@@ -1826,14 +2589,26 @@ public class ValueSet extends DomainResource {
 
             /**
              * Selects the concepts found in this value set (based on its value set definition). This is an absolute URI that is a 
-             * reference to ValueSet.url. If multiple value sets are specified this includes the union of the contents of all of the 
-             * referenced value sets.
+             * reference to ValueSet.url. If multiple value sets are specified this includes the intersection of the contents of all 
+             * of the referenced value sets.
              * 
              * @return
              *     An unmodifiable list containing immutable objects of type {@link Canonical} that may be empty.
              */
             public List<Canonical> getValueSet() {
                 return valueSet;
+            }
+
+            /**
+             * A copyright statement for the specific code system asserted by the containing ValueSet.compose.include element's 
+             * system value (if the associated ValueSet.compose.include.version element is not present); or the code system and 
+             * version combination (if the associated ValueSet.compose.include.version element is present).
+             * 
+             * @return
+             *     An immutable object of type {@link String} that may be null.
+             */
+            public String getCopyright() {
+                return copyright;
             }
 
             @Override
@@ -1843,7 +2618,8 @@ public class ValueSet extends DomainResource {
                     (version != null) || 
                     !concept.isEmpty() || 
                     !filter.isEmpty() || 
-                    !valueSet.isEmpty();
+                    !valueSet.isEmpty() || 
+                    (copyright != null);
             }
 
             @Override
@@ -1860,6 +2636,7 @@ public class ValueSet extends DomainResource {
                         accept(concept, "concept", visitor, Concept.class);
                         accept(filter, "filter", visitor, Filter.class);
                         accept(valueSet, "valueSet", visitor, Canonical.class);
+                        accept(copyright, "copyright", visitor);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
                     visitor.postVisit(this);
@@ -1885,7 +2662,8 @@ public class ValueSet extends DomainResource {
                     Objects.equals(version, other.version) && 
                     Objects.equals(concept, other.concept) && 
                     Objects.equals(filter, other.filter) && 
-                    Objects.equals(valueSet, other.valueSet);
+                    Objects.equals(valueSet, other.valueSet) && 
+                    Objects.equals(copyright, other.copyright);
             }
 
             @Override
@@ -1899,7 +2677,8 @@ public class ValueSet extends DomainResource {
                         version, 
                         concept, 
                         filter, 
-                        valueSet);
+                        valueSet, 
+                        copyright);
                     hashCode = result;
                 }
                 return result;
@@ -1920,6 +2699,7 @@ public class ValueSet extends DomainResource {
                 private List<Concept> concept = new ArrayList<>();
                 private List<Filter> filter = new ArrayList<>();
                 private List<Canonical> valueSet = new ArrayList<>();
+                private String copyright;
 
                 private Builder() {
                     super();
@@ -1942,7 +2722,7 @@ public class ValueSet extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1962,7 +2742,7 @@ public class ValueSet extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1987,7 +2767,7 @@ public class ValueSet extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2012,7 +2792,7 @@ public class ValueSet extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2120,8 +2900,9 @@ public class ValueSet extends DomainResource {
                 }
 
                 /**
-                 * Select concepts by specify a matching criterion based on the properties (including relationships) defined by the 
-                 * system, or on filters defined by the system. If multiple filters are specified, they SHALL all be true.
+                 * Select concepts by specifying a matching criterion based on the properties (including relationships) defined by the 
+                 * system, or on filters defined by the system. If multiple filters are specified within the include, they SHALL all be 
+                 * true.
                  * 
                  * <p>Adds new element(s) to the existing list.
                  * If any of the elements are null, calling {@link #build()} will fail.
@@ -2140,8 +2921,9 @@ public class ValueSet extends DomainResource {
                 }
 
                 /**
-                 * Select concepts by specify a matching criterion based on the properties (including relationships) defined by the 
-                 * system, or on filters defined by the system. If multiple filters are specified, they SHALL all be true.
+                 * Select concepts by specifying a matching criterion based on the properties (including relationships) defined by the 
+                 * system, or on filters defined by the system. If multiple filters are specified within the include, they SHALL all be 
+                 * true.
                  * 
                  * <p>Replaces the existing list with a new one containing elements from the Collection.
                  * If any of the elements are null, calling {@link #build()} will fail.
@@ -2162,8 +2944,8 @@ public class ValueSet extends DomainResource {
 
                 /**
                  * Selects the concepts found in this value set (based on its value set definition). This is an absolute URI that is a 
-                 * reference to ValueSet.url. If multiple value sets are specified this includes the union of the contents of all of the 
-                 * referenced value sets.
+                 * reference to ValueSet.url. If multiple value sets are specified this includes the intersection of the contents of all 
+                 * of the referenced value sets.
                  * 
                  * <p>Adds new element(s) to the existing list.
                  * If any of the elements are null, calling {@link #build()} will fail.
@@ -2183,8 +2965,8 @@ public class ValueSet extends DomainResource {
 
                 /**
                  * Selects the concepts found in this value set (based on its value set definition). This is an absolute URI that is a 
-                 * reference to ValueSet.url. If multiple value sets are specified this includes the union of the contents of all of the 
-                 * referenced value sets.
+                 * reference to ValueSet.url. If multiple value sets are specified this includes the intersection of the contents of all 
+                 * of the referenced value sets.
                  * 
                  * <p>Replaces the existing list with a new one containing elements from the Collection.
                  * If any of the elements are null, calling {@link #build()} will fail.
@@ -2200,6 +2982,38 @@ public class ValueSet extends DomainResource {
                  */
                 public Builder valueSet(Collection<Canonical> valueSet) {
                     this.valueSet = new ArrayList<>(valueSet);
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code copyright}.
+                 * 
+                 * @param copyright
+                 *     A copyright statement for the specific code system included in the value set
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #copyright(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder copyright(java.lang.String copyright) {
+                    this.copyright = (copyright == null) ? null : String.of(copyright);
+                    return this;
+                }
+
+                /**
+                 * A copyright statement for the specific code system asserted by the containing ValueSet.compose.include element's 
+                 * system value (if the associated ValueSet.compose.include.version element is not present); or the code system and 
+                 * version combination (if the associated ValueSet.compose.include.version element is present).
+                 * 
+                 * @param copyright
+                 *     A copyright statement for the specific code system included in the value set
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder copyright(String copyright) {
+                    this.copyright = copyright;
                     return this;
                 }
 
@@ -2235,6 +3049,7 @@ public class ValueSet extends DomainResource {
                     concept.addAll(include.concept);
                     filter.addAll(include.filter);
                     valueSet.addAll(include.valueSet);
+                    copyright = include.copyright;
                     return this;
                 }
             }
@@ -2383,7 +3198,7 @@ public class ValueSet extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -2403,7 +3218,7 @@ public class ValueSet extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -2428,7 +3243,7 @@ public class ValueSet extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -2453,7 +3268,7 @@ public class ValueSet extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -2610,10 +3425,9 @@ public class ValueSet extends DomainResource {
                 public static class Designation extends BackboneElement {
                     @Binding(
                         bindingName = "Language",
-                        strength = BindingStrength.Value.PREFERRED,
-                        description = "IETF language tag",
-                        valueSet = "http://hl7.org/fhir/ValueSet/languages",
-                        maxValueSet = "http://hl7.org/fhir/ValueSet/all-languages"
+                        strength = BindingStrength.Value.REQUIRED,
+                        description = "IETF language tag for a human language",
+                        valueSet = "http://hl7.org/fhir/ValueSet/all-languages|5.0.0"
                     )
                     private final Code language;
                     @Binding(
@@ -2623,6 +3437,13 @@ public class ValueSet extends DomainResource {
                         valueSet = "http://hl7.org/fhir/ValueSet/designation-use"
                     )
                     private final Coding use;
+                    @Binding(
+                        bindingName = "ConceptDesignationUse",
+                        strength = BindingStrength.Value.EXTENSIBLE,
+                        description = "Details of how a designation would be used.",
+                        valueSet = "http://hl7.org/fhir/ValueSet/designation-use"
+                    )
+                    private final List<Coding> additionalUse;
                     @Required
                     private final String value;
 
@@ -2630,6 +3451,7 @@ public class ValueSet extends DomainResource {
                         super(builder);
                         language = builder.language;
                         use = builder.use;
+                        additionalUse = Collections.unmodifiableList(builder.additionalUse);
                         value = builder.value;
                     }
 
@@ -2654,6 +3476,16 @@ public class ValueSet extends DomainResource {
                     }
 
                     /**
+                     * Additional codes that detail how this designation would be used, if there is more than one use.
+                     * 
+                     * @return
+                     *     An unmodifiable list containing immutable objects of type {@link Coding} that may be empty.
+                     */
+                    public List<Coding> getAdditionalUse() {
+                        return additionalUse;
+                    }
+
+                    /**
                      * The text value for this designation.
                      * 
                      * @return
@@ -2668,6 +3500,7 @@ public class ValueSet extends DomainResource {
                         return super.hasChildren() || 
                             (language != null) || 
                             (use != null) || 
+                            !additionalUse.isEmpty() || 
                             (value != null);
                     }
 
@@ -2682,6 +3515,7 @@ public class ValueSet extends DomainResource {
                                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                                 accept(language, "language", visitor);
                                 accept(use, "use", visitor);
+                                accept(additionalUse, "additionalUse", visitor, Coding.class);
                                 accept(value, "value", visitor);
                             }
                             visitor.visitEnd(elementName, elementIndex, this);
@@ -2706,6 +3540,7 @@ public class ValueSet extends DomainResource {
                             Objects.equals(modifierExtension, other.modifierExtension) && 
                             Objects.equals(language, other.language) && 
                             Objects.equals(use, other.use) && 
+                            Objects.equals(additionalUse, other.additionalUse) && 
                             Objects.equals(value, other.value);
                     }
 
@@ -2718,6 +3553,7 @@ public class ValueSet extends DomainResource {
                                 modifierExtension, 
                                 language, 
                                 use, 
+                                additionalUse, 
                                 value);
                             hashCode = result;
                         }
@@ -2736,6 +3572,7 @@ public class ValueSet extends DomainResource {
                     public static class Builder extends BackboneElement.Builder {
                         private Code language;
                         private Coding use;
+                        private List<Coding> additionalUse = new ArrayList<>();
                         private String value;
 
                         private Builder() {
@@ -2759,7 +3596,7 @@ public class ValueSet extends DomainResource {
 
                         /**
                          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                          * of the definition of the extension.
                          * 
@@ -2779,7 +3616,7 @@ public class ValueSet extends DomainResource {
 
                         /**
                          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                          * of the definition of the extension.
                          * 
@@ -2804,7 +3641,7 @@ public class ValueSet extends DomainResource {
                          * May be used to represent additional information that is not part of the basic definition of the element and that 
                          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                          * extension. Applications processing a resource are required to check for modifier extensions.
                          * 
@@ -2829,7 +3666,7 @@ public class ValueSet extends DomainResource {
                          * May be used to represent additional information that is not part of the basic definition of the element and that 
                          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                          * extension. Applications processing a resource are required to check for modifier extensions.
                          * 
@@ -2878,6 +3715,45 @@ public class ValueSet extends DomainResource {
                          */
                         public Builder use(Coding use) {
                             this.use = use;
+                            return this;
+                        }
+
+                        /**
+                         * Additional codes that detail how this designation would be used, if there is more than one use.
+                         * 
+                         * <p>Adds new element(s) to the existing list.
+                         * If any of the elements are null, calling {@link #build()} will fail.
+                         * 
+                         * @param additionalUse
+                         *     Additional ways how this designation would be used
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        public Builder additionalUse(Coding... additionalUse) {
+                            for (Coding value : additionalUse) {
+                                this.additionalUse.add(value);
+                            }
+                            return this;
+                        }
+
+                        /**
+                         * Additional codes that detail how this designation would be used, if there is more than one use.
+                         * 
+                         * <p>Replaces the existing list with a new one containing elements from the Collection.
+                         * If any of the elements are null, calling {@link #build()} will fail.
+                         * 
+                         * @param additionalUse
+                         *     Additional ways how this designation would be used
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         * 
+                         * @throws NullPointerException
+                         *     If the passed collection is null
+                         */
+                        public Builder additionalUse(Collection<Coding> additionalUse) {
+                            this.additionalUse = new ArrayList<>(additionalUse);
                             return this;
                         }
 
@@ -2939,6 +3815,7 @@ public class ValueSet extends DomainResource {
 
                         protected void validate(Designation designation) {
                             super.validate(designation);
+                            ValidationSupport.checkList(designation.additionalUse, "additionalUse", Coding.class);
                             ValidationSupport.requireNonNull(designation.value, "value");
                             ValidationSupport.checkValueSetBinding(designation.language, "language", "http://hl7.org/fhir/ValueSet/all-languages", "urn:ietf:bcp:47");
                             ValidationSupport.requireValueOrChildren(designation);
@@ -2948,6 +3825,7 @@ public class ValueSet extends DomainResource {
                             super.from(designation);
                             language = designation.language;
                             use = designation.use;
+                            additionalUse.addAll(designation.additionalUse);
                             value = designation.value;
                             return this;
                         }
@@ -2956,8 +3834,9 @@ public class ValueSet extends DomainResource {
             }
 
             /**
-             * Select concepts by specify a matching criterion based on the properties (including relationships) defined by the 
-             * system, or on filters defined by the system. If multiple filters are specified, they SHALL all be true.
+             * Select concepts by specifying a matching criterion based on the properties (including relationships) defined by the 
+             * system, or on filters defined by the system. If multiple filters are specified within the include, they SHALL all be 
+             * true.
              */
             public static class Filter extends BackboneElement {
                 @Summary
@@ -2968,7 +3847,7 @@ public class ValueSet extends DomainResource {
                     bindingName = "FilterOperator",
                     strength = BindingStrength.Value.REQUIRED,
                     description = "The kind of operation to perform as a part of a property based filter.",
-                    valueSet = "http://hl7.org/fhir/ValueSet/filter-operator|4.3.0"
+                    valueSet = "http://hl7.org/fhir/ValueSet/filter-operator|5.0.0"
                 )
                 @Required
                 private final FilterOperator op;
@@ -3112,7 +3991,7 @@ public class ValueSet extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -3132,7 +4011,7 @@ public class ValueSet extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -3157,7 +4036,7 @@ public class ValueSet extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -3182,7 +4061,7 @@ public class ValueSet extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -3228,7 +4107,7 @@ public class ValueSet extends DomainResource {
                      * <p>This element is required.
                      * 
                      * @param op
-                     *     = | is-a | descendent-of | is-not-a | regex | in | not-in | generalizes | exists
+                     *     = | is-a | descendent-of | is-not-a | regex | in | not-in | generalizes | child-of | descendent-leaf | exists
                      * 
                      * @return
                      *     A reference to this Builder instance
@@ -3325,20 +4204,24 @@ public class ValueSet extends DomainResource {
      */
     public static class Expansion extends BackboneElement {
         private final Uri identifier;
+        private final Uri next;
         @Required
         private final DateTime timestamp;
         private final Integer total;
         private final Integer offset;
         private final List<Parameter> parameter;
+        private final List<Property> property;
         private final List<Contains> contains;
 
         private Expansion(Builder builder) {
             super(builder);
             identifier = builder.identifier;
+            next = builder.next;
             timestamp = builder.timestamp;
             total = builder.total;
             offset = builder.offset;
             parameter = Collections.unmodifiableList(builder.parameter);
+            property = Collections.unmodifiableList(builder.property);
             contains = Collections.unmodifiableList(builder.contains);
         }
 
@@ -3353,6 +4236,17 @@ public class ValueSet extends DomainResource {
          */
         public Uri getIdentifier() {
             return identifier;
+        }
+
+        /**
+         * As per paging Search results, the next URLs are opaque to the client, have no dictated structure, and only the server 
+         * understands them.
+         * 
+         * @return
+         *     An immutable object of type {@link Uri} that may be null.
+         */
+        public Uri getNext() {
+            return next;
         }
 
         /**
@@ -3399,6 +4293,16 @@ public class ValueSet extends DomainResource {
         }
 
         /**
+         * A property defines an additional slot through which additional information can be provided about a concept.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link Property} that may be empty.
+         */
+        public List<Property> getProperty() {
+            return property;
+        }
+
+        /**
          * The codes that are contained in the value set expansion.
          * 
          * @return
@@ -3412,10 +4316,12 @@ public class ValueSet extends DomainResource {
         public boolean hasChildren() {
             return super.hasChildren() || 
                 (identifier != null) || 
+                (next != null) || 
                 (timestamp != null) || 
                 (total != null) || 
                 (offset != null) || 
                 !parameter.isEmpty() || 
+                !property.isEmpty() || 
                 !contains.isEmpty();
         }
 
@@ -3429,10 +4335,12 @@ public class ValueSet extends DomainResource {
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(identifier, "identifier", visitor);
+                    accept(next, "next", visitor);
                     accept(timestamp, "timestamp", visitor);
                     accept(total, "total", visitor);
                     accept(offset, "offset", visitor);
                     accept(parameter, "parameter", visitor, Parameter.class);
+                    accept(property, "property", visitor, Property.class);
                     accept(contains, "contains", visitor, Contains.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
@@ -3456,10 +4364,12 @@ public class ValueSet extends DomainResource {
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(identifier, other.identifier) && 
+                Objects.equals(next, other.next) && 
                 Objects.equals(timestamp, other.timestamp) && 
                 Objects.equals(total, other.total) && 
                 Objects.equals(offset, other.offset) && 
                 Objects.equals(parameter, other.parameter) && 
+                Objects.equals(property, other.property) && 
                 Objects.equals(contains, other.contains);
         }
 
@@ -3471,10 +4381,12 @@ public class ValueSet extends DomainResource {
                     extension, 
                     modifierExtension, 
                     identifier, 
+                    next, 
                     timestamp, 
                     total, 
                     offset, 
                     parameter, 
+                    property, 
                     contains);
                 hashCode = result;
             }
@@ -3492,10 +4404,12 @@ public class ValueSet extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private Uri identifier;
+            private Uri next;
             private DateTime timestamp;
             private Integer total;
             private Integer offset;
             private List<Parameter> parameter = new ArrayList<>();
+            private List<Property> property = new ArrayList<>();
             private List<Contains> contains = new ArrayList<>();
 
             private Builder() {
@@ -3519,7 +4433,7 @@ public class ValueSet extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3539,7 +4453,7 @@ public class ValueSet extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3564,7 +4478,7 @@ public class ValueSet extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3589,7 +4503,7 @@ public class ValueSet extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3627,6 +4541,21 @@ public class ValueSet extends DomainResource {
              */
             public Builder identifier(Uri identifier) {
                 this.identifier = identifier;
+                return this;
+            }
+
+            /**
+             * As per paging Search results, the next URLs are opaque to the client, have no dictated structure, and only the server 
+             * understands them.
+             * 
+             * @param next
+             *     Opaque urls for paging through expansion results
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder next(Uri next) {
+                this.next = next;
                 return this;
             }
 
@@ -3750,6 +4679,45 @@ public class ValueSet extends DomainResource {
             }
 
             /**
+             * A property defines an additional slot through which additional information can be provided about a concept.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param property
+             *     Additional information supplied about each concept
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder property(Property... property) {
+                for (Property value : property) {
+                    this.property.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * A property defines an additional slot through which additional information can be provided about a concept.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param property
+             *     Additional information supplied about each concept
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder property(Collection<Property> property) {
+                this.property = new ArrayList<>(property);
+                return this;
+            }
+
+            /**
              * The codes that are contained in the value set expansion.
              * 
              * <p>Adds new element(s) to the existing list.
@@ -3814,6 +4782,7 @@ public class ValueSet extends DomainResource {
                 super.validate(expansion);
                 ValidationSupport.requireNonNull(expansion.timestamp, "timestamp");
                 ValidationSupport.checkList(expansion.parameter, "parameter", Parameter.class);
+                ValidationSupport.checkList(expansion.property, "property", Property.class);
                 ValidationSupport.checkList(expansion.contains, "contains", Contains.class);
                 ValidationSupport.requireValueOrChildren(expansion);
             }
@@ -3821,10 +4790,12 @@ public class ValueSet extends DomainResource {
             protected Builder from(Expansion expansion) {
                 super.from(expansion);
                 identifier = expansion.identifier;
+                next = expansion.next;
                 timestamp = expansion.timestamp;
                 total = expansion.total;
                 offset = expansion.offset;
                 parameter.addAll(expansion.parameter);
+                property.addAll(expansion.property);
                 contains.addAll(expansion.contains);
                 return this;
             }
@@ -3838,7 +4809,7 @@ public class ValueSet extends DomainResource {
             @Required
             private final String name;
             @Choice({ String.class, Boolean.class, Integer.class, Decimal.class, Uri.class, Code.class, DateTime.class })
-            private final Element value;
+            private final org.linuxforhealth.fhir.model.type.Element value;
 
             private Parameter(Builder builder) {
                 super(builder);
@@ -3864,7 +4835,7 @@ public class ValueSet extends DomainResource {
              *     An immutable object of type {@link String}, {@link Boolean}, {@link Integer}, {@link Decimal}, {@link Uri}, {@link 
              *     Code} or {@link DateTime} that may be null.
              */
-            public Element getValue() {
+            public org.linuxforhealth.fhir.model.type.Element getValue() {
                 return value;
             }
 
@@ -3936,7 +4907,7 @@ public class ValueSet extends DomainResource {
 
             public static class Builder extends BackboneElement.Builder {
                 private String name;
-                private Element value;
+                private org.linuxforhealth.fhir.model.type.Element value;
 
                 private Builder() {
                     super();
@@ -3959,7 +4930,7 @@ public class ValueSet extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3979,7 +4950,7 @@ public class ValueSet extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -4004,7 +4975,7 @@ public class ValueSet extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4029,7 +5000,7 @@ public class ValueSet extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4156,7 +5127,7 @@ public class ValueSet extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder value(Element value) {
+                public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                     this.value = value;
                     return this;
                 }
@@ -4200,6 +5171,294 @@ public class ValueSet extends DomainResource {
         }
 
         /**
+         * A property defines an additional slot through which additional information can be provided about a concept.
+         */
+        public static class Property extends BackboneElement {
+            @Required
+            private final Code code;
+            private final Uri uri;
+
+            private Property(Builder builder) {
+                super(builder);
+                code = builder.code;
+                uri = builder.uri;
+            }
+
+            /**
+             * A code that is used to identify the property. The code is used in ValueSet.expansion.contains.property.code.
+             * 
+             * @return
+             *     An immutable object of type {@link Code} that is non-null.
+             */
+            public Code getCode() {
+                return code;
+            }
+
+            /**
+             * Reference to the formal meaning of the property. One possible source of meaning is the [Concept Properties](codesystem-
+             * concept-properties.html) code system.
+             * 
+             * @return
+             *     An immutable object of type {@link Uri} that may be null.
+             */
+            public Uri getUri() {
+                return uri;
+            }
+
+            @Override
+            public boolean hasChildren() {
+                return super.hasChildren() || 
+                    (code != null) || 
+                    (uri != null);
+            }
+
+            @Override
+            public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                if (visitor.preVisit(this)) {
+                    visitor.visitStart(elementName, elementIndex, this);
+                    if (visitor.visit(elementName, elementIndex, this)) {
+                        // visit children
+                        accept(id, "id", visitor);
+                        accept(extension, "extension", visitor, Extension.class);
+                        accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                        accept(code, "code", visitor);
+                        accept(uri, "uri", visitor);
+                    }
+                    visitor.visitEnd(elementName, elementIndex, this);
+                    visitor.postVisit(this);
+                }
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj) {
+                    return true;
+                }
+                if (obj == null) {
+                    return false;
+                }
+                if (getClass() != obj.getClass()) {
+                    return false;
+                }
+                Property other = (Property) obj;
+                return Objects.equals(id, other.id) && 
+                    Objects.equals(extension, other.extension) && 
+                    Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(code, other.code) && 
+                    Objects.equals(uri, other.uri);
+            }
+
+            @Override
+            public int hashCode() {
+                int result = hashCode;
+                if (result == 0) {
+                    result = Objects.hash(id, 
+                        extension, 
+                        modifierExtension, 
+                        code, 
+                        uri);
+                    hashCode = result;
+                }
+                return result;
+            }
+
+            @Override
+            public Builder toBuilder() {
+                return new Builder().from(this);
+            }
+
+            public static Builder builder() {
+                return new Builder();
+            }
+
+            public static class Builder extends BackboneElement.Builder {
+                private Code code;
+                private Uri uri;
+
+                private Builder() {
+                    super();
+                }
+
+                /**
+                 * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                 * contain spaces.
+                 * 
+                 * @param id
+                 *     Unique id for inter-element referencing
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder id(java.lang.String id) {
+                    return (Builder) super.id(id);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder extension(Extension... extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder extension(Collection<Extension> extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder modifierExtension(Extension... modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * A code that is used to identify the property. The code is used in ValueSet.expansion.contains.property.code.
+                 * 
+                 * <p>This element is required.
+                 * 
+                 * @param code
+                 *     Identifies the property on the concepts, and when referred to in operations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder code(Code code) {
+                    this.code = code;
+                    return this;
+                }
+
+                /**
+                 * Reference to the formal meaning of the property. One possible source of meaning is the [Concept Properties](codesystem-
+                 * concept-properties.html) code system.
+                 * 
+                 * @param uri
+                 *     Formal identifier for the property
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder uri(Uri uri) {
+                    this.uri = uri;
+                    return this;
+                }
+
+                /**
+                 * Build the {@link Property}
+                 * 
+                 * <p>Required elements:
+                 * <ul>
+                 * <li>code</li>
+                 * </ul>
+                 * 
+                 * @return
+                 *     An immutable object of type {@link Property}
+                 * @throws IllegalStateException
+                 *     if the current state cannot be built into a valid Property per the base specification
+                 */
+                @Override
+                public Property build() {
+                    Property property = new Property(this);
+                    if (validating) {
+                        validate(property);
+                    }
+                    return property;
+                }
+
+                protected void validate(Property property) {
+                    super.validate(property);
+                    ValidationSupport.requireNonNull(property.code, "code");
+                    ValidationSupport.requireValueOrChildren(property);
+                }
+
+                protected Builder from(Property property) {
+                    super.from(property);
+                    code = property.code;
+                    uri = property.uri;
+                    return this;
+                }
+            }
+        }
+
+        /**
          * The codes that are contained in the value set expansion.
          */
         public static class Contains extends BackboneElement {
@@ -4210,6 +5469,7 @@ public class ValueSet extends DomainResource {
             private final Code code;
             private final String display;
             private final List<ValueSet.Compose.Include.Concept.Designation> designation;
+            private final List<Property> property;
             private final List<ValueSet.Expansion.Contains> contains;
 
             private Contains(Builder builder) {
@@ -4221,6 +5481,7 @@ public class ValueSet extends DomainResource {
                 code = builder.code;
                 display = builder.display;
                 designation = Collections.unmodifiableList(builder.designation);
+                property = Collections.unmodifiableList(builder.property);
                 contains = Collections.unmodifiableList(builder.contains);
             }
 
@@ -4247,7 +5508,7 @@ public class ValueSet extends DomainResource {
 
             /**
              * If the concept is inactive in the code system that defines it. Inactive codes are those that are no longer to be used, 
-             * but are maintained by the code system for understanding legacy data. It might not be known or specified whether an 
+             * but are maintained by the code system for understanding legacy data. It might not be known or specified whether a 
              * concept is inactive (and it may depend on the context of use).
              * 
              * @return
@@ -4302,6 +5563,16 @@ public class ValueSet extends DomainResource {
             }
 
             /**
+             * A property value for this concept.
+             * 
+             * @return
+             *     An unmodifiable list containing immutable objects of type {@link Property} that may be empty.
+             */
+            public List<Property> getProperty() {
+                return property;
+            }
+
+            /**
              * Other codes and entries contained under this entry in the hierarchy.
              * 
              * @return
@@ -4321,6 +5592,7 @@ public class ValueSet extends DomainResource {
                     (code != null) || 
                     (display != null) || 
                     !designation.isEmpty() || 
+                    !property.isEmpty() || 
                     !contains.isEmpty();
             }
 
@@ -4340,6 +5612,7 @@ public class ValueSet extends DomainResource {
                         accept(code, "code", visitor);
                         accept(display, "display", visitor);
                         accept(designation, "designation", visitor, ValueSet.Compose.Include.Concept.Designation.class);
+                        accept(property, "property", visitor, Property.class);
                         accept(contains, "contains", visitor, ValueSet.Expansion.Contains.class);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
@@ -4369,6 +5642,7 @@ public class ValueSet extends DomainResource {
                     Objects.equals(code, other.code) && 
                     Objects.equals(display, other.display) && 
                     Objects.equals(designation, other.designation) && 
+                    Objects.equals(property, other.property) && 
                     Objects.equals(contains, other.contains);
             }
 
@@ -4386,6 +5660,7 @@ public class ValueSet extends DomainResource {
                         code, 
                         display, 
                         designation, 
+                        property, 
                         contains);
                     hashCode = result;
                 }
@@ -4409,6 +5684,7 @@ public class ValueSet extends DomainResource {
                 private Code code;
                 private String display;
                 private List<ValueSet.Compose.Include.Concept.Designation> designation = new ArrayList<>();
+                private List<Property> property = new ArrayList<>();
                 private List<ValueSet.Expansion.Contains> contains = new ArrayList<>();
 
                 private Builder() {
@@ -4432,7 +5708,7 @@ public class ValueSet extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -4452,7 +5728,7 @@ public class ValueSet extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -4477,7 +5753,7 @@ public class ValueSet extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4502,7 +5778,7 @@ public class ValueSet extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -4589,7 +5865,7 @@ public class ValueSet extends DomainResource {
 
                 /**
                  * If the concept is inactive in the code system that defines it. Inactive codes are those that are no longer to be used, 
-                 * but are maintained by the code system for understanding legacy data. It might not be known or specified whether an 
+                 * but are maintained by the code system for understanding legacy data. It might not be known or specified whether a 
                  * concept is inactive (and it may depend on the context of use).
                  * 
                  * @param inactive
@@ -4722,6 +5998,45 @@ public class ValueSet extends DomainResource {
                 }
 
                 /**
+                 * A property value for this concept.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param property
+                 *     Property value for the concept
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder property(Property... property) {
+                    for (Property value : property) {
+                        this.property.add(value);
+                    }
+                    return this;
+                }
+
+                /**
+                 * A property value for this concept.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param property
+                 *     Property value for the concept
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                public Builder property(Collection<Property> property) {
+                    this.property = new ArrayList<>(property);
+                    return this;
+                }
+
+                /**
                  * Other codes and entries contained under this entry in the hierarchy.
                  * 
                  * <p>Adds new element(s) to the existing list.
@@ -4780,6 +6095,7 @@ public class ValueSet extends DomainResource {
                 protected void validate(Contains contains) {
                     super.validate(contains);
                     ValidationSupport.checkList(contains.designation, "designation", ValueSet.Compose.Include.Concept.Designation.class);
+                    ValidationSupport.checkList(contains.property, "property", Property.class);
                     ValidationSupport.checkList(contains.contains, "contains", ValueSet.Expansion.Contains.class);
                     ValidationSupport.requireValueOrChildren(contains);
                 }
@@ -4793,9 +6109,1094 @@ public class ValueSet extends DomainResource {
                     code = contains.code;
                     display = contains.display;
                     designation.addAll(contains.designation);
+                    property.addAll(contains.property);
                     this.contains.addAll(contains.contains);
                     return this;
                 }
+            }
+
+            /**
+             * A property value for this concept.
+             */
+            public static class Property extends BackboneElement {
+                @Required
+                private final Code code;
+                @Choice({ Code.class, Coding.class, String.class, Integer.class, Boolean.class, DateTime.class, Decimal.class })
+                @Required
+                private final org.linuxforhealth.fhir.model.type.Element value;
+                private final List<SubProperty> subProperty;
+
+                private Property(Builder builder) {
+                    super(builder);
+                    code = builder.code;
+                    value = builder.value;
+                    subProperty = Collections.unmodifiableList(builder.subProperty);
+                }
+
+                /**
+                 * A code that is a reference to ValueSet.expansion.property.code.
+                 * 
+                 * @return
+                 *     An immutable object of type {@link Code} that is non-null.
+                 */
+                public Code getCode() {
+                    return code;
+                }
+
+                /**
+                 * The value of this property.
+                 * 
+                 * @return
+                 *     An immutable object of type {@link Code}, {@link Coding}, {@link String}, {@link Integer}, {@link Boolean}, {@link 
+                 *     DateTime} or {@link Decimal} that is non-null.
+                 */
+                public org.linuxforhealth.fhir.model.type.Element getValue() {
+                    return value;
+                }
+
+                /**
+                 * A subproperty value for this concept.
+                 * 
+                 * @return
+                 *     An unmodifiable list containing immutable objects of type {@link SubProperty} that may be empty.
+                 */
+                public List<SubProperty> getSubProperty() {
+                    return subProperty;
+                }
+
+                @Override
+                public boolean hasChildren() {
+                    return super.hasChildren() || 
+                        (code != null) || 
+                        (value != null) || 
+                        !subProperty.isEmpty();
+                }
+
+                @Override
+                public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                    if (visitor.preVisit(this)) {
+                        visitor.visitStart(elementName, elementIndex, this);
+                        if (visitor.visit(elementName, elementIndex, this)) {
+                            // visit children
+                            accept(id, "id", visitor);
+                            accept(extension, "extension", visitor, Extension.class);
+                            accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                            accept(code, "code", visitor);
+                            accept(value, "value", visitor);
+                            accept(subProperty, "subProperty", visitor, SubProperty.class);
+                        }
+                        visitor.visitEnd(elementName, elementIndex, this);
+                        visitor.postVisit(this);
+                    }
+                }
+
+                @Override
+                public boolean equals(Object obj) {
+                    if (this == obj) {
+                        return true;
+                    }
+                    if (obj == null) {
+                        return false;
+                    }
+                    if (getClass() != obj.getClass()) {
+                        return false;
+                    }
+                    Property other = (Property) obj;
+                    return Objects.equals(id, other.id) && 
+                        Objects.equals(extension, other.extension) && 
+                        Objects.equals(modifierExtension, other.modifierExtension) && 
+                        Objects.equals(code, other.code) && 
+                        Objects.equals(value, other.value) && 
+                        Objects.equals(subProperty, other.subProperty);
+                }
+
+                @Override
+                public int hashCode() {
+                    int result = hashCode;
+                    if (result == 0) {
+                        result = Objects.hash(id, 
+                            extension, 
+                            modifierExtension, 
+                            code, 
+                            value, 
+                            subProperty);
+                        hashCode = result;
+                    }
+                    return result;
+                }
+
+                @Override
+                public Builder toBuilder() {
+                    return new Builder().from(this);
+                }
+
+                public static Builder builder() {
+                    return new Builder();
+                }
+
+                public static class Builder extends BackboneElement.Builder {
+                    private Code code;
+                    private org.linuxforhealth.fhir.model.type.Element value;
+                    private List<SubProperty> subProperty = new ArrayList<>();
+
+                    private Builder() {
+                        super();
+                    }
+
+                    /**
+                     * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                     * contain spaces.
+                     * 
+                     * @param id
+                     *     Unique id for inter-element referencing
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    @Override
+                    public Builder id(java.lang.String id) {
+                        return (Builder) super.id(id);
+                    }
+
+                    /**
+                     * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                     * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                     * of the definition of the extension.
+                     * 
+                     * <p>Adds new element(s) to the existing list.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param extension
+                     *     Additional content defined by implementations
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    @Override
+                    public Builder extension(Extension... extension) {
+                        return (Builder) super.extension(extension);
+                    }
+
+                    /**
+                     * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                     * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                     * of the definition of the extension.
+                     * 
+                     * <p>Replaces the existing list with a new one containing elements from the Collection.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param extension
+                     *     Additional content defined by implementations
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @throws NullPointerException
+                     *     If the passed collection is null
+                     */
+                    @Override
+                    public Builder extension(Collection<Extension> extension) {
+                        return (Builder) super.extension(extension);
+                    }
+
+                    /**
+                     * May be used to represent additional information that is not part of the basic definition of the element and that 
+                     * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                     * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                     * extension. Applications processing a resource are required to check for modifier extensions.
+                     * 
+                     * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                     * change the meaning of modifierExtension itself).
+                     * 
+                     * <p>Adds new element(s) to the existing list.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param modifierExtension
+                     *     Extensions that cannot be ignored even if unrecognized
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    @Override
+                    public Builder modifierExtension(Extension... modifierExtension) {
+                        return (Builder) super.modifierExtension(modifierExtension);
+                    }
+
+                    /**
+                     * May be used to represent additional information that is not part of the basic definition of the element and that 
+                     * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                     * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                     * extension. Applications processing a resource are required to check for modifier extensions.
+                     * 
+                     * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                     * change the meaning of modifierExtension itself).
+                     * 
+                     * <p>Replaces the existing list with a new one containing elements from the Collection.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param modifierExtension
+                     *     Extensions that cannot be ignored even if unrecognized
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @throws NullPointerException
+                     *     If the passed collection is null
+                     */
+                    @Override
+                    public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                        return (Builder) super.modifierExtension(modifierExtension);
+                    }
+
+                    /**
+                     * A code that is a reference to ValueSet.expansion.property.code.
+                     * 
+                     * <p>This element is required.
+                     * 
+                     * @param code
+                     *     Reference to ValueSet.expansion.property.code
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder code(Code code) {
+                        this.code = code;
+                        return this;
+                    }
+
+                    /**
+                     * Convenience method for setting {@code value} with choice type String.
+                     * 
+                     * <p>This element is required.
+                     * 
+                     * @param value
+                     *     Value of the property for this concept
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @see #value(Element)
+                     */
+                    public Builder value(java.lang.String value) {
+                        this.value = (value == null) ? null : String.of(value);
+                        return this;
+                    }
+
+                    /**
+                     * Convenience method for setting {@code value} with choice type Integer.
+                     * 
+                     * <p>This element is required.
+                     * 
+                     * @param value
+                     *     Value of the property for this concept
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @see #value(Element)
+                     */
+                    public Builder value(java.lang.Integer value) {
+                        this.value = (value == null) ? null : Integer.of(value);
+                        return this;
+                    }
+
+                    /**
+                     * Convenience method for setting {@code value} with choice type Boolean.
+                     * 
+                     * <p>This element is required.
+                     * 
+                     * @param value
+                     *     Value of the property for this concept
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @see #value(Element)
+                     */
+                    public Builder value(java.lang.Boolean value) {
+                        this.value = (value == null) ? null : Boolean.of(value);
+                        return this;
+                    }
+
+                    /**
+                     * The value of this property.
+                     * 
+                     * <p>This element is required.
+                     * 
+                     * <p>This is a choice element with the following allowed types:
+                     * <ul>
+                     * <li>{@link Code}</li>
+                     * <li>{@link Coding}</li>
+                     * <li>{@link String}</li>
+                     * <li>{@link Integer}</li>
+                     * <li>{@link Boolean}</li>
+                     * <li>{@link DateTime}</li>
+                     * <li>{@link Decimal}</li>
+                     * </ul>
+                     * 
+                     * @param value
+                     *     Value of the property for this concept
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
+                        this.value = value;
+                        return this;
+                    }
+
+                    /**
+                     * A subproperty value for this concept.
+                     * 
+                     * <p>Adds new element(s) to the existing list.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param subProperty
+                     *     SubProperty value for the concept
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder subProperty(SubProperty... subProperty) {
+                        for (SubProperty value : subProperty) {
+                            this.subProperty.add(value);
+                        }
+                        return this;
+                    }
+
+                    /**
+                     * A subproperty value for this concept.
+                     * 
+                     * <p>Replaces the existing list with a new one containing elements from the Collection.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param subProperty
+                     *     SubProperty value for the concept
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @throws NullPointerException
+                     *     If the passed collection is null
+                     */
+                    public Builder subProperty(Collection<SubProperty> subProperty) {
+                        this.subProperty = new ArrayList<>(subProperty);
+                        return this;
+                    }
+
+                    /**
+                     * Build the {@link Property}
+                     * 
+                     * <p>Required elements:
+                     * <ul>
+                     * <li>code</li>
+                     * <li>value</li>
+                     * </ul>
+                     * 
+                     * @return
+                     *     An immutable object of type {@link Property}
+                     * @throws IllegalStateException
+                     *     if the current state cannot be built into a valid Property per the base specification
+                     */
+                    @Override
+                    public Property build() {
+                        Property property = new Property(this);
+                        if (validating) {
+                            validate(property);
+                        }
+                        return property;
+                    }
+
+                    protected void validate(Property property) {
+                        super.validate(property);
+                        ValidationSupport.requireNonNull(property.code, "code");
+                        ValidationSupport.requireChoiceElement(property.value, "value", Code.class, Coding.class, String.class, Integer.class, Boolean.class, DateTime.class, Decimal.class);
+                        ValidationSupport.checkList(property.subProperty, "subProperty", SubProperty.class);
+                        ValidationSupport.requireValueOrChildren(property);
+                    }
+
+                    protected Builder from(Property property) {
+                        super.from(property);
+                        code = property.code;
+                        value = property.value;
+                        subProperty.addAll(property.subProperty);
+                        return this;
+                    }
+                }
+
+                /**
+                 * A subproperty value for this concept.
+                 */
+                public static class SubProperty extends BackboneElement {
+                    @Required
+                    private final Code code;
+                    @Choice({ Code.class, Coding.class, String.class, Integer.class, Boolean.class, DateTime.class, Decimal.class })
+                    @Required
+                    private final org.linuxforhealth.fhir.model.type.Element value;
+
+                    private SubProperty(Builder builder) {
+                        super(builder);
+                        code = builder.code;
+                        value = builder.value;
+                    }
+
+                    /**
+                     * A code that is a reference to ValueSet.expansion.property.code.
+                     * 
+                     * @return
+                     *     An immutable object of type {@link Code} that is non-null.
+                     */
+                    public Code getCode() {
+                        return code;
+                    }
+
+                    /**
+                     * The value of this subproperty.
+                     * 
+                     * @return
+                     *     An immutable object of type {@link Code}, {@link Coding}, {@link String}, {@link Integer}, {@link Boolean}, {@link 
+                     *     DateTime} or {@link Decimal} that is non-null.
+                     */
+                    public org.linuxforhealth.fhir.model.type.Element getValue() {
+                        return value;
+                    }
+
+                    @Override
+                    public boolean hasChildren() {
+                        return super.hasChildren() || 
+                            (code != null) || 
+                            (value != null);
+                    }
+
+                    @Override
+                    public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                        if (visitor.preVisit(this)) {
+                            visitor.visitStart(elementName, elementIndex, this);
+                            if (visitor.visit(elementName, elementIndex, this)) {
+                                // visit children
+                                accept(id, "id", visitor);
+                                accept(extension, "extension", visitor, Extension.class);
+                                accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                                accept(code, "code", visitor);
+                                accept(value, "value", visitor);
+                            }
+                            visitor.visitEnd(elementName, elementIndex, this);
+                            visitor.postVisit(this);
+                        }
+                    }
+
+                    @Override
+                    public boolean equals(Object obj) {
+                        if (this == obj) {
+                            return true;
+                        }
+                        if (obj == null) {
+                            return false;
+                        }
+                        if (getClass() != obj.getClass()) {
+                            return false;
+                        }
+                        SubProperty other = (SubProperty) obj;
+                        return Objects.equals(id, other.id) && 
+                            Objects.equals(extension, other.extension) && 
+                            Objects.equals(modifierExtension, other.modifierExtension) && 
+                            Objects.equals(code, other.code) && 
+                            Objects.equals(value, other.value);
+                    }
+
+                    @Override
+                    public int hashCode() {
+                        int result = hashCode;
+                        if (result == 0) {
+                            result = Objects.hash(id, 
+                                extension, 
+                                modifierExtension, 
+                                code, 
+                                value);
+                            hashCode = result;
+                        }
+                        return result;
+                    }
+
+                    @Override
+                    public Builder toBuilder() {
+                        return new Builder().from(this);
+                    }
+
+                    public static Builder builder() {
+                        return new Builder();
+                    }
+
+                    public static class Builder extends BackboneElement.Builder {
+                        private Code code;
+                        private org.linuxforhealth.fhir.model.type.Element value;
+
+                        private Builder() {
+                            super();
+                        }
+
+                        /**
+                         * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                         * contain spaces.
+                         * 
+                         * @param id
+                         *     Unique id for inter-element referencing
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        @Override
+                        public Builder id(java.lang.String id) {
+                            return (Builder) super.id(id);
+                        }
+
+                        /**
+                         * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                         * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                         * of the definition of the extension.
+                         * 
+                         * <p>Adds new element(s) to the existing list.
+                         * If any of the elements are null, calling {@link #build()} will fail.
+                         * 
+                         * @param extension
+                         *     Additional content defined by implementations
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        @Override
+                        public Builder extension(Extension... extension) {
+                            return (Builder) super.extension(extension);
+                        }
+
+                        /**
+                         * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                         * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                         * of the definition of the extension.
+                         * 
+                         * <p>Replaces the existing list with a new one containing elements from the Collection.
+                         * If any of the elements are null, calling {@link #build()} will fail.
+                         * 
+                         * @param extension
+                         *     Additional content defined by implementations
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         * 
+                         * @throws NullPointerException
+                         *     If the passed collection is null
+                         */
+                        @Override
+                        public Builder extension(Collection<Extension> extension) {
+                            return (Builder) super.extension(extension);
+                        }
+
+                        /**
+                         * May be used to represent additional information that is not part of the basic definition of the element and that 
+                         * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                         * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                         * extension. Applications processing a resource are required to check for modifier extensions.
+                         * 
+                         * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                         * change the meaning of modifierExtension itself).
+                         * 
+                         * <p>Adds new element(s) to the existing list.
+                         * If any of the elements are null, calling {@link #build()} will fail.
+                         * 
+                         * @param modifierExtension
+                         *     Extensions that cannot be ignored even if unrecognized
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        @Override
+                        public Builder modifierExtension(Extension... modifierExtension) {
+                            return (Builder) super.modifierExtension(modifierExtension);
+                        }
+
+                        /**
+                         * May be used to represent additional information that is not part of the basic definition of the element and that 
+                         * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                         * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                         * extension. Applications processing a resource are required to check for modifier extensions.
+                         * 
+                         * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                         * change the meaning of modifierExtension itself).
+                         * 
+                         * <p>Replaces the existing list with a new one containing elements from the Collection.
+                         * If any of the elements are null, calling {@link #build()} will fail.
+                         * 
+                         * @param modifierExtension
+                         *     Extensions that cannot be ignored even if unrecognized
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         * 
+                         * @throws NullPointerException
+                         *     If the passed collection is null
+                         */
+                        @Override
+                        public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                            return (Builder) super.modifierExtension(modifierExtension);
+                        }
+
+                        /**
+                         * A code that is a reference to ValueSet.expansion.property.code.
+                         * 
+                         * <p>This element is required.
+                         * 
+                         * @param code
+                         *     Reference to ValueSet.expansion.property.code
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        public Builder code(Code code) {
+                            this.code = code;
+                            return this;
+                        }
+
+                        /**
+                         * Convenience method for setting {@code value} with choice type String.
+                         * 
+                         * <p>This element is required.
+                         * 
+                         * @param value
+                         *     Value of the subproperty for this concept
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         * 
+                         * @see #value(Element)
+                         */
+                        public Builder value(java.lang.String value) {
+                            this.value = (value == null) ? null : String.of(value);
+                            return this;
+                        }
+
+                        /**
+                         * Convenience method for setting {@code value} with choice type Integer.
+                         * 
+                         * <p>This element is required.
+                         * 
+                         * @param value
+                         *     Value of the subproperty for this concept
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         * 
+                         * @see #value(Element)
+                         */
+                        public Builder value(java.lang.Integer value) {
+                            this.value = (value == null) ? null : Integer.of(value);
+                            return this;
+                        }
+
+                        /**
+                         * Convenience method for setting {@code value} with choice type Boolean.
+                         * 
+                         * <p>This element is required.
+                         * 
+                         * @param value
+                         *     Value of the subproperty for this concept
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         * 
+                         * @see #value(Element)
+                         */
+                        public Builder value(java.lang.Boolean value) {
+                            this.value = (value == null) ? null : Boolean.of(value);
+                            return this;
+                        }
+
+                        /**
+                         * The value of this subproperty.
+                         * 
+                         * <p>This element is required.
+                         * 
+                         * <p>This is a choice element with the following allowed types:
+                         * <ul>
+                         * <li>{@link Code}</li>
+                         * <li>{@link Coding}</li>
+                         * <li>{@link String}</li>
+                         * <li>{@link Integer}</li>
+                         * <li>{@link Boolean}</li>
+                         * <li>{@link DateTime}</li>
+                         * <li>{@link Decimal}</li>
+                         * </ul>
+                         * 
+                         * @param value
+                         *     Value of the subproperty for this concept
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
+                            this.value = value;
+                            return this;
+                        }
+
+                        /**
+                         * Build the {@link SubProperty}
+                         * 
+                         * <p>Required elements:
+                         * <ul>
+                         * <li>code</li>
+                         * <li>value</li>
+                         * </ul>
+                         * 
+                         * @return
+                         *     An immutable object of type {@link SubProperty}
+                         * @throws IllegalStateException
+                         *     if the current state cannot be built into a valid SubProperty per the base specification
+                         */
+                        @Override
+                        public SubProperty build() {
+                            SubProperty subProperty = new SubProperty(this);
+                            if (validating) {
+                                validate(subProperty);
+                            }
+                            return subProperty;
+                        }
+
+                        protected void validate(SubProperty subProperty) {
+                            super.validate(subProperty);
+                            ValidationSupport.requireNonNull(subProperty.code, "code");
+                            ValidationSupport.requireChoiceElement(subProperty.value, "value", Code.class, Coding.class, String.class, Integer.class, Boolean.class, DateTime.class, Decimal.class);
+                            ValidationSupport.requireValueOrChildren(subProperty);
+                        }
+
+                        protected Builder from(SubProperty subProperty) {
+                            super.from(subProperty);
+                            code = subProperty.code;
+                            value = subProperty.value;
+                            return this;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Description of the semantic space the Value Set Expansion is intended to cover and should further clarify the text in 
+     * ValueSet.description.
+     */
+    public static class Scope extends BackboneElement {
+        private final String inclusionCriteria;
+        private final String exclusionCriteria;
+
+        private Scope(Builder builder) {
+            super(builder);
+            inclusionCriteria = builder.inclusionCriteria;
+            exclusionCriteria = builder.exclusionCriteria;
+        }
+
+        /**
+         * Criteria describing which concepts or codes should be included and why.
+         * 
+         * @return
+         *     An immutable object of type {@link String} that may be null.
+         */
+        public String getInclusionCriteria() {
+            return inclusionCriteria;
+        }
+
+        /**
+         * Criteria describing which concepts or codes should be excluded and why.
+         * 
+         * @return
+         *     An immutable object of type {@link String} that may be null.
+         */
+        public String getExclusionCriteria() {
+            return exclusionCriteria;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (inclusionCriteria != null) || 
+                (exclusionCriteria != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(inclusionCriteria, "inclusionCriteria", visitor);
+                    accept(exclusionCriteria, "exclusionCriteria", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Scope other = (Scope) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(inclusionCriteria, other.inclusionCriteria) && 
+                Objects.equals(exclusionCriteria, other.exclusionCriteria);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    inclusionCriteria, 
+                    exclusionCriteria);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private String inclusionCriteria;
+            private String exclusionCriteria;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * Convenience method for setting {@code inclusionCriteria}.
+             * 
+             * @param inclusionCriteria
+             *     Criteria describing which concepts or codes should be included and why
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #inclusionCriteria(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder inclusionCriteria(java.lang.String inclusionCriteria) {
+                this.inclusionCriteria = (inclusionCriteria == null) ? null : String.of(inclusionCriteria);
+                return this;
+            }
+
+            /**
+             * Criteria describing which concepts or codes should be included and why.
+             * 
+             * @param inclusionCriteria
+             *     Criteria describing which concepts or codes should be included and why
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder inclusionCriteria(String inclusionCriteria) {
+                this.inclusionCriteria = inclusionCriteria;
+                return this;
+            }
+
+            /**
+             * Convenience method for setting {@code exclusionCriteria}.
+             * 
+             * @param exclusionCriteria
+             *     Criteria describing which concepts or codes should be excluded and why
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #exclusionCriteria(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder exclusionCriteria(java.lang.String exclusionCriteria) {
+                this.exclusionCriteria = (exclusionCriteria == null) ? null : String.of(exclusionCriteria);
+                return this;
+            }
+
+            /**
+             * Criteria describing which concepts or codes should be excluded and why.
+             * 
+             * @param exclusionCriteria
+             *     Criteria describing which concepts or codes should be excluded and why
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder exclusionCriteria(String exclusionCriteria) {
+                this.exclusionCriteria = exclusionCriteria;
+                return this;
+            }
+
+            /**
+             * Build the {@link Scope}
+             * 
+             * @return
+             *     An immutable object of type {@link Scope}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Scope per the base specification
+             */
+            @Override
+            public Scope build() {
+                Scope scope = new Scope(this);
+                if (validating) {
+                    validate(scope);
+                }
+                return scope;
+            }
+
+            protected void validate(Scope scope) {
+                super.validate(scope);
+                ValidationSupport.requireValueOrChildren(scope);
+            }
+
+            protected Builder from(Scope scope) {
+                super.from(scope);
+                inclusionCriteria = scope.inclusionCriteria;
+                exclusionCriteria = scope.exclusionCriteria;
+                return this;
             }
         }
     }

@@ -52,6 +52,7 @@ public class FHIRParserTest {
             String jsonString = "{\"resourceType\":\"Patient\",\"id\":\"1\",\"id\":\"2\"}";
             FHIRParser parser = FHIRParser.parser(Format.JSON);
             parser.parse(new StringReader(jsonString));
+            fail();
         } catch (FHIRParserException e) {
             assertTrue(e.getMessage().startsWith("Duplicate key 'id' is not allowed"));
         }

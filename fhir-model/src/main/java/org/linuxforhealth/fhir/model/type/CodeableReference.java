@@ -20,7 +20,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * class).
  */
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class CodeableReference extends Element {
+public class CodeableReference extends DataType {
     @Summary
     private final CodeableConcept concept;
     @Summary
@@ -116,7 +116,7 @@ public class CodeableReference extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private CodeableConcept concept;
         private Reference reference;
 
@@ -141,7 +141,7 @@ public class CodeableReference extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -161,7 +161,7 @@ public class CodeableReference extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 

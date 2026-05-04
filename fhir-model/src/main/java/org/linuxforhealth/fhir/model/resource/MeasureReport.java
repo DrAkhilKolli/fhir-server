@@ -15,16 +15,20 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
+import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
+import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
 import org.linuxforhealth.fhir.model.type.DateTime;
+import org.linuxforhealth.fhir.model.type.Duration;
+import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Integer;
@@ -32,12 +36,15 @@ import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
 import org.linuxforhealth.fhir.model.type.Quantity;
+import org.linuxforhealth.fhir.model.type.Range;
 import org.linuxforhealth.fhir.model.type.Reference;
+import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.MeasureReportStatus;
 import org.linuxforhealth.fhir.model.type.code.MeasureReportType;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
+import org.linuxforhealth.fhir.model.type.code.SubmitDataUpdateType;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
@@ -45,10 +52,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * The MeasureReport resource contains the results of the calculation of a measure; and optionally a reference to the 
  * resources involved in that calculation.
  * 
- * <p>Maturity level: FMM3 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 3,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
@@ -56,7 +63,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Rule",
     location = "(base)",
     description = "Measure Reports used for data collection SHALL NOT communicate group and score information",
-    expression = "(type != 'data-collection') or group.exists().not()",
+    expression = "(type != 'data-exchange') or group.exists().not()",
     source = "http://hl7.org/fhir/StructureDefinition/MeasureReport"
 )
 @Constraint(
@@ -70,6 +77,15 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 @Constraint(
     id = "measureReport-3",
     level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://terminology.hl7.org/ValueSet/measure-scoring",
+    expression = "scoring.exists() implies (scoring.memberOf('http://terminology.hl7.org/ValueSet/measure-scoring', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/MeasureReport",
+    generated = true
+)
+@Constraint(
+    id = "measureReport-4",
+    level = "Warning",
     location = "group.population.code",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/measure-population",
     expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/measure-population', 'extensible')",
@@ -77,7 +93,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "measureReport-4",
+    id = "measureReport-5",
     level = "Warning",
     location = "group.stratifier.stratum.population.code",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/measure-population",
@@ -94,7 +110,7 @@ public class MeasureReport extends DomainResource {
         bindingName = "MeasureReportStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The status of the measure report (e.g. complete, pending, or error)",
-        valueSet = "http://hl7.org/fhir/ValueSet/measure-report-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/measure-report-status|5.0.0"
     )
     @Required
     private final MeasureReportStatus status;
@@ -103,33 +119,53 @@ public class MeasureReport extends DomainResource {
         bindingName = "MeasureReportType",
         strength = BindingStrength.Value.REQUIRED,
         description = "The type of the measure report: individual, patient listing, or summary",
-        valueSet = "http://hl7.org/fhir/ValueSet/measure-report-type|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/measure-report-type|5.0.0"
     )
     @Required
     private final MeasureReportType type;
     @Summary
-    @Required
+    @Binding(
+        bindingName = "SubmitDataUpdateType",
+        strength = BindingStrength.Value.REQUIRED,
+        valueSet = "http://hl7.org/fhir/ValueSet/submit-data-update-type|5.0.0"
+    )
+    private final SubmitDataUpdateType dataUpdateType;
+    @Summary
     private final Canonical measure;
     @Summary
-    @ReferenceTarget({ "Patient", "Practitioner", "PractitionerRole", "Location", "Device", "RelatedPerson", "Group" })
+    @ReferenceTarget({ "CareTeam", "Device", "Group", "HealthcareService", "Location", "Organization", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson" })
     private final Reference subject;
     @Summary
     private final DateTime date;
     @Summary
-    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Location", "Organization" })
+    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization", "Group" })
     private final Reference reporter;
+    @ReferenceTarget({ "Organization" })
+    private final Reference reportingVendor;
+    @ReferenceTarget({ "Location" })
+    private final Reference location;
     @Summary
     @Required
     private final Period period;
+    @ReferenceTarget({ "Parameters" })
+    private final Reference inputParameters;
+    @Summary
+    @Binding(
+        bindingName = "MeasureScoring",
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://terminology.hl7.org/ValueSet/measure-scoring"
+    )
+    private final CodeableConcept scoring;
     @Summary
     @Binding(
         bindingName = "MeasureImprovementNotation",
         strength = BindingStrength.Value.REQUIRED,
         description = "The improvement notation of the measure report (e.g. increase or decrease)",
-        valueSet = "http://hl7.org/fhir/ValueSet/measure-improvement-notation|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/measure-improvement-notation|5.0.0"
     )
     private final CodeableConcept improvementNotation;
     private final List<Group> group;
+    private final List<Reference> supplementalData;
     private final List<Reference> evaluatedResource;
 
     private MeasureReport(Builder builder) {
@@ -137,13 +173,19 @@ public class MeasureReport extends DomainResource {
         identifier = Collections.unmodifiableList(builder.identifier);
         status = builder.status;
         type = builder.type;
+        dataUpdateType = builder.dataUpdateType;
         measure = builder.measure;
         subject = builder.subject;
         date = builder.date;
         reporter = builder.reporter;
+        reportingVendor = builder.reportingVendor;
+        location = builder.location;
         period = builder.period;
+        inputParameters = builder.inputParameters;
+        scoring = builder.scoring;
         improvementNotation = builder.improvementNotation;
         group = Collections.unmodifiableList(builder.group);
+        supplementalData = Collections.unmodifiableList(builder.supplementalData);
         evaluatedResource = Collections.unmodifiableList(builder.evaluatedResource);
     }
 
@@ -183,10 +225,22 @@ public class MeasureReport extends DomainResource {
     }
 
     /**
+     * Indicates whether the data submitted in a data-exchange report represents a snapshot or incremental update. A snapshot 
+     * update replaces all previously submitted data for the receiver, whereas an incremental update represents only updated 
+     * and/or changed data and should be applied as a differential update to the existing submitted data for the receiver.
+     * 
+     * @return
+     *     An immutable object of type {@link SubmitDataUpdateType} that may be null.
+     */
+    public SubmitDataUpdateType getDataUpdateType() {
+        return dataUpdateType;
+    }
+
+    /**
      * A reference to the Measure that was calculated to produce this report.
      * 
      * @return
-     *     An immutable object of type {@link Canonical} that is non-null.
+     *     An immutable object of type {@link Canonical} that may be null.
      */
     public Canonical getMeasure() {
         return measure;
@@ -203,7 +257,7 @@ public class MeasureReport extends DomainResource {
     }
 
     /**
-     * The date this measure report was generated.
+     * The date this measure was calculated.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -213,13 +267,35 @@ public class MeasureReport extends DomainResource {
     }
 
     /**
-     * The individual, location, or organization that is reporting the data.
+     * The individual or organization that is reporting the data.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
      */
     public Reference getReporter() {
         return reporter;
+    }
+
+    /**
+     * A reference to the vendor who queried the data, calculated results and/or generated the report. The ‘reporting vendor’ 
+     * is intended to represent the submitting entity when it is not the same as the reporting entity. This extension is used 
+     * when the Receiver is interested in getting vendor information in the report.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getReportingVendor() {
+        return reportingVendor;
+    }
+
+    /**
+     * A reference to the location for which the data is being reported.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getLocation() {
+        return location;
     }
 
     /**
@@ -230,6 +306,29 @@ public class MeasureReport extends DomainResource {
      */
     public Period getPeriod() {
         return period;
+    }
+
+    /**
+     * A reference to a Parameters resource (typically represented using a contained resource) that represents any input 
+     * parameters that were provided to the operation that generated the report.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getInputParameters() {
+        return inputParameters;
+    }
+
+    /**
+     * Indicates how the calculation is performed for the measure, including proportion, ratio, continuous-variable, and 
+     * cohort. The value set is extensible, allowing additional measure scoring types to be represented. It is expected to be 
+     * the same as the scoring element on the referenced Measure.
+     * 
+     * @return
+     *     An immutable object of type {@link CodeableConcept} that may be null.
+     */
+    public CodeableConcept getScoring() {
+        return scoring;
     }
 
     /**
@@ -253,7 +352,20 @@ public class MeasureReport extends DomainResource {
     }
 
     /**
-     * A reference to a Bundle containing the Resources that were used in the calculation of this measure.
+     * A reference to a Resource that represents additional information collected for the report. If the value of the 
+     * supplemental data is not a Resource (i.e. evaluating the supplementalData expression for this case in the measure 
+     * results in a value that is not a FHIR Resource), it is reported as a reference to a contained Observation resource.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getSupplementalData() {
+        return supplementalData;
+    }
+
+    /**
+     * Evaluated resources are used to capture what data was involved in the calculation of a measure. This usage is only 
+     * allowed for individual reports to ensure that the size of the MeasureReport resource is bounded.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
@@ -268,13 +380,19 @@ public class MeasureReport extends DomainResource {
             !identifier.isEmpty() || 
             (status != null) || 
             (type != null) || 
+            (dataUpdateType != null) || 
             (measure != null) || 
             (subject != null) || 
             (date != null) || 
             (reporter != null) || 
+            (reportingVendor != null) || 
+            (location != null) || 
             (period != null) || 
+            (inputParameters != null) || 
+            (scoring != null) || 
             (improvementNotation != null) || 
             !group.isEmpty() || 
+            !supplementalData.isEmpty() || 
             !evaluatedResource.isEmpty();
     }
 
@@ -295,13 +413,19 @@ public class MeasureReport extends DomainResource {
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(status, "status", visitor);
                 accept(type, "type", visitor);
+                accept(dataUpdateType, "dataUpdateType", visitor);
                 accept(measure, "measure", visitor);
                 accept(subject, "subject", visitor);
                 accept(date, "date", visitor);
                 accept(reporter, "reporter", visitor);
+                accept(reportingVendor, "reportingVendor", visitor);
+                accept(location, "location", visitor);
                 accept(period, "period", visitor);
+                accept(inputParameters, "inputParameters", visitor);
+                accept(scoring, "scoring", visitor);
                 accept(improvementNotation, "improvementNotation", visitor);
                 accept(group, "group", visitor, Group.class);
+                accept(supplementalData, "supplementalData", visitor, Reference.class);
                 accept(evaluatedResource, "evaluatedResource", visitor, Reference.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
@@ -332,13 +456,19 @@ public class MeasureReport extends DomainResource {
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(status, other.status) && 
             Objects.equals(type, other.type) && 
+            Objects.equals(dataUpdateType, other.dataUpdateType) && 
             Objects.equals(measure, other.measure) && 
             Objects.equals(subject, other.subject) && 
             Objects.equals(date, other.date) && 
             Objects.equals(reporter, other.reporter) && 
+            Objects.equals(reportingVendor, other.reportingVendor) && 
+            Objects.equals(location, other.location) && 
             Objects.equals(period, other.period) && 
+            Objects.equals(inputParameters, other.inputParameters) && 
+            Objects.equals(scoring, other.scoring) && 
             Objects.equals(improvementNotation, other.improvementNotation) && 
             Objects.equals(group, other.group) && 
+            Objects.equals(supplementalData, other.supplementalData) && 
             Objects.equals(evaluatedResource, other.evaluatedResource);
     }
 
@@ -357,13 +487,19 @@ public class MeasureReport extends DomainResource {
                 identifier, 
                 status, 
                 type, 
+                dataUpdateType, 
                 measure, 
                 subject, 
                 date, 
                 reporter, 
+                reportingVendor, 
+                location, 
                 period, 
+                inputParameters, 
+                scoring, 
                 improvementNotation, 
                 group, 
+                supplementalData, 
                 evaluatedResource);
             hashCode = result;
         }
@@ -383,13 +519,19 @@ public class MeasureReport extends DomainResource {
         private List<Identifier> identifier = new ArrayList<>();
         private MeasureReportStatus status;
         private MeasureReportType type;
+        private SubmitDataUpdateType dataUpdateType;
         private Canonical measure;
         private Reference subject;
         private DateTime date;
         private Reference reporter;
+        private Reference reportingVendor;
+        private Reference location;
         private Period period;
+        private Reference inputParameters;
+        private CodeableConcept scoring;
         private CodeableConcept improvementNotation;
         private List<Group> group = new ArrayList<>();
+        private List<Reference> supplementalData = new ArrayList<>();
         private List<Reference> evaluatedResource = new ArrayList<>();
 
         private Builder() {
@@ -474,7 +616,8 @@ public class MeasureReport extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -492,7 +635,8 @@ public class MeasureReport extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -513,7 +657,7 @@ public class MeasureReport extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -533,7 +677,7 @@ public class MeasureReport extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -558,9 +702,9 @@ public class MeasureReport extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -583,9 +727,9 @@ public class MeasureReport extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -674,7 +818,7 @@ public class MeasureReport extends DomainResource {
          * <p>This element is required.
          * 
          * @param type
-         *     individual | subject-list | summary | data-collection
+         *     individual | subject-list | summary | data-exchange
          * 
          * @return
          *     A reference to this Builder instance
@@ -685,9 +829,23 @@ public class MeasureReport extends DomainResource {
         }
 
         /**
-         * A reference to the Measure that was calculated to produce this report.
+         * Indicates whether the data submitted in a data-exchange report represents a snapshot or incremental update. A snapshot 
+         * update replaces all previously submitted data for the receiver, whereas an incremental update represents only updated 
+         * and/or changed data and should be applied as a differential update to the existing submitted data for the receiver.
          * 
-         * <p>This element is required.
+         * @param dataUpdateType
+         *     incremental | snapshot
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder dataUpdateType(SubmitDataUpdateType dataUpdateType) {
+            this.dataUpdateType = dataUpdateType;
+            return this;
+        }
+
+        /**
+         * A reference to the Measure that was calculated to produce this report.
          * 
          * @param measure
          *     What measure was calculated
@@ -705,13 +863,16 @@ public class MeasureReport extends DomainResource {
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
+         * <li>{@link CareTeam}</li>
+         * <li>{@link Device}</li>
+         * <li>{@link Group}</li>
+         * <li>{@link HealthcareService}</li>
+         * <li>{@link Location}</li>
+         * <li>{@link Organization}</li>
          * <li>{@link Patient}</li>
          * <li>{@link Practitioner}</li>
          * <li>{@link PractitionerRole}</li>
-         * <li>{@link Location}</li>
-         * <li>{@link Device}</li>
          * <li>{@link RelatedPerson}</li>
-         * <li>{@link Group}</li>
          * </ul>
          * 
          * @param subject
@@ -726,10 +887,10 @@ public class MeasureReport extends DomainResource {
         }
 
         /**
-         * The date this measure report was generated.
+         * The date this measure was calculated.
          * 
          * @param date
-         *     When the report was generated
+         *     When the measure was calculated
          * 
          * @return
          *     A reference to this Builder instance
@@ -740,14 +901,14 @@ public class MeasureReport extends DomainResource {
         }
 
         /**
-         * The individual, location, or organization that is reporting the data.
+         * The individual or organization that is reporting the data.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
          * <li>{@link Practitioner}</li>
          * <li>{@link PractitionerRole}</li>
-         * <li>{@link Location}</li>
          * <li>{@link Organization}</li>
+         * <li>{@link Group}</li>
          * </ul>
          * 
          * @param reporter
@@ -758,6 +919,46 @@ public class MeasureReport extends DomainResource {
          */
         public Builder reporter(Reference reporter) {
             this.reporter = reporter;
+            return this;
+        }
+
+        /**
+         * A reference to the vendor who queried the data, calculated results and/or generated the report. The ‘reporting vendor’ 
+         * is intended to represent the submitting entity when it is not the same as the reporting entity. This extension is used 
+         * when the Receiver is interested in getting vendor information in the report.
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link Organization}</li>
+         * </ul>
+         * 
+         * @param reportingVendor
+         *     What vendor prepared the data
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder reportingVendor(Reference reportingVendor) {
+            this.reportingVendor = reportingVendor;
+            return this;
+        }
+
+        /**
+         * A reference to the location for which the data is being reported.
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link Location}</li>
+         * </ul>
+         * 
+         * @param location
+         *     Where the reported data is from
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder location(Reference location) {
+            this.location = location;
             return this;
         }
 
@@ -774,6 +975,42 @@ public class MeasureReport extends DomainResource {
          */
         public Builder period(Period period) {
             this.period = period;
+            return this;
+        }
+
+        /**
+         * A reference to a Parameters resource (typically represented using a contained resource) that represents any input 
+         * parameters that were provided to the operation that generated the report.
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link Parameters}</li>
+         * </ul>
+         * 
+         * @param inputParameters
+         *     What parameters were provided to the report
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder inputParameters(Reference inputParameters) {
+            this.inputParameters = inputParameters;
+            return this;
+        }
+
+        /**
+         * Indicates how the calculation is performed for the measure, including proportion, ratio, continuous-variable, and 
+         * cohort. The value set is extensible, allowing additional measure scoring types to be represented. It is expected to be 
+         * the same as the scoring element on the referenced Measure.
+         * 
+         * @param scoring
+         *     What scoring method (e.g. proportion, ratio, continuous-variable)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder scoring(CodeableConcept scoring) {
+            this.scoring = scoring;
             return this;
         }
 
@@ -831,7 +1068,51 @@ public class MeasureReport extends DomainResource {
         }
 
         /**
-         * A reference to a Bundle containing the Resources that were used in the calculation of this measure.
+         * A reference to a Resource that represents additional information collected for the report. If the value of the 
+         * supplemental data is not a Resource (i.e. evaluating the supplementalData expression for this case in the measure 
+         * results in a value that is not a FHIR Resource), it is reported as a reference to a contained Observation resource.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param supplementalData
+         *     Additional information collected for the report
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder supplementalData(Reference... supplementalData) {
+            for (Reference value : supplementalData) {
+                this.supplementalData.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A reference to a Resource that represents additional information collected for the report. If the value of the 
+         * supplemental data is not a Resource (i.e. evaluating the supplementalData expression for this case in the measure 
+         * results in a value that is not a FHIR Resource), it is reported as a reference to a contained Observation resource.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param supplementalData
+         *     Additional information collected for the report
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder supplementalData(Collection<Reference> supplementalData) {
+            this.supplementalData = new ArrayList<>(supplementalData);
+            return this;
+        }
+
+        /**
+         * Evaluated resources are used to capture what data was involved in the calculation of a measure. This usage is only 
+         * allowed for individual reports to ensure that the size of the MeasureReport resource is bounded.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -850,7 +1131,8 @@ public class MeasureReport extends DomainResource {
         }
 
         /**
-         * A reference to a Bundle containing the Resources that were used in the calculation of this measure.
+         * Evaluated resources are used to capture what data was involved in the calculation of a measure. This usage is only 
+         * allowed for individual reports to ensure that the size of the MeasureReport resource is bounded.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -876,7 +1158,6 @@ public class MeasureReport extends DomainResource {
          * <ul>
          * <li>status</li>
          * <li>type</li>
-         * <li>measure</li>
          * <li>period</li>
          * </ul>
          * 
@@ -899,13 +1180,15 @@ public class MeasureReport extends DomainResource {
             ValidationSupport.checkList(measureReport.identifier, "identifier", Identifier.class);
             ValidationSupport.requireNonNull(measureReport.status, "status");
             ValidationSupport.requireNonNull(measureReport.type, "type");
-            ValidationSupport.requireNonNull(measureReport.measure, "measure");
             ValidationSupport.requireNonNull(measureReport.period, "period");
             ValidationSupport.checkList(measureReport.group, "group", Group.class);
+            ValidationSupport.checkList(measureReport.supplementalData, "supplementalData", Reference.class);
             ValidationSupport.checkList(measureReport.evaluatedResource, "evaluatedResource", Reference.class);
-            ValidationSupport.checkValueSetBinding(measureReport.improvementNotation, "improvementNotation", "http://hl7.org/fhir/ValueSet/measure-improvement-notation", "http://terminology.hl7.org/CodeSystem/measure-improvement-notation", "increase", "decrease");
-            ValidationSupport.checkReferenceType(measureReport.subject, "subject", "Patient", "Practitioner", "PractitionerRole", "Location", "Device", "RelatedPerson", "Group");
-            ValidationSupport.checkReferenceType(measureReport.reporter, "reporter", "Practitioner", "PractitionerRole", "Location", "Organization");
+            ValidationSupport.checkReferenceType(measureReport.subject, "subject", "CareTeam", "Device", "Group", "HealthcareService", "Location", "Organization", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson");
+            ValidationSupport.checkReferenceType(measureReport.reporter, "reporter", "Practitioner", "PractitionerRole", "Organization", "Group");
+            ValidationSupport.checkReferenceType(measureReport.reportingVendor, "reportingVendor", "Organization");
+            ValidationSupport.checkReferenceType(measureReport.location, "location", "Location");
+            ValidationSupport.checkReferenceType(measureReport.inputParameters, "inputParameters", "Parameters");
         }
 
         protected Builder from(MeasureReport measureReport) {
@@ -913,13 +1196,19 @@ public class MeasureReport extends DomainResource {
             identifier.addAll(measureReport.identifier);
             status = measureReport.status;
             type = measureReport.type;
+            dataUpdateType = measureReport.dataUpdateType;
             measure = measureReport.measure;
             subject = measureReport.subject;
             date = measureReport.date;
             reporter = measureReport.reporter;
+            reportingVendor = measureReport.reportingVendor;
+            location = measureReport.location;
             period = measureReport.period;
+            inputParameters = measureReport.inputParameters;
+            scoring = measureReport.scoring;
             improvementNotation = measureReport.improvementNotation;
             group.addAll(measureReport.group);
+            supplementalData.addAll(measureReport.supplementalData);
             evaluatedResource.addAll(measureReport.evaluatedResource);
             return this;
         }
@@ -929,6 +1218,7 @@ public class MeasureReport extends DomainResource {
      * The results of the calculation, one for each population group in the measure.
      */
     public static class Group extends BackboneElement {
+        private final String linkId;
         @Summary
         @Binding(
             bindingName = "MeasureGroupExample",
@@ -937,17 +1227,33 @@ public class MeasureReport extends DomainResource {
             valueSet = "http://hl7.org/fhir/ValueSet/measure-group-example"
         )
         private final CodeableConcept code;
+        @Summary
+        @ReferenceTarget({ "CareTeam", "Device", "Group", "HealthcareService", "Location", "Organization", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson" })
+        private final Reference subject;
         private final List<Population> population;
         @Summary
-        private final Quantity measureScore;
+        @Choice({ Quantity.class, DateTime.class, CodeableConcept.class, Period.class, Range.class, Duration.class })
+        private final org.linuxforhealth.fhir.model.type.Element measureScore;
         private final List<Stratifier> stratifier;
 
         private Group(Builder builder) {
             super(builder);
+            linkId = builder.linkId;
             code = builder.code;
+            subject = builder.subject;
             population = Collections.unmodifiableList(builder.population);
             measureScore = builder.measureScore;
             stratifier = Collections.unmodifiableList(builder.stratifier);
+        }
+
+        /**
+         * The group from the Measure that corresponds to this group in the MeasureReport resource.
+         * 
+         * @return
+         *     An immutable object of type {@link String} that may be null.
+         */
+        public String getLinkId() {
+            return linkId;
         }
 
         /**
@@ -958,6 +1264,16 @@ public class MeasureReport extends DomainResource {
          */
         public CodeableConcept getCode() {
             return code;
+        }
+
+        /**
+         * Optional subject identifying the individual or individuals the report is for.
+         * 
+         * @return
+         *     An immutable object of type {@link Reference} that may be null.
+         */
+        public Reference getSubject() {
+            return subject;
         }
 
         /**
@@ -975,9 +1291,10 @@ public class MeasureReport extends DomainResource {
          * based on the contents of the populations defined in the group.
          * 
          * @return
-         *     An immutable object of type {@link Quantity} that may be null.
+         *     An immutable object of type {@link Quantity}, {@link DateTime}, {@link CodeableConcept}, {@link Period}, {@link Range} 
+         *     or {@link Duration} that may be null.
          */
-        public Quantity getMeasureScore() {
+        public org.linuxforhealth.fhir.model.type.Element getMeasureScore() {
             return measureScore;
         }
 
@@ -995,7 +1312,9 @@ public class MeasureReport extends DomainResource {
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
+                (linkId != null) || 
                 (code != null) || 
+                (subject != null) || 
                 !population.isEmpty() || 
                 (measureScore != null) || 
                 !stratifier.isEmpty();
@@ -1010,7 +1329,9 @@ public class MeasureReport extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(linkId, "linkId", visitor);
                     accept(code, "code", visitor);
+                    accept(subject, "subject", visitor);
                     accept(population, "population", visitor, Population.class);
                     accept(measureScore, "measureScore", visitor);
                     accept(stratifier, "stratifier", visitor, Stratifier.class);
@@ -1035,7 +1356,9 @@ public class MeasureReport extends DomainResource {
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(linkId, other.linkId) && 
                 Objects.equals(code, other.code) && 
+                Objects.equals(subject, other.subject) && 
                 Objects.equals(population, other.population) && 
                 Objects.equals(measureScore, other.measureScore) && 
                 Objects.equals(stratifier, other.stratifier);
@@ -1048,7 +1371,9 @@ public class MeasureReport extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
+                    linkId, 
                     code, 
+                    subject, 
                     population, 
                     measureScore, 
                     stratifier);
@@ -1067,9 +1392,11 @@ public class MeasureReport extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
+            private String linkId;
             private CodeableConcept code;
+            private Reference subject;
             private List<Population> population = new ArrayList<>();
-            private Quantity measureScore;
+            private org.linuxforhealth.fhir.model.type.Element measureScore;
             private List<Stratifier> stratifier = new ArrayList<>();
 
             private Builder() {
@@ -1093,7 +1420,7 @@ public class MeasureReport extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1113,7 +1440,7 @@ public class MeasureReport extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1138,7 +1465,7 @@ public class MeasureReport extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1163,7 +1490,7 @@ public class MeasureReport extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1188,6 +1515,36 @@ public class MeasureReport extends DomainResource {
             }
 
             /**
+             * Convenience method for setting {@code linkId}.
+             * 
+             * @param linkId
+             *     Pointer to specific group from Measure
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #linkId(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder linkId(java.lang.String linkId) {
+                this.linkId = (linkId == null) ? null : String.of(linkId);
+                return this;
+            }
+
+            /**
+             * The group from the Measure that corresponds to this group in the MeasureReport resource.
+             * 
+             * @param linkId
+             *     Pointer to specific group from Measure
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder linkId(String linkId) {
+                this.linkId = linkId;
+                return this;
+            }
+
+            /**
              * The meaning of the population group as defined in the measure definition.
              * 
              * @param code
@@ -1198,6 +1555,34 @@ public class MeasureReport extends DomainResource {
              */
             public Builder code(CodeableConcept code) {
                 this.code = code;
+                return this;
+            }
+
+            /**
+             * Optional subject identifying the individual or individuals the report is for.
+             * 
+             * <p>Allowed resource types for this reference:
+             * <ul>
+             * <li>{@link CareTeam}</li>
+             * <li>{@link Device}</li>
+             * <li>{@link Group}</li>
+             * <li>{@link HealthcareService}</li>
+             * <li>{@link Location}</li>
+             * <li>{@link Organization}</li>
+             * <li>{@link Patient}</li>
+             * <li>{@link Practitioner}</li>
+             * <li>{@link PractitionerRole}</li>
+             * <li>{@link RelatedPerson}</li>
+             * </ul>
+             * 
+             * @param subject
+             *     What individual(s) the report is for
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder subject(Reference subject) {
+                this.subject = subject;
                 return this;
             }
 
@@ -1244,13 +1629,23 @@ public class MeasureReport extends DomainResource {
              * The measure score for this population group, calculated as appropriate for the measure type and scoring method, and 
              * based on the contents of the populations defined in the group.
              * 
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link Quantity}</li>
+             * <li>{@link DateTime}</li>
+             * <li>{@link CodeableConcept}</li>
+             * <li>{@link Period}</li>
+             * <li>{@link Range}</li>
+             * <li>{@link Duration}</li>
+             * </ul>
+             * 
              * @param measureScore
              *     What score this group achieved
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder measureScore(Quantity measureScore) {
+            public Builder measureScore(org.linuxforhealth.fhir.model.type.Element measureScore) {
                 this.measureScore = measureScore;
                 return this;
             }
@@ -1316,13 +1711,17 @@ public class MeasureReport extends DomainResource {
             protected void validate(Group group) {
                 super.validate(group);
                 ValidationSupport.checkList(group.population, "population", Population.class);
+                ValidationSupport.choiceElement(group.measureScore, "measureScore", Quantity.class, DateTime.class, CodeableConcept.class, Period.class, Range.class, Duration.class);
                 ValidationSupport.checkList(group.stratifier, "stratifier", Stratifier.class);
+                ValidationSupport.checkReferenceType(group.subject, "subject", "CareTeam", "Device", "Group", "HealthcareService", "Location", "Organization", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson");
                 ValidationSupport.requireValueOrChildren(group);
             }
 
             protected Builder from(Group group) {
                 super.from(group);
+                linkId = group.linkId;
                 code = group.code;
+                subject = group.subject;
                 population.addAll(group.population);
                 measureScore = group.measureScore;
                 stratifier.addAll(group.stratifier);
@@ -1334,6 +1733,7 @@ public class MeasureReport extends DomainResource {
          * The populations that make up the population group, one for each type of population appropriate for the measure.
          */
         public static class Population extends BackboneElement {
+            private final String linkId;
             @Summary
             @Binding(
                 bindingName = "MeasurePopulation",
@@ -1345,12 +1745,29 @@ public class MeasureReport extends DomainResource {
             private final Integer count;
             @ReferenceTarget({ "List" })
             private final Reference subjectResults;
+            @ReferenceTarget({ "MeasureReport" })
+            private final List<Reference> subjectReport;
+            @ReferenceTarget({ "Group" })
+            private final Reference subjects;
 
             private Population(Builder builder) {
                 super(builder);
+                linkId = builder.linkId;
                 code = builder.code;
                 count = builder.count;
                 subjectResults = builder.subjectResults;
+                subjectReport = Collections.unmodifiableList(builder.subjectReport);
+                subjects = builder.subjects;
+            }
+
+            /**
+             * The population from the Measure that corresponds to this population in the MeasureReport resource.
+             * 
+             * @return
+             *     An immutable object of type {@link String} that may be null.
+             */
+            public String getLinkId() {
+                return linkId;
             }
 
             /**
@@ -1374,7 +1791,7 @@ public class MeasureReport extends DomainResource {
             }
 
             /**
-             * This element refers to a List of subject level MeasureReport resources, one for each subject in this population.
+             * This element refers to a List of individual level MeasureReport resources, one for each subject in this population.
              * 
              * @return
              *     An immutable object of type {@link Reference} that may be null.
@@ -1383,12 +1800,35 @@ public class MeasureReport extends DomainResource {
                 return subjectResults;
             }
 
+            /**
+             * A reference to an individual level MeasureReport resource for a member of the population.
+             * 
+             * @return
+             *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+             */
+            public List<Reference> getSubjectReport() {
+                return subjectReport;
+            }
+
+            /**
+             * Optional Group identifying the individuals that make up the population.
+             * 
+             * @return
+             *     An immutable object of type {@link Reference} that may be null.
+             */
+            public Reference getSubjects() {
+                return subjects;
+            }
+
             @Override
             public boolean hasChildren() {
                 return super.hasChildren() || 
+                    (linkId != null) || 
                     (code != null) || 
                     (count != null) || 
-                    (subjectResults != null);
+                    (subjectResults != null) || 
+                    !subjectReport.isEmpty() || 
+                    (subjects != null);
             }
 
             @Override
@@ -1400,9 +1840,12 @@ public class MeasureReport extends DomainResource {
                         accept(id, "id", visitor);
                         accept(extension, "extension", visitor, Extension.class);
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                        accept(linkId, "linkId", visitor);
                         accept(code, "code", visitor);
                         accept(count, "count", visitor);
                         accept(subjectResults, "subjectResults", visitor);
+                        accept(subjectReport, "subjectReport", visitor, Reference.class);
+                        accept(subjects, "subjects", visitor);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
                     visitor.postVisit(this);
@@ -1424,9 +1867,12 @@ public class MeasureReport extends DomainResource {
                 return Objects.equals(id, other.id) && 
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(linkId, other.linkId) && 
                     Objects.equals(code, other.code) && 
                     Objects.equals(count, other.count) && 
-                    Objects.equals(subjectResults, other.subjectResults);
+                    Objects.equals(subjectResults, other.subjectResults) && 
+                    Objects.equals(subjectReport, other.subjectReport) && 
+                    Objects.equals(subjects, other.subjects);
             }
 
             @Override
@@ -1436,9 +1882,12 @@ public class MeasureReport extends DomainResource {
                     result = Objects.hash(id, 
                         extension, 
                         modifierExtension, 
+                        linkId, 
                         code, 
                         count, 
-                        subjectResults);
+                        subjectResults, 
+                        subjectReport, 
+                        subjects);
                     hashCode = result;
                 }
                 return result;
@@ -1454,9 +1903,12 @@ public class MeasureReport extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
+                private String linkId;
                 private CodeableConcept code;
                 private Integer count;
                 private Reference subjectResults;
+                private List<Reference> subjectReport = new ArrayList<>();
+                private Reference subjects;
 
                 private Builder() {
                     super();
@@ -1479,7 +1931,7 @@ public class MeasureReport extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1499,7 +1951,7 @@ public class MeasureReport extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1524,7 +1976,7 @@ public class MeasureReport extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -1549,7 +2001,7 @@ public class MeasureReport extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -1571,6 +2023,36 @@ public class MeasureReport extends DomainResource {
                 @Override
                 public Builder modifierExtension(Collection<Extension> modifierExtension) {
                     return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * Convenience method for setting {@code linkId}.
+                 * 
+                 * @param linkId
+                 *     Pointer to specific population from Measure
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #linkId(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder linkId(java.lang.String linkId) {
+                    this.linkId = (linkId == null) ? null : String.of(linkId);
+                    return this;
+                }
+
+                /**
+                 * The population from the Measure that corresponds to this population in the MeasureReport resource.
+                 * 
+                 * @param linkId
+                 *     Pointer to specific population from Measure
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder linkId(String linkId) {
+                    this.linkId = linkId;
+                    return this;
                 }
 
                 /**
@@ -1619,7 +2101,7 @@ public class MeasureReport extends DomainResource {
                 }
 
                 /**
-                 * This element refers to a List of subject level MeasureReport resources, one for each subject in this population.
+                 * This element refers to a List of individual level MeasureReport resources, one for each subject in this population.
                  * 
                  * <p>Allowed resource types for this reference:
                  * <ul>
@@ -1634,6 +2116,74 @@ public class MeasureReport extends DomainResource {
                  */
                 public Builder subjectResults(Reference subjectResults) {
                     this.subjectResults = subjectResults;
+                    return this;
+                }
+
+                /**
+                 * A reference to an individual level MeasureReport resource for a member of the population.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * <p>Allowed resource types for the references:
+                 * <ul>
+                 * <li>{@link MeasureReport}</li>
+                 * </ul>
+                 * 
+                 * @param subjectReport
+                 *     For subject-list reports, a subject result in this population
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder subjectReport(Reference... subjectReport) {
+                    for (Reference value : subjectReport) {
+                        this.subjectReport.add(value);
+                    }
+                    return this;
+                }
+
+                /**
+                 * A reference to an individual level MeasureReport resource for a member of the population.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * <p>Allowed resource types for the references:
+                 * <ul>
+                 * <li>{@link MeasureReport}</li>
+                 * </ul>
+                 * 
+                 * @param subjectReport
+                 *     For subject-list reports, a subject result in this population
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                public Builder subjectReport(Collection<Reference> subjectReport) {
+                    this.subjectReport = new ArrayList<>(subjectReport);
+                    return this;
+                }
+
+                /**
+                 * Optional Group identifying the individuals that make up the population.
+                 * 
+                 * <p>Allowed resource types for this reference:
+                 * <ul>
+                 * <li>{@link Group}</li>
+                 * </ul>
+                 * 
+                 * @param subjects
+                 *     What individual(s) in the population
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder subjects(Reference subjects) {
+                    this.subjects = subjects;
                     return this;
                 }
 
@@ -1656,15 +2206,21 @@ public class MeasureReport extends DomainResource {
 
                 protected void validate(Population population) {
                     super.validate(population);
+                    ValidationSupport.checkList(population.subjectReport, "subjectReport", Reference.class);
                     ValidationSupport.checkReferenceType(population.subjectResults, "subjectResults", "List");
+                    ValidationSupport.checkReferenceType(population.subjectReport, "subjectReport", "MeasureReport");
+                    ValidationSupport.checkReferenceType(population.subjects, "subjects", "Group");
                     ValidationSupport.requireValueOrChildren(population);
                 }
 
                 protected Builder from(Population population) {
                     super.from(population);
+                    linkId = population.linkId;
                     code = population.code;
                     count = population.count;
                     subjectResults = population.subjectResults;
+                    subjectReport.addAll(population.subjectReport);
+                    subjects = population.subjects;
                     return this;
                 }
             }
@@ -1675,28 +2231,40 @@ public class MeasureReport extends DomainResource {
          * measure.
          */
         public static class Stratifier extends BackboneElement {
+            private final String linkId;
             @Binding(
                 bindingName = "MeasureStratifierExample",
                 strength = BindingStrength.Value.EXAMPLE,
                 description = "Meaning of the stratifier.",
                 valueSet = "http://hl7.org/fhir/ValueSet/measure-stratifier-example"
             )
-            private final List<CodeableConcept> code;
+            private final CodeableConcept code;
             private final List<Stratum> stratum;
 
             private Stratifier(Builder builder) {
                 super(builder);
-                code = Collections.unmodifiableList(builder.code);
+                linkId = builder.linkId;
+                code = builder.code;
                 stratum = Collections.unmodifiableList(builder.stratum);
+            }
+
+            /**
+             * The stratifier from the Measure that corresponds to this stratifier in the MeasureReport resource.
+             * 
+             * @return
+             *     An immutable object of type {@link String} that may be null.
+             */
+            public String getLinkId() {
+                return linkId;
             }
 
             /**
              * The meaning of this stratifier, as defined in the measure definition.
              * 
              * @return
-             *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+             *     An immutable object of type {@link CodeableConcept} that may be null.
              */
-            public List<CodeableConcept> getCode() {
+            public CodeableConcept getCode() {
                 return code;
             }
 
@@ -1714,7 +2282,8 @@ public class MeasureReport extends DomainResource {
             @Override
             public boolean hasChildren() {
                 return super.hasChildren() || 
-                    !code.isEmpty() || 
+                    (linkId != null) || 
+                    (code != null) || 
                     !stratum.isEmpty();
             }
 
@@ -1727,7 +2296,8 @@ public class MeasureReport extends DomainResource {
                         accept(id, "id", visitor);
                         accept(extension, "extension", visitor, Extension.class);
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                        accept(code, "code", visitor, CodeableConcept.class);
+                        accept(linkId, "linkId", visitor);
+                        accept(code, "code", visitor);
                         accept(stratum, "stratum", visitor, Stratum.class);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
@@ -1750,6 +2320,7 @@ public class MeasureReport extends DomainResource {
                 return Objects.equals(id, other.id) && 
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(linkId, other.linkId) && 
                     Objects.equals(code, other.code) && 
                     Objects.equals(stratum, other.stratum);
             }
@@ -1761,6 +2332,7 @@ public class MeasureReport extends DomainResource {
                     result = Objects.hash(id, 
                         extension, 
                         modifierExtension, 
+                        linkId, 
                         code, 
                         stratum);
                     hashCode = result;
@@ -1778,7 +2350,8 @@ public class MeasureReport extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private List<CodeableConcept> code = new ArrayList<>();
+                private String linkId;
+                private CodeableConcept code;
                 private List<Stratum> stratum = new ArrayList<>();
 
                 private Builder() {
@@ -1802,7 +2375,7 @@ public class MeasureReport extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1822,7 +2395,7 @@ public class MeasureReport extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -1847,7 +2420,7 @@ public class MeasureReport extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -1872,7 +2445,7 @@ public class MeasureReport extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -1897,41 +2470,46 @@ public class MeasureReport extends DomainResource {
                 }
 
                 /**
-                 * The meaning of this stratifier, as defined in the measure definition.
+                 * Convenience method for setting {@code linkId}.
                  * 
-                 * <p>Adds new element(s) to the existing list.
-                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * @param linkId
+                 *     Pointer to specific stratifier from Measure
                  * 
-                 * @param code
-                 *     What stratifier of the group
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #linkId(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder linkId(java.lang.String linkId) {
+                    this.linkId = (linkId == null) ? null : String.of(linkId);
+                    return this;
+                }
+
+                /**
+                 * The stratifier from the Measure that corresponds to this stratifier in the MeasureReport resource.
+                 * 
+                 * @param linkId
+                 *     Pointer to specific stratifier from Measure
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder code(CodeableConcept... code) {
-                    for (CodeableConcept value : code) {
-                        this.code.add(value);
-                    }
+                public Builder linkId(String linkId) {
+                    this.linkId = linkId;
                     return this;
                 }
 
                 /**
                  * The meaning of this stratifier, as defined in the measure definition.
                  * 
-                 * <p>Replaces the existing list with a new one containing elements from the Collection.
-                 * If any of the elements are null, calling {@link #build()} will fail.
-                 * 
                  * @param code
                  *     What stratifier of the group
                  * 
                  * @return
                  *     A reference to this Builder instance
-                 * 
-                 * @throws NullPointerException
-                 *     If the passed collection is null
                  */
-                public Builder code(Collection<CodeableConcept> code) {
-                    this.code = new ArrayList<>(code);
+                public Builder code(CodeableConcept code) {
+                    this.code = code;
                     return this;
                 }
 
@@ -1995,14 +2573,14 @@ public class MeasureReport extends DomainResource {
 
                 protected void validate(Stratifier stratifier) {
                     super.validate(stratifier);
-                    ValidationSupport.checkList(stratifier.code, "code", CodeableConcept.class);
                     ValidationSupport.checkList(stratifier.stratum, "stratum", Stratum.class);
                     ValidationSupport.requireValueOrChildren(stratifier);
                 }
 
                 protected Builder from(Stratifier stratifier) {
                     super.from(stratifier);
-                    code.addAll(stratifier.code);
+                    linkId = stratifier.linkId;
+                    code = stratifier.code;
                     stratum.addAll(stratifier.stratum);
                     return this;
                 }
@@ -2013,16 +2591,17 @@ public class MeasureReport extends DomainResource {
              * administrative gender, there will be four strata, one for each possible gender value.
              */
             public static class Stratum extends BackboneElement {
+                @Choice({ CodeableConcept.class, Boolean.class, Quantity.class, Range.class, Reference.class })
                 @Binding(
                     bindingName = "MeasureReportStratifierValueExample",
                     strength = BindingStrength.Value.EXAMPLE,
-                    description = "The stratum value.",
                     valueSet = "http://hl7.org/fhir/ValueSet/measurereport-stratifier-value-example"
                 )
-                private final CodeableConcept value;
+                private final org.linuxforhealth.fhir.model.type.Element value;
                 private final List<Component> component;
                 private final List<Population> population;
-                private final Quantity measureScore;
+                @Choice({ Quantity.class, DateTime.class, CodeableConcept.class, Period.class, Range.class, Duration.class })
+                private final org.linuxforhealth.fhir.model.type.Element measureScore;
 
                 private Stratum(Builder builder) {
                     super(builder);
@@ -2037,9 +2616,10 @@ public class MeasureReport extends DomainResource {
                  * must be rendered such that the value for each stratum within the stratifier is unique.
                  * 
                  * @return
-                 *     An immutable object of type {@link CodeableConcept} that may be null.
+                 *     An immutable object of type {@link CodeableConcept}, {@link Boolean}, {@link Quantity}, {@link Range} or {@link 
+                 *     Reference} that may be null.
                  */
-                public CodeableConcept getValue() {
+                public org.linuxforhealth.fhir.model.type.Element getValue() {
                     return value;
                 }
 
@@ -2068,9 +2648,10 @@ public class MeasureReport extends DomainResource {
                  * only the members of this stratum.
                  * 
                  * @return
-                 *     An immutable object of type {@link Quantity} that may be null.
+                 *     An immutable object of type {@link Quantity}, {@link DateTime}, {@link CodeableConcept}, {@link Period}, {@link Range} 
+                 *     or {@link Duration} that may be null.
                  */
-                public Quantity getMeasureScore() {
+                public org.linuxforhealth.fhir.model.type.Element getMeasureScore() {
                     return measureScore;
                 }
 
@@ -2149,10 +2730,10 @@ public class MeasureReport extends DomainResource {
                 }
 
                 public static class Builder extends BackboneElement.Builder {
-                    private CodeableConcept value;
+                    private org.linuxforhealth.fhir.model.type.Element value;
                     private List<Component> component = new ArrayList<>();
                     private List<Population> population = new ArrayList<>();
-                    private Quantity measureScore;
+                    private org.linuxforhealth.fhir.model.type.Element measureScore;
 
                     private Builder() {
                         super();
@@ -2175,7 +2756,7 @@ public class MeasureReport extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -2195,7 +2776,7 @@ public class MeasureReport extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -2220,7 +2801,7 @@ public class MeasureReport extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -2245,7 +2826,7 @@ public class MeasureReport extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -2270,8 +2851,33 @@ public class MeasureReport extends DomainResource {
                     }
 
                     /**
+                     * Convenience method for setting {@code value} with choice type Boolean.
+                     * 
+                     * @param value
+                     *     The stratum value, e.g. male
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @see #value(Element)
+                     */
+                    public Builder value(java.lang.Boolean value) {
+                        this.value = (value == null) ? null : Boolean.of(value);
+                        return this;
+                    }
+
+                    /**
                      * The value for this stratum, expressed as a CodeableConcept. When defining stratifiers on complex values, the value 
                      * must be rendered such that the value for each stratum within the stratifier is unique.
+                     * 
+                     * <p>This is a choice element with the following allowed types:
+                     * <ul>
+                     * <li>{@link CodeableConcept}</li>
+                     * <li>{@link Boolean}</li>
+                     * <li>{@link Quantity}</li>
+                     * <li>{@link Range}</li>
+                     * <li>{@link Reference}</li>
+                     * </ul>
                      * 
                      * @param value
                      *     The stratum value, e.g. male
@@ -2279,7 +2885,7 @@ public class MeasureReport extends DomainResource {
                      * @return
                      *     A reference to this Builder instance
                      */
-                    public Builder value(CodeableConcept value) {
+                    public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                         this.value = value;
                         return this;
                     }
@@ -2366,13 +2972,23 @@ public class MeasureReport extends DomainResource {
                      * The measure score for this stratum, calculated as appropriate for the measure type and scoring method, and based on 
                      * only the members of this stratum.
                      * 
+                     * <p>This is a choice element with the following allowed types:
+                     * <ul>
+                     * <li>{@link Quantity}</li>
+                     * <li>{@link DateTime}</li>
+                     * <li>{@link CodeableConcept}</li>
+                     * <li>{@link Period}</li>
+                     * <li>{@link Range}</li>
+                     * <li>{@link Duration}</li>
+                     * </ul>
+                     * 
                      * @param measureScore
                      *     What score this stratum achieved
                      * 
                      * @return
                      *     A reference to this Builder instance
                      */
-                    public Builder measureScore(Quantity measureScore) {
+                    public Builder measureScore(org.linuxforhealth.fhir.model.type.Element measureScore) {
                         this.measureScore = measureScore;
                         return this;
                     }
@@ -2396,8 +3012,10 @@ public class MeasureReport extends DomainResource {
 
                     protected void validate(Stratum stratum) {
                         super.validate(stratum);
+                        ValidationSupport.choiceElement(stratum.value, "value", CodeableConcept.class, Boolean.class, Quantity.class, Range.class, Reference.class);
                         ValidationSupport.checkList(stratum.component, "component", Component.class);
                         ValidationSupport.checkList(stratum.population, "population", Population.class);
+                        ValidationSupport.choiceElement(stratum.measureScore, "measureScore", Quantity.class, DateTime.class, CodeableConcept.class, Period.class, Range.class, Duration.class);
                         ValidationSupport.requireValueOrChildren(stratum);
                     }
 
@@ -2415,6 +3033,7 @@ public class MeasureReport extends DomainResource {
                  * A stratifier component value.
                  */
                 public static class Component extends BackboneElement {
+                    private final String linkId;
                     @Binding(
                         bindingName = "MeasureStratifierExample",
                         strength = BindingStrength.Value.EXAMPLE,
@@ -2423,19 +3042,30 @@ public class MeasureReport extends DomainResource {
                     )
                     @Required
                     private final CodeableConcept code;
+                    @Choice({ CodeableConcept.class, Boolean.class, Quantity.class, Range.class, Reference.class })
                     @Binding(
                         bindingName = "MeasureReportStratifierValueExample",
                         strength = BindingStrength.Value.EXAMPLE,
-                        description = "The stratum value.",
                         valueSet = "http://hl7.org/fhir/ValueSet/measurereport-stratifier-value-example"
                     )
                     @Required
-                    private final CodeableConcept value;
+                    private final org.linuxforhealth.fhir.model.type.Element value;
 
                     private Component(Builder builder) {
                         super(builder);
+                        linkId = builder.linkId;
                         code = builder.code;
                         value = builder.value;
+                    }
+
+                    /**
+                     * The stratifier component from the Measure that corresponds to this stratifier component in the MeasureReport resource.
+                     * 
+                     * @return
+                     *     An immutable object of type {@link String} that may be null.
+                     */
+                    public String getLinkId() {
+                        return linkId;
                     }
 
                     /**
@@ -2452,15 +3082,17 @@ public class MeasureReport extends DomainResource {
                      * The stratum component value.
                      * 
                      * @return
-                     *     An immutable object of type {@link CodeableConcept} that is non-null.
+                     *     An immutable object of type {@link CodeableConcept}, {@link Boolean}, {@link Quantity}, {@link Range} or {@link 
+                     *     Reference} that is non-null.
                      */
-                    public CodeableConcept getValue() {
+                    public org.linuxforhealth.fhir.model.type.Element getValue() {
                         return value;
                     }
 
                     @Override
                     public boolean hasChildren() {
                         return super.hasChildren() || 
+                            (linkId != null) || 
                             (code != null) || 
                             (value != null);
                     }
@@ -2474,6 +3106,7 @@ public class MeasureReport extends DomainResource {
                                 accept(id, "id", visitor);
                                 accept(extension, "extension", visitor, Extension.class);
                                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                                accept(linkId, "linkId", visitor);
                                 accept(code, "code", visitor);
                                 accept(value, "value", visitor);
                             }
@@ -2497,6 +3130,7 @@ public class MeasureReport extends DomainResource {
                         return Objects.equals(id, other.id) && 
                             Objects.equals(extension, other.extension) && 
                             Objects.equals(modifierExtension, other.modifierExtension) && 
+                            Objects.equals(linkId, other.linkId) && 
                             Objects.equals(code, other.code) && 
                             Objects.equals(value, other.value);
                     }
@@ -2508,6 +3142,7 @@ public class MeasureReport extends DomainResource {
                             result = Objects.hash(id, 
                                 extension, 
                                 modifierExtension, 
+                                linkId, 
                                 code, 
                                 value);
                             hashCode = result;
@@ -2525,8 +3160,9 @@ public class MeasureReport extends DomainResource {
                     }
 
                     public static class Builder extends BackboneElement.Builder {
+                        private String linkId;
                         private CodeableConcept code;
-                        private CodeableConcept value;
+                        private org.linuxforhealth.fhir.model.type.Element value;
 
                         private Builder() {
                             super();
@@ -2549,7 +3185,7 @@ public class MeasureReport extends DomainResource {
 
                         /**
                          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                          * of the definition of the extension.
                          * 
@@ -2569,7 +3205,7 @@ public class MeasureReport extends DomainResource {
 
                         /**
                          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                          * of the definition of the extension.
                          * 
@@ -2594,7 +3230,7 @@ public class MeasureReport extends DomainResource {
                          * May be used to represent additional information that is not part of the basic definition of the element and that 
                          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                          * extension. Applications processing a resource are required to check for modifier extensions.
                          * 
@@ -2619,7 +3255,7 @@ public class MeasureReport extends DomainResource {
                          * May be used to represent additional information that is not part of the basic definition of the element and that 
                          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                          * extension. Applications processing a resource are required to check for modifier extensions.
                          * 
@@ -2644,6 +3280,36 @@ public class MeasureReport extends DomainResource {
                         }
 
                         /**
+                         * Convenience method for setting {@code linkId}.
+                         * 
+                         * @param linkId
+                         *     Pointer to specific stratifier component from Measure
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         * 
+                         * @see #linkId(org.linuxforhealth.fhir.model.type.String)
+                         */
+                        public Builder linkId(java.lang.String linkId) {
+                            this.linkId = (linkId == null) ? null : String.of(linkId);
+                            return this;
+                        }
+
+                        /**
+                         * The stratifier component from the Measure that corresponds to this stratifier component in the MeasureReport resource.
+                         * 
+                         * @param linkId
+                         *     Pointer to specific stratifier component from Measure
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        public Builder linkId(String linkId) {
+                            this.linkId = linkId;
+                            return this;
+                        }
+
+                        /**
                          * The code for the stratum component value.
                          * 
                          * <p>This element is required.
@@ -2660,7 +3326,7 @@ public class MeasureReport extends DomainResource {
                         }
 
                         /**
-                         * The stratum component value.
+                         * Convenience method for setting {@code value} with choice type Boolean.
                          * 
                          * <p>This element is required.
                          * 
@@ -2669,8 +3335,35 @@ public class MeasureReport extends DomainResource {
                          * 
                          * @return
                          *     A reference to this Builder instance
+                         * 
+                         * @see #value(Element)
                          */
-                        public Builder value(CodeableConcept value) {
+                        public Builder value(java.lang.Boolean value) {
+                            this.value = (value == null) ? null : Boolean.of(value);
+                            return this;
+                        }
+
+                        /**
+                         * The stratum component value.
+                         * 
+                         * <p>This element is required.
+                         * 
+                         * <p>This is a choice element with the following allowed types:
+                         * <ul>
+                         * <li>{@link CodeableConcept}</li>
+                         * <li>{@link Boolean}</li>
+                         * <li>{@link Quantity}</li>
+                         * <li>{@link Range}</li>
+                         * <li>{@link Reference}</li>
+                         * </ul>
+                         * 
+                         * @param value
+                         *     The stratum component value, e.g. male
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                             this.value = value;
                             return this;
                         }
@@ -2701,12 +3394,13 @@ public class MeasureReport extends DomainResource {
                         protected void validate(Component component) {
                             super.validate(component);
                             ValidationSupport.requireNonNull(component.code, "code");
-                            ValidationSupport.requireNonNull(component.value, "value");
+                            ValidationSupport.requireChoiceElement(component.value, "value", CodeableConcept.class, Boolean.class, Quantity.class, Range.class, Reference.class);
                             ValidationSupport.requireValueOrChildren(component);
                         }
 
                         protected Builder from(Component component) {
                             super.from(component);
+                            linkId = component.linkId;
                             code = component.code;
                             value = component.value;
                             return this;
@@ -2718,6 +3412,7 @@ public class MeasureReport extends DomainResource {
                  * The populations that make up the stratum, one for each type of population appropriate to the measure.
                  */
                 public static class Population extends BackboneElement {
+                    private final String linkId;
                     @Binding(
                         bindingName = "MeasurePopulation",
                         strength = BindingStrength.Value.EXTENSIBLE,
@@ -2728,12 +3423,29 @@ public class MeasureReport extends DomainResource {
                     private final Integer count;
                     @ReferenceTarget({ "List" })
                     private final Reference subjectResults;
+                    @ReferenceTarget({ "MeasureReport" })
+                    private final List<Reference> subjectReport;
+                    @ReferenceTarget({ "Group" })
+                    private final Reference subjects;
 
                     private Population(Builder builder) {
                         super(builder);
+                        linkId = builder.linkId;
                         code = builder.code;
                         count = builder.count;
                         subjectResults = builder.subjectResults;
+                        subjectReport = Collections.unmodifiableList(builder.subjectReport);
+                        subjects = builder.subjects;
+                    }
+
+                    /**
+                     * The population from the Measure that corresponds to this population in the MeasureReport resource.
+                     * 
+                     * @return
+                     *     An immutable object of type {@link String} that may be null.
+                     */
+                    public String getLinkId() {
+                        return linkId;
                     }
 
                     /**
@@ -2757,7 +3469,7 @@ public class MeasureReport extends DomainResource {
                     }
 
                     /**
-                     * This element refers to a List of subject level MeasureReport resources, one for each subject in this population in 
+                     * This element refers to a List of individual level MeasureReport resources, one for each subject in this population in 
                      * this stratum.
                      * 
                      * @return
@@ -2767,12 +3479,35 @@ public class MeasureReport extends DomainResource {
                         return subjectResults;
                     }
 
+                    /**
+                     * A reference to an individual level MeasureReport resource for a member of the population.
+                     * 
+                     * @return
+                     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+                     */
+                    public List<Reference> getSubjectReport() {
+                        return subjectReport;
+                    }
+
+                    /**
+                     * Optional Group identifying the individuals that make up the population.
+                     * 
+                     * @return
+                     *     An immutable object of type {@link Reference} that may be null.
+                     */
+                    public Reference getSubjects() {
+                        return subjects;
+                    }
+
                     @Override
                     public boolean hasChildren() {
                         return super.hasChildren() || 
+                            (linkId != null) || 
                             (code != null) || 
                             (count != null) || 
-                            (subjectResults != null);
+                            (subjectResults != null) || 
+                            !subjectReport.isEmpty() || 
+                            (subjects != null);
                     }
 
                     @Override
@@ -2784,9 +3519,12 @@ public class MeasureReport extends DomainResource {
                                 accept(id, "id", visitor);
                                 accept(extension, "extension", visitor, Extension.class);
                                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                                accept(linkId, "linkId", visitor);
                                 accept(code, "code", visitor);
                                 accept(count, "count", visitor);
                                 accept(subjectResults, "subjectResults", visitor);
+                                accept(subjectReport, "subjectReport", visitor, Reference.class);
+                                accept(subjects, "subjects", visitor);
                             }
                             visitor.visitEnd(elementName, elementIndex, this);
                             visitor.postVisit(this);
@@ -2808,9 +3546,12 @@ public class MeasureReport extends DomainResource {
                         return Objects.equals(id, other.id) && 
                             Objects.equals(extension, other.extension) && 
                             Objects.equals(modifierExtension, other.modifierExtension) && 
+                            Objects.equals(linkId, other.linkId) && 
                             Objects.equals(code, other.code) && 
                             Objects.equals(count, other.count) && 
-                            Objects.equals(subjectResults, other.subjectResults);
+                            Objects.equals(subjectResults, other.subjectResults) && 
+                            Objects.equals(subjectReport, other.subjectReport) && 
+                            Objects.equals(subjects, other.subjects);
                     }
 
                     @Override
@@ -2820,9 +3561,12 @@ public class MeasureReport extends DomainResource {
                             result = Objects.hash(id, 
                                 extension, 
                                 modifierExtension, 
+                                linkId, 
                                 code, 
                                 count, 
-                                subjectResults);
+                                subjectResults, 
+                                subjectReport, 
+                                subjects);
                             hashCode = result;
                         }
                         return result;
@@ -2838,9 +3582,12 @@ public class MeasureReport extends DomainResource {
                     }
 
                     public static class Builder extends BackboneElement.Builder {
+                        private String linkId;
                         private CodeableConcept code;
                         private Integer count;
                         private Reference subjectResults;
+                        private List<Reference> subjectReport = new ArrayList<>();
+                        private Reference subjects;
 
                         private Builder() {
                             super();
@@ -2863,7 +3610,7 @@ public class MeasureReport extends DomainResource {
 
                         /**
                          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                          * of the definition of the extension.
                          * 
@@ -2883,7 +3630,7 @@ public class MeasureReport extends DomainResource {
 
                         /**
                          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                          * of the definition of the extension.
                          * 
@@ -2908,7 +3655,7 @@ public class MeasureReport extends DomainResource {
                          * May be used to represent additional information that is not part of the basic definition of the element and that 
                          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                          * extension. Applications processing a resource are required to check for modifier extensions.
                          * 
@@ -2933,7 +3680,7 @@ public class MeasureReport extends DomainResource {
                          * May be used to represent additional information that is not part of the basic definition of the element and that 
                          * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                          * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                         * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                         * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                          * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                          * extension. Applications processing a resource are required to check for modifier extensions.
                          * 
@@ -2955,6 +3702,36 @@ public class MeasureReport extends DomainResource {
                         @Override
                         public Builder modifierExtension(Collection<Extension> modifierExtension) {
                             return (Builder) super.modifierExtension(modifierExtension);
+                        }
+
+                        /**
+                         * Convenience method for setting {@code linkId}.
+                         * 
+                         * @param linkId
+                         *     Pointer to specific population from Measure
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         * 
+                         * @see #linkId(org.linuxforhealth.fhir.model.type.String)
+                         */
+                        public Builder linkId(java.lang.String linkId) {
+                            this.linkId = (linkId == null) ? null : String.of(linkId);
+                            return this;
+                        }
+
+                        /**
+                         * The population from the Measure that corresponds to this population in the MeasureReport resource.
+                         * 
+                         * @param linkId
+                         *     Pointer to specific population from Measure
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        public Builder linkId(String linkId) {
+                            this.linkId = linkId;
+                            return this;
                         }
 
                         /**
@@ -3003,7 +3780,7 @@ public class MeasureReport extends DomainResource {
                         }
 
                         /**
-                         * This element refers to a List of subject level MeasureReport resources, one for each subject in this population in 
+                         * This element refers to a List of individual level MeasureReport resources, one for each subject in this population in 
                          * this stratum.
                          * 
                          * <p>Allowed resource types for this reference:
@@ -3019,6 +3796,74 @@ public class MeasureReport extends DomainResource {
                          */
                         public Builder subjectResults(Reference subjectResults) {
                             this.subjectResults = subjectResults;
+                            return this;
+                        }
+
+                        /**
+                         * A reference to an individual level MeasureReport resource for a member of the population.
+                         * 
+                         * <p>Adds new element(s) to the existing list.
+                         * If any of the elements are null, calling {@link #build()} will fail.
+                         * 
+                         * <p>Allowed resource types for the references:
+                         * <ul>
+                         * <li>{@link MeasureReport}</li>
+                         * </ul>
+                         * 
+                         * @param subjectReport
+                         *     For subject-list reports, a subject result in this population
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        public Builder subjectReport(Reference... subjectReport) {
+                            for (Reference value : subjectReport) {
+                                this.subjectReport.add(value);
+                            }
+                            return this;
+                        }
+
+                        /**
+                         * A reference to an individual level MeasureReport resource for a member of the population.
+                         * 
+                         * <p>Replaces the existing list with a new one containing elements from the Collection.
+                         * If any of the elements are null, calling {@link #build()} will fail.
+                         * 
+                         * <p>Allowed resource types for the references:
+                         * <ul>
+                         * <li>{@link MeasureReport}</li>
+                         * </ul>
+                         * 
+                         * @param subjectReport
+                         *     For subject-list reports, a subject result in this population
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         * 
+                         * @throws NullPointerException
+                         *     If the passed collection is null
+                         */
+                        public Builder subjectReport(Collection<Reference> subjectReport) {
+                            this.subjectReport = new ArrayList<>(subjectReport);
+                            return this;
+                        }
+
+                        /**
+                         * Optional Group identifying the individuals that make up the population.
+                         * 
+                         * <p>Allowed resource types for this reference:
+                         * <ul>
+                         * <li>{@link Group}</li>
+                         * </ul>
+                         * 
+                         * @param subjects
+                         *     What individual(s) in the population
+                         * 
+                         * @return
+                         *     A reference to this Builder instance
+                         */
+                        public Builder subjects(Reference subjects) {
+                            this.subjects = subjects;
                             return this;
                         }
 
@@ -3041,15 +3886,21 @@ public class MeasureReport extends DomainResource {
 
                         protected void validate(Population population) {
                             super.validate(population);
+                            ValidationSupport.checkList(population.subjectReport, "subjectReport", Reference.class);
                             ValidationSupport.checkReferenceType(population.subjectResults, "subjectResults", "List");
+                            ValidationSupport.checkReferenceType(population.subjectReport, "subjectReport", "MeasureReport");
+                            ValidationSupport.checkReferenceType(population.subjects, "subjects", "Group");
                             ValidationSupport.requireValueOrChildren(population);
                         }
 
                         protected Builder from(Population population) {
                             super.from(population);
+                            linkId = population.linkId;
                             code = population.code;
                             count = population.count;
                             subjectResults = population.subjectResults;
+                            subjectReport.addAll(population.subjectReport);
+                            subjects = population.subjects;
                             return this;
                         }
                     }

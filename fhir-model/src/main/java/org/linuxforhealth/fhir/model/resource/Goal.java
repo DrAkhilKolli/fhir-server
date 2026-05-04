@@ -26,6 +26,7 @@ import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.Duration;
 import org.linuxforhealth.fhir.model.type.Element;
@@ -90,7 +91,7 @@ public class Goal extends DomainResource {
         bindingName = "GoalLifecycleStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "Codes that reflect the current state of a goal and whether the goal is still being targeted.",
-        valueSet = "http://hl7.org/fhir/ValueSet/goal-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/goal-status|5.0.0"
     )
     @Required
     private final GoalLifecycleStatus lifecycleStatus;
@@ -110,6 +111,7 @@ public class Goal extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/goal-category"
     )
     private final List<CodeableConcept> category;
+    private final Boolean continuous;
     @Summary
     @Binding(
         bindingName = "GoalPriority",
@@ -139,15 +141,15 @@ public class Goal extends DomainResource {
         description = "Codes describing events that can trigger the initiation of a goal.",
         valueSet = "http://hl7.org/fhir/ValueSet/goal-start-event"
     )
-    private final Element start;
+    private final org.linuxforhealth.fhir.model.type.Element start;
     private final List<Target> target;
     @Summary
     private final Date statusDate;
     private final String statusReason;
     @Summary
-    @ReferenceTarget({ "Patient", "Practitioner", "PractitionerRole", "RelatedPerson" })
-    private final Reference expressedBy;
-    @ReferenceTarget({ "Condition", "Observation", "MedicationStatement", "NutritionOrder", "ServiceRequest", "RiskAssessment" })
+    @ReferenceTarget({ "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "CareTeam" })
+    private final Reference source;
+    @ReferenceTarget({ "Condition", "Observation", "MedicationStatement", "MedicationRequest", "NutritionOrder", "ServiceRequest", "RiskAssessment", "Procedure" })
     private final List<Reference> addresses;
     private final List<Annotation> note;
     @Binding(
@@ -156,9 +158,7 @@ public class Goal extends DomainResource {
         description = "The result of the goal; e.g. \"25% increase in shoulder mobility\", \"Anxiety reduced to moderate levels\".  \"15 kg weight loss sustained over 6 months\".",
         valueSet = "http://hl7.org/fhir/ValueSet/clinical-findings"
     )
-    private final List<CodeableConcept> outcomeCode;
-    @ReferenceTarget({ "Observation" })
-    private final List<Reference> outcomeReference;
+    private final List<CodeableReference> outcome;
 
     private Goal(Builder builder) {
         super(builder);
@@ -166,6 +166,7 @@ public class Goal extends DomainResource {
         lifecycleStatus = builder.lifecycleStatus;
         achievementStatus = builder.achievementStatus;
         category = Collections.unmodifiableList(builder.category);
+        continuous = builder.continuous;
         priority = builder.priority;
         description = builder.description;
         subject = builder.subject;
@@ -173,11 +174,10 @@ public class Goal extends DomainResource {
         target = Collections.unmodifiableList(builder.target);
         statusDate = builder.statusDate;
         statusReason = builder.statusReason;
-        expressedBy = builder.expressedBy;
+        source = builder.source;
         addresses = Collections.unmodifiableList(builder.addresses);
         note = Collections.unmodifiableList(builder.note);
-        outcomeCode = Collections.unmodifiableList(builder.outcomeCode);
-        outcomeReference = Collections.unmodifiableList(builder.outcomeReference);
+        outcome = Collections.unmodifiableList(builder.outcome);
     }
 
     /**
@@ -222,6 +222,16 @@ public class Goal extends DomainResource {
     }
 
     /**
+     * After meeting the goal, ongoing activity is needed to sustain the goal objective.
+     * 
+     * @return
+     *     An immutable object of type {@link Boolean} that may be null.
+     */
+    public Boolean getContinuous() {
+        return continuous;
+    }
+
+    /**
      * Identifies the mutually agreed level of importance associated with reaching/sustaining the goal.
      * 
      * @return
@@ -258,7 +268,7 @@ public class Goal extends DomainResource {
      * @return
      *     An immutable object of type {@link Date} or {@link CodeableConcept} that may be null.
      */
-    public Element getStart() {
+    public org.linuxforhealth.fhir.model.type.Element getStart() {
         return start;
     }
 
@@ -298,8 +308,8 @@ public class Goal extends DomainResource {
      * @return
      *     An immutable object of type {@link Reference} that may be null.
      */
-    public Reference getExpressedBy() {
-        return expressedBy;
+    public Reference getSource() {
+        return source;
     }
 
     /**
@@ -326,20 +336,10 @@ public class Goal extends DomainResource {
      * Identifies the change (or lack of change) at the point when the status of the goal is assessed.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<CodeableConcept> getOutcomeCode() {
-        return outcomeCode;
-    }
-
-    /**
-     * Details of what's changed (or not changed).
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-     */
-    public List<Reference> getOutcomeReference() {
-        return outcomeReference;
+    public List<CodeableReference> getOutcome() {
+        return outcome;
     }
 
     @Override
@@ -349,6 +349,7 @@ public class Goal extends DomainResource {
             (lifecycleStatus != null) || 
             (achievementStatus != null) || 
             !category.isEmpty() || 
+            (continuous != null) || 
             (priority != null) || 
             (description != null) || 
             (subject != null) || 
@@ -356,11 +357,10 @@ public class Goal extends DomainResource {
             !target.isEmpty() || 
             (statusDate != null) || 
             (statusReason != null) || 
-            (expressedBy != null) || 
+            (source != null) || 
             !addresses.isEmpty() || 
             !note.isEmpty() || 
-            !outcomeCode.isEmpty() || 
-            !outcomeReference.isEmpty();
+            !outcome.isEmpty();
     }
 
     @Override
@@ -381,6 +381,7 @@ public class Goal extends DomainResource {
                 accept(lifecycleStatus, "lifecycleStatus", visitor);
                 accept(achievementStatus, "achievementStatus", visitor);
                 accept(category, "category", visitor, CodeableConcept.class);
+                accept(continuous, "continuous", visitor);
                 accept(priority, "priority", visitor);
                 accept(description, "description", visitor);
                 accept(subject, "subject", visitor);
@@ -388,11 +389,10 @@ public class Goal extends DomainResource {
                 accept(target, "target", visitor, Target.class);
                 accept(statusDate, "statusDate", visitor);
                 accept(statusReason, "statusReason", visitor);
-                accept(expressedBy, "expressedBy", visitor);
+                accept(source, "source", visitor);
                 accept(addresses, "addresses", visitor, Reference.class);
                 accept(note, "note", visitor, Annotation.class);
-                accept(outcomeCode, "outcomeCode", visitor, CodeableConcept.class);
-                accept(outcomeReference, "outcomeReference", visitor, Reference.class);
+                accept(outcome, "outcome", visitor, CodeableReference.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
             visitor.postVisit(this);
@@ -423,6 +423,7 @@ public class Goal extends DomainResource {
             Objects.equals(lifecycleStatus, other.lifecycleStatus) && 
             Objects.equals(achievementStatus, other.achievementStatus) && 
             Objects.equals(category, other.category) && 
+            Objects.equals(continuous, other.continuous) && 
             Objects.equals(priority, other.priority) && 
             Objects.equals(description, other.description) && 
             Objects.equals(subject, other.subject) && 
@@ -430,11 +431,10 @@ public class Goal extends DomainResource {
             Objects.equals(target, other.target) && 
             Objects.equals(statusDate, other.statusDate) && 
             Objects.equals(statusReason, other.statusReason) && 
-            Objects.equals(expressedBy, other.expressedBy) && 
+            Objects.equals(source, other.source) && 
             Objects.equals(addresses, other.addresses) && 
             Objects.equals(note, other.note) && 
-            Objects.equals(outcomeCode, other.outcomeCode) && 
-            Objects.equals(outcomeReference, other.outcomeReference);
+            Objects.equals(outcome, other.outcome);
     }
 
     @Override
@@ -453,6 +453,7 @@ public class Goal extends DomainResource {
                 lifecycleStatus, 
                 achievementStatus, 
                 category, 
+                continuous, 
                 priority, 
                 description, 
                 subject, 
@@ -460,11 +461,10 @@ public class Goal extends DomainResource {
                 target, 
                 statusDate, 
                 statusReason, 
-                expressedBy, 
+                source, 
                 addresses, 
                 note, 
-                outcomeCode, 
-                outcomeReference);
+                outcome);
             hashCode = result;
         }
         return result;
@@ -484,18 +484,18 @@ public class Goal extends DomainResource {
         private GoalLifecycleStatus lifecycleStatus;
         private CodeableConcept achievementStatus;
         private List<CodeableConcept> category = new ArrayList<>();
+        private Boolean continuous;
         private CodeableConcept priority;
         private CodeableConcept description;
         private Reference subject;
-        private Element start;
+        private org.linuxforhealth.fhir.model.type.Element start;
         private List<Target> target = new ArrayList<>();
         private Date statusDate;
         private String statusReason;
-        private Reference expressedBy;
+        private Reference source;
         private List<Reference> addresses = new ArrayList<>();
         private List<Annotation> note = new ArrayList<>();
-        private List<CodeableConcept> outcomeCode = new ArrayList<>();
-        private List<Reference> outcomeReference = new ArrayList<>();
+        private List<CodeableReference> outcome = new ArrayList<>();
 
         private Builder() {
             super();
@@ -579,7 +579,8 @@ public class Goal extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -597,7 +598,8 @@ public class Goal extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -618,7 +620,7 @@ public class Goal extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -638,7 +640,7 @@ public class Goal extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -663,9 +665,9 @@ public class Goal extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -688,9 +690,9 @@ public class Goal extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -790,7 +792,7 @@ public class Goal extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param category
-         *     E.g. Treatment, dietary, behavioral, etc.
+         *     E.g. Treatment, dietary, behavioral, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -809,7 +811,7 @@ public class Goal extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param category
-         *     E.g. Treatment, dietary, behavioral, etc.
+         *     E.g. Treatment, dietary, behavioral, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -819,6 +821,36 @@ public class Goal extends DomainResource {
          */
         public Builder category(Collection<CodeableConcept> category) {
             this.category = new ArrayList<>(category);
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code continuous}.
+         * 
+         * @param continuous
+         *     After meeting the goal, ongoing activity is needed to sustain the goal objective
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #continuous(org.linuxforhealth.fhir.model.type.Boolean)
+         */
+        public Builder continuous(java.lang.Boolean continuous) {
+            this.continuous = (continuous == null) ? null : Boolean.of(continuous);
+            return this;
+        }
+
+        /**
+         * After meeting the goal, ongoing activity is needed to sustain the goal objective.
+         * 
+         * @param continuous
+         *     After meeting the goal, ongoing activity is needed to sustain the goal objective
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder continuous(Boolean continuous) {
+            this.continuous = continuous;
             return this;
         }
 
@@ -907,7 +939,7 @@ public class Goal extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder start(Element start) {
+        public Builder start(org.linuxforhealth.fhir.model.type.Element start) {
             this.start = start;
             return this;
         }
@@ -1020,16 +1052,17 @@ public class Goal extends DomainResource {
          * <li>{@link Practitioner}</li>
          * <li>{@link PractitionerRole}</li>
          * <li>{@link RelatedPerson}</li>
+         * <li>{@link CareTeam}</li>
          * </ul>
          * 
-         * @param expressedBy
+         * @param source
          *     Who's responsible for creating Goal?
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder expressedBy(Reference expressedBy) {
-            this.expressedBy = expressedBy;
+        public Builder source(Reference source) {
+            this.source = source;
             return this;
         }
 
@@ -1044,9 +1077,11 @@ public class Goal extends DomainResource {
          * <li>{@link Condition}</li>
          * <li>{@link Observation}</li>
          * <li>{@link MedicationStatement}</li>
+         * <li>{@link MedicationRequest}</li>
          * <li>{@link NutritionOrder}</li>
          * <li>{@link ServiceRequest}</li>
          * <li>{@link RiskAssessment}</li>
+         * <li>{@link Procedure}</li>
          * </ul>
          * 
          * @param addresses
@@ -1073,9 +1108,11 @@ public class Goal extends DomainResource {
          * <li>{@link Condition}</li>
          * <li>{@link Observation}</li>
          * <li>{@link MedicationStatement}</li>
+         * <li>{@link MedicationRequest}</li>
          * <li>{@link NutritionOrder}</li>
          * <li>{@link ServiceRequest}</li>
          * <li>{@link RiskAssessment}</li>
+         * <li>{@link Procedure}</li>
          * </ul>
          * 
          * @param addresses
@@ -1137,15 +1174,15 @@ public class Goal extends DomainResource {
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param outcomeCode
+         * @param outcome
          *     What result was achieved regarding the goal?
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder outcomeCode(CodeableConcept... outcomeCode) {
-            for (CodeableConcept value : outcomeCode) {
-                this.outcomeCode.add(value);
+        public Builder outcome(CodeableReference... outcome) {
+            for (CodeableReference value : outcome) {
+                this.outcome.add(value);
             }
             return this;
         }
@@ -1156,7 +1193,7 @@ public class Goal extends DomainResource {
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param outcomeCode
+         * @param outcome
          *     What result was achieved regarding the goal?
          * 
          * @return
@@ -1165,57 +1202,8 @@ public class Goal extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder outcomeCode(Collection<CodeableConcept> outcomeCode) {
-            this.outcomeCode = new ArrayList<>(outcomeCode);
-            return this;
-        }
-
-        /**
-         * Details of what's changed (or not changed).
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Observation}</li>
-         * </ul>
-         * 
-         * @param outcomeReference
-         *     Observation that resulted from goal
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder outcomeReference(Reference... outcomeReference) {
-            for (Reference value : outcomeReference) {
-                this.outcomeReference.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Details of what's changed (or not changed).
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Observation}</li>
-         * </ul>
-         * 
-         * @param outcomeReference
-         *     Observation that resulted from goal
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder outcomeReference(Collection<Reference> outcomeReference) {
-            this.outcomeReference = new ArrayList<>(outcomeReference);
+        public Builder outcome(Collection<CodeableReference> outcome) {
+            this.outcome = new ArrayList<>(outcome);
             return this;
         }
 
@@ -1254,12 +1242,10 @@ public class Goal extends DomainResource {
             ValidationSupport.checkList(goal.target, "target", Target.class);
             ValidationSupport.checkList(goal.addresses, "addresses", Reference.class);
             ValidationSupport.checkList(goal.note, "note", Annotation.class);
-            ValidationSupport.checkList(goal.outcomeCode, "outcomeCode", CodeableConcept.class);
-            ValidationSupport.checkList(goal.outcomeReference, "outcomeReference", Reference.class);
+            ValidationSupport.checkList(goal.outcome, "outcome", CodeableReference.class);
             ValidationSupport.checkReferenceType(goal.subject, "subject", "Patient", "Group", "Organization");
-            ValidationSupport.checkReferenceType(goal.expressedBy, "expressedBy", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson");
-            ValidationSupport.checkReferenceType(goal.addresses, "addresses", "Condition", "Observation", "MedicationStatement", "NutritionOrder", "ServiceRequest", "RiskAssessment");
-            ValidationSupport.checkReferenceType(goal.outcomeReference, "outcomeReference", "Observation");
+            ValidationSupport.checkReferenceType(goal.source, "source", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "CareTeam");
+            ValidationSupport.checkReferenceType(goal.addresses, "addresses", "Condition", "Observation", "MedicationStatement", "MedicationRequest", "NutritionOrder", "ServiceRequest", "RiskAssessment", "Procedure");
         }
 
         protected Builder from(Goal goal) {
@@ -1268,6 +1254,7 @@ public class Goal extends DomainResource {
             lifecycleStatus = goal.lifecycleStatus;
             achievementStatus = goal.achievementStatus;
             category.addAll(goal.category);
+            continuous = goal.continuous;
             priority = goal.priority;
             description = goal.description;
             subject = goal.subject;
@@ -1275,11 +1262,10 @@ public class Goal extends DomainResource {
             target.addAll(goal.target);
             statusDate = goal.statusDate;
             statusReason = goal.statusReason;
-            expressedBy = goal.expressedBy;
+            source = goal.source;
             addresses.addAll(goal.addresses);
             note.addAll(goal.note);
-            outcomeCode.addAll(goal.outcomeCode);
-            outcomeReference.addAll(goal.outcomeReference);
+            outcome.addAll(goal.outcome);
             return this;
         }
     }
@@ -1303,10 +1289,10 @@ public class Goal extends DomainResource {
             strength = BindingStrength.Value.EXAMPLE,
             description = "Codes to identify the target value of the focus to be achieved to signify the fulfillment of the goal."
         )
-        private final Element detail;
+        private final org.linuxforhealth.fhir.model.type.Element detail;
         @Summary
         @Choice({ Date.class, Duration.class })
-        private final Element due;
+        private final org.linuxforhealth.fhir.model.type.Element due;
 
         private Target(Builder builder) {
             super(builder);
@@ -1335,7 +1321,7 @@ public class Goal extends DomainResource {
          *     An immutable object of type {@link Quantity}, {@link Range}, {@link CodeableConcept}, {@link String}, {@link Boolean}, 
          *     {@link Integer} or {@link Ratio} that may be null.
          */
-        public Element getDetail() {
+        public org.linuxforhealth.fhir.model.type.Element getDetail() {
             return detail;
         }
 
@@ -1345,7 +1331,7 @@ public class Goal extends DomainResource {
          * @return
          *     An immutable object of type {@link Date} or {@link Duration} that may be null.
          */
-        public Element getDue() {
+        public org.linuxforhealth.fhir.model.type.Element getDue() {
             return due;
         }
 
@@ -1421,8 +1407,8 @@ public class Goal extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private CodeableConcept measure;
-            private Element detail;
-            private Element due;
+            private org.linuxforhealth.fhir.model.type.Element detail;
+            private org.linuxforhealth.fhir.model.type.Element due;
 
             private Builder() {
                 super();
@@ -1445,7 +1431,7 @@ public class Goal extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1465,7 +1451,7 @@ public class Goal extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1490,7 +1476,7 @@ public class Goal extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1515,7 +1501,7 @@ public class Goal extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1624,7 +1610,7 @@ public class Goal extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder detail(Element detail) {
+            public Builder detail(org.linuxforhealth.fhir.model.type.Element detail) {
                 this.detail = detail;
                 return this;
             }
@@ -1660,7 +1646,7 @@ public class Goal extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder due(Element due) {
+            public Builder due(org.linuxforhealth.fhir.model.type.Element due) {
                 this.due = due;
                 return this;
             }

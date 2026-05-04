@@ -30,8 +30,8 @@ import org.linuxforhealth.fhir.model.resource.Resource;
 import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.DateTime;
-import org.linuxforhealth.fhir.model.type.Uri;
-import org.linuxforhealth.fhir.model.type.code.ConceptMapEquivalence;
+import org.linuxforhealth.fhir.model.type.Canonical;
+import org.linuxforhealth.fhir.model.type.code.ConceptMapRelationship;
 import org.linuxforhealth.fhir.model.type.code.IssueType;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
 import org.linuxforhealth.fhir.registry.FHIRRegistry;
@@ -107,8 +107,8 @@ public class ClosureOperation extends AbstractTermOperation {
                 .date(DateTime.now(ZoneOffset.UTC))
                 .group(getSystemSet(result.keySet()).stream()
                     .map(system -> Group.builder()
-                        .source(Uri.of(system))
-                        .target(Uri.of(system))
+                        .source(Canonical.of(system))
+                        .target(Canonical.of(system))
                         .element(getEntrySet(result, system).stream()
                             .map(entry -> Element.builder()
                                 .code(entry.getKey().getCode())
@@ -116,8 +116,8 @@ public class ClosureOperation extends AbstractTermOperation {
                                 .target(entry.getValue().stream()
                                     .map(concept -> Target.builder()
                                         .code(concept.getCode())
-                                        .equivalence(entry.getKey().getCode().equals(concept.getCode()) ?
-                                                ConceptMapEquivalence.EQUAL : ConceptMapEquivalence.SPECIALIZES)
+                                        .relationship(entry.getKey().getCode().equals(concept.getCode()) ?
+                                                ConceptMapRelationship.EQUIVALENT : ConceptMapRelationship.SOURCE_IS_NARROWER_THAN_TARGET)
                                         .display(concept.getDisplay())
                                         .build())
                                     .collect(Collectors.toList()))

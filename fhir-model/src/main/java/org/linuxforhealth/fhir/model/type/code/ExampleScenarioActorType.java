@@ -22,16 +22,16 @@ public class ExampleScenarioActorType extends Code {
     /**
      * Person
      * 
-     * <p>A person.
+     * <p>A human actor
      */
     public static final ExampleScenarioActorType PERSON = ExampleScenarioActorType.builder().value(Value.PERSON).build();
 
     /**
      * System
      * 
-     * <p>A system.
+     * <p>A software application or other system
      */
-    public static final ExampleScenarioActorType ENTITY = ExampleScenarioActorType.builder().value(Value.ENTITY).build();
+    public static final ExampleScenarioActorType SYSTEM = ExampleScenarioActorType.builder().value(Value.SYSTEM).build();
 
     private volatile int hashCode;
 
@@ -53,8 +53,8 @@ public class ExampleScenarioActorType extends Code {
         switch (value) {
         case PERSON:
             return PERSON;
-        case ENTITY:
-            return ENTITY;
+        case SYSTEM:
+            return SYSTEM;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -190,16 +190,16 @@ public class ExampleScenarioActorType extends Code {
         /**
          * Person
          * 
-         * <p>A person.
+         * <p>A human actor
          */
         PERSON("person"),
 
         /**
          * System
          * 
-         * <p>A system.
+         * <p>A software application or other system
          */
-        ENTITY("entity");
+        SYSTEM("system");
 
         private final java.lang.String value;
 
@@ -232,8 +232,8 @@ public class ExampleScenarioActorType extends Code {
             switch (value) {
             case "person":
                 return PERSON;
-            case "entity":
-                return ENTITY;
+            case "system":
+                return SYSTEM;
             default:
                 throw new IllegalArgumentException(value);
             }

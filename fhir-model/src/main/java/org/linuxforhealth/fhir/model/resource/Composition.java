@@ -15,31 +15,29 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
-import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
+import org.linuxforhealth.fhir.model.type.Annotation;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.DateTime;
-import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
 import org.linuxforhealth.fhir.model.type.Reference;
+import org.linuxforhealth.fhir.model.type.RelatedArtifact;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
+import org.linuxforhealth.fhir.model.type.UsageContext;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
-import org.linuxforhealth.fhir.model.type.code.CompositionAttestationMode;
 import org.linuxforhealth.fhir.model.type.code.CompositionStatus;
-import org.linuxforhealth.fhir.model.type.code.DocumentConfidentiality;
-import org.linuxforhealth.fhir.model.type.code.DocumentRelationshipType;
-import org.linuxforhealth.fhir.model.type.code.SectionMode;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
@@ -52,10 +50,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * Bundle.type=document, and any other resources referenced from Composition must be included as subsequent entries in 
  * the Bundle (for example Patient, Practitioner, Encounter, etc.).
  * 
- * <p>Maturity level: FMM2 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 2,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
@@ -86,6 +84,15 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 @Constraint(
     id = "composition-4",
     level = "Warning",
+    location = "attester.mode",
+    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/composition-attestation-mode",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/composition-attestation-mode', 'preferred')",
+    source = "http://hl7.org/fhir/StructureDefinition/Composition",
+    generated = true
+)
+@Constraint(
+    id = "composition-5",
+    level = "Warning",
     location = "section.orderedBy",
     description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/list-order",
     expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/list-order', 'preferred')",
@@ -93,7 +100,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "composition-5",
+    id = "composition-6",
     level = "Warning",
     location = "section.emptyReason",
     description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/list-empty-reason",
@@ -104,13 +111,17 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class Composition extends DomainResource {
     @Summary
-    private final Identifier identifier;
+    private final Uri url;
+    @Summary
+    private final List<Identifier> identifier;
+    @Summary
+    private final String version;
     @Summary
     @Binding(
         bindingName = "CompositionStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The workflow/clinical status of the composition.",
-        valueSet = "http://hl7.org/fhir/ValueSet/composition-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/composition-status|5.0.0"
     )
     @Required
     private final CompositionStatus status;
@@ -128,11 +139,11 @@ public class Composition extends DomainResource {
         bindingName = "DocumentCategory",
         strength = BindingStrength.Value.EXAMPLE,
         description = "High-level kind of a clinical document at a macro level.",
-        valueSet = "http://terminology.hl7.org/ValueSet/v3-LoincDocumentOntologyInternational"
+        valueSet = "http://hl7.org/fhir/ValueSet/referenced-item-category"
     )
     private final List<CodeableConcept> category;
     @Summary
-    private final Reference subject;
+    private final List<Reference> subject;
     @Summary
     @ReferenceTarget({ "Encounter" })
     private final Reference encounter;
@@ -140,41 +151,42 @@ public class Composition extends DomainResource {
     @Required
     private final DateTime date;
     @Summary
+    private final List<UsageContext> useContext;
+    @Summary
     @ReferenceTarget({ "Practitioner", "PractitionerRole", "Device", "Patient", "RelatedPerson", "Organization" })
     @Required
     private final List<Reference> author;
     @Summary
+    private final String name;
+    @Summary
     @Required
     private final String title;
-    @Summary
-    @Binding(
-        bindingName = "DocumentConfidentiality",
-        strength = BindingStrength.Value.REQUIRED,
-        description = "Codes specifying the level of confidentiality of the composition.",
-        valueSet = "http://terminology.hl7.org/ValueSet/v3-Confidentiality|2.0.0"
-    )
-    private final DocumentConfidentiality confidentiality;
+    private final List<Annotation> note;
     private final List<Attester> attester;
     @Summary
     @ReferenceTarget({ "Organization" })
     private final Reference custodian;
-    private final List<RelatesTo> relatesTo;
+    private final List<RelatedArtifact> relatesTo;
     @Summary
     private final List<Event> event;
     private final List<Section> section;
 
     private Composition(Builder builder) {
         super(builder);
-        identifier = builder.identifier;
+        url = builder.url;
+        identifier = Collections.unmodifiableList(builder.identifier);
+        version = builder.version;
         status = builder.status;
         type = builder.type;
         category = Collections.unmodifiableList(builder.category);
-        subject = builder.subject;
+        subject = Collections.unmodifiableList(builder.subject);
         encounter = builder.encounter;
         date = builder.date;
+        useContext = Collections.unmodifiableList(builder.useContext);
         author = Collections.unmodifiableList(builder.author);
+        name = builder.name;
         title = builder.title;
-        confidentiality = builder.confidentiality;
+        note = Collections.unmodifiableList(builder.note);
         attester = Collections.unmodifiableList(builder.attester);
         custodian = builder.custodian;
         relatesTo = Collections.unmodifiableList(builder.relatesTo);
@@ -183,14 +195,37 @@ public class Composition extends DomainResource {
     }
 
     /**
+     * An absolute URI that is used to identify this Composition when it is referenced in a specification, model, design or 
+     * an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
+     * which an authoritative instance of this Composition is (or will be) published. This URL can be the target of a 
+     * canonical reference. It SHALL remain the same when the Composition is stored on different servers.
+     * 
+     * @return
+     *     An immutable object of type {@link Uri} that may be null.
+     */
+    public Uri getUrl() {
+        return url;
+    }
+
+    /**
      * A version-independent identifier for the Composition. This identifier stays constant as the composition is changed 
      * over time.
      * 
      * @return
-     *     An immutable object of type {@link Identifier} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
      */
-    public Identifier getIdentifier() {
+    public List<Identifier> getIdentifier() {
         return identifier;
+    }
+
+    /**
+     * An explicitly assigned identifer of a variation of the content in the Composition.
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getVersion() {
+        return version;
     }
 
     /**
@@ -231,9 +266,9 @@ public class Composition extends DomainResource {
      * patients that share a common exposure).
      * 
      * @return
-     *     An immutable object of type {@link Reference} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
      */
-    public Reference getSubject() {
+    public List<Reference> getSubject() {
         return subject;
     }
 
@@ -258,6 +293,18 @@ public class Composition extends DomainResource {
     }
 
     /**
+     * The content was developed with a focus and intent of supporting the contexts that are listed. These contexts may be 
+     * general categories (gender, age, ...) or may be references to specific programs (insurance plans, studies, ...) and 
+     * may be used to assist with indexing and searching for appropriate Composition instances.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link UsageContext} that may be empty.
+     */
+    public List<UsageContext> getUseContext() {
+        return useContext;
+    }
+
+    /**
      * Identifies who is responsible for the information in the composition, not necessarily who typed it in.
      * 
      * @return
@@ -265,6 +312,17 @@ public class Composition extends DomainResource {
      */
     public List<Reference> getAuthor() {
         return author;
+    }
+
+    /**
+     * A natural language name identifying the {{title}}. This name should be usable as an identifier for the module by 
+     * machine processing applications such as code generation.
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getName() {
+        return name;
     }
 
     /**
@@ -278,13 +336,13 @@ public class Composition extends DomainResource {
     }
 
     /**
-     * The code specifying the level of confidentiality of the Composition.
+     * For any additional notes.
      * 
      * @return
-     *     An immutable object of type {@link DocumentConfidentiality} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Annotation} that may be empty.
      */
-    public DocumentConfidentiality getConfidentiality() {
-        return confidentiality;
+    public List<Annotation> getNote() {
+        return note;
     }
 
     /**
@@ -312,9 +370,9 @@ public class Composition extends DomainResource {
      * Relationships that this composition has with other compositions or documents that already exist.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link RelatesTo} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link RelatedArtifact} that may be empty.
      */
-    public List<RelatesTo> getRelatesTo() {
+    public List<RelatedArtifact> getRelatesTo() {
         return relatesTo;
     }
 
@@ -341,16 +399,20 @@ public class Composition extends DomainResource {
     @Override
     public boolean hasChildren() {
         return super.hasChildren() || 
-            (identifier != null) || 
+            (url != null) || 
+            !identifier.isEmpty() || 
+            (version != null) || 
             (status != null) || 
             (type != null) || 
             !category.isEmpty() || 
-            (subject != null) || 
+            !subject.isEmpty() || 
             (encounter != null) || 
             (date != null) || 
+            !useContext.isEmpty() || 
             !author.isEmpty() || 
+            (name != null) || 
             (title != null) || 
-            (confidentiality != null) || 
+            !note.isEmpty() || 
             !attester.isEmpty() || 
             (custodian != null) || 
             !relatesTo.isEmpty() || 
@@ -372,19 +434,23 @@ public class Composition extends DomainResource {
                 accept(contained, "contained", visitor, Resource.class);
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                accept(identifier, "identifier", visitor);
+                accept(url, "url", visitor);
+                accept(identifier, "identifier", visitor, Identifier.class);
+                accept(version, "version", visitor);
                 accept(status, "status", visitor);
                 accept(type, "type", visitor);
                 accept(category, "category", visitor, CodeableConcept.class);
-                accept(subject, "subject", visitor);
+                accept(subject, "subject", visitor, Reference.class);
                 accept(encounter, "encounter", visitor);
                 accept(date, "date", visitor);
+                accept(useContext, "useContext", visitor, UsageContext.class);
                 accept(author, "author", visitor, Reference.class);
+                accept(name, "name", visitor);
                 accept(title, "title", visitor);
-                accept(confidentiality, "confidentiality", visitor);
+                accept(note, "note", visitor, Annotation.class);
                 accept(attester, "attester", visitor, Attester.class);
                 accept(custodian, "custodian", visitor);
-                accept(relatesTo, "relatesTo", visitor, RelatesTo.class);
+                accept(relatesTo, "relatesTo", visitor, RelatedArtifact.class);
                 accept(event, "event", visitor, Event.class);
                 accept(section, "section", visitor, Section.class);
             }
@@ -413,16 +479,20 @@ public class Composition extends DomainResource {
             Objects.equals(contained, other.contained) && 
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
+            Objects.equals(url, other.url) && 
             Objects.equals(identifier, other.identifier) && 
+            Objects.equals(version, other.version) && 
             Objects.equals(status, other.status) && 
             Objects.equals(type, other.type) && 
             Objects.equals(category, other.category) && 
             Objects.equals(subject, other.subject) && 
             Objects.equals(encounter, other.encounter) && 
             Objects.equals(date, other.date) && 
+            Objects.equals(useContext, other.useContext) && 
             Objects.equals(author, other.author) && 
+            Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
-            Objects.equals(confidentiality, other.confidentiality) && 
+            Objects.equals(note, other.note) && 
             Objects.equals(attester, other.attester) && 
             Objects.equals(custodian, other.custodian) && 
             Objects.equals(relatesTo, other.relatesTo) && 
@@ -442,16 +512,20 @@ public class Composition extends DomainResource {
                 contained, 
                 extension, 
                 modifierExtension, 
+                url, 
                 identifier, 
+                version, 
                 status, 
                 type, 
                 category, 
                 subject, 
                 encounter, 
                 date, 
+                useContext, 
                 author, 
+                name, 
                 title, 
-                confidentiality, 
+                note, 
                 attester, 
                 custodian, 
                 relatesTo, 
@@ -472,19 +546,23 @@ public class Composition extends DomainResource {
     }
 
     public static class Builder extends DomainResource.Builder {
-        private Identifier identifier;
+        private Uri url;
+        private List<Identifier> identifier = new ArrayList<>();
+        private String version;
         private CompositionStatus status;
         private CodeableConcept type;
         private List<CodeableConcept> category = new ArrayList<>();
-        private Reference subject;
+        private List<Reference> subject = new ArrayList<>();
         private Reference encounter;
         private DateTime date;
+        private List<UsageContext> useContext = new ArrayList<>();
         private List<Reference> author = new ArrayList<>();
+        private String name;
         private String title;
-        private DocumentConfidentiality confidentiality;
+        private List<Annotation> note = new ArrayList<>();
         private List<Attester> attester = new ArrayList<>();
         private Reference custodian;
-        private List<RelatesTo> relatesTo = new ArrayList<>();
+        private List<RelatedArtifact> relatesTo = new ArrayList<>();
         private List<Event> event = new ArrayList<>();
         private List<Section> section = new ArrayList<>();
 
@@ -570,7 +648,8 @@ public class Composition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -588,7 +667,8 @@ public class Composition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -609,7 +689,7 @@ public class Composition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -629,7 +709,7 @@ public class Composition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -654,9 +734,9 @@ public class Composition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -679,9 +759,9 @@ public class Composition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -704,8 +784,28 @@ public class Composition extends DomainResource {
         }
 
         /**
+         * An absolute URI that is used to identify this Composition when it is referenced in a specification, model, design or 
+         * an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
+         * which an authoritative instance of this Composition is (or will be) published. This URL can be the target of a 
+         * canonical reference. It SHALL remain the same when the Composition is stored on different servers.
+         * 
+         * @param url
+         *     Canonical identifier for this Composition, represented as a URI (globally unique)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder url(Uri url) {
+            this.url = url;
+            return this;
+        }
+
+        /**
          * A version-independent identifier for the Composition. This identifier stays constant as the composition is changed 
          * over time.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param identifier
          *     Version-independent identifier for the Composition
@@ -713,8 +813,61 @@ public class Composition extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder identifier(Identifier identifier) {
-            this.identifier = identifier;
+        public Builder identifier(Identifier... identifier) {
+            for (Identifier value : identifier) {
+                this.identifier.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A version-independent identifier for the Composition. This identifier stays constant as the composition is changed 
+         * over time.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param identifier
+         *     Version-independent identifier for the Composition
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder identifier(Collection<Identifier> identifier) {
+            this.identifier = new ArrayList<>(identifier);
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code version}.
+         * 
+         * @param version
+         *     An explicitly assigned identifer of a variation of the content in the Composition
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #version(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder version(java.lang.String version) {
+            this.version = (version == null) ? null : String.of(version);
+            return this;
+        }
+
+        /**
+         * An explicitly assigned identifer of a variation of the content in the Composition.
+         * 
+         * @param version
+         *     An explicitly assigned identifer of a variation of the content in the Composition
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder version(String version) {
+            this.version = version;
             return this;
         }
 
@@ -724,7 +877,8 @@ public class Composition extends DomainResource {
          * <p>This element is required.
          * 
          * @param status
-         *     preliminary | final | amended | entered-in-error
+         *     registered | partial | preliminary | final | amended | corrected | appended | cancelled | entered-in-error | 
+         *     deprecated | unknown
          * 
          * @return
          *     A reference to this Builder instance
@@ -797,14 +951,41 @@ public class Composition extends DomainResource {
          * device (e.g. a machine) or even a group of subjects (such as a document about a herd of livestock, or a set of 
          * patients that share a common exposure).
          * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
          * @param subject
          *     Who and/or what the composition is about
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder subject(Reference subject) {
-            this.subject = subject;
+        public Builder subject(Reference... subject) {
+            for (Reference value : subject) {
+                this.subject.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Who or what the composition is about. The composition can be about a person, (patient or healthcare practitioner), a 
+         * device (e.g. a machine) or even a group of subjects (such as a document about a herd of livestock, or a set of 
+         * patients that share a common exposure).
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param subject
+         *     Who and/or what the composition is about
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder subject(Collection<Reference> subject) {
+            this.subject = new ArrayList<>(subject);
             return this;
         }
 
@@ -840,6 +1021,49 @@ public class Composition extends DomainResource {
          */
         public Builder date(DateTime date) {
             this.date = date;
+            return this;
+        }
+
+        /**
+         * The content was developed with a focus and intent of supporting the contexts that are listed. These contexts may be 
+         * general categories (gender, age, ...) or may be references to specific programs (insurance plans, studies, ...) and 
+         * may be used to assist with indexing and searching for appropriate Composition instances.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param useContext
+         *     The context that the content is intended to support
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder useContext(UsageContext... useContext) {
+            for (UsageContext value : useContext) {
+                this.useContext.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The content was developed with a focus and intent of supporting the contexts that are listed. These contexts may be 
+         * general categories (gender, age, ...) or may be references to specific programs (insurance plans, studies, ...) and 
+         * may be used to assist with indexing and searching for appropriate Composition instances.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param useContext
+         *     The context that the content is intended to support
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder useContext(Collection<UsageContext> useContext) {
+            this.useContext = new ArrayList<>(useContext);
             return this;
         }
 
@@ -907,6 +1131,37 @@ public class Composition extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code name}.
+         * 
+         * @param name
+         *     Name for this Composition (computer friendly)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #name(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder name(java.lang.String name) {
+            this.name = (name == null) ? null : String.of(name);
+            return this;
+        }
+
+        /**
+         * A natural language name identifying the {{title}}. This name should be usable as an identifier for the module by 
+         * machine processing applications such as code generation.
+         * 
+         * @param name
+         *     Name for this Composition (computer friendly)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        /**
          * Convenience method for setting {@code title}.
          * 
          * <p>This element is required.
@@ -941,16 +1196,41 @@ public class Composition extends DomainResource {
         }
 
         /**
-         * The code specifying the level of confidentiality of the Composition.
+         * For any additional notes.
          * 
-         * @param confidentiality
-         *     As defined by affinity domain
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param note
+         *     For any additional notes
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder confidentiality(DocumentConfidentiality confidentiality) {
-            this.confidentiality = confidentiality;
+        public Builder note(Annotation... note) {
+            for (Annotation value : note) {
+                this.note.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * For any additional notes.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param note
+         *     For any additional notes
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder note(Collection<Annotation> note) {
+            this.note = new ArrayList<>(note);
             return this;
         }
 
@@ -1025,8 +1305,8 @@ public class Composition extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder relatesTo(RelatesTo... relatesTo) {
-            for (RelatesTo value : relatesTo) {
+        public Builder relatesTo(RelatedArtifact... relatesTo) {
+            for (RelatedArtifact value : relatesTo) {
                 this.relatesTo.add(value);
             }
             return this;
@@ -1047,7 +1327,7 @@ public class Composition extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder relatesTo(Collection<RelatesTo> relatesTo) {
+        public Builder relatesTo(Collection<RelatedArtifact> relatesTo) {
             this.relatesTo = new ArrayList<>(relatesTo);
             return this;
         }
@@ -1158,14 +1438,18 @@ public class Composition extends DomainResource {
 
         protected void validate(Composition composition) {
             super.validate(composition);
+            ValidationSupport.checkList(composition.identifier, "identifier", Identifier.class);
             ValidationSupport.requireNonNull(composition.status, "status");
             ValidationSupport.requireNonNull(composition.type, "type");
             ValidationSupport.checkList(composition.category, "category", CodeableConcept.class);
+            ValidationSupport.checkList(composition.subject, "subject", Reference.class);
             ValidationSupport.requireNonNull(composition.date, "date");
+            ValidationSupport.checkList(composition.useContext, "useContext", UsageContext.class);
             ValidationSupport.checkNonEmptyList(composition.author, "author", Reference.class);
             ValidationSupport.requireNonNull(composition.title, "title");
+            ValidationSupport.checkList(composition.note, "note", Annotation.class);
             ValidationSupport.checkList(composition.attester, "attester", Attester.class);
-            ValidationSupport.checkList(composition.relatesTo, "relatesTo", RelatesTo.class);
+            ValidationSupport.checkList(composition.relatesTo, "relatesTo", RelatedArtifact.class);
             ValidationSupport.checkList(composition.event, "event", Event.class);
             ValidationSupport.checkList(composition.section, "section", Section.class);
             ValidationSupport.checkReferenceType(composition.encounter, "encounter", "Encounter");
@@ -1175,16 +1459,20 @@ public class Composition extends DomainResource {
 
         protected Builder from(Composition composition) {
             super.from(composition);
-            identifier = composition.identifier;
+            url = composition.url;
+            identifier.addAll(composition.identifier);
+            version = composition.version;
             status = composition.status;
             type = composition.type;
             category.addAll(composition.category);
-            subject = composition.subject;
+            subject.addAll(composition.subject);
             encounter = composition.encounter;
             date = composition.date;
+            useContext.addAll(composition.useContext);
             author.addAll(composition.author);
+            name = composition.name;
             title = composition.title;
-            confidentiality = composition.confidentiality;
+            note.addAll(composition.note);
             attester.addAll(composition.attester);
             custodian = composition.custodian;
             relatesTo.addAll(composition.relatesTo);
@@ -1200,12 +1488,12 @@ public class Composition extends DomainResource {
     public static class Attester extends BackboneElement {
         @Binding(
             bindingName = "CompositionAttestationMode",
-            strength = BindingStrength.Value.REQUIRED,
+            strength = BindingStrength.Value.PREFERRED,
             description = "The way in which a person authenticated a composition.",
-            valueSet = "http://hl7.org/fhir/ValueSet/composition-attestation-mode|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/composition-attestation-mode"
         )
         @Required
-        private final CompositionAttestationMode mode;
+        private final CodeableConcept mode;
         private final DateTime time;
         @ReferenceTarget({ "Patient", "RelatedPerson", "Practitioner", "PractitionerRole", "Organization" })
         private final Reference party;
@@ -1221,9 +1509,9 @@ public class Composition extends DomainResource {
          * The type of attestation the authenticator offers.
          * 
          * @return
-         *     An immutable object of type {@link CompositionAttestationMode} that is non-null.
+         *     An immutable object of type {@link CodeableConcept} that is non-null.
          */
-        public CompositionAttestationMode getMode() {
+        public CodeableConcept getMode() {
             return mode;
         }
 
@@ -1318,7 +1606,7 @@ public class Composition extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private CompositionAttestationMode mode;
+            private CodeableConcept mode;
             private DateTime time;
             private Reference party;
 
@@ -1343,7 +1631,7 @@ public class Composition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1363,7 +1651,7 @@ public class Composition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1388,7 +1676,7 @@ public class Composition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1413,7 +1701,7 @@ public class Composition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1448,7 +1736,7 @@ public class Composition extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder mode(CompositionAttestationMode mode) {
+            public Builder mode(CodeableConcept mode) {
                 this.mode = mode;
                 return this;
             }
@@ -1530,320 +1818,11 @@ public class Composition extends DomainResource {
     }
 
     /**
-     * Relationships that this composition has with other compositions or documents that already exist.
-     */
-    public static class RelatesTo extends BackboneElement {
-        @Binding(
-            bindingName = "DocumentRelationshipType",
-            strength = BindingStrength.Value.REQUIRED,
-            description = "The type of relationship between documents.",
-            valueSet = "http://hl7.org/fhir/ValueSet/document-relationship-type|4.3.0"
-        )
-        @Required
-        private final DocumentRelationshipType code;
-        @ReferenceTarget({ "Composition" })
-        @Choice({ Identifier.class, Reference.class })
-        @Required
-        private final Element target;
-
-        private RelatesTo(Builder builder) {
-            super(builder);
-            code = builder.code;
-            target = builder.target;
-        }
-
-        /**
-         * The type of relationship that this composition has with anther composition or document.
-         * 
-         * @return
-         *     An immutable object of type {@link DocumentRelationshipType} that is non-null.
-         */
-        public DocumentRelationshipType getCode() {
-            return code;
-        }
-
-        /**
-         * The target composition/document of this relationship.
-         * 
-         * @return
-         *     An immutable object of type {@link Identifier} or {@link Reference} that is non-null.
-         */
-        public Element getTarget() {
-            return target;
-        }
-
-        @Override
-        public boolean hasChildren() {
-            return super.hasChildren() || 
-                (code != null) || 
-                (target != null);
-        }
-
-        @Override
-        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
-            if (visitor.preVisit(this)) {
-                visitor.visitStart(elementName, elementIndex, this);
-                if (visitor.visit(elementName, elementIndex, this)) {
-                    // visit children
-                    accept(id, "id", visitor);
-                    accept(extension, "extension", visitor, Extension.class);
-                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(code, "code", visitor);
-                    accept(target, "target", visitor);
-                }
-                visitor.visitEnd(elementName, elementIndex, this);
-                visitor.postVisit(this);
-            }
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            RelatesTo other = (RelatesTo) obj;
-            return Objects.equals(id, other.id) && 
-                Objects.equals(extension, other.extension) && 
-                Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(code, other.code) && 
-                Objects.equals(target, other.target);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = hashCode;
-            if (result == 0) {
-                result = Objects.hash(id, 
-                    extension, 
-                    modifierExtension, 
-                    code, 
-                    target);
-                hashCode = result;
-            }
-            return result;
-        }
-
-        @Override
-        public Builder toBuilder() {
-            return new Builder().from(this);
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public static class Builder extends BackboneElement.Builder {
-            private DocumentRelationshipType code;
-            private Element target;
-
-            private Builder() {
-                super();
-            }
-
-            /**
-             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
-             * contain spaces.
-             * 
-             * @param id
-             *     Unique id for inter-element referencing
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder id(java.lang.String id) {
-                return (Builder) super.id(id);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder extension(Extension... extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
-             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
-             * of the definition of the extension.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param extension
-             *     Additional content defined by implementations
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder extension(Collection<Extension> extension) {
-                return (Builder) super.extension(extension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            @Override
-            public Builder modifierExtension(Extension... modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * May be used to represent additional information that is not part of the basic definition of the element and that 
-             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
-             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
-             * extension. Applications processing a resource are required to check for modifier extensions.
-             * 
-             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
-             * change the meaning of modifierExtension itself).
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param modifierExtension
-             *     Extensions that cannot be ignored even if unrecognized
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            @Override
-            public Builder modifierExtension(Collection<Extension> modifierExtension) {
-                return (Builder) super.modifierExtension(modifierExtension);
-            }
-
-            /**
-             * The type of relationship that this composition has with anther composition or document.
-             * 
-             * <p>This element is required.
-             * 
-             * @param code
-             *     replaces | transforms | signs | appends
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder code(DocumentRelationshipType code) {
-                this.code = code;
-                return this;
-            }
-
-            /**
-             * The target composition/document of this relationship.
-             * 
-             * <p>This element is required.
-             * 
-             * <p>This is a choice element with the following allowed types:
-             * <ul>
-             * <li>{@link Identifier}</li>
-             * <li>{@link Reference}</li>
-             * </ul>
-             * 
-             * When of type {@link Reference}, the allowed resource types for this reference are:
-             * <ul>
-             * <li>{@link Composition}</li>
-             * </ul>
-             * 
-             * @param target
-             *     Target of the relationship
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder target(Element target) {
-                this.target = target;
-                return this;
-            }
-
-            /**
-             * Build the {@link RelatesTo}
-             * 
-             * <p>Required elements:
-             * <ul>
-             * <li>code</li>
-             * <li>target</li>
-             * </ul>
-             * 
-             * @return
-             *     An immutable object of type {@link RelatesTo}
-             * @throws IllegalStateException
-             *     if the current state cannot be built into a valid RelatesTo per the base specification
-             */
-            @Override
-            public RelatesTo build() {
-                RelatesTo relatesTo = new RelatesTo(this);
-                if (validating) {
-                    validate(relatesTo);
-                }
-                return relatesTo;
-            }
-
-            protected void validate(RelatesTo relatesTo) {
-                super.validate(relatesTo);
-                ValidationSupport.requireNonNull(relatesTo.code, "code");
-                ValidationSupport.requireChoiceElement(relatesTo.target, "target", Identifier.class, Reference.class);
-                ValidationSupport.checkReferenceType(relatesTo.target, "target", "Composition");
-                ValidationSupport.requireValueOrChildren(relatesTo);
-            }
-
-            protected Builder from(RelatesTo relatesTo) {
-                super.from(relatesTo);
-                code = relatesTo.code;
-                target = relatesTo.target;
-                return this;
-            }
-        }
-    }
-
-    /**
      * The clinical service, such as a colonoscopy or an appendectomy, being documented.
      */
     public static class Event extends BackboneElement {
+        @Summary
+        private final Period period;
         @Summary
         @Binding(
             bindingName = "DocumentEventType",
@@ -1851,29 +1830,12 @@ public class Composition extends DomainResource {
             description = "This list of codes represents the main clinical acts being documented.",
             valueSet = "http://terminology.hl7.org/ValueSet/v3-ActCode"
         )
-        private final List<CodeableConcept> code;
-        @Summary
-        private final Period period;
-        @Summary
-        private final List<Reference> detail;
+        private final List<CodeableReference> detail;
 
         private Event(Builder builder) {
             super(builder);
-            code = Collections.unmodifiableList(builder.code);
             period = builder.period;
             detail = Collections.unmodifiableList(builder.detail);
-        }
-
-        /**
-         * This list of codes represents the main clinical acts, such as a colonoscopy or an appendectomy, being documented. In 
-         * some cases, the event is inherent in the typeCode, such as a "History and Physical Report" in which the procedure 
-         * being documented is necessarily a "History and Physical" act.
-         * 
-         * @return
-         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
-         */
-        public List<CodeableConcept> getCode() {
-            return code;
         }
 
         /**
@@ -1888,20 +1850,21 @@ public class Composition extends DomainResource {
         }
 
         /**
-         * The description and/or reference of the event(s) being documented. For example, this could be used to document such a 
-         * colonoscopy or an appendectomy.
+         * Represents the main clinical acts, such as a colonoscopy or an appendectomy, being documented. In some cases, the 
+         * event is inherent in the typeCode, such as a "History and Physical Report" in which case the procedure being 
+         * documented is necessarily a "History and Physical" act. The events may be included as a code or as a reference to an 
+         * other resource.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+         *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
          */
-        public List<Reference> getDetail() {
+        public List<CodeableReference> getDetail() {
             return detail;
         }
 
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                !code.isEmpty() || 
                 (period != null) || 
                 !detail.isEmpty();
         }
@@ -1915,9 +1878,8 @@ public class Composition extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(code, "code", visitor, CodeableConcept.class);
                     accept(period, "period", visitor);
-                    accept(detail, "detail", visitor, Reference.class);
+                    accept(detail, "detail", visitor, CodeableReference.class);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -1939,7 +1901,6 @@ public class Composition extends DomainResource {
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
-                Objects.equals(code, other.code) && 
                 Objects.equals(period, other.period) && 
                 Objects.equals(detail, other.detail);
         }
@@ -1951,7 +1912,6 @@ public class Composition extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
-                    code, 
                     period, 
                     detail);
                 hashCode = result;
@@ -1969,9 +1929,8 @@ public class Composition extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private List<CodeableConcept> code = new ArrayList<>();
             private Period period;
-            private List<Reference> detail = new ArrayList<>();
+            private List<CodeableReference> detail = new ArrayList<>();
 
             private Builder() {
                 super();
@@ -1994,7 +1953,7 @@ public class Composition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2014,7 +1973,7 @@ public class Composition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2039,7 +1998,7 @@ public class Composition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2064,7 +2023,7 @@ public class Composition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2089,49 +2048,6 @@ public class Composition extends DomainResource {
             }
 
             /**
-             * This list of codes represents the main clinical acts, such as a colonoscopy or an appendectomy, being documented. In 
-             * some cases, the event is inherent in the typeCode, such as a "History and Physical Report" in which the procedure 
-             * being documented is necessarily a "History and Physical" act.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param code
-             *     Code(s) that apply to the event being documented
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder code(CodeableConcept... code) {
-                for (CodeableConcept value : code) {
-                    this.code.add(value);
-                }
-                return this;
-            }
-
-            /**
-             * This list of codes represents the main clinical acts, such as a colonoscopy or an appendectomy, being documented. In 
-             * some cases, the event is inherent in the typeCode, such as a "History and Physical Report" in which the procedure 
-             * being documented is necessarily a "History and Physical" act.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param code
-             *     Code(s) that apply to the event being documented
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            public Builder code(Collection<CodeableConcept> code) {
-                this.code = new ArrayList<>(code);
-                return this;
-            }
-
-            /**
              * The period of time covered by the documentation. There is no assertion that the documentation is a complete 
              * representation for this period, only that it documents events during this time.
              * 
@@ -2147,34 +2063,38 @@ public class Composition extends DomainResource {
             }
 
             /**
-             * The description and/or reference of the event(s) being documented. For example, this could be used to document such a 
-             * colonoscopy or an appendectomy.
+             * Represents the main clinical acts, such as a colonoscopy or an appendectomy, being documented. In some cases, the 
+             * event is inherent in the typeCode, such as a "History and Physical Report" in which case the procedure being 
+             * documented is necessarily a "History and Physical" act. The events may be included as a code or as a reference to an 
+             * other resource.
              * 
              * <p>Adds new element(s) to the existing list.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param detail
-             *     The event(s) being documented
+             *     The event(s) being documented, as code(s), reference(s), or both
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder detail(Reference... detail) {
-                for (Reference value : detail) {
+            public Builder detail(CodeableReference... detail) {
+                for (CodeableReference value : detail) {
                     this.detail.add(value);
                 }
                 return this;
             }
 
             /**
-             * The description and/or reference of the event(s) being documented. For example, this could be used to document such a 
-             * colonoscopy or an appendectomy.
+             * Represents the main clinical acts, such as a colonoscopy or an appendectomy, being documented. In some cases, the 
+             * event is inherent in the typeCode, such as a "History and Physical Report" in which case the procedure being 
+             * documented is necessarily a "History and Physical" act. The events may be included as a code or as a reference to an 
+             * other resource.
              * 
              * <p>Replaces the existing list with a new one containing elements from the Collection.
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param detail
-             *     The event(s) being documented
+             *     The event(s) being documented, as code(s), reference(s), or both
              * 
              * @return
              *     A reference to this Builder instance
@@ -2182,7 +2102,7 @@ public class Composition extends DomainResource {
              * @throws NullPointerException
              *     If the passed collection is null
              */
-            public Builder detail(Collection<Reference> detail) {
+            public Builder detail(Collection<CodeableReference> detail) {
                 this.detail = new ArrayList<>(detail);
                 return this;
             }
@@ -2206,14 +2126,12 @@ public class Composition extends DomainResource {
 
             protected void validate(Event event) {
                 super.validate(event);
-                ValidationSupport.checkList(event.code, "code", CodeableConcept.class);
-                ValidationSupport.checkList(event.detail, "detail", Reference.class);
+                ValidationSupport.checkList(event.detail, "detail", CodeableReference.class);
                 ValidationSupport.requireValueOrChildren(event);
             }
 
             protected Builder from(Event event) {
                 super.from(event);
-                code.addAll(event.code);
                 period = event.period;
                 detail.addAll(event.detail);
                 return this;
@@ -2238,13 +2156,6 @@ public class Composition extends DomainResource {
         private final Reference focus;
         private final Narrative text;
         @Binding(
-            bindingName = "SectionMode",
-            strength = BindingStrength.Value.REQUIRED,
-            description = "The processing mode that applies to this section.",
-            valueSet = "http://hl7.org/fhir/ValueSet/list-mode|4.3.0"
-        )
-        private final SectionMode mode;
-        @Binding(
             bindingName = "SectionEntryOrder",
             strength = BindingStrength.Value.PREFERRED,
             description = "What order applies to the items in the entry.",
@@ -2268,7 +2179,6 @@ public class Composition extends DomainResource {
             author = Collections.unmodifiableList(builder.author);
             focus = builder.focus;
             text = builder.text;
-            mode = builder.mode;
             orderedBy = builder.orderedBy;
             entry = Collections.unmodifiableList(builder.entry);
             emptyReason = builder.emptyReason;
@@ -2333,18 +2243,6 @@ public class Composition extends DomainResource {
         }
 
         /**
-         * How the entry list was prepared - whether it is a working list that is suitable for being maintained on an ongoing 
-         * basis, or if it represents a snapshot of a list of items from another source, or whether it is a prepared list where 
-         * items may be marked as added, modified or deleted.
-         * 
-         * @return
-         *     An immutable object of type {@link SectionMode} that may be null.
-         */
-        public SectionMode getMode() {
-            return mode;
-        }
-
-        /**
          * Specifies the order applied to the items in the section entries.
          * 
          * @return
@@ -2392,7 +2290,6 @@ public class Composition extends DomainResource {
                 !author.isEmpty() || 
                 (focus != null) || 
                 (text != null) || 
-                (mode != null) || 
                 (orderedBy != null) || 
                 !entry.isEmpty() || 
                 (emptyReason != null) || 
@@ -2413,7 +2310,6 @@ public class Composition extends DomainResource {
                     accept(author, "author", visitor, Reference.class);
                     accept(focus, "focus", visitor);
                     accept(text, "text", visitor);
-                    accept(mode, "mode", visitor);
                     accept(orderedBy, "orderedBy", visitor);
                     accept(entry, "entry", visitor, Reference.class);
                     accept(emptyReason, "emptyReason", visitor);
@@ -2444,7 +2340,6 @@ public class Composition extends DomainResource {
                 Objects.equals(author, other.author) && 
                 Objects.equals(focus, other.focus) && 
                 Objects.equals(text, other.text) && 
-                Objects.equals(mode, other.mode) && 
                 Objects.equals(orderedBy, other.orderedBy) && 
                 Objects.equals(entry, other.entry) && 
                 Objects.equals(emptyReason, other.emptyReason) && 
@@ -2463,7 +2358,6 @@ public class Composition extends DomainResource {
                     author, 
                     focus, 
                     text, 
-                    mode, 
                     orderedBy, 
                     entry, 
                     emptyReason, 
@@ -2488,7 +2382,6 @@ public class Composition extends DomainResource {
             private List<Reference> author = new ArrayList<>();
             private Reference focus;
             private Narrative text;
-            private SectionMode mode;
             private CodeableConcept orderedBy;
             private List<Reference> entry = new ArrayList<>();
             private CodeableConcept emptyReason;
@@ -2515,7 +2408,7 @@ public class Composition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2535,7 +2428,7 @@ public class Composition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2560,7 +2453,7 @@ public class Composition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2585,7 +2478,7 @@ public class Composition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2748,22 +2641,6 @@ public class Composition extends DomainResource {
             }
 
             /**
-             * How the entry list was prepared - whether it is a working list that is suitable for being maintained on an ongoing 
-             * basis, or if it represents a snapshot of a list of items from another source, or whether it is a prepared list where 
-             * items may be marked as added, modified or deleted.
-             * 
-             * @param mode
-             *     working | snapshot | changes
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder mode(SectionMode mode) {
-                this.mode = mode;
-                return this;
-            }
-
-            /**
              * Specifies the order applied to the items in the section entries.
              * 
              * @param orderedBy
@@ -2902,7 +2779,6 @@ public class Composition extends DomainResource {
                 author.addAll(section.author);
                 focus = section.focus;
                 text = section.text;
-                mode = section.mode;
                 orderedBy = section.orderedBy;
                 entry.addAll(section.entry);
                 emptyReason = section.emptyReason;

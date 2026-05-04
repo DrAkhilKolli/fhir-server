@@ -16,7 +16,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.linuxforhealth.fhir.core.ResourceType;
 import org.linuxforhealth.fhir.model.format.Format;
 import org.linuxforhealth.fhir.model.generator.FHIRGenerator;
 import org.linuxforhealth.fhir.model.resource.Resource;
@@ -27,7 +26,7 @@ import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Uri;
-import org.linuxforhealth.fhir.model.type.code.ResourceTypeCode;
+import org.linuxforhealth.fhir.model.type.code.FHIRTypes;
 import org.linuxforhealth.fhir.model.type.code.SearchParamType;
 import org.linuxforhealth.fhir.model.util.ModelSupport;
 import org.linuxforhealth.fhir.path.FHIRPathNode;
@@ -49,8 +48,8 @@ public class SearchParameterAugmenter {
         params.addAll(FHIRRegistry.getInstance().getSearchParameters("reference"));
 
         for (SearchParameter searchParameter : params) {
-            List<ResourceTypeCode> base = searchParameter.getBase();
-            if (base.size() != 1 || base.get(0).getValueAsEnum() == ResourceType.RESOURCE) {
+            List<FHIRTypes> base = searchParameter.getBase();
+            if (base.size() != 1 || base.get(0).getValueAsEnum() == FHIRTypes.Value.RESOURCE) {
                 continue; // too complicated to handle this case right now
             }
 
@@ -116,7 +115,7 @@ public class SearchParameterAugmenter {
         }
     }
 
-    private static FHIRPathNode getExampleNodeIfPossible(SearchParameter searchParameter, List<ResourceTypeCode> base)
+    private static FHIRPathNode getExampleNodeIfPossible(SearchParameter searchParameter, List<FHIRTypes> base)
             throws Exception, FHIRPathException {
         FHIRPathNode node = null;
         // try up to five examples to find the node

@@ -21,14 +21,15 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * An amount of economic utility in some recognized currency.
  */
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Money extends Element {
+public class Money extends DataType {
     @Summary
     private final Decimal value;
     @Summary
     @Binding(
         bindingName = "CurrencyCode",
         strength = BindingStrength.Value.REQUIRED,
-        valueSet = "http://hl7.org/fhir/ValueSet/currencies|4.3.0"
+        description = "A code indicating the currency, taken from ISO 4217.",
+        valueSet = "http://hl7.org/fhir/ValueSet/currencies|5.0.0"
     )
     private final Code currency;
 
@@ -121,7 +122,7 @@ public class Money extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private Decimal value;
         private Code currency;
 
@@ -146,7 +147,7 @@ public class Money extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -166,7 +167,7 @@ public class Money extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 

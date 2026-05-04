@@ -28,7 +28,7 @@ import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactPoint;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
-import org.linuxforhealth.fhir.model.type.Id;
+import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Reference;
@@ -55,25 +55,21 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class MessageHeader extends DomainResource {
     @Summary
-    @Choice({ Coding.class, Uri.class })
+    @Choice({ Coding.class, Canonical.class })
     @Binding(
         bindingName = "MessageEvent",
         strength = BindingStrength.Value.EXAMPLE,
-        description = "One of the message events defined as part of this version of FHIR.",
-        valueSet = "http://hl7.org/fhir/ValueSet/message-events"
+        description = "One of the message events defined as part of this version of FHIR."
     )
     @Required
-    private final Element event;
+    private final org.linuxforhealth.fhir.model.type.Element event;
     @Summary
     private final List<Destination> destination;
     @Summary
-    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization" })
+    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Device", "Organization" })
     private final Reference sender;
     @Summary
-    @ReferenceTarget({ "Practitioner", "PractitionerRole" })
-    private final Reference enterer;
-    @Summary
-    @ReferenceTarget({ "Practitioner", "PractitionerRole" })
+    @ReferenceTarget({ "Practitioner", "PractitionerRole", "Device", "Organization" })
     private final Reference author;
     @Summary
     @Required
@@ -101,7 +97,6 @@ public class MessageHeader extends DomainResource {
         event = builder.event;
         destination = Collections.unmodifiableList(builder.destination);
         sender = builder.sender;
-        enterer = builder.enterer;
         author = builder.author;
         source = builder.source;
         responsible = builder.responsible;
@@ -113,13 +108,12 @@ public class MessageHeader extends DomainResource {
 
     /**
      * Code that identifies the event this message represents and connects it with its definition. Events defined as part of 
-     * the FHIR specification have the system value "http://terminology.hl7.org/CodeSystem/message-events". Alternatively uri 
-     * to the EventDefinition.
+     * the FHIR specification are defined by the implementation. Alternatively a canonical uri to the EventDefinition.
      * 
      * @return
-     *     An immutable object of type {@link Coding} or {@link Uri} that is non-null.
+     *     An immutable object of type {@link Coding} or {@link Canonical} that is non-null.
      */
-    public Element getEvent() {
+    public org.linuxforhealth.fhir.model.type.Element getEvent() {
         return event;
     }
 
@@ -144,18 +138,7 @@ public class MessageHeader extends DomainResource {
     }
 
     /**
-     * The person or device that performed the data entry leading to this message. When there is more than one candidate, 
-     * pick the most proximal to the message. Can provide other enterers in extensions.
-     * 
-     * @return
-     *     An immutable object of type {@link Reference} that may be null.
-     */
-    public Reference getEnterer() {
-        return enterer;
-    }
-
-    /**
-     * The logical author of the message - the person or device that decided the described event should happen. When there is 
+     * The logical author of the message - the personor device that decided the described event should happen. When there is 
      * more than one candidate, pick the most proximal to the MessageHeader. Can provide other authors in extensions.
      * 
      * @return
@@ -208,7 +191,8 @@ public class MessageHeader extends DomainResource {
     }
 
     /**
-     * The actual data of the message - a reference to the root/focus class of the event.
+     * The actual data of the message - a reference to the root/focus class of the event. This is allowed to be a Parameters 
+     * resource.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
@@ -233,7 +217,6 @@ public class MessageHeader extends DomainResource {
             (event != null) || 
             !destination.isEmpty() || 
             (sender != null) || 
-            (enterer != null) || 
             (author != null) || 
             (source != null) || 
             (responsible != null) || 
@@ -260,7 +243,6 @@ public class MessageHeader extends DomainResource {
                 accept(event, "event", visitor);
                 accept(destination, "destination", visitor, Destination.class);
                 accept(sender, "sender", visitor);
-                accept(enterer, "enterer", visitor);
                 accept(author, "author", visitor);
                 accept(source, "source", visitor);
                 accept(responsible, "responsible", visitor);
@@ -297,7 +279,6 @@ public class MessageHeader extends DomainResource {
             Objects.equals(event, other.event) && 
             Objects.equals(destination, other.destination) && 
             Objects.equals(sender, other.sender) && 
-            Objects.equals(enterer, other.enterer) && 
             Objects.equals(author, other.author) && 
             Objects.equals(source, other.source) && 
             Objects.equals(responsible, other.responsible) && 
@@ -322,7 +303,6 @@ public class MessageHeader extends DomainResource {
                 event, 
                 destination, 
                 sender, 
-                enterer, 
                 author, 
                 source, 
                 responsible, 
@@ -345,10 +325,9 @@ public class MessageHeader extends DomainResource {
     }
 
     public static class Builder extends DomainResource.Builder {
-        private Element event;
+        private org.linuxforhealth.fhir.model.type.Element event;
         private List<Destination> destination = new ArrayList<>();
         private Reference sender;
-        private Reference enterer;
         private Reference author;
         private Source source;
         private Reference responsible;
@@ -439,7 +418,8 @@ public class MessageHeader extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -457,7 +437,8 @@ public class MessageHeader extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -478,7 +459,7 @@ public class MessageHeader extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -498,7 +479,7 @@ public class MessageHeader extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -523,9 +504,9 @@ public class MessageHeader extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -548,9 +529,9 @@ public class MessageHeader extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -574,24 +555,23 @@ public class MessageHeader extends DomainResource {
 
         /**
          * Code that identifies the event this message represents and connects it with its definition. Events defined as part of 
-         * the FHIR specification have the system value "http://terminology.hl7.org/CodeSystem/message-events". Alternatively uri 
-         * to the EventDefinition.
+         * the FHIR specification are defined by the implementation. Alternatively a canonical uri to the EventDefinition.
          * 
          * <p>This element is required.
          * 
          * <p>This is a choice element with the following allowed types:
          * <ul>
          * <li>{@link Coding}</li>
-         * <li>{@link Uri}</li>
+         * <li>{@link Canonical}</li>
          * </ul>
          * 
          * @param event
-         *     Code for the event this message represents or link to event definition
+         *     Event code or link to EventDefinition
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder event(Element event) {
+        public Builder event(org.linuxforhealth.fhir.model.type.Element event) {
             this.event = event;
             return this;
         }
@@ -642,6 +622,7 @@ public class MessageHeader extends DomainResource {
          * <ul>
          * <li>{@link Practitioner}</li>
          * <li>{@link PractitionerRole}</li>
+         * <li>{@link Device}</li>
          * <li>{@link Organization}</li>
          * </ul>
          * 
@@ -657,34 +638,15 @@ public class MessageHeader extends DomainResource {
         }
 
         /**
-         * The person or device that performed the data entry leading to this message. When there is more than one candidate, 
-         * pick the most proximal to the message. Can provide other enterers in extensions.
-         * 
-         * <p>Allowed resource types for this reference:
-         * <ul>
-         * <li>{@link Practitioner}</li>
-         * <li>{@link PractitionerRole}</li>
-         * </ul>
-         * 
-         * @param enterer
-         *     The source of the data entry
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder enterer(Reference enterer) {
-            this.enterer = enterer;
-            return this;
-        }
-
-        /**
-         * The logical author of the message - the person or device that decided the described event should happen. When there is 
+         * The logical author of the message - the personor device that decided the described event should happen. When there is 
          * more than one candidate, pick the most proximal to the MessageHeader. Can provide other authors in extensions.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
          * <li>{@link Practitioner}</li>
          * <li>{@link PractitionerRole}</li>
+         * <li>{@link Device}</li>
+         * <li>{@link Organization}</li>
          * </ul>
          * 
          * @param author
@@ -766,7 +728,8 @@ public class MessageHeader extends DomainResource {
         }
 
         /**
-         * The actual data of the message - a reference to the root/focus class of the event.
+         * The actual data of the message - a reference to the root/focus class of the event. This is allowed to be a Parameters 
+         * resource.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -785,7 +748,8 @@ public class MessageHeader extends DomainResource {
         }
 
         /**
-         * The actual data of the message - a reference to the root/focus class of the event.
+         * The actual data of the message - a reference to the root/focus class of the event. This is allowed to be a Parameters 
+         * resource.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -843,13 +807,12 @@ public class MessageHeader extends DomainResource {
 
         protected void validate(MessageHeader messageHeader) {
             super.validate(messageHeader);
-            ValidationSupport.requireChoiceElement(messageHeader.event, "event", Coding.class, Uri.class);
+            ValidationSupport.requireChoiceElement(messageHeader.event, "event", Coding.class, Canonical.class);
             ValidationSupport.checkList(messageHeader.destination, "destination", Destination.class);
             ValidationSupport.requireNonNull(messageHeader.source, "source");
             ValidationSupport.checkList(messageHeader.focus, "focus", Reference.class);
-            ValidationSupport.checkReferenceType(messageHeader.sender, "sender", "Practitioner", "PractitionerRole", "Organization");
-            ValidationSupport.checkReferenceType(messageHeader.enterer, "enterer", "Practitioner", "PractitionerRole");
-            ValidationSupport.checkReferenceType(messageHeader.author, "author", "Practitioner", "PractitionerRole");
+            ValidationSupport.checkReferenceType(messageHeader.sender, "sender", "Practitioner", "PractitionerRole", "Device", "Organization");
+            ValidationSupport.checkReferenceType(messageHeader.author, "author", "Practitioner", "PractitionerRole", "Device", "Organization");
             ValidationSupport.checkReferenceType(messageHeader.responsible, "responsible", "Practitioner", "PractitionerRole", "Organization");
         }
 
@@ -858,7 +821,6 @@ public class MessageHeader extends DomainResource {
             event = messageHeader.event;
             destination.addAll(messageHeader.destination);
             sender = messageHeader.sender;
-            enterer = messageHeader.enterer;
             author = messageHeader.author;
             source = messageHeader.source;
             responsible = messageHeader.responsible;
@@ -875,23 +837,34 @@ public class MessageHeader extends DomainResource {
      */
     public static class Destination extends BackboneElement {
         @Summary
+        @ReferenceTarget({ "Endpoint" })
+        @Choice({ Url.class, Reference.class })
+        private final org.linuxforhealth.fhir.model.type.Element endpoint;
+        @Summary
         private final String name;
         @Summary
         @ReferenceTarget({ "Device" })
         private final Reference target;
-        @Summary
-        @Required
-        private final Url endpoint;
         @Summary
         @ReferenceTarget({ "Practitioner", "PractitionerRole", "Organization" })
         private final Reference receiver;
 
         private Destination(Builder builder) {
             super(builder);
+            endpoint = builder.endpoint;
             name = builder.name;
             target = builder.target;
-            endpoint = builder.endpoint;
             receiver = builder.receiver;
+        }
+
+        /**
+         * Indicates where the message should be routed.
+         * 
+         * @return
+         *     An immutable object of type {@link Url} or {@link Reference} that may be null.
+         */
+        public org.linuxforhealth.fhir.model.type.Element getEndpoint() {
+            return endpoint;
         }
 
         /**
@@ -915,16 +888,6 @@ public class MessageHeader extends DomainResource {
         }
 
         /**
-         * Indicates where the message should be routed to.
-         * 
-         * @return
-         *     An immutable object of type {@link Url} that is non-null.
-         */
-        public Url getEndpoint() {
-            return endpoint;
-        }
-
-        /**
          * Allows data conveyed by a message to be addressed to a particular person or department when routing to a specific 
          * application isn't sufficient.
          * 
@@ -938,9 +901,9 @@ public class MessageHeader extends DomainResource {
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
+                (endpoint != null) || 
                 (name != null) || 
                 (target != null) || 
-                (endpoint != null) || 
                 (receiver != null);
         }
 
@@ -953,9 +916,9 @@ public class MessageHeader extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(endpoint, "endpoint", visitor);
                     accept(name, "name", visitor);
                     accept(target, "target", visitor);
-                    accept(endpoint, "endpoint", visitor);
                     accept(receiver, "receiver", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
@@ -978,9 +941,9 @@ public class MessageHeader extends DomainResource {
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(endpoint, other.endpoint) && 
                 Objects.equals(name, other.name) && 
                 Objects.equals(target, other.target) && 
-                Objects.equals(endpoint, other.endpoint) && 
                 Objects.equals(receiver, other.receiver);
         }
 
@@ -991,9 +954,9 @@ public class MessageHeader extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
+                    endpoint, 
                     name, 
                     target, 
-                    endpoint, 
                     receiver);
                 hashCode = result;
             }
@@ -1010,9 +973,9 @@ public class MessageHeader extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
+            private org.linuxforhealth.fhir.model.type.Element endpoint;
             private String name;
             private Reference target;
-            private Url endpoint;
             private Reference receiver;
 
             private Builder() {
@@ -1036,7 +999,7 @@ public class MessageHeader extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1056,7 +1019,7 @@ public class MessageHeader extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1081,7 +1044,7 @@ public class MessageHeader extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1106,7 +1069,7 @@ public class MessageHeader extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1128,6 +1091,31 @@ public class MessageHeader extends DomainResource {
             @Override
             public Builder modifierExtension(Collection<Extension> modifierExtension) {
                 return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * Indicates where the message should be routed.
+             * 
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link Url}</li>
+             * <li>{@link Reference}</li>
+             * </ul>
+             * 
+             * When of type {@link Reference}, the allowed resource types for this reference are:
+             * <ul>
+             * <li>{@link Endpoint}</li>
+             * </ul>
+             * 
+             * @param endpoint
+             *     Actual destination address or Endpoint resource
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder endpoint(org.linuxforhealth.fhir.model.type.Element endpoint) {
+                this.endpoint = endpoint;
+                return this;
             }
 
             /**
@@ -1180,22 +1168,6 @@ public class MessageHeader extends DomainResource {
             }
 
             /**
-             * Indicates where the message should be routed to.
-             * 
-             * <p>This element is required.
-             * 
-             * @param endpoint
-             *     Actual destination address or id
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder endpoint(Url endpoint) {
-                this.endpoint = endpoint;
-                return this;
-            }
-
-            /**
              * Allows data conveyed by a message to be addressed to a particular person or department when routing to a specific 
              * application isn't sufficient.
              * 
@@ -1220,11 +1192,6 @@ public class MessageHeader extends DomainResource {
             /**
              * Build the {@link Destination}
              * 
-             * <p>Required elements:
-             * <ul>
-             * <li>endpoint</li>
-             * </ul>
-             * 
              * @return
              *     An immutable object of type {@link Destination}
              * @throws IllegalStateException
@@ -1241,7 +1208,8 @@ public class MessageHeader extends DomainResource {
 
             protected void validate(Destination destination) {
                 super.validate(destination);
-                ValidationSupport.requireNonNull(destination.endpoint, "endpoint");
+                ValidationSupport.choiceElement(destination.endpoint, "endpoint", Url.class, Reference.class);
+                ValidationSupport.checkReferenceType(destination.endpoint, "endpoint", "Endpoint");
                 ValidationSupport.checkReferenceType(destination.target, "target", "Device");
                 ValidationSupport.checkReferenceType(destination.receiver, "receiver", "Practitioner", "PractitionerRole", "Organization");
                 ValidationSupport.requireValueOrChildren(destination);
@@ -1249,9 +1217,9 @@ public class MessageHeader extends DomainResource {
 
             protected Builder from(Destination destination) {
                 super.from(destination);
+                endpoint = destination.endpoint;
                 name = destination.name;
                 target = destination.target;
-                endpoint = destination.endpoint;
                 receiver = destination.receiver;
                 return this;
             }
@@ -1263,6 +1231,10 @@ public class MessageHeader extends DomainResource {
      */
     public static class Source extends BackboneElement {
         @Summary
+        @ReferenceTarget({ "Endpoint" })
+        @Choice({ Url.class, Reference.class })
+        private final org.linuxforhealth.fhir.model.type.Element endpoint;
+        @Summary
         private final String name;
         @Summary
         private final String software;
@@ -1270,17 +1242,24 @@ public class MessageHeader extends DomainResource {
         private final String version;
         @Summary
         private final ContactPoint contact;
-        @Summary
-        @Required
-        private final Url endpoint;
 
         private Source(Builder builder) {
             super(builder);
+            endpoint = builder.endpoint;
             name = builder.name;
             software = builder.software;
             version = builder.version;
             contact = builder.contact;
-            endpoint = builder.endpoint;
+        }
+
+        /**
+         * Identifies the routing target to send acknowledgements to.
+         * 
+         * @return
+         *     An immutable object of type {@link Url} or {@link Reference} that may be null.
+         */
+        public org.linuxforhealth.fhir.model.type.Element getEndpoint() {
+            return endpoint;
         }
 
         /**
@@ -1323,24 +1302,14 @@ public class MessageHeader extends DomainResource {
             return contact;
         }
 
-        /**
-         * Identifies the routing target to send acknowledgements to.
-         * 
-         * @return
-         *     An immutable object of type {@link Url} that is non-null.
-         */
-        public Url getEndpoint() {
-            return endpoint;
-        }
-
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
+                (endpoint != null) || 
                 (name != null) || 
                 (software != null) || 
                 (version != null) || 
-                (contact != null) || 
-                (endpoint != null);
+                (contact != null);
         }
 
         @Override
@@ -1352,11 +1321,11 @@ public class MessageHeader extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(endpoint, "endpoint", visitor);
                     accept(name, "name", visitor);
                     accept(software, "software", visitor);
                     accept(version, "version", visitor);
                     accept(contact, "contact", visitor);
-                    accept(endpoint, "endpoint", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -1378,11 +1347,11 @@ public class MessageHeader extends DomainResource {
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(endpoint, other.endpoint) && 
                 Objects.equals(name, other.name) && 
                 Objects.equals(software, other.software) && 
                 Objects.equals(version, other.version) && 
-                Objects.equals(contact, other.contact) && 
-                Objects.equals(endpoint, other.endpoint);
+                Objects.equals(contact, other.contact);
         }
 
         @Override
@@ -1392,11 +1361,11 @@ public class MessageHeader extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
+                    endpoint, 
                     name, 
                     software, 
                     version, 
-                    contact, 
-                    endpoint);
+                    contact);
                 hashCode = result;
             }
             return result;
@@ -1412,11 +1381,11 @@ public class MessageHeader extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
+            private org.linuxforhealth.fhir.model.type.Element endpoint;
             private String name;
             private String software;
             private String version;
             private ContactPoint contact;
-            private Url endpoint;
 
             private Builder() {
                 super();
@@ -1439,7 +1408,7 @@ public class MessageHeader extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1459,7 +1428,7 @@ public class MessageHeader extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1484,7 +1453,7 @@ public class MessageHeader extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1509,7 +1478,7 @@ public class MessageHeader extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1531,6 +1500,31 @@ public class MessageHeader extends DomainResource {
             @Override
             public Builder modifierExtension(Collection<Extension> modifierExtension) {
                 return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * Identifies the routing target to send acknowledgements to.
+             * 
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link Url}</li>
+             * <li>{@link Reference}</li>
+             * </ul>
+             * 
+             * When of type {@link Reference}, the allowed resource types for this reference are:
+             * <ul>
+             * <li>{@link Endpoint}</li>
+             * </ul>
+             * 
+             * @param endpoint
+             *     Actual source address or Endpoint resource
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder endpoint(org.linuxforhealth.fhir.model.type.Element endpoint) {
+                this.endpoint = endpoint;
+                return this;
             }
 
             /**
@@ -1638,28 +1632,7 @@ public class MessageHeader extends DomainResource {
             }
 
             /**
-             * Identifies the routing target to send acknowledgements to.
-             * 
-             * <p>This element is required.
-             * 
-             * @param endpoint
-             *     Actual message source address or id
-             * 
-             * @return
-             *     A reference to this Builder instance
-             */
-            public Builder endpoint(Url endpoint) {
-                this.endpoint = endpoint;
-                return this;
-            }
-
-            /**
              * Build the {@link Source}
-             * 
-             * <p>Required elements:
-             * <ul>
-             * <li>endpoint</li>
-             * </ul>
              * 
              * @return
              *     An immutable object of type {@link Source}
@@ -1677,17 +1650,18 @@ public class MessageHeader extends DomainResource {
 
             protected void validate(Source source) {
                 super.validate(source);
-                ValidationSupport.requireNonNull(source.endpoint, "endpoint");
+                ValidationSupport.choiceElement(source.endpoint, "endpoint", Url.class, Reference.class);
+                ValidationSupport.checkReferenceType(source.endpoint, "endpoint", "Endpoint");
                 ValidationSupport.requireValueOrChildren(source);
             }
 
             protected Builder from(Source source) {
                 super.from(source);
+                endpoint = source.endpoint;
                 name = source.name;
                 software = source.software;
                 version = source.version;
                 contact = source.contact;
-                endpoint = source.endpoint;
                 return this;
             }
         }
@@ -1699,13 +1673,13 @@ public class MessageHeader extends DomainResource {
     public static class Response extends BackboneElement {
         @Summary
         @Required
-        private final Id identifier;
+        private final Identifier identifier;
         @Summary
         @Binding(
             bindingName = "ResponseType",
             strength = BindingStrength.Value.REQUIRED,
             description = "The kind of response to a message.",
-            valueSet = "http://hl7.org/fhir/ValueSet/response-code|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/response-code|5.0.0"
         )
         @Required
         private final ResponseType code;
@@ -1721,12 +1695,12 @@ public class MessageHeader extends DomainResource {
         }
 
         /**
-         * The MessageHeader.id of the message to which this message is a response.
+         * The Bundle.identifier of the message to which this message is a response.
          * 
          * @return
-         *     An immutable object of type {@link Id} that is non-null.
+         *     An immutable object of type {@link Identifier} that is non-null.
          */
-        public Id getIdentifier() {
+        public Identifier getIdentifier() {
             return identifier;
         }
 
@@ -1822,7 +1796,7 @@ public class MessageHeader extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private Id identifier;
+            private Identifier identifier;
             private ResponseType code;
             private Reference details;
 
@@ -1847,7 +1821,7 @@ public class MessageHeader extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1867,7 +1841,7 @@ public class MessageHeader extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1892,7 +1866,7 @@ public class MessageHeader extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1917,7 +1891,7 @@ public class MessageHeader extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1942,17 +1916,17 @@ public class MessageHeader extends DomainResource {
             }
 
             /**
-             * The MessageHeader.id of the message to which this message is a response.
+             * The Bundle.identifier of the message to which this message is a response.
              * 
              * <p>This element is required.
              * 
              * @param identifier
-             *     Id of original message
+             *     Bundle.identifier of original message
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder identifier(Id identifier) {
+            public Builder identifier(Identifier identifier) {
                 this.identifier = identifier;
                 return this;
             }

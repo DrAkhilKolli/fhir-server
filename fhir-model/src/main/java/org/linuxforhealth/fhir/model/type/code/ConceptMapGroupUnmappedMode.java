@@ -20,16 +20,17 @@ import javax.annotation.Generated;
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class ConceptMapGroupUnmappedMode extends Code {
     /**
-     * Provided Code
+     * Use Provided Source Code
      * 
-     * <p>Use the code as provided in the $translate request.
+     * <p>Use the code as provided in the $translate request in one of the following input parameters: sourceCode, 
+     * sourceCoding, sourceCodeableConcept.
      */
-    public static final ConceptMapGroupUnmappedMode PROVIDED = ConceptMapGroupUnmappedMode.builder().value(Value.PROVIDED).build();
+    public static final ConceptMapGroupUnmappedMode USE_SOURCE_CODE = ConceptMapGroupUnmappedMode.builder().value(Value.USE_SOURCE_CODE).build();
 
     /**
      * Fixed Code
      * 
-     * <p>Use the code explicitly provided in the group.unmapped.
+     * <p>Use the code(s) explicitly provided in the group.unmapped 'code' or 'valueSet' element.
      */
     public static final ConceptMapGroupUnmappedMode FIXED = ConceptMapGroupUnmappedMode.builder().value(Value.FIXED).build();
 
@@ -58,8 +59,8 @@ public class ConceptMapGroupUnmappedMode extends Code {
      */
     public static ConceptMapGroupUnmappedMode of(Value value) {
         switch (value) {
-        case PROVIDED:
-            return PROVIDED;
+        case USE_SOURCE_CODE:
+            return USE_SOURCE_CODE;
         case FIXED:
             return FIXED;
         case OTHER_MAP:
@@ -197,16 +198,17 @@ public class ConceptMapGroupUnmappedMode extends Code {
 
     public enum Value {
         /**
-         * Provided Code
+         * Use Provided Source Code
          * 
-         * <p>Use the code as provided in the $translate request.
+         * <p>Use the code as provided in the $translate request in one of the following input parameters: sourceCode, 
+         * sourceCoding, sourceCodeableConcept.
          */
-        PROVIDED("provided"),
+        USE_SOURCE_CODE("use-source-code"),
 
         /**
          * Fixed Code
          * 
-         * <p>Use the code explicitly provided in the group.unmapped.
+         * <p>Use the code(s) explicitly provided in the group.unmapped 'code' or 'valueSet' element.
          */
         FIXED("fixed"),
 
@@ -246,8 +248,8 @@ public class ConceptMapGroupUnmappedMode extends Code {
                 return null;
             }
             switch (value) {
-            case "provided":
-                return PROVIDED;
+            case "use-source-code":
+                return USE_SOURCE_CODE;
             case "fixed":
                 return FIXED;
             case "other-map":

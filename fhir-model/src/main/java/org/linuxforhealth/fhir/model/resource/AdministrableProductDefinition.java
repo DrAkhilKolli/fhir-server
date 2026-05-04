@@ -31,6 +31,7 @@ import org.linuxforhealth.fhir.model.type.Duration;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
+import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Quantity;
@@ -48,10 +49,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * A medicinal product in the final form which is suitable for administering to a patient (after any mixing of multiple 
  * components, dissolution etc. has been performed).
  * 
- * <p>Maturity level: FMM1 (Trial Use)
+ * <p>Maturity level: FMM2 (Trial Use)
  */
 @Maturity(
-    level = 1,
+    level = 2,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
@@ -59,7 +60,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Rule",
     location = "(base)",
     description = "RouteOfAdministration cannot be used when the 'formOf' product already uses MedicinalProductDefinition.route (and vice versa)",
-    expression = "(AdministrableProductDefinition.routeOfAdministration.code.count() + AdministrableProductDefinition.formOf.resolve().route.count())  < 2",
+    expression = "AdministrableProductDefinition.formOf.resolve().route.empty()",
     source = "http://hl7.org/fhir/StructureDefinition/AdministrableProductDefinition"
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
@@ -71,7 +72,7 @@ public class AdministrableProductDefinition extends DomainResource {
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -108,6 +109,7 @@ public class AdministrableProductDefinition extends DomainResource {
     @Summary
     @ReferenceTarget({ "DeviceDefinition" })
     private final Reference device;
+    private final Markdown description;
     @Summary
     private final List<Property> property;
     @Summary
@@ -124,6 +126,7 @@ public class AdministrableProductDefinition extends DomainResource {
         producedFrom = Collections.unmodifiableList(builder.producedFrom);
         ingredient = Collections.unmodifiableList(builder.ingredient);
         device = builder.device;
+        description = builder.description;
         property = Collections.unmodifiableList(builder.property);
         routeOfAdministration = Collections.unmodifiableList(builder.routeOfAdministration);
     }
@@ -225,6 +228,18 @@ public class AdministrableProductDefinition extends DomainResource {
     }
 
     /**
+     * A general description of the product, when in its final form, suitable for administration e.g. effervescent blue 
+     * liquid, to be swallowed. Intended to be used when the other structured properties of this resource are insufficient or 
+     * cannot be supported. It is not intended to duplicate information already carried elswehere.
+     * 
+     * @return
+     *     An immutable object of type {@link Markdown} that may be null.
+     */
+    public Markdown getDescription() {
+        return description;
+    }
+
+    /**
      * Characteristics e.g. a product's onset of action.
      * 
      * @return
@@ -257,6 +272,7 @@ public class AdministrableProductDefinition extends DomainResource {
             !producedFrom.isEmpty() || 
             !ingredient.isEmpty() || 
             (device != null) || 
+            (description != null) || 
             !property.isEmpty() || 
             !routeOfAdministration.isEmpty();
     }
@@ -283,6 +299,7 @@ public class AdministrableProductDefinition extends DomainResource {
                 accept(producedFrom, "producedFrom", visitor, Reference.class);
                 accept(ingredient, "ingredient", visitor, CodeableConcept.class);
                 accept(device, "device", visitor);
+                accept(description, "description", visitor);
                 accept(property, "property", visitor, Property.class);
                 accept(routeOfAdministration, "routeOfAdministration", visitor, RouteOfAdministration.class);
             }
@@ -319,6 +336,7 @@ public class AdministrableProductDefinition extends DomainResource {
             Objects.equals(producedFrom, other.producedFrom) && 
             Objects.equals(ingredient, other.ingredient) && 
             Objects.equals(device, other.device) && 
+            Objects.equals(description, other.description) && 
             Objects.equals(property, other.property) && 
             Objects.equals(routeOfAdministration, other.routeOfAdministration);
     }
@@ -343,6 +361,7 @@ public class AdministrableProductDefinition extends DomainResource {
                 producedFrom, 
                 ingredient, 
                 device, 
+                description, 
                 property, 
                 routeOfAdministration);
             hashCode = result;
@@ -368,6 +387,7 @@ public class AdministrableProductDefinition extends DomainResource {
         private List<Reference> producedFrom = new ArrayList<>();
         private List<CodeableConcept> ingredient = new ArrayList<>();
         private Reference device;
+        private Markdown description;
         private List<Property> property = new ArrayList<>();
         private List<RouteOfAdministration> routeOfAdministration = new ArrayList<>();
 
@@ -453,7 +473,8 @@ public class AdministrableProductDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -471,7 +492,8 @@ public class AdministrableProductDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -492,7 +514,7 @@ public class AdministrableProductDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -512,7 +534,7 @@ public class AdministrableProductDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -537,9 +559,9 @@ public class AdministrableProductDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -562,9 +584,9 @@ public class AdministrableProductDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -860,6 +882,23 @@ public class AdministrableProductDefinition extends DomainResource {
         }
 
         /**
+         * A general description of the product, when in its final form, suitable for administration e.g. effervescent blue 
+         * liquid, to be swallowed. Intended to be used when the other structured properties of this resource are insufficient or 
+         * cannot be supported. It is not intended to duplicate information already carried elswehere.
+         * 
+         * @param description
+         *     A general description of the product, when in its final form, suitable for administration e.g. effervescent blue 
+         *     liquid, to be swallowed
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder description(Markdown description) {
+            this.description = description;
+            return this;
+        }
+
+        /**
          * Characteristics e.g. a product's onset of action.
          * 
          * <p>Adds new element(s) to the existing list.
@@ -992,6 +1031,7 @@ public class AdministrableProductDefinition extends DomainResource {
             producedFrom.addAll(administrableProductDefinition.producedFrom);
             ingredient.addAll(administrableProductDefinition.ingredient);
             device = administrableProductDefinition.device;
+            description = administrableProductDefinition.description;
             property.addAll(administrableProductDefinition.property);
             routeOfAdministration.addAll(administrableProductDefinition.routeOfAdministration);
             return this;
@@ -1012,14 +1052,15 @@ public class AdministrableProductDefinition extends DomainResource {
         @Required
         private final CodeableConcept type;
         @Summary
-        @Choice({ CodeableConcept.class, Quantity.class, Date.class, Boolean.class, Attachment.class })
-        private final Element value;
+        @ReferenceTarget({ "Binary" })
+        @Choice({ CodeableConcept.class, Quantity.class, Date.class, Boolean.class, Markdown.class, Attachment.class, Reference.class })
+        private final org.linuxforhealth.fhir.model.type.Element value;
         @Summary
         @Binding(
             bindingName = "PublicationStatus",
             strength = BindingStrength.Value.REQUIRED,
             description = "The lifecycle status of an artifact.",
-            valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
         )
         private final CodeableConcept status;
 
@@ -1044,10 +1085,10 @@ public class AdministrableProductDefinition extends DomainResource {
          * A value for the characteristic.
          * 
          * @return
-         *     An immutable object of type {@link CodeableConcept}, {@link Quantity}, {@link Date}, {@link Boolean} or {@link 
-         *     Attachment} that may be null.
+         *     An immutable object of type {@link CodeableConcept}, {@link Quantity}, {@link Date}, {@link Boolean}, {@link 
+         *     Markdown}, {@link Attachment} or {@link Reference} that may be null.
          */
-        public Element getValue() {
+        public org.linuxforhealth.fhir.model.type.Element getValue() {
             return value;
         }
 
@@ -1133,7 +1174,7 @@ public class AdministrableProductDefinition extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private CodeableConcept type;
-            private Element value;
+            private org.linuxforhealth.fhir.model.type.Element value;
             private CodeableConcept status;
 
             private Builder() {
@@ -1157,7 +1198,7 @@ public class AdministrableProductDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1177,7 +1218,7 @@ public class AdministrableProductDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1202,7 +1243,7 @@ public class AdministrableProductDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1227,7 +1268,7 @@ public class AdministrableProductDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1308,7 +1349,14 @@ public class AdministrableProductDefinition extends DomainResource {
              * <li>{@link Quantity}</li>
              * <li>{@link Date}</li>
              * <li>{@link Boolean}</li>
+             * <li>{@link Markdown}</li>
              * <li>{@link Attachment}</li>
+             * <li>{@link Reference}</li>
+             * </ul>
+             * 
+             * When of type {@link Reference}, the allowed resource types for this reference are:
+             * <ul>
+             * <li>{@link Binary}</li>
              * </ul>
              * 
              * @param value
@@ -1317,7 +1365,7 @@ public class AdministrableProductDefinition extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder value(Element value) {
+            public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                 this.value = value;
                 return this;
             }
@@ -1361,8 +1409,9 @@ public class AdministrableProductDefinition extends DomainResource {
             protected void validate(Property property) {
                 super.validate(property);
                 ValidationSupport.requireNonNull(property.type, "type");
-                ValidationSupport.choiceElement(property.value, "value", CodeableConcept.class, Quantity.class, Date.class, Boolean.class, Attachment.class);
+                ValidationSupport.choiceElement(property.value, "value", CodeableConcept.class, Quantity.class, Date.class, Boolean.class, Markdown.class, Attachment.class, Reference.class);
                 ValidationSupport.checkValueSetBinding(property.status, "status", "http://hl7.org/fhir/ValueSet/publication-status", "http://hl7.org/fhir/publication-status", "draft", "active", "retired", "unknown");
+                ValidationSupport.checkReferenceType(property.value, "value", "Binary");
                 ValidationSupport.requireValueOrChildren(property);
             }
 
@@ -1602,7 +1651,7 @@ public class AdministrableProductDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1622,7 +1671,7 @@ public class AdministrableProductDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1647,7 +1696,7 @@ public class AdministrableProductDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1672,7 +1721,7 @@ public class AdministrableProductDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1997,7 +2046,7 @@ public class AdministrableProductDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2017,7 +2066,7 @@ public class AdministrableProductDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2042,7 +2091,7 @@ public class AdministrableProductDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2067,7 +2116,7 @@ public class AdministrableProductDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2335,7 +2384,7 @@ public class AdministrableProductDefinition extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -2355,7 +2404,7 @@ public class AdministrableProductDefinition extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -2380,7 +2429,7 @@ public class AdministrableProductDefinition extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -2405,7 +2454,7 @@ public class AdministrableProductDefinition extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 

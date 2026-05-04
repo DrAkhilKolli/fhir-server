@@ -27,9 +27,9 @@ public class AuditEventAction extends Code {
     public static final AuditEventAction C = AuditEventAction.builder().value(Value.C).build();
 
     /**
-     * Read/View/Print
+     * Read
      * 
-     * <p>Display or print data, such as a doctor census.
+     * <p>Read data, such as to print or display to a doctor.
      */
     public static final AuditEventAction R = AuditEventAction.builder().value(Value.R).build();
 
@@ -223,9 +223,9 @@ public class AuditEventAction extends Code {
         C("C"),
 
         /**
-         * Read/View/Print
+         * Read
          * 
-         * <p>Display or print data, such as a doctor census.
+         * <p>Read data, such as to print or display to a doctor.
          */
         R("R"),
 

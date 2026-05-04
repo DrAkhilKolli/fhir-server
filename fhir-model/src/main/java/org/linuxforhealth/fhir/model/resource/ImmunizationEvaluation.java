@@ -15,7 +15,6 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
-import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
@@ -23,12 +22,11 @@ import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
 import org.linuxforhealth.fhir.model.type.DateTime;
-import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
+import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
-import org.linuxforhealth.fhir.model.type.PositiveInt;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
@@ -42,10 +40,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * Describes a comparison of an immunization event against published recommendations to determine if the administration 
  * is "valid" in relation to those recommendations.
  * 
- * <p>Maturity level: FMM0 (Trial Use)
+ * <p>Maturity level: FMM1 (Trial Use)
  */
 @Maturity(
-    level = 0,
+    level = 1,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
@@ -56,7 +54,7 @@ public class ImmunizationEvaluation extends DomainResource {
         bindingName = "ImmunizationEvaluationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The status of the evaluation being done.",
-        valueSet = "http://hl7.org/fhir/ValueSet/immunization-evaluation-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/immunization-evaluation-status|5.0.0"
     )
     @Required
     private final ImmunizationEvaluationStatus status;
@@ -72,7 +70,7 @@ public class ImmunizationEvaluation extends DomainResource {
         bindingName = "EvaluationTargetDisease",
         strength = BindingStrength.Value.EXAMPLE,
         description = "The vaccine preventable disease the dose is being evaluated against.",
-        valueSet = "http://hl7.org/fhir/ValueSet/immunization-evaluation-target-disease"
+        valueSet = "http://hl7.org/fhir/ValueSet/immunization-target-disease"
     )
     @Required
     private final CodeableConcept targetDisease;
@@ -96,12 +94,10 @@ public class ImmunizationEvaluation extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/immunization-evaluation-dose-status-reason"
     )
     private final List<CodeableConcept> doseStatusReason;
-    private final String description;
+    private final Markdown description;
     private final String series;
-    @Choice({ PositiveInt.class, String.class })
-    private final Element doseNumber;
-    @Choice({ PositiveInt.class, String.class })
-    private final Element seriesDoses;
+    private final String doseNumber;
+    private final String seriesDoses;
 
     private ImmunizationEvaluation(Builder builder) {
         super(builder);
@@ -215,9 +211,9 @@ public class ImmunizationEvaluation extends DomainResource {
      * Additional information about the evaluation.
      * 
      * @return
-     *     An immutable object of type {@link String} that may be null.
+     *     An immutable object of type {@link Markdown} that may be null.
      */
-    public String getDescription() {
+    public Markdown getDescription() {
         return description;
     }
 
@@ -232,22 +228,22 @@ public class ImmunizationEvaluation extends DomainResource {
     }
 
     /**
-     * Nominal position in a series.
+     * Nominal position in a series as determined by the outcome of the evaluation process.
      * 
      * @return
-     *     An immutable object of type {@link PositiveInt} or {@link String} that may be null.
+     *     An immutable object of type {@link String} that may be null.
      */
-    public Element getDoseNumber() {
+    public String getDoseNumber() {
         return doseNumber;
     }
 
     /**
-     * The recommended number of doses to achieve immunity.
+     * The recommended number of doses to achieve immunity as determined by the outcome of the evaluation process.
      * 
      * @return
-     *     An immutable object of type {@link PositiveInt} or {@link String} that may be null.
+     *     An immutable object of type {@link String} that may be null.
      */
-    public Element getSeriesDoses() {
+    public String getSeriesDoses() {
         return seriesDoses;
     }
 
@@ -386,10 +382,10 @@ public class ImmunizationEvaluation extends DomainResource {
         private Reference immunizationEvent;
         private CodeableConcept doseStatus;
         private List<CodeableConcept> doseStatusReason = new ArrayList<>();
-        private String description;
+        private Markdown description;
         private String series;
-        private Element doseNumber;
-        private Element seriesDoses;
+        private String doseNumber;
+        private String seriesDoses;
 
         private Builder() {
             super();
@@ -473,7 +469,8 @@ public class ImmunizationEvaluation extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -491,7 +488,8 @@ public class ImmunizationEvaluation extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -512,7 +510,7 @@ public class ImmunizationEvaluation extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -532,7 +530,7 @@ public class ImmunizationEvaluation extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -557,9 +555,9 @@ public class ImmunizationEvaluation extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -582,9 +580,9 @@ public class ImmunizationEvaluation extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -721,7 +719,7 @@ public class ImmunizationEvaluation extends DomainResource {
          * <p>This element is required.
          * 
          * @param targetDisease
-         *     Evaluation target disease
+         *     The vaccine preventable disease schedule being evaluated
          * 
          * @return
          *     A reference to this Builder instance
@@ -776,7 +774,7 @@ public class ImmunizationEvaluation extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param doseStatusReason
-         *     Reason for the dose status
+         *     Reason why the doese is considered valid, invalid or some other status
          * 
          * @return
          *     A reference to this Builder instance
@@ -796,7 +794,7 @@ public class ImmunizationEvaluation extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param doseStatusReason
-         *     Reason for the dose status
+         *     Reason why the doese is considered valid, invalid or some other status
          * 
          * @return
          *     A reference to this Builder instance
@@ -810,22 +808,6 @@ public class ImmunizationEvaluation extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code description}.
-         * 
-         * @param description
-         *     Evaluation notes
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #description(org.linuxforhealth.fhir.model.type.String)
-         */
-        public Builder description(java.lang.String description) {
-            this.description = (description == null) ? null : String.of(description);
-            return this;
-        }
-
-        /**
          * Additional information about the evaluation.
          * 
          * @param description
@@ -834,7 +816,7 @@ public class ImmunizationEvaluation extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder description(String description) {
+        public Builder description(Markdown description) {
             this.description = description;
             return this;
         }
@@ -870,7 +852,7 @@ public class ImmunizationEvaluation extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code doseNumber} with choice type String.
+         * Convenience method for setting {@code doseNumber}.
          * 
          * @param doseNumber
          *     Dose number within series
@@ -878,7 +860,7 @@ public class ImmunizationEvaluation extends DomainResource {
          * @return
          *     A reference to this Builder instance
          * 
-         * @see #doseNumber(Element)
+         * @see #doseNumber(org.linuxforhealth.fhir.model.type.String)
          */
         public Builder doseNumber(java.lang.String doseNumber) {
             this.doseNumber = (doseNumber == null) ? null : String.of(doseNumber);
@@ -886,13 +868,7 @@ public class ImmunizationEvaluation extends DomainResource {
         }
 
         /**
-         * Nominal position in a series.
-         * 
-         * <p>This is a choice element with the following allowed types:
-         * <ul>
-         * <li>{@link PositiveInt}</li>
-         * <li>{@link String}</li>
-         * </ul>
+         * Nominal position in a series as determined by the outcome of the evaluation process.
          * 
          * @param doseNumber
          *     Dose number within series
@@ -900,13 +876,13 @@ public class ImmunizationEvaluation extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder doseNumber(Element doseNumber) {
+        public Builder doseNumber(String doseNumber) {
             this.doseNumber = doseNumber;
             return this;
         }
 
         /**
-         * Convenience method for setting {@code seriesDoses} with choice type String.
+         * Convenience method for setting {@code seriesDoses}.
          * 
          * @param seriesDoses
          *     Recommended number of doses for immunity
@@ -914,7 +890,7 @@ public class ImmunizationEvaluation extends DomainResource {
          * @return
          *     A reference to this Builder instance
          * 
-         * @see #seriesDoses(Element)
+         * @see #seriesDoses(org.linuxforhealth.fhir.model.type.String)
          */
         public Builder seriesDoses(java.lang.String seriesDoses) {
             this.seriesDoses = (seriesDoses == null) ? null : String.of(seriesDoses);
@@ -922,13 +898,7 @@ public class ImmunizationEvaluation extends DomainResource {
         }
 
         /**
-         * The recommended number of doses to achieve immunity.
-         * 
-         * <p>This is a choice element with the following allowed types:
-         * <ul>
-         * <li>{@link PositiveInt}</li>
-         * <li>{@link String}</li>
-         * </ul>
+         * The recommended number of doses to achieve immunity as determined by the outcome of the evaluation process.
          * 
          * @param seriesDoses
          *     Recommended number of doses for immunity
@@ -936,7 +906,7 @@ public class ImmunizationEvaluation extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder seriesDoses(Element seriesDoses) {
+        public Builder seriesDoses(String seriesDoses) {
             this.seriesDoses = seriesDoses;
             return this;
         }
@@ -976,8 +946,6 @@ public class ImmunizationEvaluation extends DomainResource {
             ValidationSupport.requireNonNull(immunizationEvaluation.immunizationEvent, "immunizationEvent");
             ValidationSupport.requireNonNull(immunizationEvaluation.doseStatus, "doseStatus");
             ValidationSupport.checkList(immunizationEvaluation.doseStatusReason, "doseStatusReason", CodeableConcept.class);
-            ValidationSupport.choiceElement(immunizationEvaluation.doseNumber, "doseNumber", PositiveInt.class, String.class);
-            ValidationSupport.choiceElement(immunizationEvaluation.seriesDoses, "seriesDoses", PositiveInt.class, String.class);
             ValidationSupport.checkReferenceType(immunizationEvaluation.patient, "patient", "Patient");
             ValidationSupport.checkReferenceType(immunizationEvaluation.authority, "authority", "Organization");
             ValidationSupport.checkReferenceType(immunizationEvaluation.immunizationEvent, "immunizationEvent", "Immunization");

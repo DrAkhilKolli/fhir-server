@@ -23,13 +23,16 @@ import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.Annotation;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
+import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
+import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Ratio;
@@ -40,6 +43,7 @@ import org.linuxforhealth.fhir.model.type.Timing;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.NutritionOrderIntent;
+import org.linuxforhealth.fhir.model.type.code.NutritionOrderPriority;
 import org.linuxforhealth.fhir.model.type.code.NutritionOrderStatus;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
@@ -65,7 +69,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 @Constraint(
     id = "nutritionOrder-2",
     level = "Warning",
-    location = "enteralFormula.routeofAdministration",
+    location = "enteralFormula.routeOfAdministration",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/enteral-route",
     expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/enteral-route', 'extensible')",
     source = "http://hl7.org/fhir/StructureDefinition/NutritionOrder",
@@ -79,12 +83,16 @@ public class NutritionOrder extends DomainResource {
     @Summary
     private final List<Uri> instantiatesUri;
     private final List<Uri> instantiates;
+    @ReferenceTarget({ "CarePlan", "NutritionOrder", "ServiceRequest" })
+    private final List<Reference> basedOn;
+    @Summary
+    private final Identifier groupIdentifier;
     @Summary
     @Binding(
         bindingName = "NutritionOrderStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "Codes identifying the lifecycle stage of the nutrition order.",
-        valueSet = "http://hl7.org/fhir/ValueSet/request-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/request-status|5.0.0"
     )
     @Required
     private final NutritionOrderStatus status;
@@ -93,22 +101,31 @@ public class NutritionOrder extends DomainResource {
         bindingName = "NutritiionOrderIntent",
         strength = BindingStrength.Value.REQUIRED,
         description = "Codes indicating the degree of authority/intentionality associated with a nutrition order.",
-        valueSet = "http://hl7.org/fhir/ValueSet/request-intent|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/request-intent|5.0.0"
     )
     @Required
     private final NutritionOrderIntent intent;
+    @Binding(
+        bindingName = "NutritionOrderPriority",
+        strength = BindingStrength.Value.REQUIRED,
+        description = "Identifies the level of importance to be assigned to actioning the request.",
+        valueSet = "http://hl7.org/fhir/ValueSet/request-priority|5.0.0"
+    )
+    private final NutritionOrderPriority priority;
     @Summary
-    @ReferenceTarget({ "Patient" })
+    @ReferenceTarget({ "Patient", "Group" })
     @Required
-    private final Reference patient;
+    private final Reference subject;
     @ReferenceTarget({ "Encounter" })
     private final Reference encounter;
+    private final List<Reference> supportingInformation;
     @Summary
     @Required
     private final DateTime dateTime;
     @Summary
     @ReferenceTarget({ "Practitioner", "PractitionerRole" })
     private final Reference orderer;
+    private final List<CodeableReference> performer;
     @ReferenceTarget({ "AllergyIntolerance" })
     private final List<Reference> allergyIntolerance;
     @Binding(
@@ -125,6 +142,7 @@ public class NutritionOrder extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/food-type"
     )
     private final List<CodeableConcept> excludeFoodModifier;
+    private final Boolean outsideFoodAllowed;
     private final OralDiet oralDiet;
     private final List<Supplement> supplement;
     private final EnteralFormula enteralFormula;
@@ -136,15 +154,21 @@ public class NutritionOrder extends DomainResource {
         instantiatesCanonical = Collections.unmodifiableList(builder.instantiatesCanonical);
         instantiatesUri = Collections.unmodifiableList(builder.instantiatesUri);
         instantiates = Collections.unmodifiableList(builder.instantiates);
+        basedOn = Collections.unmodifiableList(builder.basedOn);
+        groupIdentifier = builder.groupIdentifier;
         status = builder.status;
         intent = builder.intent;
-        patient = builder.patient;
+        priority = builder.priority;
+        subject = builder.subject;
         encounter = builder.encounter;
+        supportingInformation = Collections.unmodifiableList(builder.supportingInformation);
         dateTime = builder.dateTime;
         orderer = builder.orderer;
+        performer = Collections.unmodifiableList(builder.performer);
         allergyIntolerance = Collections.unmodifiableList(builder.allergyIntolerance);
         foodPreferenceModifier = Collections.unmodifiableList(builder.foodPreferenceModifier);
         excludeFoodModifier = Collections.unmodifiableList(builder.excludeFoodModifier);
+        outsideFoodAllowed = builder.outsideFoodAllowed;
         oralDiet = builder.oralDiet;
         supplement = Collections.unmodifiableList(builder.supplement);
         enteralFormula = builder.enteralFormula;
@@ -195,6 +219,27 @@ public class NutritionOrder extends DomainResource {
     }
 
     /**
+     * A plan or request that is fulfilled in whole or in part by this nutrition order.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getBasedOn() {
+        return basedOn;
+    }
+
+    /**
+     * A shared identifier common to all nutrition orders that were authorized more or less simultaneously by a single 
+     * author, representing the composite or group identifier.
+     * 
+     * @return
+     *     An immutable object of type {@link Identifier} that may be null.
+     */
+    public Identifier getGroupIdentifier() {
+        return groupIdentifier;
+    }
+
+    /**
      * The workflow status of the nutrition order/request.
      * 
      * @return
@@ -216,14 +261,24 @@ public class NutritionOrder extends DomainResource {
     }
 
     /**
-     * The person (patient) who needs the nutrition order for an oral diet, nutritional supplement and/or enteral or formula 
-     * feeding.
+     * Indicates how quickly the Nutrition Order should be addressed with respect to other requests.
+     * 
+     * @return
+     *     An immutable object of type {@link NutritionOrderPriority} that may be null.
+     */
+    public NutritionOrderPriority getPriority() {
+        return priority;
+    }
+
+    /**
+     * The person or set of individuals who needs the nutrition order for an oral diet, nutritional supplement and/or enteral 
+     * or formula feeding.
      * 
      * @return
      *     An immutable object of type {@link Reference} that is non-null.
      */
-    public Reference getPatient() {
-        return patient;
+    public Reference getSubject() {
+        return subject;
     }
 
     /**
@@ -234,6 +289,17 @@ public class NutritionOrder extends DomainResource {
      */
     public Reference getEncounter() {
         return encounter;
+    }
+
+    /**
+     * Information to support fulfilling (i.e. dispensing or administering) of the nutrition, for example, patient height and 
+     * weight).
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getSupportingInformation() {
+        return supportingInformation;
     }
 
     /**
@@ -254,6 +320,16 @@ public class NutritionOrder extends DomainResource {
      */
     public Reference getOrderer() {
         return orderer;
+    }
+
+    /**
+     * The specified desired performer of the nutrition order.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
+     */
+    public List<CodeableReference> getPerformer() {
+        return performer;
     }
 
     /**
@@ -291,6 +367,17 @@ public class NutritionOrder extends DomainResource {
      */
     public List<CodeableConcept> getExcludeFoodModifier() {
         return excludeFoodModifier;
+    }
+
+    /**
+     * This modifier is used to convey whether a food item is allowed to be brought in by the patient and/or family. If set 
+     * to true, indicates that the receiving system does not need to supply the food item.
+     * 
+     * @return
+     *     An immutable object of type {@link Boolean} that may be null.
+     */
+    public Boolean getOutsideFoodAllowed() {
+        return outsideFoodAllowed;
     }
 
     /**
@@ -341,15 +428,21 @@ public class NutritionOrder extends DomainResource {
             !instantiatesCanonical.isEmpty() || 
             !instantiatesUri.isEmpty() || 
             !instantiates.isEmpty() || 
+            !basedOn.isEmpty() || 
+            (groupIdentifier != null) || 
             (status != null) || 
             (intent != null) || 
-            (patient != null) || 
+            (priority != null) || 
+            (subject != null) || 
             (encounter != null) || 
+            !supportingInformation.isEmpty() || 
             (dateTime != null) || 
             (orderer != null) || 
+            !performer.isEmpty() || 
             !allergyIntolerance.isEmpty() || 
             !foodPreferenceModifier.isEmpty() || 
             !excludeFoodModifier.isEmpty() || 
+            (outsideFoodAllowed != null) || 
             (oralDiet != null) || 
             !supplement.isEmpty() || 
             (enteralFormula != null) || 
@@ -374,15 +467,21 @@ public class NutritionOrder extends DomainResource {
                 accept(instantiatesCanonical, "instantiatesCanonical", visitor, Canonical.class);
                 accept(instantiatesUri, "instantiatesUri", visitor, Uri.class);
                 accept(instantiates, "instantiates", visitor, Uri.class);
+                accept(basedOn, "basedOn", visitor, Reference.class);
+                accept(groupIdentifier, "groupIdentifier", visitor);
                 accept(status, "status", visitor);
                 accept(intent, "intent", visitor);
-                accept(patient, "patient", visitor);
+                accept(priority, "priority", visitor);
+                accept(subject, "subject", visitor);
                 accept(encounter, "encounter", visitor);
+                accept(supportingInformation, "supportingInformation", visitor, Reference.class);
                 accept(dateTime, "dateTime", visitor);
                 accept(orderer, "orderer", visitor);
+                accept(performer, "performer", visitor, CodeableReference.class);
                 accept(allergyIntolerance, "allergyIntolerance", visitor, Reference.class);
                 accept(foodPreferenceModifier, "foodPreferenceModifier", visitor, CodeableConcept.class);
                 accept(excludeFoodModifier, "excludeFoodModifier", visitor, CodeableConcept.class);
+                accept(outsideFoodAllowed, "outsideFoodAllowed", visitor);
                 accept(oralDiet, "oralDiet", visitor);
                 accept(supplement, "supplement", visitor, Supplement.class);
                 accept(enteralFormula, "enteralFormula", visitor);
@@ -417,15 +516,21 @@ public class NutritionOrder extends DomainResource {
             Objects.equals(instantiatesCanonical, other.instantiatesCanonical) && 
             Objects.equals(instantiatesUri, other.instantiatesUri) && 
             Objects.equals(instantiates, other.instantiates) && 
+            Objects.equals(basedOn, other.basedOn) && 
+            Objects.equals(groupIdentifier, other.groupIdentifier) && 
             Objects.equals(status, other.status) && 
             Objects.equals(intent, other.intent) && 
-            Objects.equals(patient, other.patient) && 
+            Objects.equals(priority, other.priority) && 
+            Objects.equals(subject, other.subject) && 
             Objects.equals(encounter, other.encounter) && 
+            Objects.equals(supportingInformation, other.supportingInformation) && 
             Objects.equals(dateTime, other.dateTime) && 
             Objects.equals(orderer, other.orderer) && 
+            Objects.equals(performer, other.performer) && 
             Objects.equals(allergyIntolerance, other.allergyIntolerance) && 
             Objects.equals(foodPreferenceModifier, other.foodPreferenceModifier) && 
             Objects.equals(excludeFoodModifier, other.excludeFoodModifier) && 
+            Objects.equals(outsideFoodAllowed, other.outsideFoodAllowed) && 
             Objects.equals(oralDiet, other.oralDiet) && 
             Objects.equals(supplement, other.supplement) && 
             Objects.equals(enteralFormula, other.enteralFormula) && 
@@ -448,15 +553,21 @@ public class NutritionOrder extends DomainResource {
                 instantiatesCanonical, 
                 instantiatesUri, 
                 instantiates, 
+                basedOn, 
+                groupIdentifier, 
                 status, 
                 intent, 
-                patient, 
+                priority, 
+                subject, 
                 encounter, 
+                supportingInformation, 
                 dateTime, 
                 orderer, 
+                performer, 
                 allergyIntolerance, 
                 foodPreferenceModifier, 
                 excludeFoodModifier, 
+                outsideFoodAllowed, 
                 oralDiet, 
                 supplement, 
                 enteralFormula, 
@@ -480,15 +591,21 @@ public class NutritionOrder extends DomainResource {
         private List<Canonical> instantiatesCanonical = new ArrayList<>();
         private List<Uri> instantiatesUri = new ArrayList<>();
         private List<Uri> instantiates = new ArrayList<>();
+        private List<Reference> basedOn = new ArrayList<>();
+        private Identifier groupIdentifier;
         private NutritionOrderStatus status;
         private NutritionOrderIntent intent;
-        private Reference patient;
+        private NutritionOrderPriority priority;
+        private Reference subject;
         private Reference encounter;
+        private List<Reference> supportingInformation = new ArrayList<>();
         private DateTime dateTime;
         private Reference orderer;
+        private List<CodeableReference> performer = new ArrayList<>();
         private List<Reference> allergyIntolerance = new ArrayList<>();
         private List<CodeableConcept> foodPreferenceModifier = new ArrayList<>();
         private List<CodeableConcept> excludeFoodModifier = new ArrayList<>();
+        private Boolean outsideFoodAllowed;
         private OralDiet oralDiet;
         private List<Supplement> supplement = new ArrayList<>();
         private EnteralFormula enteralFormula;
@@ -576,7 +693,8 @@ public class NutritionOrder extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -594,7 +712,8 @@ public class NutritionOrder extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -615,7 +734,7 @@ public class NutritionOrder extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -635,7 +754,7 @@ public class NutritionOrder extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -660,9 +779,9 @@ public class NutritionOrder extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -685,9 +804,9 @@ public class NutritionOrder extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -872,6 +991,74 @@ public class NutritionOrder extends DomainResource {
         }
 
         /**
+         * A plan or request that is fulfilled in whole or in part by this nutrition order.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link CarePlan}</li>
+         * <li>{@link NutritionOrder}</li>
+         * <li>{@link ServiceRequest}</li>
+         * </ul>
+         * 
+         * @param basedOn
+         *     What this order fulfills
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder basedOn(Reference... basedOn) {
+            for (Reference value : basedOn) {
+                this.basedOn.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A plan or request that is fulfilled in whole or in part by this nutrition order.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link CarePlan}</li>
+         * <li>{@link NutritionOrder}</li>
+         * <li>{@link ServiceRequest}</li>
+         * </ul>
+         * 
+         * @param basedOn
+         *     What this order fulfills
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder basedOn(Collection<Reference> basedOn) {
+            this.basedOn = new ArrayList<>(basedOn);
+            return this;
+        }
+
+        /**
+         * A shared identifier common to all nutrition orders that were authorized more or less simultaneously by a single 
+         * author, representing the composite or group identifier.
+         * 
+         * @param groupIdentifier
+         *     Composite Request ID
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder groupIdentifier(Identifier groupIdentifier) {
+            this.groupIdentifier = groupIdentifier;
+            return this;
+        }
+
+        /**
          * The workflow status of the nutrition order/request.
          * 
          * <p>This element is required.
@@ -905,24 +1092,39 @@ public class NutritionOrder extends DomainResource {
         }
 
         /**
-         * The person (patient) who needs the nutrition order for an oral diet, nutritional supplement and/or enteral or formula 
-         * feeding.
+         * Indicates how quickly the Nutrition Order should be addressed with respect to other requests.
+         * 
+         * @param priority
+         *     routine | urgent | asap | stat
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder priority(NutritionOrderPriority priority) {
+            this.priority = priority;
+            return this;
+        }
+
+        /**
+         * The person or set of individuals who needs the nutrition order for an oral diet, nutritional supplement and/or enteral 
+         * or formula feeding.
          * 
          * <p>This element is required.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
          * <li>{@link Patient}</li>
+         * <li>{@link Group}</li>
          * </ul>
          * 
-         * @param patient
-         *     The person who requires the diet, formula or nutritional supplement
+         * @param subject
+         *     Who requires the diet, formula or nutritional supplement
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder patient(Reference patient) {
-            this.patient = patient;
+        public Builder subject(Reference subject) {
+            this.subject = subject;
             return this;
         }
 
@@ -942,6 +1144,47 @@ public class NutritionOrder extends DomainResource {
          */
         public Builder encounter(Reference encounter) {
             this.encounter = encounter;
+            return this;
+        }
+
+        /**
+         * Information to support fulfilling (i.e. dispensing or administering) of the nutrition, for example, patient height and 
+         * weight).
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param supportingInformation
+         *     Information to support fulfilling of the nutrition order
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder supportingInformation(Reference... supportingInformation) {
+            for (Reference value : supportingInformation) {
+                this.supportingInformation.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Information to support fulfilling (i.e. dispensing or administering) of the nutrition, for example, patient height and 
+         * weight).
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param supportingInformation
+         *     Information to support fulfilling of the nutrition order
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder supportingInformation(Collection<Reference> supportingInformation) {
+            this.supportingInformation = new ArrayList<>(supportingInformation);
             return this;
         }
 
@@ -978,6 +1221,45 @@ public class NutritionOrder extends DomainResource {
          */
         public Builder orderer(Reference orderer) {
             this.orderer = orderer;
+            return this;
+        }
+
+        /**
+         * The specified desired performer of the nutrition order.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param performer
+         *     Who is desired to perform the administration of what is being ordered
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder performer(CodeableReference... performer) {
+            for (CodeableReference value : performer) {
+                this.performer.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The specified desired performer of the nutrition order.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param performer
+         *     Who is desired to perform the administration of what is being ordered
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder performer(Collection<CodeableReference> performer) {
+            this.performer = new ArrayList<>(performer);
             return this;
         }
 
@@ -1123,6 +1405,37 @@ public class NutritionOrder extends DomainResource {
         }
 
         /**
+         * Convenience method for setting {@code outsideFoodAllowed}.
+         * 
+         * @param outsideFoodAllowed
+         *     Capture when a food item is brought in by the patient and/or family
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #outsideFoodAllowed(org.linuxforhealth.fhir.model.type.Boolean)
+         */
+        public Builder outsideFoodAllowed(java.lang.Boolean outsideFoodAllowed) {
+            this.outsideFoodAllowed = (outsideFoodAllowed == null) ? null : Boolean.of(outsideFoodAllowed);
+            return this;
+        }
+
+        /**
+         * This modifier is used to convey whether a food item is allowed to be brought in by the patient and/or family. If set 
+         * to true, indicates that the receiving system does not need to supply the food item.
+         * 
+         * @param outsideFoodAllowed
+         *     Capture when a food item is brought in by the patient and/or family
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder outsideFoodAllowed(Boolean outsideFoodAllowed) {
+            this.outsideFoodAllowed = outsideFoodAllowed;
+            return this;
+        }
+
+        /**
          * Diet given orally in contrast to enteral (tube) feeding.
          * 
          * @param oralDiet
@@ -1236,7 +1549,7 @@ public class NutritionOrder extends DomainResource {
          * <ul>
          * <li>status</li>
          * <li>intent</li>
-         * <li>patient</li>
+         * <li>subject</li>
          * <li>dateTime</li>
          * </ul>
          * 
@@ -1260,16 +1573,20 @@ public class NutritionOrder extends DomainResource {
             ValidationSupport.checkList(nutritionOrder.instantiatesCanonical, "instantiatesCanonical", Canonical.class);
             ValidationSupport.checkList(nutritionOrder.instantiatesUri, "instantiatesUri", Uri.class);
             ValidationSupport.checkList(nutritionOrder.instantiates, "instantiates", Uri.class);
+            ValidationSupport.checkList(nutritionOrder.basedOn, "basedOn", Reference.class);
             ValidationSupport.requireNonNull(nutritionOrder.status, "status");
             ValidationSupport.requireNonNull(nutritionOrder.intent, "intent");
-            ValidationSupport.requireNonNull(nutritionOrder.patient, "patient");
+            ValidationSupport.requireNonNull(nutritionOrder.subject, "subject");
+            ValidationSupport.checkList(nutritionOrder.supportingInformation, "supportingInformation", Reference.class);
             ValidationSupport.requireNonNull(nutritionOrder.dateTime, "dateTime");
+            ValidationSupport.checkList(nutritionOrder.performer, "performer", CodeableReference.class);
             ValidationSupport.checkList(nutritionOrder.allergyIntolerance, "allergyIntolerance", Reference.class);
             ValidationSupport.checkList(nutritionOrder.foodPreferenceModifier, "foodPreferenceModifier", CodeableConcept.class);
             ValidationSupport.checkList(nutritionOrder.excludeFoodModifier, "excludeFoodModifier", CodeableConcept.class);
             ValidationSupport.checkList(nutritionOrder.supplement, "supplement", Supplement.class);
             ValidationSupport.checkList(nutritionOrder.note, "note", Annotation.class);
-            ValidationSupport.checkReferenceType(nutritionOrder.patient, "patient", "Patient");
+            ValidationSupport.checkReferenceType(nutritionOrder.basedOn, "basedOn", "CarePlan", "NutritionOrder", "ServiceRequest");
+            ValidationSupport.checkReferenceType(nutritionOrder.subject, "subject", "Patient", "Group");
             ValidationSupport.checkReferenceType(nutritionOrder.encounter, "encounter", "Encounter");
             ValidationSupport.checkReferenceType(nutritionOrder.orderer, "orderer", "Practitioner", "PractitionerRole");
             ValidationSupport.checkReferenceType(nutritionOrder.allergyIntolerance, "allergyIntolerance", "AllergyIntolerance");
@@ -1281,15 +1598,21 @@ public class NutritionOrder extends DomainResource {
             instantiatesCanonical.addAll(nutritionOrder.instantiatesCanonical);
             instantiatesUri.addAll(nutritionOrder.instantiatesUri);
             instantiates.addAll(nutritionOrder.instantiates);
+            basedOn.addAll(nutritionOrder.basedOn);
+            groupIdentifier = nutritionOrder.groupIdentifier;
             status = nutritionOrder.status;
             intent = nutritionOrder.intent;
-            patient = nutritionOrder.patient;
+            priority = nutritionOrder.priority;
+            subject = nutritionOrder.subject;
             encounter = nutritionOrder.encounter;
+            supportingInformation.addAll(nutritionOrder.supportingInformation);
             dateTime = nutritionOrder.dateTime;
             orderer = nutritionOrder.orderer;
+            performer.addAll(nutritionOrder.performer);
             allergyIntolerance.addAll(nutritionOrder.allergyIntolerance);
             foodPreferenceModifier.addAll(nutritionOrder.foodPreferenceModifier);
             excludeFoodModifier.addAll(nutritionOrder.excludeFoodModifier);
+            outsideFoodAllowed = nutritionOrder.outsideFoodAllowed;
             oralDiet = nutritionOrder.oralDiet;
             supplement.addAll(nutritionOrder.supplement);
             enteralFormula = nutritionOrder.enteralFormula;
@@ -1310,7 +1633,7 @@ public class NutritionOrder extends DomainResource {
             valueSet = "http://hl7.org/fhir/ValueSet/diet-type"
         )
         private final List<CodeableConcept> type;
-        private final List<Timing> schedule;
+        private final Schedule schedule;
         private final List<Nutrient> nutrient;
         private final List<Texture> texture;
         @Binding(
@@ -1326,7 +1649,7 @@ public class NutritionOrder extends DomainResource {
         private OralDiet(Builder builder) {
             super(builder);
             type = Collections.unmodifiableList(builder.type);
-            schedule = Collections.unmodifiableList(builder.schedule);
+            schedule = builder.schedule;
             nutrient = Collections.unmodifiableList(builder.nutrient);
             texture = Collections.unmodifiableList(builder.texture);
             fluidConsistencyType = Collections.unmodifiableList(builder.fluidConsistencyType);
@@ -1344,13 +1667,12 @@ public class NutritionOrder extends DomainResource {
         }
 
         /**
-         * The time period and frequency at which the diet should be given. The diet should be given for the combination of all 
-         * schedules if more than one schedule is present.
+         * Schedule information for an oral diet.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link Timing} that may be empty.
+         *     An immutable object of type {@link Schedule} that may be null.
          */
-        public List<Timing> getSchedule() {
+        public Schedule getSchedule() {
             return schedule;
         }
 
@@ -1399,7 +1721,7 @@ public class NutritionOrder extends DomainResource {
         public boolean hasChildren() {
             return super.hasChildren() || 
                 !type.isEmpty() || 
-                !schedule.isEmpty() || 
+                (schedule != null) || 
                 !nutrient.isEmpty() || 
                 !texture.isEmpty() || 
                 !fluidConsistencyType.isEmpty() || 
@@ -1416,7 +1738,7 @@ public class NutritionOrder extends DomainResource {
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(type, "type", visitor, CodeableConcept.class);
-                    accept(schedule, "schedule", visitor, Timing.class);
+                    accept(schedule, "schedule", visitor);
                     accept(nutrient, "nutrient", visitor, Nutrient.class);
                     accept(texture, "texture", visitor, Texture.class);
                     accept(fluidConsistencyType, "fluidConsistencyType", visitor, CodeableConcept.class);
@@ -1479,7 +1801,7 @@ public class NutritionOrder extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private List<CodeableConcept> type = new ArrayList<>();
-            private List<Timing> schedule = new ArrayList<>();
+            private Schedule schedule;
             private List<Nutrient> nutrient = new ArrayList<>();
             private List<Texture> texture = new ArrayList<>();
             private List<CodeableConcept> fluidConsistencyType = new ArrayList<>();
@@ -1506,7 +1828,7 @@ public class NutritionOrder extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1526,7 +1848,7 @@ public class NutritionOrder extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1551,7 +1873,7 @@ public class NutritionOrder extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1576,7 +1898,7 @@ public class NutritionOrder extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1640,43 +1962,16 @@ public class NutritionOrder extends DomainResource {
             }
 
             /**
-             * The time period and frequency at which the diet should be given. The diet should be given for the combination of all 
-             * schedules if more than one schedule is present.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
+             * Schedule information for an oral diet.
              * 
              * @param schedule
-             *     Scheduled frequency of diet
+             *     Scheduling information for oral diets
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder schedule(Timing... schedule) {
-                for (Timing value : schedule) {
-                    this.schedule.add(value);
-                }
-                return this;
-            }
-
-            /**
-             * The time period and frequency at which the diet should be given. The diet should be given for the combination of all 
-             * schedules if more than one schedule is present.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param schedule
-             *     Scheduled frequency of diet
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            public Builder schedule(Collection<Timing> schedule) {
-                this.schedule = new ArrayList<>(schedule);
+            public Builder schedule(Schedule schedule) {
+                this.schedule = schedule;
                 return this;
             }
 
@@ -1849,7 +2144,6 @@ public class NutritionOrder extends DomainResource {
             protected void validate(OralDiet oralDiet) {
                 super.validate(oralDiet);
                 ValidationSupport.checkList(oralDiet.type, "type", CodeableConcept.class);
-                ValidationSupport.checkList(oralDiet.schedule, "schedule", Timing.class);
                 ValidationSupport.checkList(oralDiet.nutrient, "nutrient", Nutrient.class);
                 ValidationSupport.checkList(oralDiet.texture, "texture", Texture.class);
                 ValidationSupport.checkList(oralDiet.fluidConsistencyType, "fluidConsistencyType", CodeableConcept.class);
@@ -1859,12 +2153,372 @@ public class NutritionOrder extends DomainResource {
             protected Builder from(OralDiet oralDiet) {
                 super.from(oralDiet);
                 type.addAll(oralDiet.type);
-                schedule.addAll(oralDiet.schedule);
+                schedule = oralDiet.schedule;
                 nutrient.addAll(oralDiet.nutrient);
                 texture.addAll(oralDiet.texture);
                 fluidConsistencyType.addAll(oralDiet.fluidConsistencyType);
                 instruction = oralDiet.instruction;
                 return this;
+            }
+        }
+
+        /**
+         * Schedule information for an oral diet.
+         */
+        public static class Schedule extends BackboneElement {
+            private final List<Timing> timing;
+            private final Boolean asNeeded;
+            @Binding(
+                bindingName = "OralDietAsNeededReason",
+                strength = BindingStrength.Value.EXAMPLE,
+                description = "A coded concept identifying the precondition that should be met or evaluated prior to       consuming a nutrition product.",
+                valueSet = "http://hl7.org/fhir/ValueSet/medication-as-needed-reason"
+            )
+            private final CodeableConcept asNeededFor;
+
+            private Schedule(Builder builder) {
+                super(builder);
+                timing = Collections.unmodifiableList(builder.timing);
+                asNeeded = builder.asNeeded;
+                asNeededFor = builder.asNeededFor;
+            }
+
+            /**
+             * The time period and frequency at which the diet should be given. The diet should be given for the combination of all 
+             * schedules if more than one schedule is present.
+             * 
+             * @return
+             *     An unmodifiable list containing immutable objects of type {@link Timing} that may be empty.
+             */
+            public List<Timing> getTiming() {
+                return timing;
+            }
+
+            /**
+             * Indicates whether the product is only taken when needed within a specific dosing schedule.
+             * 
+             * @return
+             *     An immutable object of type {@link Boolean} that may be null.
+             */
+            public Boolean getAsNeeded() {
+                return asNeeded;
+            }
+
+            /**
+             * Indicates whether the product is only taken based on a precondition for taking the product.
+             * 
+             * @return
+             *     An immutable object of type {@link CodeableConcept} that may be null.
+             */
+            public CodeableConcept getAsNeededFor() {
+                return asNeededFor;
+            }
+
+            @Override
+            public boolean hasChildren() {
+                return super.hasChildren() || 
+                    !timing.isEmpty() || 
+                    (asNeeded != null) || 
+                    (asNeededFor != null);
+            }
+
+            @Override
+            public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                if (visitor.preVisit(this)) {
+                    visitor.visitStart(elementName, elementIndex, this);
+                    if (visitor.visit(elementName, elementIndex, this)) {
+                        // visit children
+                        accept(id, "id", visitor);
+                        accept(extension, "extension", visitor, Extension.class);
+                        accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                        accept(timing, "timing", visitor, Timing.class);
+                        accept(asNeeded, "asNeeded", visitor);
+                        accept(asNeededFor, "asNeededFor", visitor);
+                    }
+                    visitor.visitEnd(elementName, elementIndex, this);
+                    visitor.postVisit(this);
+                }
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj) {
+                    return true;
+                }
+                if (obj == null) {
+                    return false;
+                }
+                if (getClass() != obj.getClass()) {
+                    return false;
+                }
+                Schedule other = (Schedule) obj;
+                return Objects.equals(id, other.id) && 
+                    Objects.equals(extension, other.extension) && 
+                    Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(timing, other.timing) && 
+                    Objects.equals(asNeeded, other.asNeeded) && 
+                    Objects.equals(asNeededFor, other.asNeededFor);
+            }
+
+            @Override
+            public int hashCode() {
+                int result = hashCode;
+                if (result == 0) {
+                    result = Objects.hash(id, 
+                        extension, 
+                        modifierExtension, 
+                        timing, 
+                        asNeeded, 
+                        asNeededFor);
+                    hashCode = result;
+                }
+                return result;
+            }
+
+            @Override
+            public Builder toBuilder() {
+                return new Builder().from(this);
+            }
+
+            public static Builder builder() {
+                return new Builder();
+            }
+
+            public static class Builder extends BackboneElement.Builder {
+                private List<Timing> timing = new ArrayList<>();
+                private Boolean asNeeded;
+                private CodeableConcept asNeededFor;
+
+                private Builder() {
+                    super();
+                }
+
+                /**
+                 * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                 * contain spaces.
+                 * 
+                 * @param id
+                 *     Unique id for inter-element referencing
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder id(java.lang.String id) {
+                    return (Builder) super.id(id);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder extension(Extension... extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder extension(Collection<Extension> extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder modifierExtension(Extension... modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * The time period and frequency at which the diet should be given. The diet should be given for the combination of all 
+                 * schedules if more than one schedule is present.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param timing
+                 *     Scheduled frequency of diet
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder timing(Timing... timing) {
+                    for (Timing value : timing) {
+                        this.timing.add(value);
+                    }
+                    return this;
+                }
+
+                /**
+                 * The time period and frequency at which the diet should be given. The diet should be given for the combination of all 
+                 * schedules if more than one schedule is present.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param timing
+                 *     Scheduled frequency of diet
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                public Builder timing(Collection<Timing> timing) {
+                    this.timing = new ArrayList<>(timing);
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code asNeeded}.
+                 * 
+                 * @param asNeeded
+                 *     Take 'as needed'
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #asNeeded(org.linuxforhealth.fhir.model.type.Boolean)
+                 */
+                public Builder asNeeded(java.lang.Boolean asNeeded) {
+                    this.asNeeded = (asNeeded == null) ? null : Boolean.of(asNeeded);
+                    return this;
+                }
+
+                /**
+                 * Indicates whether the product is only taken when needed within a specific dosing schedule.
+                 * 
+                 * @param asNeeded
+                 *     Take 'as needed'
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder asNeeded(Boolean asNeeded) {
+                    this.asNeeded = asNeeded;
+                    return this;
+                }
+
+                /**
+                 * Indicates whether the product is only taken based on a precondition for taking the product.
+                 * 
+                 * @param asNeededFor
+                 *     Take 'as needed' for x
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder asNeededFor(CodeableConcept asNeededFor) {
+                    this.asNeededFor = asNeededFor;
+                    return this;
+                }
+
+                /**
+                 * Build the {@link Schedule}
+                 * 
+                 * @return
+                 *     An immutable object of type {@link Schedule}
+                 * @throws IllegalStateException
+                 *     if the current state cannot be built into a valid Schedule per the base specification
+                 */
+                @Override
+                public Schedule build() {
+                    Schedule schedule = new Schedule(this);
+                    if (validating) {
+                        validate(schedule);
+                    }
+                    return schedule;
+                }
+
+                protected void validate(Schedule schedule) {
+                    super.validate(schedule);
+                    ValidationSupport.checkList(schedule.timing, "timing", Timing.class);
+                    ValidationSupport.requireValueOrChildren(schedule);
+                }
+
+                protected Builder from(Schedule schedule) {
+                    super.from(schedule);
+                    timing.addAll(schedule.timing);
+                    asNeeded = schedule.asNeeded;
+                    asNeededFor = schedule.asNeededFor;
+                    return this;
+                }
             }
         }
 
@@ -1999,7 +2653,7 @@ public class NutritionOrder extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2019,7 +2673,7 @@ public class NutritionOrder extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2044,7 +2698,7 @@ public class NutritionOrder extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2069,7 +2723,7 @@ public class NutritionOrder extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2288,7 +2942,7 @@ public class NutritionOrder extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2308,7 +2962,7 @@ public class NutritionOrder extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2333,7 +2987,7 @@ public class NutritionOrder extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2358,7 +3012,7 @@ public class NutritionOrder extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2453,9 +3107,9 @@ public class NutritionOrder extends DomainResource {
             description = "Codes for nutritional supplements to be provided to the patient.",
             valueSet = "http://hl7.org/fhir/ValueSet/supplement-type"
         )
-        private final CodeableConcept type;
+        private final CodeableReference type;
         private final String productName;
-        private final List<Timing> schedule;
+        private final Schedule schedule;
         private final SimpleQuantity quantity;
         @Summary
         private final String instruction;
@@ -2464,7 +3118,7 @@ public class NutritionOrder extends DomainResource {
             super(builder);
             type = builder.type;
             productName = builder.productName;
-            schedule = Collections.unmodifiableList(builder.schedule);
+            schedule = builder.schedule;
             quantity = builder.quantity;
             instruction = builder.instruction;
         }
@@ -2473,9 +3127,9 @@ public class NutritionOrder extends DomainResource {
          * The kind of nutritional supplement product required such as a high protein or pediatric clear liquid supplement.
          * 
          * @return
-         *     An immutable object of type {@link CodeableConcept} that may be null.
+         *     An immutable object of type {@link CodeableReference} that may be null.
          */
-        public CodeableConcept getType() {
+        public CodeableReference getType() {
             return type;
         }
 
@@ -2490,13 +3144,12 @@ public class NutritionOrder extends DomainResource {
         }
 
         /**
-         * The time period and frequency at which the supplement(s) should be given. The supplement should be given for the 
-         * combination of all schedules if more than one schedule is present.
+         * Schedule information for a supplement.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link Timing} that may be empty.
+         *     An immutable object of type {@link Schedule} that may be null.
          */
-        public List<Timing> getSchedule() {
+        public Schedule getSchedule() {
             return schedule;
         }
 
@@ -2525,7 +3178,7 @@ public class NutritionOrder extends DomainResource {
             return super.hasChildren() || 
                 (type != null) || 
                 (productName != null) || 
-                !schedule.isEmpty() || 
+                (schedule != null) || 
                 (quantity != null) || 
                 (instruction != null);
         }
@@ -2541,7 +3194,7 @@ public class NutritionOrder extends DomainResource {
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(type, "type", visitor);
                     accept(productName, "productName", visitor);
-                    accept(schedule, "schedule", visitor, Timing.class);
+                    accept(schedule, "schedule", visitor);
                     accept(quantity, "quantity", visitor);
                     accept(instruction, "instruction", visitor);
                 }
@@ -2599,9 +3252,9 @@ public class NutritionOrder extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private CodeableConcept type;
+            private CodeableReference type;
             private String productName;
-            private List<Timing> schedule = new ArrayList<>();
+            private Schedule schedule;
             private SimpleQuantity quantity;
             private String instruction;
 
@@ -2626,7 +3279,7 @@ public class NutritionOrder extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2646,7 +3299,7 @@ public class NutritionOrder extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2671,7 +3324,7 @@ public class NutritionOrder extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2696,7 +3349,7 @@ public class NutritionOrder extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2729,7 +3382,7 @@ public class NutritionOrder extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder type(CodeableConcept type) {
+            public Builder type(CodeableReference type) {
                 this.type = type;
                 return this;
             }
@@ -2765,43 +3418,16 @@ public class NutritionOrder extends DomainResource {
             }
 
             /**
-             * The time period and frequency at which the supplement(s) should be given. The supplement should be given for the 
-             * combination of all schedules if more than one schedule is present.
-             * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
+             * Schedule information for a supplement.
              * 
              * @param schedule
-             *     Scheduled frequency of supplement
+             *     Scheduling information for supplements
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder schedule(Timing... schedule) {
-                for (Timing value : schedule) {
-                    this.schedule.add(value);
-                }
-                return this;
-            }
-
-            /**
-             * The time period and frequency at which the supplement(s) should be given. The supplement should be given for the 
-             * combination of all schedules if more than one schedule is present.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param schedule
-             *     Scheduled frequency of supplement
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            public Builder schedule(Collection<Timing> schedule) {
-                this.schedule = new ArrayList<>(schedule);
+            public Builder schedule(Schedule schedule) {
+                this.schedule = schedule;
                 return this;
             }
 
@@ -2868,7 +3494,6 @@ public class NutritionOrder extends DomainResource {
 
             protected void validate(Supplement supplement) {
                 super.validate(supplement);
-                ValidationSupport.checkList(supplement.schedule, "schedule", Timing.class);
                 ValidationSupport.requireValueOrChildren(supplement);
             }
 
@@ -2876,10 +3501,370 @@ public class NutritionOrder extends DomainResource {
                 super.from(supplement);
                 type = supplement.type;
                 productName = supplement.productName;
-                schedule.addAll(supplement.schedule);
+                schedule = supplement.schedule;
                 quantity = supplement.quantity;
                 instruction = supplement.instruction;
                 return this;
+            }
+        }
+
+        /**
+         * Schedule information for a supplement.
+         */
+        public static class Schedule extends BackboneElement {
+            private final List<Timing> timing;
+            private final Boolean asNeeded;
+            @Binding(
+                bindingName = "SupplementAsNeededReason",
+                strength = BindingStrength.Value.EXAMPLE,
+                description = "A coded concept identifying the precondition that should be met or evaluated prior to       consuming a supplement.",
+                valueSet = "http://hl7.org/fhir/ValueSet/medication-as-needed-reason"
+            )
+            private final CodeableConcept asNeededFor;
+
+            private Schedule(Builder builder) {
+                super(builder);
+                timing = Collections.unmodifiableList(builder.timing);
+                asNeeded = builder.asNeeded;
+                asNeededFor = builder.asNeededFor;
+            }
+
+            /**
+             * The time period and frequency at which the supplement should be given. The supplement should be given for the 
+             * combination of all schedules if more than one schedule is present.
+             * 
+             * @return
+             *     An unmodifiable list containing immutable objects of type {@link Timing} that may be empty.
+             */
+            public List<Timing> getTiming() {
+                return timing;
+            }
+
+            /**
+             * Indicates whether the supplement is only taken when needed within a specific dosing schedule.
+             * 
+             * @return
+             *     An immutable object of type {@link Boolean} that may be null.
+             */
+            public Boolean getAsNeeded() {
+                return asNeeded;
+            }
+
+            /**
+             * Indicates whether the supplement is only taken based on a precondition for taking the supplement.
+             * 
+             * @return
+             *     An immutable object of type {@link CodeableConcept} that may be null.
+             */
+            public CodeableConcept getAsNeededFor() {
+                return asNeededFor;
+            }
+
+            @Override
+            public boolean hasChildren() {
+                return super.hasChildren() || 
+                    !timing.isEmpty() || 
+                    (asNeeded != null) || 
+                    (asNeededFor != null);
+            }
+
+            @Override
+            public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                if (visitor.preVisit(this)) {
+                    visitor.visitStart(elementName, elementIndex, this);
+                    if (visitor.visit(elementName, elementIndex, this)) {
+                        // visit children
+                        accept(id, "id", visitor);
+                        accept(extension, "extension", visitor, Extension.class);
+                        accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                        accept(timing, "timing", visitor, Timing.class);
+                        accept(asNeeded, "asNeeded", visitor);
+                        accept(asNeededFor, "asNeededFor", visitor);
+                    }
+                    visitor.visitEnd(elementName, elementIndex, this);
+                    visitor.postVisit(this);
+                }
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj) {
+                    return true;
+                }
+                if (obj == null) {
+                    return false;
+                }
+                if (getClass() != obj.getClass()) {
+                    return false;
+                }
+                Schedule other = (Schedule) obj;
+                return Objects.equals(id, other.id) && 
+                    Objects.equals(extension, other.extension) && 
+                    Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(timing, other.timing) && 
+                    Objects.equals(asNeeded, other.asNeeded) && 
+                    Objects.equals(asNeededFor, other.asNeededFor);
+            }
+
+            @Override
+            public int hashCode() {
+                int result = hashCode;
+                if (result == 0) {
+                    result = Objects.hash(id, 
+                        extension, 
+                        modifierExtension, 
+                        timing, 
+                        asNeeded, 
+                        asNeededFor);
+                    hashCode = result;
+                }
+                return result;
+            }
+
+            @Override
+            public Builder toBuilder() {
+                return new Builder().from(this);
+            }
+
+            public static Builder builder() {
+                return new Builder();
+            }
+
+            public static class Builder extends BackboneElement.Builder {
+                private List<Timing> timing = new ArrayList<>();
+                private Boolean asNeeded;
+                private CodeableConcept asNeededFor;
+
+                private Builder() {
+                    super();
+                }
+
+                /**
+                 * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                 * contain spaces.
+                 * 
+                 * @param id
+                 *     Unique id for inter-element referencing
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder id(java.lang.String id) {
+                    return (Builder) super.id(id);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder extension(Extension... extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder extension(Collection<Extension> extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder modifierExtension(Extension... modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * The time period and frequency at which the supplement should be given. The supplement should be given for the 
+                 * combination of all schedules if more than one schedule is present.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param timing
+                 *     Scheduled frequency of diet
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder timing(Timing... timing) {
+                    for (Timing value : timing) {
+                        this.timing.add(value);
+                    }
+                    return this;
+                }
+
+                /**
+                 * The time period and frequency at which the supplement should be given. The supplement should be given for the 
+                 * combination of all schedules if more than one schedule is present.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param timing
+                 *     Scheduled frequency of diet
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                public Builder timing(Collection<Timing> timing) {
+                    this.timing = new ArrayList<>(timing);
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code asNeeded}.
+                 * 
+                 * @param asNeeded
+                 *     Take 'as needed'
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #asNeeded(org.linuxforhealth.fhir.model.type.Boolean)
+                 */
+                public Builder asNeeded(java.lang.Boolean asNeeded) {
+                    this.asNeeded = (asNeeded == null) ? null : Boolean.of(asNeeded);
+                    return this;
+                }
+
+                /**
+                 * Indicates whether the supplement is only taken when needed within a specific dosing schedule.
+                 * 
+                 * @param asNeeded
+                 *     Take 'as needed'
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder asNeeded(Boolean asNeeded) {
+                    this.asNeeded = asNeeded;
+                    return this;
+                }
+
+                /**
+                 * Indicates whether the supplement is only taken based on a precondition for taking the supplement.
+                 * 
+                 * @param asNeededFor
+                 *     Take 'as needed' for x
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder asNeededFor(CodeableConcept asNeededFor) {
+                    this.asNeededFor = asNeededFor;
+                    return this;
+                }
+
+                /**
+                 * Build the {@link Schedule}
+                 * 
+                 * @return
+                 *     An immutable object of type {@link Schedule}
+                 * @throws IllegalStateException
+                 *     if the current state cannot be built into a valid Schedule per the base specification
+                 */
+                @Override
+                public Schedule build() {
+                    Schedule schedule = new Schedule(this);
+                    if (validating) {
+                        validate(schedule);
+                    }
+                    return schedule;
+                }
+
+                protected void validate(Schedule schedule) {
+                    super.validate(schedule);
+                    ValidationSupport.checkList(schedule.timing, "timing", Timing.class);
+                    ValidationSupport.requireValueOrChildren(schedule);
+                }
+
+                protected Builder from(Schedule schedule) {
+                    super.from(schedule);
+                    timing.addAll(schedule.timing);
+                    asNeeded = schedule.asNeeded;
+                    asNeededFor = schedule.asNeededFor;
+                    return this;
+                }
             }
         }
     }
@@ -2896,16 +3881,10 @@ public class NutritionOrder extends DomainResource {
             description = "Codes for type of enteral formula to be administered to patient.",
             valueSet = "http://hl7.org/fhir/ValueSet/entformula-type"
         )
-        private final CodeableConcept baseFormulaType;
+        private final CodeableReference baseFormulaType;
         private final String baseFormulaProductName;
-        @Binding(
-            bindingName = "EnteralFormulaAdditiveType",
-            strength = BindingStrength.Value.EXAMPLE,
-            description = "Codes for the type of modular component such as protein, carbohydrate or fiber to be provided in addition to or mixed with the base formula.",
-            valueSet = "http://hl7.org/fhir/ValueSet/entformula-additive"
-        )
-        private final CodeableConcept additiveType;
-        private final String additiveProductName;
+        private final List<CodeableReference> deliveryDevice;
+        private final List<Additive> additive;
         private final SimpleQuantity caloricDensity;
         @Binding(
             bindingName = "EnteralRouteOfAdministration",
@@ -2913,20 +3892,20 @@ public class NutritionOrder extends DomainResource {
             description = "Codes specifying the route of administration of enteral formula.",
             valueSet = "http://hl7.org/fhir/ValueSet/enteral-route"
         )
-        private final CodeableConcept routeofAdministration;
+        private final CodeableConcept routeOfAdministration;
         private final List<Administration> administration;
         private final SimpleQuantity maxVolumeToDeliver;
         @Summary
-        private final String administrationInstruction;
+        private final Markdown administrationInstruction;
 
         private EnteralFormula(Builder builder) {
             super(builder);
             baseFormulaType = builder.baseFormulaType;
             baseFormulaProductName = builder.baseFormulaProductName;
-            additiveType = builder.additiveType;
-            additiveProductName = builder.additiveProductName;
+            deliveryDevice = Collections.unmodifiableList(builder.deliveryDevice);
+            additive = Collections.unmodifiableList(builder.additive);
             caloricDensity = builder.caloricDensity;
-            routeofAdministration = builder.routeofAdministration;
+            routeOfAdministration = builder.routeOfAdministration;
             administration = Collections.unmodifiableList(builder.administration);
             maxVolumeToDeliver = builder.maxVolumeToDeliver;
             administrationInstruction = builder.administrationInstruction;
@@ -2936,9 +3915,9 @@ public class NutritionOrder extends DomainResource {
          * The type of enteral or infant formula such as an adult standard formula with fiber or a soy-based infant formula.
          * 
          * @return
-         *     An immutable object of type {@link CodeableConcept} that may be null.
+         *     An immutable object of type {@link CodeableReference} that may be null.
          */
-        public CodeableConcept getBaseFormulaType() {
+        public CodeableReference getBaseFormulaType() {
             return baseFormulaType;
         }
 
@@ -2953,24 +3932,23 @@ public class NutritionOrder extends DomainResource {
         }
 
         /**
-         * Indicates the type of modular component such as protein, carbohydrate, fat or fiber to be provided in addition to or 
-         * mixed with the base formula.
+         * The intended type of device that is to be used for the administration of the enteral formula.
          * 
          * @return
-         *     An immutable object of type {@link CodeableConcept} that may be null.
+         *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
          */
-        public CodeableConcept getAdditiveType() {
-            return additiveType;
+        public List<CodeableReference> getDeliveryDevice() {
+            return deliveryDevice;
         }
 
         /**
-         * The product or brand name of the type of modular component to be added to the formula.
+         * Indicates modular components to be provided in addition or mixed with the base formula.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An unmodifiable list containing immutable objects of type {@link Additive} that may be empty.
          */
-        public String getAdditiveProductName() {
-            return additiveProductName;
+        public List<Additive> getAdditive() {
+            return additive;
         }
 
         /**
@@ -2992,8 +3970,8 @@ public class NutritionOrder extends DomainResource {
          * @return
          *     An immutable object of type {@link CodeableConcept} that may be null.
          */
-        public CodeableConcept getRouteofAdministration() {
-            return routeofAdministration;
+        public CodeableConcept getRouteOfAdministration() {
+            return routeOfAdministration;
         }
 
         /**
@@ -3023,9 +4001,9 @@ public class NutritionOrder extends DomainResource {
          * Free text formula administration, feeding instructions or additional instructions or information.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link Markdown} that may be null.
          */
-        public String getAdministrationInstruction() {
+        public Markdown getAdministrationInstruction() {
             return administrationInstruction;
         }
 
@@ -3034,10 +4012,10 @@ public class NutritionOrder extends DomainResource {
             return super.hasChildren() || 
                 (baseFormulaType != null) || 
                 (baseFormulaProductName != null) || 
-                (additiveType != null) || 
-                (additiveProductName != null) || 
+                !deliveryDevice.isEmpty() || 
+                !additive.isEmpty() || 
                 (caloricDensity != null) || 
-                (routeofAdministration != null) || 
+                (routeOfAdministration != null) || 
                 !administration.isEmpty() || 
                 (maxVolumeToDeliver != null) || 
                 (administrationInstruction != null);
@@ -3054,10 +4032,10 @@ public class NutritionOrder extends DomainResource {
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(baseFormulaType, "baseFormulaType", visitor);
                     accept(baseFormulaProductName, "baseFormulaProductName", visitor);
-                    accept(additiveType, "additiveType", visitor);
-                    accept(additiveProductName, "additiveProductName", visitor);
+                    accept(deliveryDevice, "deliveryDevice", visitor, CodeableReference.class);
+                    accept(additive, "additive", visitor, Additive.class);
                     accept(caloricDensity, "caloricDensity", visitor);
-                    accept(routeofAdministration, "routeofAdministration", visitor);
+                    accept(routeOfAdministration, "routeOfAdministration", visitor);
                     accept(administration, "administration", visitor, Administration.class);
                     accept(maxVolumeToDeliver, "maxVolumeToDeliver", visitor);
                     accept(administrationInstruction, "administrationInstruction", visitor);
@@ -3084,10 +4062,10 @@ public class NutritionOrder extends DomainResource {
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(baseFormulaType, other.baseFormulaType) && 
                 Objects.equals(baseFormulaProductName, other.baseFormulaProductName) && 
-                Objects.equals(additiveType, other.additiveType) && 
-                Objects.equals(additiveProductName, other.additiveProductName) && 
+                Objects.equals(deliveryDevice, other.deliveryDevice) && 
+                Objects.equals(additive, other.additive) && 
                 Objects.equals(caloricDensity, other.caloricDensity) && 
-                Objects.equals(routeofAdministration, other.routeofAdministration) && 
+                Objects.equals(routeOfAdministration, other.routeOfAdministration) && 
                 Objects.equals(administration, other.administration) && 
                 Objects.equals(maxVolumeToDeliver, other.maxVolumeToDeliver) && 
                 Objects.equals(administrationInstruction, other.administrationInstruction);
@@ -3102,10 +4080,10 @@ public class NutritionOrder extends DomainResource {
                     modifierExtension, 
                     baseFormulaType, 
                     baseFormulaProductName, 
-                    additiveType, 
-                    additiveProductName, 
+                    deliveryDevice, 
+                    additive, 
                     caloricDensity, 
-                    routeofAdministration, 
+                    routeOfAdministration, 
                     administration, 
                     maxVolumeToDeliver, 
                     administrationInstruction);
@@ -3124,15 +4102,15 @@ public class NutritionOrder extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private CodeableConcept baseFormulaType;
+            private CodeableReference baseFormulaType;
             private String baseFormulaProductName;
-            private CodeableConcept additiveType;
-            private String additiveProductName;
+            private List<CodeableReference> deliveryDevice = new ArrayList<>();
+            private List<Additive> additive = new ArrayList<>();
             private SimpleQuantity caloricDensity;
-            private CodeableConcept routeofAdministration;
+            private CodeableConcept routeOfAdministration;
             private List<Administration> administration = new ArrayList<>();
             private SimpleQuantity maxVolumeToDeliver;
-            private String administrationInstruction;
+            private Markdown administrationInstruction;
 
             private Builder() {
                 super();
@@ -3155,7 +4133,7 @@ public class NutritionOrder extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3175,7 +4153,7 @@ public class NutritionOrder extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3200,7 +4178,7 @@ public class NutritionOrder extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3225,7 +4203,7 @@ public class NutritionOrder extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3258,7 +4236,7 @@ public class NutritionOrder extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder baseFormulaType(CodeableConcept baseFormulaType) {
+            public Builder baseFormulaType(CodeableReference baseFormulaType) {
                 this.baseFormulaType = baseFormulaType;
                 return this;
             }
@@ -3294,47 +4272,80 @@ public class NutritionOrder extends DomainResource {
             }
 
             /**
-             * Indicates the type of modular component such as protein, carbohydrate, fat or fiber to be provided in addition to or 
-             * mixed with the base formula.
+             * The intended type of device that is to be used for the administration of the enteral formula.
              * 
-             * @param additiveType
-             *     Type of modular component to add to the feeding
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param deliveryDevice
+             *     Intended type of device for the administration
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder additiveType(CodeableConcept additiveType) {
-                this.additiveType = additiveType;
+            public Builder deliveryDevice(CodeableReference... deliveryDevice) {
+                for (CodeableReference value : deliveryDevice) {
+                    this.deliveryDevice.add(value);
+                }
                 return this;
             }
 
             /**
-             * Convenience method for setting {@code additiveProductName}.
+             * The intended type of device that is to be used for the administration of the enteral formula.
              * 
-             * @param additiveProductName
-             *     Product or brand name of the modular additive
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param deliveryDevice
+             *     Intended type of device for the administration
              * 
              * @return
              *     A reference to this Builder instance
              * 
-             * @see #additiveProductName(org.linuxforhealth.fhir.model.type.String)
+             * @throws NullPointerException
+             *     If the passed collection is null
              */
-            public Builder additiveProductName(java.lang.String additiveProductName) {
-                this.additiveProductName = (additiveProductName == null) ? null : String.of(additiveProductName);
+            public Builder deliveryDevice(Collection<CodeableReference> deliveryDevice) {
+                this.deliveryDevice = new ArrayList<>(deliveryDevice);
                 return this;
             }
 
             /**
-             * The product or brand name of the type of modular component to be added to the formula.
+             * Indicates modular components to be provided in addition or mixed with the base formula.
              * 
-             * @param additiveProductName
-             *     Product or brand name of the modular additive
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param additive
+             *     Components to add to the feeding
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder additiveProductName(String additiveProductName) {
-                this.additiveProductName = additiveProductName;
+            public Builder additive(Additive... additive) {
+                for (Additive value : additive) {
+                    this.additive.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * Indicates modular components to be provided in addition or mixed with the base formula.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param additive
+             *     Components to add to the feeding
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder additive(Collection<Additive> additive) {
+                this.additive = new ArrayList<>(additive);
                 return this;
             }
 
@@ -3358,14 +4369,14 @@ public class NutritionOrder extends DomainResource {
              * The route or physiological path of administration into the patient's gastrointestinal tract for purposes of providing 
              * the formula feeding, e.g. nasogastric tube.
              * 
-             * @param routeofAdministration
+             * @param routeOfAdministration
              *     How the formula should enter the patient's gastrointestinal tract
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder routeofAdministration(CodeableConcept routeofAdministration) {
-                this.routeofAdministration = routeofAdministration;
+            public Builder routeOfAdministration(CodeableConcept routeOfAdministration) {
+                this.routeOfAdministration = routeOfAdministration;
                 return this;
             }
 
@@ -3428,22 +4439,6 @@ public class NutritionOrder extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code administrationInstruction}.
-             * 
-             * @param administrationInstruction
-             *     Formula feeding instructions expressed as text
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #administrationInstruction(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder administrationInstruction(java.lang.String administrationInstruction) {
-                this.administrationInstruction = (administrationInstruction == null) ? null : String.of(administrationInstruction);
-                return this;
-            }
-
-            /**
              * Free text formula administration, feeding instructions or additional instructions or information.
              * 
              * @param administrationInstruction
@@ -3452,7 +4447,7 @@ public class NutritionOrder extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder administrationInstruction(String administrationInstruction) {
+            public Builder administrationInstruction(Markdown administrationInstruction) {
                 this.administrationInstruction = administrationInstruction;
                 return this;
             }
@@ -3476,6 +4471,8 @@ public class NutritionOrder extends DomainResource {
 
             protected void validate(EnteralFormula enteralFormula) {
                 super.validate(enteralFormula);
+                ValidationSupport.checkList(enteralFormula.deliveryDevice, "deliveryDevice", CodeableReference.class);
+                ValidationSupport.checkList(enteralFormula.additive, "additive", Additive.class);
                 ValidationSupport.checkList(enteralFormula.administration, "administration", Administration.class);
                 ValidationSupport.requireValueOrChildren(enteralFormula);
             }
@@ -3484,14 +4481,347 @@ public class NutritionOrder extends DomainResource {
                 super.from(enteralFormula);
                 baseFormulaType = enteralFormula.baseFormulaType;
                 baseFormulaProductName = enteralFormula.baseFormulaProductName;
-                additiveType = enteralFormula.additiveType;
-                additiveProductName = enteralFormula.additiveProductName;
+                deliveryDevice.addAll(enteralFormula.deliveryDevice);
+                additive.addAll(enteralFormula.additive);
                 caloricDensity = enteralFormula.caloricDensity;
-                routeofAdministration = enteralFormula.routeofAdministration;
+                routeOfAdministration = enteralFormula.routeOfAdministration;
                 administration.addAll(enteralFormula.administration);
                 maxVolumeToDeliver = enteralFormula.maxVolumeToDeliver;
                 administrationInstruction = enteralFormula.administrationInstruction;
                 return this;
+            }
+        }
+
+        /**
+         * Indicates modular components to be provided in addition or mixed with the base formula.
+         */
+        public static class Additive extends BackboneElement {
+            @Binding(
+                bindingName = "EnteralFormulaAdditiveType",
+                strength = BindingStrength.Value.EXAMPLE,
+                description = "Codes for the type of modular component such as protein, carbohydrate or fiber to be provided in addition to or mixed with the base formula.",
+                valueSet = "http://hl7.org/fhir/ValueSet/entformula-additive"
+            )
+            private final CodeableReference type;
+            private final String productName;
+            private final SimpleQuantity quantity;
+
+            private Additive(Builder builder) {
+                super(builder);
+                type = builder.type;
+                productName = builder.productName;
+                quantity = builder.quantity;
+            }
+
+            /**
+             * Indicates the type of modular component such as protein, carbohydrate, fat or fiber to be provided in addition to or 
+             * mixed with the base formula.
+             * 
+             * @return
+             *     An immutable object of type {@link CodeableReference} that may be null.
+             */
+            public CodeableReference getType() {
+                return type;
+            }
+
+            /**
+             * The product or brand name of the type of modular component to be added to the formula.
+             * 
+             * @return
+             *     An immutable object of type {@link String} that may be null.
+             */
+            public String getProductName() {
+                return productName;
+            }
+
+            /**
+             * The amount of additive to be given in addition or to be mixed in with the base formula.
+             * 
+             * @return
+             *     An immutable object of type {@link SimpleQuantity} that may be null.
+             */
+            public SimpleQuantity getQuantity() {
+                return quantity;
+            }
+
+            @Override
+            public boolean hasChildren() {
+                return super.hasChildren() || 
+                    (type != null) || 
+                    (productName != null) || 
+                    (quantity != null);
+            }
+
+            @Override
+            public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                if (visitor.preVisit(this)) {
+                    visitor.visitStart(elementName, elementIndex, this);
+                    if (visitor.visit(elementName, elementIndex, this)) {
+                        // visit children
+                        accept(id, "id", visitor);
+                        accept(extension, "extension", visitor, Extension.class);
+                        accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                        accept(type, "type", visitor);
+                        accept(productName, "productName", visitor);
+                        accept(quantity, "quantity", visitor);
+                    }
+                    visitor.visitEnd(elementName, elementIndex, this);
+                    visitor.postVisit(this);
+                }
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj) {
+                    return true;
+                }
+                if (obj == null) {
+                    return false;
+                }
+                if (getClass() != obj.getClass()) {
+                    return false;
+                }
+                Additive other = (Additive) obj;
+                return Objects.equals(id, other.id) && 
+                    Objects.equals(extension, other.extension) && 
+                    Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(type, other.type) && 
+                    Objects.equals(productName, other.productName) && 
+                    Objects.equals(quantity, other.quantity);
+            }
+
+            @Override
+            public int hashCode() {
+                int result = hashCode;
+                if (result == 0) {
+                    result = Objects.hash(id, 
+                        extension, 
+                        modifierExtension, 
+                        type, 
+                        productName, 
+                        quantity);
+                    hashCode = result;
+                }
+                return result;
+            }
+
+            @Override
+            public Builder toBuilder() {
+                return new Builder().from(this);
+            }
+
+            public static Builder builder() {
+                return new Builder();
+            }
+
+            public static class Builder extends BackboneElement.Builder {
+                private CodeableReference type;
+                private String productName;
+                private SimpleQuantity quantity;
+
+                private Builder() {
+                    super();
+                }
+
+                /**
+                 * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                 * contain spaces.
+                 * 
+                 * @param id
+                 *     Unique id for inter-element referencing
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder id(java.lang.String id) {
+                    return (Builder) super.id(id);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder extension(Extension... extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                 * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                 * of the definition of the extension.
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param extension
+                 *     Additional content defined by implementations
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder extension(Collection<Extension> extension) {
+                    return (Builder) super.extension(extension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Adds new element(s) to the existing list.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                @Override
+                public Builder modifierExtension(Extension... modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * May be used to represent additional information that is not part of the basic definition of the element and that 
+                 * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                 * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                 * extension. Applications processing a resource are required to check for modifier extensions.
+                 * 
+                 * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                 * change the meaning of modifierExtension itself).
+                 * 
+                 * <p>Replaces the existing list with a new one containing elements from the Collection.
+                 * If any of the elements are null, calling {@link #build()} will fail.
+                 * 
+                 * @param modifierExtension
+                 *     Extensions that cannot be ignored even if unrecognized
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @throws NullPointerException
+                 *     If the passed collection is null
+                 */
+                @Override
+                public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                    return (Builder) super.modifierExtension(modifierExtension);
+                }
+
+                /**
+                 * Indicates the type of modular component such as protein, carbohydrate, fat or fiber to be provided in addition to or 
+                 * mixed with the base formula.
+                 * 
+                 * @param type
+                 *     Type of modular component to add to the feeding
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder type(CodeableReference type) {
+                    this.type = type;
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code productName}.
+                 * 
+                 * @param productName
+                 *     Product or brand name of the modular additive
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #productName(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder productName(java.lang.String productName) {
+                    this.productName = (productName == null) ? null : String.of(productName);
+                    return this;
+                }
+
+                /**
+                 * The product or brand name of the type of modular component to be added to the formula.
+                 * 
+                 * @param productName
+                 *     Product or brand name of the modular additive
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder productName(String productName) {
+                    this.productName = productName;
+                    return this;
+                }
+
+                /**
+                 * The amount of additive to be given in addition or to be mixed in with the base formula.
+                 * 
+                 * @param quantity
+                 *     Amount of additive to be given or mixed in
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder quantity(SimpleQuantity quantity) {
+                    this.quantity = quantity;
+                    return this;
+                }
+
+                /**
+                 * Build the {@link Additive}
+                 * 
+                 * @return
+                 *     An immutable object of type {@link Additive}
+                 * @throws IllegalStateException
+                 *     if the current state cannot be built into a valid Additive per the base specification
+                 */
+                @Override
+                public Additive build() {
+                    Additive additive = new Additive(this);
+                    if (validating) {
+                        validate(additive);
+                    }
+                    return additive;
+                }
+
+                protected void validate(Additive additive) {
+                    super.validate(additive);
+                    ValidationSupport.requireValueOrChildren(additive);
+                }
+
+                protected Builder from(Additive additive) {
+                    super.from(additive);
+                    type = additive.type;
+                    productName = additive.productName;
+                    quantity = additive.quantity;
+                    return this;
+                }
             }
         }
 
@@ -3501,10 +4831,10 @@ public class NutritionOrder extends DomainResource {
          * instruction to increase the rate of continuous feeding every 2 hours.
          */
         public static class Administration extends BackboneElement {
-            private final Timing schedule;
+            private final Schedule schedule;
             private final SimpleQuantity quantity;
             @Choice({ SimpleQuantity.class, Ratio.class })
-            private final Element rate;
+            private final org.linuxforhealth.fhir.model.type.Element rate;
 
             private Administration(Builder builder) {
                 super(builder);
@@ -3514,12 +4844,12 @@ public class NutritionOrder extends DomainResource {
             }
 
             /**
-             * The time period and frequency at which the enteral formula should be delivered to the patient.
+             * Schedule information for an enteral formula.
              * 
              * @return
-             *     An immutable object of type {@link Timing} that may be null.
+             *     An immutable object of type {@link Schedule} that may be null.
              */
-            public Timing getSchedule() {
+            public Schedule getSchedule() {
                 return schedule;
             }
 
@@ -3539,7 +4869,7 @@ public class NutritionOrder extends DomainResource {
              * @return
              *     An immutable object of type {@link SimpleQuantity} or {@link Ratio} that may be null.
              */
-            public Element getRate() {
+            public org.linuxforhealth.fhir.model.type.Element getRate() {
                 return rate;
             }
 
@@ -3614,9 +4944,9 @@ public class NutritionOrder extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
-                private Timing schedule;
+                private Schedule schedule;
                 private SimpleQuantity quantity;
-                private Element rate;
+                private org.linuxforhealth.fhir.model.type.Element rate;
 
                 private Builder() {
                     super();
@@ -3639,7 +4969,7 @@ public class NutritionOrder extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3659,7 +4989,7 @@ public class NutritionOrder extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3684,7 +5014,7 @@ public class NutritionOrder extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3709,7 +5039,7 @@ public class NutritionOrder extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3734,15 +5064,15 @@ public class NutritionOrder extends DomainResource {
                 }
 
                 /**
-                 * The time period and frequency at which the enteral formula should be delivered to the patient.
+                 * Schedule information for an enteral formula.
                  * 
                  * @param schedule
-                 *     Scheduled frequency of enteral feeding
+                 *     Scheduling information for enteral formula products
                  * 
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder schedule(Timing schedule) {
+                public Builder schedule(Schedule schedule) {
                     this.schedule = schedule;
                     return this;
                 }
@@ -3776,7 +5106,7 @@ public class NutritionOrder extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder rate(Element rate) {
+                public Builder rate(org.linuxforhealth.fhir.model.type.Element rate) {
                     this.rate = rate;
                     return this;
                 }
@@ -3810,6 +5140,366 @@ public class NutritionOrder extends DomainResource {
                     quantity = administration.quantity;
                     rate = administration.rate;
                     return this;
+                }
+            }
+
+            /**
+             * Schedule information for an enteral formula.
+             */
+            public static class Schedule extends BackboneElement {
+                private final List<Timing> timing;
+                private final Boolean asNeeded;
+                @Binding(
+                    bindingName = "EnteralFormulaAsNeededReason",
+                    strength = BindingStrength.Value.EXAMPLE,
+                    description = "A coded concept identifying the precondition that should be met or evaluated prior to       consuming an enteral formula.",
+                    valueSet = "http://hl7.org/fhir/ValueSet/medication-as-needed-reason"
+                )
+                private final CodeableConcept asNeededFor;
+
+                private Schedule(Builder builder) {
+                    super(builder);
+                    timing = Collections.unmodifiableList(builder.timing);
+                    asNeeded = builder.asNeeded;
+                    asNeededFor = builder.asNeededFor;
+                }
+
+                /**
+                 * The time period and frequency at which the enteral formula should be given. The enteral formula should be given for 
+                 * the combination of all schedules if more than one schedule is present.
+                 * 
+                 * @return
+                 *     An unmodifiable list containing immutable objects of type {@link Timing} that may be empty.
+                 */
+                public List<Timing> getTiming() {
+                    return timing;
+                }
+
+                /**
+                 * Indicates whether the enteral formula is only taken when needed within a specific dosing schedule.
+                 * 
+                 * @return
+                 *     An immutable object of type {@link Boolean} that may be null.
+                 */
+                public Boolean getAsNeeded() {
+                    return asNeeded;
+                }
+
+                /**
+                 * Indicates whether the enteral formula is only taken based on a precondition for taking the enteral formula.
+                 * 
+                 * @return
+                 *     An immutable object of type {@link CodeableConcept} that may be null.
+                 */
+                public CodeableConcept getAsNeededFor() {
+                    return asNeededFor;
+                }
+
+                @Override
+                public boolean hasChildren() {
+                    return super.hasChildren() || 
+                        !timing.isEmpty() || 
+                        (asNeeded != null) || 
+                        (asNeededFor != null);
+                }
+
+                @Override
+                public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+                    if (visitor.preVisit(this)) {
+                        visitor.visitStart(elementName, elementIndex, this);
+                        if (visitor.visit(elementName, elementIndex, this)) {
+                            // visit children
+                            accept(id, "id", visitor);
+                            accept(extension, "extension", visitor, Extension.class);
+                            accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                            accept(timing, "timing", visitor, Timing.class);
+                            accept(asNeeded, "asNeeded", visitor);
+                            accept(asNeededFor, "asNeededFor", visitor);
+                        }
+                        visitor.visitEnd(elementName, elementIndex, this);
+                        visitor.postVisit(this);
+                    }
+                }
+
+                @Override
+                public boolean equals(Object obj) {
+                    if (this == obj) {
+                        return true;
+                    }
+                    if (obj == null) {
+                        return false;
+                    }
+                    if (getClass() != obj.getClass()) {
+                        return false;
+                    }
+                    Schedule other = (Schedule) obj;
+                    return Objects.equals(id, other.id) && 
+                        Objects.equals(extension, other.extension) && 
+                        Objects.equals(modifierExtension, other.modifierExtension) && 
+                        Objects.equals(timing, other.timing) && 
+                        Objects.equals(asNeeded, other.asNeeded) && 
+                        Objects.equals(asNeededFor, other.asNeededFor);
+                }
+
+                @Override
+                public int hashCode() {
+                    int result = hashCode;
+                    if (result == 0) {
+                        result = Objects.hash(id, 
+                            extension, 
+                            modifierExtension, 
+                            timing, 
+                            asNeeded, 
+                            asNeededFor);
+                        hashCode = result;
+                    }
+                    return result;
+                }
+
+                @Override
+                public Builder toBuilder() {
+                    return new Builder().from(this);
+                }
+
+                public static Builder builder() {
+                    return new Builder();
+                }
+
+                public static class Builder extends BackboneElement.Builder {
+                    private List<Timing> timing = new ArrayList<>();
+                    private Boolean asNeeded;
+                    private CodeableConcept asNeededFor;
+
+                    private Builder() {
+                        super();
+                    }
+
+                    /**
+                     * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+                     * contain spaces.
+                     * 
+                     * @param id
+                     *     Unique id for inter-element referencing
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    @Override
+                    public Builder id(java.lang.String id) {
+                        return (Builder) super.id(id);
+                    }
+
+                    /**
+                     * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                     * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                     * of the definition of the extension.
+                     * 
+                     * <p>Adds new element(s) to the existing list.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param extension
+                     *     Additional content defined by implementations
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    @Override
+                    public Builder extension(Extension... extension) {
+                        return (Builder) super.extension(extension);
+                    }
+
+                    /**
+                     * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+                     * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+                     * of the definition of the extension.
+                     * 
+                     * <p>Replaces the existing list with a new one containing elements from the Collection.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param extension
+                     *     Additional content defined by implementations
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @throws NullPointerException
+                     *     If the passed collection is null
+                     */
+                    @Override
+                    public Builder extension(Collection<Extension> extension) {
+                        return (Builder) super.extension(extension);
+                    }
+
+                    /**
+                     * May be used to represent additional information that is not part of the basic definition of the element and that 
+                     * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                     * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                     * extension. Applications processing a resource are required to check for modifier extensions.
+                     * 
+                     * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                     * change the meaning of modifierExtension itself).
+                     * 
+                     * <p>Adds new element(s) to the existing list.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param modifierExtension
+                     *     Extensions that cannot be ignored even if unrecognized
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    @Override
+                    public Builder modifierExtension(Extension... modifierExtension) {
+                        return (Builder) super.modifierExtension(modifierExtension);
+                    }
+
+                    /**
+                     * May be used to represent additional information that is not part of the basic definition of the element and that 
+                     * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+                     * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+                     * extension. Applications processing a resource are required to check for modifier extensions.
+                     * 
+                     * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+                     * change the meaning of modifierExtension itself).
+                     * 
+                     * <p>Replaces the existing list with a new one containing elements from the Collection.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param modifierExtension
+                     *     Extensions that cannot be ignored even if unrecognized
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @throws NullPointerException
+                     *     If the passed collection is null
+                     */
+                    @Override
+                    public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                        return (Builder) super.modifierExtension(modifierExtension);
+                    }
+
+                    /**
+                     * The time period and frequency at which the enteral formula should be given. The enteral formula should be given for 
+                     * the combination of all schedules if more than one schedule is present.
+                     * 
+                     * <p>Adds new element(s) to the existing list.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param timing
+                     *     Scheduled frequency of enteral formula
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder timing(Timing... timing) {
+                        for (Timing value : timing) {
+                            this.timing.add(value);
+                        }
+                        return this;
+                    }
+
+                    /**
+                     * The time period and frequency at which the enteral formula should be given. The enteral formula should be given for 
+                     * the combination of all schedules if more than one schedule is present.
+                     * 
+                     * <p>Replaces the existing list with a new one containing elements from the Collection.
+                     * If any of the elements are null, calling {@link #build()} will fail.
+                     * 
+                     * @param timing
+                     *     Scheduled frequency of enteral formula
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @throws NullPointerException
+                     *     If the passed collection is null
+                     */
+                    public Builder timing(Collection<Timing> timing) {
+                        this.timing = new ArrayList<>(timing);
+                        return this;
+                    }
+
+                    /**
+                     * Convenience method for setting {@code asNeeded}.
+                     * 
+                     * @param asNeeded
+                     *     Take 'as needed'
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @see #asNeeded(org.linuxforhealth.fhir.model.type.Boolean)
+                     */
+                    public Builder asNeeded(java.lang.Boolean asNeeded) {
+                        this.asNeeded = (asNeeded == null) ? null : Boolean.of(asNeeded);
+                        return this;
+                    }
+
+                    /**
+                     * Indicates whether the enteral formula is only taken when needed within a specific dosing schedule.
+                     * 
+                     * @param asNeeded
+                     *     Take 'as needed'
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder asNeeded(Boolean asNeeded) {
+                        this.asNeeded = asNeeded;
+                        return this;
+                    }
+
+                    /**
+                     * Indicates whether the enteral formula is only taken based on a precondition for taking the enteral formula.
+                     * 
+                     * @param asNeededFor
+                     *     Take 'as needed' for x
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder asNeededFor(CodeableConcept asNeededFor) {
+                        this.asNeededFor = asNeededFor;
+                        return this;
+                    }
+
+                    /**
+                     * Build the {@link Schedule}
+                     * 
+                     * @return
+                     *     An immutable object of type {@link Schedule}
+                     * @throws IllegalStateException
+                     *     if the current state cannot be built into a valid Schedule per the base specification
+                     */
+                    @Override
+                    public Schedule build() {
+                        Schedule schedule = new Schedule(this);
+                        if (validating) {
+                            validate(schedule);
+                        }
+                        return schedule;
+                    }
+
+                    protected void validate(Schedule schedule) {
+                        super.validate(schedule);
+                        ValidationSupport.checkList(schedule.timing, "timing", Timing.class);
+                        ValidationSupport.requireValueOrChildren(schedule);
+                    }
+
+                    protected Builder from(Schedule schedule) {
+                        super.from(schedule);
+                        timing.addAll(schedule.timing);
+                        asNeeded = schedule.asNeeded;
+                        asNeededFor = schedule.asNeededFor;
+                        return this;
+                    }
                 }
             }
         }

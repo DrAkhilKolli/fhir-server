@@ -557,7 +557,7 @@ public class CodeGenerator {
                        _super = "Resource.Builder";
                    }
                } else if (!"logical".equalsIgnoreCase(structureDefinition.getString("kind"))) {
-                   if (!"Element".equalsIgnoreCase(structureDefinition.getString("name"))) {
+                   if (!"Element".equalsIgnoreCase(structureDefinition.getString("name")) && !"Base".equalsIgnoreCase(structureDefinition.getString("name"))) {
                        _super = "Element.Builder";
                    }
                }
@@ -587,7 +587,7 @@ public class CodeGenerator {
                 if (isRepeating(elementDefinition)) {
                     init = "new ArrayList<>()";
                 }
-                cb.field(mods(visibility), fieldType, fieldName, init);
+                cb.field(mods(visibility), "Element".equals(fieldType) ? "org.linuxforhealth.fhir.model.type.Element" : fieldType, fieldName, init);
                 fieldCount++;
             }
         }
@@ -762,7 +762,7 @@ public class CodeGenerator {
         cb.method(mods("protected"), "Builder", "from", params(param(className, paramName)));
         // Call super.from unless we are at the topMost resources in the model hierarchy
         if (!(isAbstract(structureDefinition) &&
-                ("Resource".equals(className) || "Element".equals(className)))) {
+                ("Resource".equals(className) || "Element".equals(className) || "Base".equals(className)))) {
             cb.invoke("super", "from", args(paramName));
         }
         for (JsonObject elementDefinition : declaredElementDefinitions) {
@@ -789,7 +789,7 @@ public class CodeGenerator {
         if (!declaredBy) {
             cb.override();
         }
-        cb.method(mods("public"), "Builder", fieldName, params(param(fieldType, fieldName)));
+        cb.method(mods("public"), "Builder", fieldName, params(param("Element".equals(fieldType) ? "org.linuxforhealth.fhir.model.type.Element" : fieldType, fieldName)));
         if (declaredBy) {
             cb.assign(_this(fieldName), fieldName);
             cb._return("this");
@@ -908,7 +908,7 @@ public class CodeGenerator {
         cb.method(mods("protected"), "void", "validate", params(param(className, paramName)));
 
         if (!(isAbstract(structureDefinition) &&
-                ("Resource".equals(className) || "Element".equals(className)))) {
+                ("Resource".equals(className) || "Element".equals(className) || "Base".equals(className)))) {
             cb.invoke("super", "validate", args(paramName));
         }
 
@@ -1264,7 +1264,7 @@ public class CodeGenerator {
                            _super = "Resource";
                        }
                    } else if (!"logical".equalsIgnoreCase(structureDefinition.getString("kind"))) {
-                       if (!"Element".equalsIgnoreCase(name)) {
+                       if (!"Element".equalsIgnoreCase(name) && !"Base".equalsIgnoreCase(name)) {
                            _super = "Element";
                        }
                    }
@@ -1436,7 +1436,7 @@ public class CodeGenerator {
                     if (isRequired(elementDefinition)) {
                         cb.annotation("Required");
                     }
-                    cb.field(mods(visibility, "final"), fieldType, fieldName);
+                    cb.field(mods(visibility, "final"), "Element".equals(fieldType) ? "org.linuxforhealth.fhir.model.type.Element" : fieldType, fieldName);
                     if (isBackboneElement(elementDefinition)) {
                         nestedPaths.add(elementDefinition.getString("path"));
                     }
@@ -1463,7 +1463,7 @@ public class CodeGenerator {
                     String fieldType = getFieldType(structureDefinition, elementDefinition);
                     String methodName = "get" + titleCase(fieldName.replace("_", ""));
                     generateGetterMethodJavadoc(structureDefinition, elementDefinition, fieldType, cb);
-                    cb.method(mods("public"), fieldType, methodName)._return(fieldName).end().newLine();
+                    cb.method(mods("public"), "Element".equals(fieldType) ? "org.linuxforhealth.fhir.model.type.Element" : fieldType, methodName)._return(fieldName).end().newLine();
                 }
             }
 
@@ -1481,7 +1481,7 @@ public class CodeGenerator {
             List<JsonObject> requiredElementDefinitions = elementDefinitions.stream().filter(o -> isRequired(o)).collect(Collectors.toList());
 
             if (isAbstract(structureDefinition)) {
-                if ("Resource".equals(className) || "Element".equals(className)) {
+                if ("Resource".equals(className) || "Element".equals(className) || "Base".equals(className)) {
                     cb.javadocStart()
                         .javadoc("Create a new Builder from the contents of this " + className)
                         .javadocEnd();
@@ -1527,7 +1527,10 @@ public class CodeGenerator {
 
     private void generateConstructor(JsonObject structureDefinition, String path, String className, String visibility, CodeBuilder cb, boolean nested) {
         cb.constructor(mods(visibility), className, args("Builder builder"));
-        if ((!"Resource".equals(className) && !"Element".equals(className)) || nested) {
+        // Only call super(builder) if the parent class has a Builder constructor.
+        // Types with no baseDefinition (Base, Element, Resource in R4) extend AbstractVisitable directly.
+        boolean hasBaseDefinition = structureDefinition.containsKey("baseDefinition");
+        if (hasBaseDefinition || nested) {
             cb._super(args("builder"));
         }
 
@@ -1641,10 +1644,13 @@ public class CodeGenerator {
      * @return
      */
     private String getBindingDescription(JsonObject binding) {
-        for (JsonValue ext : binding.getJsonArray("extension")) {
-            String url = ext.asJsonObject().getString("url");
-            if ("http://hl7.org/fhir/build/StructureDefinition/definition".equals(url)) {
-                return ext.asJsonObject().getString("valueString");
+        JsonArray extensions = binding.getJsonArray("extension");
+        if (extensions != null) {
+            for (JsonValue ext : extensions) {
+                String url = ext.asJsonObject().getString("url");
+                if ("http://hl7.org/fhir/build/StructureDefinition/definition".equals(url)) {
+                    return ext.asJsonObject().getString("valueString");
+                }
             }
         }
         return binding.getString("description", null);
@@ -2369,8 +2375,12 @@ public class CodeGenerator {
             imports.add("java.util.Objects");
         }
 
-        if ("Resource".equals(name) || "Element".equals(name)) {
+        if ("Base".equals(name)) {
             imports.add("org.linuxforhealth.fhir.model.visitor.AbstractVisitable");
+        }
+
+        if ("Resource".equals(name)) {
+            imports.add("org.linuxforhealth.fhir.model.type.Base");
         }
 
         if (!isAbstract(structureDefinition) && !isCodeSubtype(className)) {
@@ -2486,9 +2496,8 @@ public class CodeGenerator {
 
         if ("Resource".equals(name)) {
             imports.add("org.linuxforhealth.fhir.model.util.ValidationSupport");
-            imports.add("org.linuxforhealth.fhir.model.builder.AbstractBuilder");
         }
-        if ("Element".equals(name)) {
+        if ("Base".equals(name) || "Element".equals(name)) {
             imports.add("org.linuxforhealth.fhir.model.builder.AbstractBuilder");
         }
 
@@ -2535,6 +2544,13 @@ public class CodeGenerator {
                 isDate(structureDefinition) ||
                 isDateTime(structureDefinition)) {
             imports.add("org.linuxforhealth.fhir.model.util.ValidationSupport");
+            // R5 may define a non-standard pattern for string/uri base types
+            if (isString(structureDefinition) && !STRING_PATTERN.equals(getPattern(structureDefinition)) && getPattern(structureDefinition) != null) {
+                imports.add("java.util.regex.Pattern");
+            }
+            if (isUri(structureDefinition) && !URI_PATTERN.equals(getPattern(structureDefinition)) && getPattern(structureDefinition) != null) {
+                imports.add("java.util.regex.Pattern");
+            }
         } else if (isStringSubtype(structureDefinition)){
             // only add the Pattern import if the pattern differs from the base String pattern
             if (!STRING_PATTERN.equals(getPattern(structureDefinition))) {
@@ -2686,7 +2702,8 @@ public class CodeGenerator {
 
         String name = structureDefinition.getString("name");
 
-        if (!"Element".equals(name) && !"Resource".equals(name)) {
+        boolean isRootType = "Element".equals(name) || "Resource".equals(name) || "Base".equals(name);
+        if (!isRootType) {
             cb.override();
         }
 
@@ -2695,7 +2712,7 @@ public class CodeGenerator {
         int level = path.split("\\.").length + 2;
         StringJoiner joiner = new StringJoiner(" || " + System.lineSeparator() + indent(level));
 
-        if (!"Element".equals(name) && !"Resource".equals(name)) {
+        if (!isRootType) {
             joiner.add("super.hasChildren()");
         }
 
@@ -2723,7 +2740,8 @@ public class CodeGenerator {
             }
         }
 
-        cb._return(joiner.toString());
+        String hasChildrenExpr = joiner.toString();
+        cb._return(hasChildrenExpr.isEmpty() ? "false" : hasChildrenExpr);
 
         cb.end().newLine();
     }
@@ -2851,7 +2869,8 @@ public class CodeGenerator {
         cb.assign("java.lang.String resourceType", "getResourceType(reader)");
         cb._switch("resourceType");
         for (String resourceClassName : resourceClassNames) {
-            if ("Resource".equals(resourceClassName) || "DomainResource".equals(resourceClassName)) {
+            JsonObject resourceSD = getStructureDefinition(resourceClassName);
+            if ("Resource".equals(resourceClassName) || "DomainResource".equals(resourceClassName) || (resourceSD != null && isAbstract(resourceSD))) {
                 continue;
             }
             cb._case(quote(resourceClassName));
@@ -3318,7 +3337,8 @@ public class CodeGenerator {
         cb.assign("Class<?> resourceType", "getResourceType(jsonObject)");
         cb._switch("resourceType.getSimpleName()");
         for (String resourceClassName : resourceClassNames) {
-            if ("Resource".equals(resourceClassName) || "DomainResource".equals(resourceClassName)) {
+            JsonObject resourceSD = getStructureDefinition(resourceClassName);
+            if ("Resource".equals(resourceClassName) || "DomainResource".equals(resourceClassName) || (resourceSD != null && isAbstract(resourceSD))) {
                 continue;
             }
             cb._case(quote(resourceClassName));
@@ -3675,6 +3695,10 @@ public class CodeGenerator {
                 JsonObject binding = getBinding(elementDefinition);
                 String bindingName = getBindingName(binding);
 
+                if (bindingName == null) {
+                    continue;
+                }
+
                 if ("messageheader-response-request".equals(bindingName)) {
                     bindingName = "MessageHeaderResponseRequest";
                 } else if ("NutritiionOrderIntent".equals(bindingName)) {
@@ -3965,6 +3989,10 @@ public class CodeGenerator {
             generateConceptJavadoc(concept, cb);
             cb.enumConstant(enumConstantName, args(quote(value)), ++i == concepts.size()).newLine();
         }
+        // Java enums require a ';' separator before fields/methods when there are no enum constants
+        if (concepts.isEmpty()) {
+            cb.lines(java.util.Arrays.asList(";"));
+        }
 
         cb.field(mods("private", "final"), "java.lang.String", "value").newLine();
 
@@ -4190,7 +4218,12 @@ public class CodeGenerator {
     private String getBindingName(JsonObject binding) {
         for (JsonValue extension : binding.getOrDefault("extension", JsonArray.EMPTY_JSON_ARRAY).asJsonArray()) {
             if (extension.asJsonObject().getString("url").endsWith("bindingName")) {
-                return extension.asJsonObject().getString("valueString");
+                String name = extension.asJsonObject().getString("valueString");
+                // Skip placeholder or non-identifier binding names (e.g. "??" in R5 definitions)
+                if (name != null && name.chars().allMatch(c -> Character.isLetterOrDigit(c) || c == '-' || c == '_')) {
+                    return name;
+                }
+                return null;
             }
         }
         return null;
@@ -4253,10 +4286,16 @@ public class CodeGenerator {
                 if (include.asJsonObject().containsKey("concept")) {
                     concepts.addAll(getConcepts(include.asJsonObject().getJsonArray("concept")));
                 } else {
-                    String system = include.asJsonObject().getString("system");
+                    String system = include.asJsonObject().getString("system", null);
+                    if (system == null) {
+                        continue;
+                    }
                     JsonObject codeSystem = codeSystemMap.get(system);
                     if (codeSystem != null) {
-                        concepts.addAll(getConcepts(codeSystem.getJsonArray(("concept"))));
+                        JsonArray codeSystemConcepts = codeSystem.getJsonArray("concept");
+                        if (codeSystemConcepts != null) {
+                            concepts.addAll(getConcepts(codeSystemConcepts));
+                        }
                     }
                 }
             }
@@ -4269,7 +4308,10 @@ public class CodeGenerator {
         if (valueSet != null) {
             JsonObject compose = valueSet.getJsonObject("compose");
             for (JsonValue include : compose.getJsonArray("include")) {
-                return include.asJsonObject().getString("system");
+                String system = include.asJsonObject().getString("system", null);
+                if (system != null) {
+                    return system;
+                }
             }
         }
         return null;
@@ -4524,27 +4566,34 @@ public class CodeGenerator {
             if (types.size() > 1) {
                 throw new RuntimeException("Expected a single type but found " + types.size());
             }
-            fieldType = titleCase(types.get(0).getString("code"));
+            String typeCode = types.get(0).getString("code");
+            fieldType = (typeCode != null) ? titleCase(typeCode) : null;
             if (types.get(0).containsKey("profile")) {
                 String profile = types.get(0).getJsonArray("profile").getString(0);
                 fieldType = profile.substring(profile.lastIndexOf("/") + 1);
             }
+            if (fieldType == null) {
+                fieldType = "Element";
+            }
             if ("Code".equals(fieldType) && hasRequiredBinding(elementDefinition)) {
                 JsonObject binding = getBinding(elementDefinition);
-                fieldType = getBindingName(binding);
-                if ("messageheader-response-request".equals(fieldType)) {
-                    fieldType = "MessageHeaderResponseRequest";
-                } else if ("NutritiionOrderIntent".equals(fieldType)) {
-                    fieldType = "NutritionOrderIntent";
-                } else if ("SubscriptionStatus".equals(fieldType)) {
-                    // Rename to avoid conflict with the SubscriptionStatus resource type.
-                    // This is easier than package-qualifying it all over because the parser uses
-                    // wildcard imports on both packages and uses the field name in method names.
-                    fieldType = "SubscriptionStatusCode";
-                } else if ("ResourceType".equals(fieldType) || "FHIRResourceType".equals(fieldType)) {
-                    fieldType = "ResourceTypeCode";
+                String bindingName = getBindingName(binding);
+                if (bindingName != null) {
+                    fieldType = bindingName;
+                    if ("messageheader-response-request".equals(fieldType)) {
+                        fieldType = "MessageHeaderResponseRequest";
+                    } else if ("NutritiionOrderIntent".equals(fieldType)) {
+                        fieldType = "NutritionOrderIntent";
+                    } else if ("SubscriptionStatus".equals(fieldType)) {
+                        // Rename to avoid conflict with the SubscriptionStatus resource type.
+                        // This is easier than package-qualifying it all over because the parser uses
+                        // wildcard imports on both packages and uses the field name in method names.
+                        fieldType = "SubscriptionStatusCode";
+                    } else if ("ResourceType".equals(fieldType) || "FHIRResourceType".equals(fieldType)) {
+                        fieldType = "ResourceTypeCode";
+                    }
+                    fieldType = titleCase(fieldType);
                 }
-                fieldType = titleCase(fieldType);
             } else if ("Code".equals(fieldType) && containsBackboneElement(structureDefinition, "code")) {
                 fieldType = "org.linuxforhealth.fhir.model.type.Code";
             } else if ("Dosage".equals(fieldType) && containsBackboneElement(structureDefinition, "dosage")) {
@@ -4667,10 +4716,13 @@ public class CodeGenerator {
     }
 
     private boolean hasSubtypes(String type) {
-        return "Resource".equals(type) ||
+        return "Base".equals(type) ||
+                "Resource".equals(type) ||
                 "DomainResource".equals(type) ||
                 "Element".equals(type) ||
                 "BackboneElement".equals(type) ||
+                "BackboneType".equals(type) ||
+                "PrimitiveType".equals(type) ||
                 "Quantity".equals(type) ||
                 "string".equals(type) ||
                 "integer".equals(type) ||
@@ -4745,9 +4797,12 @@ public class CodeGenerator {
 
     private boolean isBackboneElement(JsonObject elementDefinition) {
         String path = elementDefinition.getString("path");
-        if ("DataRequirement.codeFilter".equals(path) ||
+        if ("Availability.availableTime".equals(path) ||
+            "Availability.notAvailableTime".equals(path) ||
+            "DataRequirement.codeFilter".equals(path) ||
             "DataRequirement.dateFilter".equals(path) ||
             "DataRequirement.sort".equals(path) ||
+            "DataRequirement.valueFilter".equals(path) ||
             "Dosage.doseAndRate".equals(path) ||
             "ElementDefinition.slicing".equals(path) ||
             "ElementDefinition.slicing.discriminator".equals(path) ||
@@ -4756,6 +4811,7 @@ public class CodeGenerator {
             "ElementDefinition.example".equals(path) ||
             "ElementDefinition.constraint".equals(path) ||
             "ElementDefinition.binding".equals(path) ||
+            "ElementDefinition.binding.additional".equals(path) ||
             "ElementDefinition.mapping".equals(path) ||
             "Timing.repeat".equals(path)) {
             return true;
@@ -4930,12 +4986,7 @@ public class CodeGenerator {
     }
 
     private boolean isResource(JsonObject structureDefinition) {
-        JsonObject baseDefinition = getBaseDefinition(structureDefinition);
-        if (baseDefinition != null) {
-            return "Resource".equals(baseDefinition.getString("name")) ||
-                    "DomainResource".equals(baseDefinition.getString("name"));
-        }
-        return "Resource".equals(structureDefinition.getString("name"));
+        return "resource".equals(structureDefinition.getString("kind", null));
     }
 
     private boolean isString(JsonObject structureDefinition) {
@@ -4991,7 +5042,7 @@ public class CodeGenerator {
     }
 
     private String visibility(JsonObject structureDefinition) {
-        if (hasSubtypes(structureDefinition.getString("name"))) {
+        if (hasSubtypes(structureDefinition.getString("name")) || isAbstract(structureDefinition)) {
             return "protected";
         }
         return "private";

@@ -48,10 +48,10 @@ public class LinkType extends Code {
     /**
      * See also
      * 
-     * <p>The patient resource containing this link is in use and valid, but points to another patient resource that is known 
-     * to contain data about the same person. Data in this resource might overlap or contradict information found in the 
-     * other patient resource. This link does not indicate any relative importance of the resources concerned, and both 
-     * should be regarded as equally valid.
+     * <p>The patient resource containing this link is in use and valid, but points to another Patient or RelatedPerson 
+     * resource that is known to contain data about the same person. Data in this resource might overlap or contradict 
+     * information found in the other Patient/RelatedPerson resource. This link does not indicate any relative importance of 
+     * the resources concerned, and both should be regarded as equally valid.
      */
     public static final LinkType SEEALSO = LinkType.builder().value(Value.SEEALSO).build();
 
@@ -242,10 +242,10 @@ public class LinkType extends Code {
         /**
          * See also
          * 
-         * <p>The patient resource containing this link is in use and valid, but points to another patient resource that is known 
-         * to contain data about the same person. Data in this resource might overlap or contradict information found in the 
-         * other patient resource. This link does not indicate any relative importance of the resources concerned, and both 
-         * should be regarded as equally valid.
+         * <p>The patient resource containing this link is in use and valid, but points to another Patient or RelatedPerson 
+         * resource that is known to contain data about the same person. Data in this resource might overlap or contradict 
+         * information found in the other Patient/RelatedPerson resource. This link does not indicate any relative importance of 
+         * the resources concerned, and both should be regarded as equally valid.
          */
         SEEALSO("seealso");
 

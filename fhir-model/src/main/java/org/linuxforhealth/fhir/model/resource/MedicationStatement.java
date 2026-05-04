@@ -16,23 +16,26 @@ import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
 import org.linuxforhealth.fhir.model.annotation.Choice;
-import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
 import org.linuxforhealth.fhir.model.type.Annotation;
+import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Dosage;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
+import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
 import org.linuxforhealth.fhir.model.type.Reference;
+import org.linuxforhealth.fhir.model.type.Timing;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.MedicationStatementStatus;
@@ -48,67 +51,47 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * visit or stay. The medication information may come from sources such as the patient's memory, from a prescription 
  * bottle, or from a list of medications the patient, clinician or other party maintains. 
  * 
- * <p>The primary difference between a medication statement and a medication administration is that the medication 
+ * <p>The primary difference between a medicationstatement and a medicationadministration is that the medication 
  * administration has complete administration information and is based on actual administration information from the 
- * person who administered the medication. A medication statement is often, if not always, less specific. There is no 
+ * person who administered the medication. A medicationstatement is often, if not always, less specific. There is no 
  * required date/time when the medication was administered, in fact we only know that a source has reported the patient 
  * is taking this medication, where details such as time, quantity, or rate or even medication product may be incomplete 
- * or missing or less precise. As stated earlier, the medication statement information may come from the patient's 
+ * or missing or less precise. As stated earlier, the Medication Statement information may come from the patient's 
  * memory, from a prescription bottle or from a list of medications the patient, clinician or other party maintains. 
  * Medication administration is more formal and is not missing detailed information.
  * 
- * <p>Maturity level: FMM3 (Trial Use)
+ * <p>The MedicationStatement resource was previously called MedicationStatement.
+ * 
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 3,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
-)
-@Constraint(
-    id = "medicationStatement-0",
-    level = "Warning",
-    location = "(base)",
-    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/medication-statement-category",
-    expression = "category.exists() implies (category.memberOf('http://hl7.org/fhir/ValueSet/medication-statement-category', 'preferred'))",
-    source = "http://hl7.org/fhir/StructureDefinition/MedicationStatement",
-    generated = true
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class MedicationStatement extends DomainResource {
     @Summary
     private final List<Identifier> identifier;
-    @Summary
-    @ReferenceTarget({ "MedicationRequest", "CarePlan", "ServiceRequest" })
-    private final List<Reference> basedOn;
-    @Summary
-    @ReferenceTarget({ "MedicationAdministration", "MedicationDispense", "MedicationStatement", "Procedure", "Observation" })
+    @ReferenceTarget({ "Procedure", "MedicationStatement" })
     private final List<Reference> partOf;
     @Summary
     @Binding(
         bindingName = "MedicationStatementStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "A coded concept indicating the current status of a MedicationStatement.",
-        valueSet = "http://hl7.org/fhir/ValueSet/medication-statement-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/medication-statement-status|5.0.0"
     )
     @Required
     private final MedicationStatementStatus status;
+    @Summary
     @Binding(
-        bindingName = "MedicationStatementStatusReason",
+        bindingName = "MedicationStatementAdministrationLocation",
         strength = BindingStrength.Value.EXAMPLE,
-        description = "A coded concept indicating the reason for the status of the statement.",
-        valueSet = "http://hl7.org/fhir/ValueSet/reason-medication-status-codes"
-    )
-    private final List<CodeableConcept> statusReason;
-    @Summary
-    @Binding(
-        bindingName = "MedicationStatementCategory",
-        strength = BindingStrength.Value.PREFERRED,
         description = "A coded concept identifying where the medication included in the MedicationStatement is expected to be consumed or administered.",
-        valueSet = "http://hl7.org/fhir/ValueSet/medication-statement-category"
+        valueSet = "http://hl7.org/fhir/ValueSet/medicationrequest-admin-location"
     )
-    private final CodeableConcept category;
+    private final List<CodeableConcept> category;
     @Summary
-    @ReferenceTarget({ "Medication" })
-    @Choice({ CodeableConcept.class, Reference.class })
     @Binding(
         bindingName = "MedicationCode",
         strength = BindingStrength.Value.EXAMPLE,
@@ -116,21 +99,21 @@ public class MedicationStatement extends DomainResource {
         valueSet = "http://hl7.org/fhir/ValueSet/medication-codes"
     )
     @Required
-    private final Element medication;
+    private final CodeableReference medication;
     @Summary
     @ReferenceTarget({ "Patient", "Group" })
     @Required
     private final Reference subject;
     @Summary
-    @ReferenceTarget({ "Encounter", "EpisodeOfCare" })
-    private final Reference context;
+    @ReferenceTarget({ "Encounter" })
+    private final Reference encounter;
     @Summary
-    @Choice({ DateTime.class, Period.class })
-    private final Element effective;
+    @Choice({ DateTime.class, Period.class, Timing.class })
+    private final org.linuxforhealth.fhir.model.type.Element effective;
     @Summary
     private final DateTime dateAsserted;
     @ReferenceTarget({ "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "Organization" })
-    private final Reference informationSource;
+    private final List<Reference> informationSource;
     private final List<Reference> derivedFrom;
     @Binding(
         bindingName = "MedicationReason",
@@ -138,31 +121,34 @@ public class MedicationStatement extends DomainResource {
         description = "A coded concept identifying why the medication is being taken.",
         valueSet = "http://hl7.org/fhir/ValueSet/condition-code"
     )
-    private final List<CodeableConcept> reasonCode;
-    @ReferenceTarget({ "Condition", "Observation", "DiagnosticReport" })
-    private final List<Reference> reasonReference;
+    private final List<CodeableReference> reason;
     private final List<Annotation> note;
+    @ReferenceTarget({ "Observation", "Condition" })
+    private final List<Reference> relatedClinicalInformation;
+    private final Markdown renderedDosageInstruction;
     private final List<Dosage> dosage;
+    @Summary
+    private final Adherence adherence;
 
     private MedicationStatement(Builder builder) {
         super(builder);
         identifier = Collections.unmodifiableList(builder.identifier);
-        basedOn = Collections.unmodifiableList(builder.basedOn);
         partOf = Collections.unmodifiableList(builder.partOf);
         status = builder.status;
-        statusReason = Collections.unmodifiableList(builder.statusReason);
-        category = builder.category;
+        category = Collections.unmodifiableList(builder.category);
         medication = builder.medication;
         subject = builder.subject;
-        context = builder.context;
+        encounter = builder.encounter;
         effective = builder.effective;
         dateAsserted = builder.dateAsserted;
-        informationSource = builder.informationSource;
+        informationSource = Collections.unmodifiableList(builder.informationSource);
         derivedFrom = Collections.unmodifiableList(builder.derivedFrom);
-        reasonCode = Collections.unmodifiableList(builder.reasonCode);
-        reasonReference = Collections.unmodifiableList(builder.reasonReference);
+        reason = Collections.unmodifiableList(builder.reason);
         note = Collections.unmodifiableList(builder.note);
+        relatedClinicalInformation = Collections.unmodifiableList(builder.relatedClinicalInformation);
+        renderedDosageInstruction = builder.renderedDosageInstruction;
         dosage = Collections.unmodifiableList(builder.dosage);
+        adherence = builder.adherence;
     }
 
     /**
@@ -179,17 +165,7 @@ public class MedicationStatement extends DomainResource {
     }
 
     /**
-     * A plan, proposal or order that is fulfilled in whole or in part by this event.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-     */
-    public List<Reference> getBasedOn() {
-        return basedOn;
-    }
-
-    /**
-     * A larger event of which this particular event is a component or step.
+     * A larger event of which this particular MedicationStatement is a component or step.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
@@ -199,8 +175,7 @@ public class MedicationStatement extends DomainResource {
     }
 
     /**
-     * A code representing the patient or other source's judgment about the state of the medication used that this statement 
-     * is about. Generally, this will be active or completed.
+     * A code representing the status of recording the medication statement.
      * 
      * @return
      *     An immutable object of type {@link MedicationStatementStatus} that is non-null.
@@ -210,22 +185,13 @@ public class MedicationStatement extends DomainResource {
     }
 
     /**
-     * Captures the reason for the current state of the MedicationStatement.
+     * Type of medication statement (for example, drug classification like ATC, where meds would be administered, legal 
+     * category of the medication.).
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
      */
-    public List<CodeableConcept> getStatusReason() {
-        return statusReason;
-    }
-
-    /**
-     * Indicates where the medication is expected to be consumed or administered.
-     * 
-     * @return
-     *     An immutable object of type {@link CodeableConcept} that may be null.
-     */
-    public CodeableConcept getCategory() {
+    public List<CodeableConcept> getCategory() {
         return category;
     }
 
@@ -234,9 +200,9 @@ public class MedicationStatement extends DomainResource {
      * medication or a simple attribute carrying a code that identifies the medication from a known list of medications.
      * 
      * @return
-     *     An immutable object of type {@link CodeableConcept} or {@link Reference} that is non-null.
+     *     An immutable object of type {@link CodeableReference} that is non-null.
      */
-    public Element getMedication() {
+    public CodeableReference getMedication() {
         return medication;
     }
 
@@ -251,28 +217,28 @@ public class MedicationStatement extends DomainResource {
     }
 
     /**
-     * The encounter or episode of care that establishes the context for this MedicationStatement.
+     * The encounter that establishes the context for this MedicationStatement.
      * 
      * @return
      *     An immutable object of type {@link Reference} that may be null.
      */
-    public Reference getContext() {
-        return context;
+    public Reference getEncounter() {
+        return encounter;
     }
 
     /**
      * The interval of time during which it is being asserted that the patient is/was/will be taking the medication (or was 
-     * not taking, when the MedicationStatement.taken element is No).
+     * not taking, when the MedicationStatement.adherence element is Not Taking).
      * 
      * @return
-     *     An immutable object of type {@link DateTime} or {@link Period} that may be null.
+     *     An immutable object of type {@link DateTime}, {@link Period} or {@link Timing} that may be null.
      */
-    public Element getEffective() {
+    public org.linuxforhealth.fhir.model.type.Element getEffective() {
         return effective;
     }
 
     /**
-     * The date when the medication statement was asserted by the information source.
+     * The date when the Medication Statement was asserted by the information source.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -286,9 +252,9 @@ public class MedicationStatement extends DomainResource {
      * when a MedicationStatement is derived from other resources, e.g. Claim or MedicationRequest.
      * 
      * @return
-     *     An immutable object of type {@link Reference} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
      */
-    public Reference getInformationSource() {
+    public List<Reference> getInformationSource() {
         return informationSource;
     }
 
@@ -304,33 +270,44 @@ public class MedicationStatement extends DomainResource {
     }
 
     /**
-     * A reason for why the medication is being/was taken.
+     * A concept, Condition or observation that supports why the medication is being/was taken.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<CodeableConcept> getReasonCode() {
-        return reasonCode;
+    public List<CodeableReference> getReason() {
+        return reason;
     }
 
     /**
-     * Condition or observation that supports why the medication is being/was taken.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-     */
-    public List<Reference> getReasonReference() {
-        return reasonReference;
-    }
-
-    /**
-     * Provides extra information about the medication statement that is not conveyed by the other attributes.
+     * Provides extra information about the Medication Statement that is not conveyed by the other attributes.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Annotation} that may be empty.
      */
     public List<Annotation> getNote() {
         return note;
+    }
+
+    /**
+     * Link to information that is relevant to a medication statement, for example, illicit drug use, gestational age, etc.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
+     */
+    public List<Reference> getRelatedClinicalInformation() {
+        return relatedClinicalInformation;
+    }
+
+    /**
+     * The full representation of the dose of the medication included in all dosage instructions. To be used when multiple 
+     * dosage instructions are included to represent complex dosing such as increasing or tapering doses.
+     * 
+     * @return
+     *     An immutable object of type {@link Markdown} that may be null.
+     */
+    public Markdown getRenderedDosageInstruction() {
+        return renderedDosageInstruction;
     }
 
     /**
@@ -343,26 +320,36 @@ public class MedicationStatement extends DomainResource {
         return dosage;
     }
 
+    /**
+     * Indicates whether the medication is or is not being consumed or administered.
+     * 
+     * @return
+     *     An immutable object of type {@link Adherence} that may be null.
+     */
+    public Adherence getAdherence() {
+        return adherence;
+    }
+
     @Override
     public boolean hasChildren() {
         return super.hasChildren() || 
             !identifier.isEmpty() || 
-            !basedOn.isEmpty() || 
             !partOf.isEmpty() || 
             (status != null) || 
-            !statusReason.isEmpty() || 
-            (category != null) || 
+            !category.isEmpty() || 
             (medication != null) || 
             (subject != null) || 
-            (context != null) || 
+            (encounter != null) || 
             (effective != null) || 
             (dateAsserted != null) || 
-            (informationSource != null) || 
+            !informationSource.isEmpty() || 
             !derivedFrom.isEmpty() || 
-            !reasonCode.isEmpty() || 
-            !reasonReference.isEmpty() || 
+            !reason.isEmpty() || 
             !note.isEmpty() || 
-            !dosage.isEmpty();
+            !relatedClinicalInformation.isEmpty() || 
+            (renderedDosageInstruction != null) || 
+            !dosage.isEmpty() || 
+            (adherence != null);
     }
 
     @Override
@@ -380,22 +367,22 @@ public class MedicationStatement extends DomainResource {
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(identifier, "identifier", visitor, Identifier.class);
-                accept(basedOn, "basedOn", visitor, Reference.class);
                 accept(partOf, "partOf", visitor, Reference.class);
                 accept(status, "status", visitor);
-                accept(statusReason, "statusReason", visitor, CodeableConcept.class);
-                accept(category, "category", visitor);
+                accept(category, "category", visitor, CodeableConcept.class);
                 accept(medication, "medication", visitor);
                 accept(subject, "subject", visitor);
-                accept(context, "context", visitor);
+                accept(encounter, "encounter", visitor);
                 accept(effective, "effective", visitor);
                 accept(dateAsserted, "dateAsserted", visitor);
-                accept(informationSource, "informationSource", visitor);
+                accept(informationSource, "informationSource", visitor, Reference.class);
                 accept(derivedFrom, "derivedFrom", visitor, Reference.class);
-                accept(reasonCode, "reasonCode", visitor, CodeableConcept.class);
-                accept(reasonReference, "reasonReference", visitor, Reference.class);
+                accept(reason, "reason", visitor, CodeableReference.class);
                 accept(note, "note", visitor, Annotation.class);
+                accept(relatedClinicalInformation, "relatedClinicalInformation", visitor, Reference.class);
+                accept(renderedDosageInstruction, "renderedDosageInstruction", visitor);
                 accept(dosage, "dosage", visitor, Dosage.class);
+                accept(adherence, "adherence", visitor);
             }
             visitor.visitEnd(elementName, elementIndex, this);
             visitor.postVisit(this);
@@ -423,22 +410,22 @@ public class MedicationStatement extends DomainResource {
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(identifier, other.identifier) && 
-            Objects.equals(basedOn, other.basedOn) && 
             Objects.equals(partOf, other.partOf) && 
             Objects.equals(status, other.status) && 
-            Objects.equals(statusReason, other.statusReason) && 
             Objects.equals(category, other.category) && 
             Objects.equals(medication, other.medication) && 
             Objects.equals(subject, other.subject) && 
-            Objects.equals(context, other.context) && 
+            Objects.equals(encounter, other.encounter) && 
             Objects.equals(effective, other.effective) && 
             Objects.equals(dateAsserted, other.dateAsserted) && 
             Objects.equals(informationSource, other.informationSource) && 
             Objects.equals(derivedFrom, other.derivedFrom) && 
-            Objects.equals(reasonCode, other.reasonCode) && 
-            Objects.equals(reasonReference, other.reasonReference) && 
+            Objects.equals(reason, other.reason) && 
             Objects.equals(note, other.note) && 
-            Objects.equals(dosage, other.dosage);
+            Objects.equals(relatedClinicalInformation, other.relatedClinicalInformation) && 
+            Objects.equals(renderedDosageInstruction, other.renderedDosageInstruction) && 
+            Objects.equals(dosage, other.dosage) && 
+            Objects.equals(adherence, other.adherence);
     }
 
     @Override
@@ -454,22 +441,22 @@ public class MedicationStatement extends DomainResource {
                 extension, 
                 modifierExtension, 
                 identifier, 
-                basedOn, 
                 partOf, 
                 status, 
-                statusReason, 
                 category, 
                 medication, 
                 subject, 
-                context, 
+                encounter, 
                 effective, 
                 dateAsserted, 
                 informationSource, 
                 derivedFrom, 
-                reasonCode, 
-                reasonReference, 
+                reason, 
                 note, 
-                dosage);
+                relatedClinicalInformation, 
+                renderedDosageInstruction, 
+                dosage, 
+                adherence);
             hashCode = result;
         }
         return result;
@@ -486,22 +473,22 @@ public class MedicationStatement extends DomainResource {
 
     public static class Builder extends DomainResource.Builder {
         private List<Identifier> identifier = new ArrayList<>();
-        private List<Reference> basedOn = new ArrayList<>();
         private List<Reference> partOf = new ArrayList<>();
         private MedicationStatementStatus status;
-        private List<CodeableConcept> statusReason = new ArrayList<>();
-        private CodeableConcept category;
-        private Element medication;
+        private List<CodeableConcept> category = new ArrayList<>();
+        private CodeableReference medication;
         private Reference subject;
-        private Reference context;
-        private Element effective;
+        private Reference encounter;
+        private org.linuxforhealth.fhir.model.type.Element effective;
         private DateTime dateAsserted;
-        private Reference informationSource;
+        private List<Reference> informationSource = new ArrayList<>();
         private List<Reference> derivedFrom = new ArrayList<>();
-        private List<CodeableConcept> reasonCode = new ArrayList<>();
-        private List<Reference> reasonReference = new ArrayList<>();
+        private List<CodeableReference> reason = new ArrayList<>();
         private List<Annotation> note = new ArrayList<>();
+        private List<Reference> relatedClinicalInformation = new ArrayList<>();
+        private Markdown renderedDosageInstruction;
         private List<Dosage> dosage = new ArrayList<>();
+        private Adherence adherence;
 
         private Builder() {
             super();
@@ -585,7 +572,8 @@ public class MedicationStatement extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -603,7 +591,8 @@ public class MedicationStatement extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -624,7 +613,7 @@ public class MedicationStatement extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -644,7 +633,7 @@ public class MedicationStatement extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -669,9 +658,9 @@ public class MedicationStatement extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -694,9 +683,9 @@ public class MedicationStatement extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -764,71 +753,15 @@ public class MedicationStatement extends DomainResource {
         }
 
         /**
-         * A plan, proposal or order that is fulfilled in whole or in part by this event.
+         * A larger event of which this particular MedicationStatement is a component or step.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * <p>Allowed resource types for the references:
          * <ul>
-         * <li>{@link MedicationRequest}</li>
-         * <li>{@link CarePlan}</li>
-         * <li>{@link ServiceRequest}</li>
-         * </ul>
-         * 
-         * @param basedOn
-         *     Fulfils plan, proposal or order
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder basedOn(Reference... basedOn) {
-            for (Reference value : basedOn) {
-                this.basedOn.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * A plan, proposal or order that is fulfilled in whole or in part by this event.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link MedicationRequest}</li>
-         * <li>{@link CarePlan}</li>
-         * <li>{@link ServiceRequest}</li>
-         * </ul>
-         * 
-         * @param basedOn
-         *     Fulfils plan, proposal or order
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder basedOn(Collection<Reference> basedOn) {
-            this.basedOn = new ArrayList<>(basedOn);
-            return this;
-        }
-
-        /**
-         * A larger event of which this particular event is a component or step.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link MedicationAdministration}</li>
-         * <li>{@link MedicationDispense}</li>
-         * <li>{@link MedicationStatement}</li>
          * <li>{@link Procedure}</li>
-         * <li>{@link Observation}</li>
+         * <li>{@link MedicationStatement}</li>
          * </ul>
          * 
          * @param partOf
@@ -845,18 +778,15 @@ public class MedicationStatement extends DomainResource {
         }
 
         /**
-         * A larger event of which this particular event is a component or step.
+         * A larger event of which this particular MedicationStatement is a component or step.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * <p>Allowed resource types for the references:
          * <ul>
-         * <li>{@link MedicationAdministration}</li>
-         * <li>{@link MedicationDispense}</li>
-         * <li>{@link MedicationStatement}</li>
          * <li>{@link Procedure}</li>
-         * <li>{@link Observation}</li>
+         * <li>{@link MedicationStatement}</li>
          * </ul>
          * 
          * @param partOf
@@ -874,13 +804,12 @@ public class MedicationStatement extends DomainResource {
         }
 
         /**
-         * A code representing the patient or other source's judgment about the state of the medication used that this statement 
-         * is about. Generally, this will be active or completed.
+         * A code representing the status of recording the medication statement.
          * 
          * <p>This element is required.
          * 
          * @param status
-         *     active | completed | entered-in-error | intended | stopped | on-hold | unknown | not-taken
+         *     recorded | entered-in-error | draft
          * 
          * @return
          *     A reference to this Builder instance
@@ -891,32 +820,34 @@ public class MedicationStatement extends DomainResource {
         }
 
         /**
-         * Captures the reason for the current state of the MedicationStatement.
+         * Type of medication statement (for example, drug classification like ATC, where meds would be administered, legal 
+         * category of the medication.).
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param statusReason
-         *     Reason for current status
+         * @param category
+         *     Type of medication statement
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder statusReason(CodeableConcept... statusReason) {
-            for (CodeableConcept value : statusReason) {
-                this.statusReason.add(value);
+        public Builder category(CodeableConcept... category) {
+            for (CodeableConcept value : category) {
+                this.category.add(value);
             }
             return this;
         }
 
         /**
-         * Captures the reason for the current state of the MedicationStatement.
+         * Type of medication statement (for example, drug classification like ATC, where meds would be administered, legal 
+         * category of the medication.).
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param statusReason
-         *     Reason for current status
+         * @param category
+         *     Type of medication statement
          * 
          * @return
          *     A reference to this Builder instance
@@ -924,22 +855,8 @@ public class MedicationStatement extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder statusReason(Collection<CodeableConcept> statusReason) {
-            this.statusReason = new ArrayList<>(statusReason);
-            return this;
-        }
-
-        /**
-         * Indicates where the medication is expected to be consumed or administered.
-         * 
-         * @param category
-         *     Type of medication usage
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder category(CodeableConcept category) {
-            this.category = category;
+        public Builder category(Collection<CodeableConcept> category) {
+            this.category = new ArrayList<>(category);
             return this;
         }
 
@@ -949,24 +866,13 @@ public class MedicationStatement extends DomainResource {
          * 
          * <p>This element is required.
          * 
-         * <p>This is a choice element with the following allowed types:
-         * <ul>
-         * <li>{@link CodeableConcept}</li>
-         * <li>{@link Reference}</li>
-         * </ul>
-         * 
-         * When of type {@link Reference}, the allowed resource types for this reference are:
-         * <ul>
-         * <li>{@link Medication}</li>
-         * </ul>
-         * 
          * @param medication
          *     What medication was taken
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder medication(Element medication) {
+        public Builder medication(CodeableReference medication) {
             this.medication = medication;
             return this;
         }
@@ -994,33 +900,33 @@ public class MedicationStatement extends DomainResource {
         }
 
         /**
-         * The encounter or episode of care that establishes the context for this MedicationStatement.
+         * The encounter that establishes the context for this MedicationStatement.
          * 
          * <p>Allowed resource types for this reference:
          * <ul>
          * <li>{@link Encounter}</li>
-         * <li>{@link EpisodeOfCare}</li>
          * </ul>
          * 
-         * @param context
-         *     Encounter / Episode associated with MedicationStatement
+         * @param encounter
+         *     Encounter associated with MedicationStatement
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder context(Reference context) {
-            this.context = context;
+        public Builder encounter(Reference encounter) {
+            this.encounter = encounter;
             return this;
         }
 
         /**
          * The interval of time during which it is being asserted that the patient is/was/will be taking the medication (or was 
-         * not taking, when the MedicationStatement.taken element is No).
+         * not taking, when the MedicationStatement.adherence element is Not Taking).
          * 
          * <p>This is a choice element with the following allowed types:
          * <ul>
          * <li>{@link DateTime}</li>
          * <li>{@link Period}</li>
+         * <li>{@link Timing}</li>
          * </ul>
          * 
          * @param effective
@@ -1029,16 +935,16 @@ public class MedicationStatement extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder effective(Element effective) {
+        public Builder effective(org.linuxforhealth.fhir.model.type.Element effective) {
             this.effective = effective;
             return this;
         }
 
         /**
-         * The date when the medication statement was asserted by the information source.
+         * The date when the Medication Statement was asserted by the information source.
          * 
          * @param dateAsserted
-         *     When the statement was asserted?
+         *     When the usage was asserted?
          * 
          * @return
          *     A reference to this Builder instance
@@ -1052,7 +958,10 @@ public class MedicationStatement extends DomainResource {
          * The person or organization that provided the information about the taking of this medication. Note: Use derivedFrom 
          * when a MedicationStatement is derived from other resources, e.g. Claim or MedicationRequest.
          * 
-         * <p>Allowed resource types for this reference:
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
          * <ul>
          * <li>{@link Patient}</li>
          * <li>{@link Practitioner}</li>
@@ -1067,8 +976,40 @@ public class MedicationStatement extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder informationSource(Reference informationSource) {
-            this.informationSource = informationSource;
+        public Builder informationSource(Reference... informationSource) {
+            for (Reference value : informationSource) {
+                this.informationSource.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The person or organization that provided the information about the taking of this medication. Note: Use derivedFrom 
+         * when a MedicationStatement is derived from other resources, e.g. Claim or MedicationRequest.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link Patient}</li>
+         * <li>{@link Practitioner}</li>
+         * <li>{@link PractitionerRole}</li>
+         * <li>{@link RelatedPerson}</li>
+         * <li>{@link Organization}</li>
+         * </ul>
+         * 
+         * @param informationSource
+         *     Person or organization that provided the information about the taking of this medication
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder informationSource(Collection<Reference> informationSource) {
+            this.informationSource = new ArrayList<>(informationSource);
             return this;
         }
 
@@ -1080,7 +1021,7 @@ public class MedicationStatement extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param derivedFrom
-         *     Additional supporting information
+         *     Link to information used to derive the MedicationStatement
          * 
          * @return
          *     A reference to this Builder instance
@@ -1100,7 +1041,7 @@ public class MedicationStatement extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param derivedFrom
-         *     Additional supporting information
+         *     Link to information used to derive the MedicationStatement
          * 
          * @return
          *     A reference to this Builder instance
@@ -1114,31 +1055,31 @@ public class MedicationStatement extends DomainResource {
         }
 
         /**
-         * A reason for why the medication is being/was taken.
+         * A concept, Condition or observation that supports why the medication is being/was taken.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
+         * @param reason
          *     Reason for why the medication is being/was taken
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder reasonCode(CodeableConcept... reasonCode) {
-            for (CodeableConcept value : reasonCode) {
-                this.reasonCode.add(value);
+        public Builder reason(CodeableReference... reason) {
+            for (CodeableReference value : reason) {
+                this.reason.add(value);
             }
             return this;
         }
 
         /**
-         * A reason for why the medication is being/was taken.
+         * A concept, Condition or observation that supports why the medication is being/was taken.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
+         * @param reason
          *     Reason for why the medication is being/was taken
          * 
          * @return
@@ -1147,72 +1088,19 @@ public class MedicationStatement extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder reasonCode(Collection<CodeableConcept> reasonCode) {
-            this.reasonCode = new ArrayList<>(reasonCode);
+        public Builder reason(Collection<CodeableReference> reason) {
+            this.reason = new ArrayList<>(reason);
             return this;
         }
 
         /**
-         * Condition or observation that supports why the medication is being/was taken.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Condition or observation that supports why the medication is being/was taken
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder reasonReference(Reference... reasonReference) {
-            for (Reference value : reasonReference) {
-                this.reasonReference.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Condition or observation that supports why the medication is being/was taken.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Condition or observation that supports why the medication is being/was taken
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder reasonReference(Collection<Reference> reasonReference) {
-            this.reasonReference = new ArrayList<>(reasonReference);
-            return this;
-        }
-
-        /**
-         * Provides extra information about the medication statement that is not conveyed by the other attributes.
+         * Provides extra information about the Medication Statement that is not conveyed by the other attributes.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param note
-         *     Further information about the statement
+         *     Further information about the usage
          * 
          * @return
          *     A reference to this Builder instance
@@ -1225,13 +1113,13 @@ public class MedicationStatement extends DomainResource {
         }
 
         /**
-         * Provides extra information about the medication statement that is not conveyed by the other attributes.
+         * Provides extra information about the Medication Statement that is not conveyed by the other attributes.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param note
-         *     Further information about the statement
+         *     Further information about the usage
          * 
          * @return
          *     A reference to this Builder instance
@@ -1241,6 +1129,72 @@ public class MedicationStatement extends DomainResource {
          */
         public Builder note(Collection<Annotation> note) {
             this.note = new ArrayList<>(note);
+            return this;
+        }
+
+        /**
+         * Link to information that is relevant to a medication statement, for example, illicit drug use, gestational age, etc.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link Observation}</li>
+         * <li>{@link Condition}</li>
+         * </ul>
+         * 
+         * @param relatedClinicalInformation
+         *     Link to information relevant to the usage of a medication
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder relatedClinicalInformation(Reference... relatedClinicalInformation) {
+            for (Reference value : relatedClinicalInformation) {
+                this.relatedClinicalInformation.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Link to information that is relevant to a medication statement, for example, illicit drug use, gestational age, etc.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link Observation}</li>
+         * <li>{@link Condition}</li>
+         * </ul>
+         * 
+         * @param relatedClinicalInformation
+         *     Link to information relevant to the usage of a medication
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder relatedClinicalInformation(Collection<Reference> relatedClinicalInformation) {
+            this.relatedClinicalInformation = new ArrayList<>(relatedClinicalInformation);
+            return this;
+        }
+
+        /**
+         * The full representation of the dose of the medication included in all dosage instructions. To be used when multiple 
+         * dosage instructions are included to represent complex dosing such as increasing or tapering doses.
+         * 
+         * @param renderedDosageInstruction
+         *     Full representation of the dosage instructions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder renderedDosageInstruction(Markdown renderedDosageInstruction) {
+            this.renderedDosageInstruction = renderedDosageInstruction;
             return this;
         }
 
@@ -1284,6 +1238,20 @@ public class MedicationStatement extends DomainResource {
         }
 
         /**
+         * Indicates whether the medication is or is not being consumed or administered.
+         * 
+         * @param adherence
+         *     Indicates whether the medication is or is not being consumed or administered
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder adherence(Adherence adherence) {
+            this.adherence = adherence;
+            return this;
+        }
+
+        /**
          * Build the {@link MedicationStatement}
          * 
          * <p>Required elements:
@@ -1310,47 +1278,342 @@ public class MedicationStatement extends DomainResource {
         protected void validate(MedicationStatement medicationStatement) {
             super.validate(medicationStatement);
             ValidationSupport.checkList(medicationStatement.identifier, "identifier", Identifier.class);
-            ValidationSupport.checkList(medicationStatement.basedOn, "basedOn", Reference.class);
             ValidationSupport.checkList(medicationStatement.partOf, "partOf", Reference.class);
             ValidationSupport.requireNonNull(medicationStatement.status, "status");
-            ValidationSupport.checkList(medicationStatement.statusReason, "statusReason", CodeableConcept.class);
-            ValidationSupport.requireChoiceElement(medicationStatement.medication, "medication", CodeableConcept.class, Reference.class);
+            ValidationSupport.checkList(medicationStatement.category, "category", CodeableConcept.class);
+            ValidationSupport.requireNonNull(medicationStatement.medication, "medication");
             ValidationSupport.requireNonNull(medicationStatement.subject, "subject");
-            ValidationSupport.choiceElement(medicationStatement.effective, "effective", DateTime.class, Period.class);
+            ValidationSupport.choiceElement(medicationStatement.effective, "effective", DateTime.class, Period.class, Timing.class);
+            ValidationSupport.checkList(medicationStatement.informationSource, "informationSource", Reference.class);
             ValidationSupport.checkList(medicationStatement.derivedFrom, "derivedFrom", Reference.class);
-            ValidationSupport.checkList(medicationStatement.reasonCode, "reasonCode", CodeableConcept.class);
-            ValidationSupport.checkList(medicationStatement.reasonReference, "reasonReference", Reference.class);
+            ValidationSupport.checkList(medicationStatement.reason, "reason", CodeableReference.class);
             ValidationSupport.checkList(medicationStatement.note, "note", Annotation.class);
+            ValidationSupport.checkList(medicationStatement.relatedClinicalInformation, "relatedClinicalInformation", Reference.class);
             ValidationSupport.checkList(medicationStatement.dosage, "dosage", Dosage.class);
-            ValidationSupport.checkReferenceType(medicationStatement.basedOn, "basedOn", "MedicationRequest", "CarePlan", "ServiceRequest");
-            ValidationSupport.checkReferenceType(medicationStatement.partOf, "partOf", "MedicationAdministration", "MedicationDispense", "MedicationStatement", "Procedure", "Observation");
-            ValidationSupport.checkReferenceType(medicationStatement.medication, "medication", "Medication");
+            ValidationSupport.checkReferenceType(medicationStatement.partOf, "partOf", "Procedure", "MedicationStatement");
             ValidationSupport.checkReferenceType(medicationStatement.subject, "subject", "Patient", "Group");
-            ValidationSupport.checkReferenceType(medicationStatement.context, "context", "Encounter", "EpisodeOfCare");
+            ValidationSupport.checkReferenceType(medicationStatement.encounter, "encounter", "Encounter");
             ValidationSupport.checkReferenceType(medicationStatement.informationSource, "informationSource", "Patient", "Practitioner", "PractitionerRole", "RelatedPerson", "Organization");
-            ValidationSupport.checkReferenceType(medicationStatement.reasonReference, "reasonReference", "Condition", "Observation", "DiagnosticReport");
+            ValidationSupport.checkReferenceType(medicationStatement.relatedClinicalInformation, "relatedClinicalInformation", "Observation", "Condition");
         }
 
         protected Builder from(MedicationStatement medicationStatement) {
             super.from(medicationStatement);
             identifier.addAll(medicationStatement.identifier);
-            basedOn.addAll(medicationStatement.basedOn);
             partOf.addAll(medicationStatement.partOf);
             status = medicationStatement.status;
-            statusReason.addAll(medicationStatement.statusReason);
-            category = medicationStatement.category;
+            category.addAll(medicationStatement.category);
             medication = medicationStatement.medication;
             subject = medicationStatement.subject;
-            context = medicationStatement.context;
+            encounter = medicationStatement.encounter;
             effective = medicationStatement.effective;
             dateAsserted = medicationStatement.dateAsserted;
-            informationSource = medicationStatement.informationSource;
+            informationSource.addAll(medicationStatement.informationSource);
             derivedFrom.addAll(medicationStatement.derivedFrom);
-            reasonCode.addAll(medicationStatement.reasonCode);
-            reasonReference.addAll(medicationStatement.reasonReference);
+            reason.addAll(medicationStatement.reason);
             note.addAll(medicationStatement.note);
+            relatedClinicalInformation.addAll(medicationStatement.relatedClinicalInformation);
+            renderedDosageInstruction = medicationStatement.renderedDosageInstruction;
             dosage.addAll(medicationStatement.dosage);
+            adherence = medicationStatement.adherence;
             return this;
+        }
+    }
+
+    /**
+     * Indicates whether the medication is or is not being consumed or administered.
+     */
+    public static class Adherence extends BackboneElement {
+        @Summary
+        @Binding(
+            bindingName = "MedicationStatementAdherence",
+            strength = BindingStrength.Value.EXAMPLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/medication-statement-adherence"
+        )
+        @Required
+        private final CodeableConcept code;
+        @Binding(
+            bindingName = "MedicationStatementStatusReason",
+            strength = BindingStrength.Value.EXAMPLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/reason-medication-status-codes"
+        )
+        private final CodeableConcept reason;
+
+        private Adherence(Builder builder) {
+            super(builder);
+            code = builder.code;
+            reason = builder.reason;
+        }
+
+        /**
+         * Type of the adherence for the medication.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that is non-null.
+         */
+        public CodeableConcept getCode() {
+            return code;
+        }
+
+        /**
+         * Captures the reason for the current use or adherence of a medication.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getReason() {
+            return reason;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (code != null) || 
+                (reason != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(code, "code", visitor);
+                    accept(reason, "reason", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Adherence other = (Adherence) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(code, other.code) && 
+                Objects.equals(reason, other.reason);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    code, 
+                    reason);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private CodeableConcept code;
+            private CodeableConcept reason;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * Type of the adherence for the medication.
+             * 
+             * <p>This element is required.
+             * 
+             * @param code
+             *     Type of adherence
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder code(CodeableConcept code) {
+                this.code = code;
+                return this;
+            }
+
+            /**
+             * Captures the reason for the current use or adherence of a medication.
+             * 
+             * @param reason
+             *     Details of the reason for the current use of the medication
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder reason(CodeableConcept reason) {
+                this.reason = reason;
+                return this;
+            }
+
+            /**
+             * Build the {@link Adherence}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>code</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link Adherence}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Adherence per the base specification
+             */
+            @Override
+            public Adherence build() {
+                Adherence adherence = new Adherence(this);
+                if (validating) {
+                    validate(adherence);
+                }
+                return adherence;
+            }
+
+            protected void validate(Adherence adherence) {
+                super.validate(adherence);
+                ValidationSupport.requireNonNull(adherence.code, "code");
+                ValidationSupport.requireValueOrChildren(adherence);
+            }
+
+            protected Builder from(Adherence adherence) {
+                super.from(adherence);
+                code = adherence.code;
+                reason = adherence.reason;
+                return this;
+            }
         }
     }
 }

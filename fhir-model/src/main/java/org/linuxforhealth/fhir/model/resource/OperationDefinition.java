@@ -15,6 +15,7 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
+import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.Required;
@@ -24,9 +25,12 @@ import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
 import org.linuxforhealth.fhir.model.type.DateTime;
+import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
+import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Integer;
 import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
@@ -36,10 +40,11 @@ import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.UsageContext;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.FHIRAllTypes;
+import org.linuxforhealth.fhir.model.type.code.FHIRTypes;
 import org.linuxforhealth.fhir.model.type.code.OperationKind;
+import org.linuxforhealth.fhir.model.type.code.OperationParameterScope;
 import org.linuxforhealth.fhir.model.type.code.OperationParameterUse;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
-import org.linuxforhealth.fhir.model.type.code.ResourceTypeCode;
 import org.linuxforhealth.fhir.model.type.code.SearchParamType;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
@@ -56,11 +61,19 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     status = StandardsStatus.Value.NORMATIVE
 )
 @Constraint(
-    id = "opd-0",
+    id = "cnl-0",
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
+    source = "http://hl7.org/fhir/StructureDefinition/OperationDefinition"
+)
+@Constraint(
+    id = "cnl-1",
+    level = "Warning",
+    location = "OperationDefinition.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
     source = "http://hl7.org/fhir/StructureDefinition/OperationDefinition"
 )
 @Constraint(
@@ -83,12 +96,53 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     id = "opd-3",
     level = "Rule",
     location = "OperationDefinition.parameter",
-    description = "A targetProfile can only be specified for parameters of type Reference or Canonical",
-    expression = "targetProfile.exists() implies (type = 'Reference' or type = 'canonical')",
+    description = "A targetProfile can only be specified for parameters of type Reference, Canonical, or a Resource",
+    expression = "targetProfile.exists() implies (type = 'Reference' or type = 'canonical' or type.memberOf('http://hl7.org/fhir/ValueSet/resource-types'))",
     source = "http://hl7.org/fhir/StructureDefinition/OperationDefinition"
 )
 @Constraint(
-    id = "operationDefinition-4",
+    id = "opd-4",
+    level = "Rule",
+    location = "OperationDefinition.parameter",
+    description = "SearchParamType can only be specified on in parameters",
+    expression = "(use = 'out') implies searchType.empty()",
+    source = "http://hl7.org/fhir/StructureDefinition/OperationDefinition"
+)
+@Constraint(
+    id = "opd-5",
+    level = "Rule",
+    location = "(base)",
+    description = "A query operation cannot be defined at the instance level",
+    expression = "(kind = 'query') implies (instance = false)",
+    source = "http://hl7.org/fhir/StructureDefinition/OperationDefinition"
+)
+@Constraint(
+    id = "opd-6",
+    level = "Rule",
+    location = "(base)",
+    description = "A query operation requires input parameters to have a search type",
+    expression = "(kind = 'query') implies (parameter.all((use = 'in' and searchType.exists()) or (use != 'in')))",
+    source = "http://hl7.org/fhir/StructureDefinition/OperationDefinition"
+)
+@Constraint(
+    id = "opd-7",
+    level = "Rule",
+    location = "(base)",
+    description = "Named queries always have a single output parameter named 'result' of type Bundle",
+    expression = "(kind = 'query') implies ((parameter.where(use = 'out').count() = 1) and (parameter.where(use = 'out').all(name = 'result' and type = 'Bundle')))",
+    source = "http://hl7.org/fhir/StructureDefinition/OperationDefinition"
+)
+@Constraint(
+    id = "operationDefinition-8",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/OperationDefinition",
+    generated = true
+)
+@Constraint(
+    id = "operationDefinition-9",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
@@ -101,7 +155,16 @@ public class OperationDefinition extends DomainResource {
     @Summary
     private final Uri url;
     @Summary
+    private final List<Identifier> identifier;
+    @Summary
     private final String version;
+    @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
     @Summary
     @Required
     private final String name;
@@ -112,7 +175,7 @@ public class OperationDefinition extends DomainResource {
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -121,7 +184,7 @@ public class OperationDefinition extends DomainResource {
         bindingName = "OperationKind",
         strength = BindingStrength.Value.REQUIRED,
         description = "Whether an operation is a normal operation or a query.",
-        valueSet = "http://hl7.org/fhir/ValueSet/operation-kind|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/operation-kind|5.0.0"
     )
     @Required
     private final OperationKind kind;
@@ -145,6 +208,8 @@ public class OperationDefinition extends DomainResource {
     )
     private final List<CodeableConcept> jurisdiction;
     private final Markdown purpose;
+    private final Markdown copyright;
+    private final String copyrightLabel;
     @Summary
     private final Boolean affectsState;
     @Summary
@@ -155,12 +220,12 @@ public class OperationDefinition extends DomainResource {
     private final Canonical base;
     @Summary
     @Binding(
-        bindingName = "ResourceType",
+        bindingName = "FHIRTypes",
         strength = BindingStrength.Value.REQUIRED,
-        description = "One of the resource types defined as part of this version of FHIR.",
-        valueSet = "http://hl7.org/fhir/ValueSet/resource-types|4.3.0"
+        description = "A type of resource, or a Reference (from all versions)",
+        valueSet = "http://hl7.org/fhir/ValueSet/version-independent-all-resource-types|5.0.0"
     )
-    private final List<ResourceTypeCode> resource;
+    private final List<FHIRTypes> resource;
     @Summary
     @Required
     private final Boolean system;
@@ -178,7 +243,9 @@ public class OperationDefinition extends DomainResource {
     private OperationDefinition(Builder builder) {
         super(builder);
         url = builder.url;
+        identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
         title = builder.title;
         status = builder.status;
@@ -191,6 +258,8 @@ public class OperationDefinition extends DomainResource {
         useContext = Collections.unmodifiableList(builder.useContext);
         jurisdiction = Collections.unmodifiableList(builder.jurisdiction);
         purpose = builder.purpose;
+        copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
         affectsState = builder.affectsState;
         code = builder.code;
         comment = builder.comment;
@@ -208,15 +277,25 @@ public class OperationDefinition extends DomainResource {
     /**
      * An absolute URI that is used to identify this operation definition when it is referenced in a specification, model, 
      * design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal 
-     * address at which at which an authoritative instance of this operation definition is (or will be) published. This URL 
-     * can be the target of a canonical reference. It SHALL remain the same when the operation definition is stored on 
-     * different servers.
+     * address at which an authoritative instance of this operation definition is (or will be) published. This URL can be the 
+     * target of a canonical reference. It SHALL remain the same when the operation definition is stored on different servers.
      * 
      * @return
      *     An immutable object of type {@link Uri} that may be null.
      */
     public Uri getUrl() {
         return url;
+    }
+
+    /**
+     * A formal identifier that is used to identify this implementation guide when it is represented in other formats, or 
+     * referenced in a specification, model, design or an instance.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
+     */
+    public List<Identifier> getIdentifier() {
+        return identifier;
     }
 
     /**
@@ -230,6 +309,16 @@ public class OperationDefinition extends DomainResource {
      */
     public String getVersion() {
         return version;
+    }
+
+    /**
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
     }
 
     /**
@@ -254,7 +343,7 @@ public class OperationDefinition extends DomainResource {
     }
 
     /**
-     * The status of this operation definition. Enables tracking the life-cycle of the content.
+     * The current state of this operation definition.
      * 
      * @return
      *     An immutable object of type {@link PublicationStatus} that is non-null.
@@ -275,7 +364,7 @@ public class OperationDefinition extends DomainResource {
 
     /**
      * A Boolean value to indicate that this operation definition is authored for testing purposes (or 
-     * education/evaluation/marketing) and is not intended to be used for genuine usage.
+     * education/evaluation/marketing) and is not intended for genuine usage.
      * 
      * @return
      *     An immutable object of type {@link Boolean} that may be null.
@@ -285,9 +374,9 @@ public class OperationDefinition extends DomainResource {
     }
 
     /**
-     * The date (and optionally time) when the operation definition was published. The date must change when the business 
-     * version changes and it must change if the status code changes. In addition, it should change when the substantive 
-     * content of the operation definition changes.
+     * The date (and optionally time) when the operation definition was last significantly changed. The date must change when 
+     * the business version changes and it must change if the status code changes. In addition, it should change when the 
+     * substantive content of the operation definition changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -297,7 +386,8 @@ public class OperationDefinition extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the operation definition.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the operation 
+     * definition.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -329,7 +419,7 @@ public class OperationDefinition extends DomainResource {
     /**
      * The content was developed with a focus and intent of supporting the contexts that are listed. These contexts may be 
      * general categories (gender, age, ...) or may be references to specific programs (insurance plans, studies, ...) and 
-     * may be used to assist with indexing and searching for appropriate operation definition instances.
+     * may be used to assist with indexing and searching for appropriate operation definition.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link UsageContext} that may be empty.
@@ -359,6 +449,28 @@ public class OperationDefinition extends DomainResource {
     }
 
     /**
+     * A copyright statement relating to the operation definition and/or its contents. Copyright statements are generally 
+     * legal restrictions on the use and publishing of the operation definition.
+     * 
+     * @return
+     *     An immutable object of type {@link Markdown} that may be null.
+     */
+    public Markdown getCopyright() {
+        return copyright;
+    }
+
+    /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
+    }
+
+    /**
      * Whether the operation affects state. Side effects such as producing audit trail entries do not count as 'affecting 
      * state'.
      * 
@@ -370,7 +482,9 @@ public class OperationDefinition extends DomainResource {
     }
 
     /**
-     * The name used to invoke the operation.
+     * The label that is recommended to be used in the URL for this operation. In some cases, servers may need to use a 
+     * different CapabilityStatement operation.name to differentiate between multiple SearchParameters that happen to have 
+     * the same code.
      * 
      * @return
      *     An immutable object of type {@link Code} that is non-null.
@@ -403,9 +517,9 @@ public class OperationDefinition extends DomainResource {
      * The types on which this operation can be executed.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link ResourceTypeCode} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link FHIRTypes} that may be empty.
      */
-    public List<ResourceTypeCode> getResource() {
+    public List<FHIRTypes> getResource() {
         return resource;
     }
 
@@ -488,7 +602,9 @@ public class OperationDefinition extends DomainResource {
     public boolean hasChildren() {
         return super.hasChildren() || 
             (url != null) || 
+            !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
             (title != null) || 
             (status != null) || 
@@ -501,6 +617,8 @@ public class OperationDefinition extends DomainResource {
             !useContext.isEmpty() || 
             !jurisdiction.isEmpty() || 
             (purpose != null) || 
+            (copyright != null) || 
+            (copyrightLabel != null) || 
             (affectsState != null) || 
             (code != null) || 
             (comment != null) || 
@@ -530,7 +648,9 @@ public class OperationDefinition extends DomainResource {
                 accept(extension, "extension", visitor, Extension.class);
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(url, "url", visitor);
+                accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(status, "status", visitor);
@@ -543,11 +663,13 @@ public class OperationDefinition extends DomainResource {
                 accept(useContext, "useContext", visitor, UsageContext.class);
                 accept(jurisdiction, "jurisdiction", visitor, CodeableConcept.class);
                 accept(purpose, "purpose", visitor);
+                accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
                 accept(affectsState, "affectsState", visitor);
                 accept(code, "code", visitor);
                 accept(comment, "comment", visitor);
                 accept(base, "base", visitor);
-                accept(resource, "resource", visitor, ResourceTypeCode.class);
+                accept(resource, "resource", visitor, FHIRTypes.class);
                 accept(system, "system", visitor);
                 accept(type, "type", visitor);
                 accept(instance, "instance", visitor);
@@ -582,7 +704,9 @@ public class OperationDefinition extends DomainResource {
             Objects.equals(extension, other.extension) && 
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(url, other.url) && 
+            Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(status, other.status) && 
@@ -595,6 +719,8 @@ public class OperationDefinition extends DomainResource {
             Objects.equals(useContext, other.useContext) && 
             Objects.equals(jurisdiction, other.jurisdiction) && 
             Objects.equals(purpose, other.purpose) && 
+            Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
             Objects.equals(affectsState, other.affectsState) && 
             Objects.equals(code, other.code) && 
             Objects.equals(comment, other.comment) && 
@@ -622,7 +748,9 @@ public class OperationDefinition extends DomainResource {
                 extension, 
                 modifierExtension, 
                 url, 
+                identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
                 title, 
                 status, 
@@ -635,6 +763,8 @@ public class OperationDefinition extends DomainResource {
                 useContext, 
                 jurisdiction, 
                 purpose, 
+                copyright, 
+                copyrightLabel, 
                 affectsState, 
                 code, 
                 comment, 
@@ -663,7 +793,9 @@ public class OperationDefinition extends DomainResource {
 
     public static class Builder extends DomainResource.Builder {
         private Uri url;
+        private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
         private String title;
         private PublicationStatus status;
@@ -676,11 +808,13 @@ public class OperationDefinition extends DomainResource {
         private List<UsageContext> useContext = new ArrayList<>();
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
         private Markdown purpose;
+        private Markdown copyright;
+        private String copyrightLabel;
         private Boolean affectsState;
         private Code code;
         private Markdown comment;
         private Canonical base;
-        private List<ResourceTypeCode> resource = new ArrayList<>();
+        private List<FHIRTypes> resource = new ArrayList<>();
         private Boolean system;
         private Boolean type;
         private Boolean instance;
@@ -771,7 +905,8 @@ public class OperationDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -789,7 +924,8 @@ public class OperationDefinition extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -810,7 +946,7 @@ public class OperationDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -830,7 +966,7 @@ public class OperationDefinition extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -855,9 +991,9 @@ public class OperationDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -880,9 +1016,9 @@ public class OperationDefinition extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -907,18 +1043,58 @@ public class OperationDefinition extends DomainResource {
         /**
          * An absolute URI that is used to identify this operation definition when it is referenced in a specification, model, 
          * design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal 
-         * address at which at which an authoritative instance of this operation definition is (or will be) published. This URL 
-         * can be the target of a canonical reference. It SHALL remain the same when the operation definition is stored on 
-         * different servers.
+         * address at which an authoritative instance of this operation definition is (or will be) published. This URL can be the 
+         * target of a canonical reference. It SHALL remain the same when the operation definition is stored on different servers.
          * 
          * @param url
-         *     Canonical identifier for this operation definition, represented as a URI (globally unique)
+         *     Canonical identifier for this operation definition, represented as an absolute URI (globally unique)
          * 
          * @return
          *     A reference to this Builder instance
          */
         public Builder url(Uri url) {
             this.url = url;
+            return this;
+        }
+
+        /**
+         * A formal identifier that is used to identify this implementation guide when it is represented in other formats, or 
+         * referenced in a specification, model, design or an instance.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param identifier
+         *     Additional identifier for the implementation guide (business identifier)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder identifier(Identifier... identifier) {
+            for (Identifier value : identifier) {
+                this.identifier.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * A formal identifier that is used to identify this implementation guide when it is represented in other formats, or 
+         * referenced in a specification, model, design or an instance.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param identifier
+         *     Additional identifier for the implementation guide (business identifier)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder identifier(Collection<Identifier> identifier) {
+            this.identifier = new ArrayList<>(identifier);
             return this;
         }
 
@@ -952,6 +1128,42 @@ public class OperationDefinition extends DomainResource {
          */
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
             return this;
         }
 
@@ -1021,7 +1233,7 @@ public class OperationDefinition extends DomainResource {
         }
 
         /**
-         * The status of this operation definition. Enables tracking the life-cycle of the content.
+         * The current state of this operation definition.
          * 
          * <p>This element is required.
          * 
@@ -1070,7 +1282,7 @@ public class OperationDefinition extends DomainResource {
 
         /**
          * A Boolean value to indicate that this operation definition is authored for testing purposes (or 
-         * education/evaluation/marketing) and is not intended to be used for genuine usage.
+         * education/evaluation/marketing) and is not intended for genuine usage.
          * 
          * @param experimental
          *     For testing purposes, not real usage
@@ -1084,9 +1296,9 @@ public class OperationDefinition extends DomainResource {
         }
 
         /**
-         * The date (and optionally time) when the operation definition was published. The date must change when the business 
-         * version changes and it must change if the status code changes. In addition, it should change when the substantive 
-         * content of the operation definition changes.
+         * The date (and optionally time) when the operation definition was last significantly changed. The date must change when 
+         * the business version changes and it must change if the status code changes. In addition, it should change when the 
+         * substantive content of the operation definition changes.
          * 
          * @param date
          *     Date last changed
@@ -1103,7 +1315,7 @@ public class OperationDefinition extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1116,10 +1328,11 @@ public class OperationDefinition extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the operation definition.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the operation 
+         * definition.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1185,7 +1398,7 @@ public class OperationDefinition extends DomainResource {
         /**
          * The content was developed with a focus and intent of supporting the contexts that are listed. These contexts may be 
          * general categories (gender, age, ...) or may be references to specific programs (insurance plans, studies, ...) and 
-         * may be used to assist with indexing and searching for appropriate operation definition instances.
+         * may be used to assist with indexing and searching for appropriate operation definition.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1206,7 +1419,7 @@ public class OperationDefinition extends DomainResource {
         /**
          * The content was developed with a focus and intent of supporting the contexts that are listed. These contexts may be 
          * general categories (gender, age, ...) or may be references to specific programs (insurance plans, studies, ...) and 
-         * may be used to assist with indexing and searching for appropriate operation definition instances.
+         * may be used to assist with indexing and searching for appropriate operation definition.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1279,6 +1492,52 @@ public class OperationDefinition extends DomainResource {
         }
 
         /**
+         * A copyright statement relating to the operation definition and/or its contents. Copyright statements are generally 
+         * legal restrictions on the use and publishing of the operation definition.
+         * 
+         * @param copyright
+         *     Use and/or publishing restrictions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyright(Markdown copyright) {
+            this.copyright = copyright;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
+            return this;
+        }
+
+        /**
          * Convenience method for setting {@code affectsState}.
          * 
          * @param affectsState
@@ -1310,12 +1569,14 @@ public class OperationDefinition extends DomainResource {
         }
 
         /**
-         * The name used to invoke the operation.
+         * The label that is recommended to be used in the URL for this operation. In some cases, servers may need to use a 
+         * different CapabilityStatement operation.name to differentiate between multiple SearchParameters that happen to have 
+         * the same code.
          * 
          * <p>This element is required.
          * 
          * @param code
-         *     Name used to invoke the operation
+         *     Recommended name for operation in search url
          * 
          * @return
          *     A reference to this Builder instance
@@ -1365,8 +1626,8 @@ public class OperationDefinition extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder resource(ResourceTypeCode... resource) {
-            for (ResourceTypeCode value : resource) {
+        public Builder resource(FHIRTypes... resource) {
+            for (FHIRTypes value : resource) {
                 this.resource.add(value);
             }
             return this;
@@ -1387,7 +1648,7 @@ public class OperationDefinition extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder resource(Collection<ResourceTypeCode> resource) {
+        public Builder resource(Collection<FHIRTypes> resource) {
             this.resource = new ArrayList<>(resource);
             return this;
         }
@@ -1636,6 +1897,8 @@ public class OperationDefinition extends DomainResource {
 
         protected void validate(OperationDefinition operationDefinition) {
             super.validate(operationDefinition);
+            ValidationSupport.checkList(operationDefinition.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(operationDefinition.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.requireNonNull(operationDefinition.name, "name");
             ValidationSupport.requireNonNull(operationDefinition.status, "status");
             ValidationSupport.requireNonNull(operationDefinition.kind, "kind");
@@ -1643,7 +1906,7 @@ public class OperationDefinition extends DomainResource {
             ValidationSupport.checkList(operationDefinition.useContext, "useContext", UsageContext.class);
             ValidationSupport.checkList(operationDefinition.jurisdiction, "jurisdiction", CodeableConcept.class);
             ValidationSupport.requireNonNull(operationDefinition.code, "code");
-            ValidationSupport.checkList(operationDefinition.resource, "resource", ResourceTypeCode.class);
+            ValidationSupport.checkList(operationDefinition.resource, "resource", FHIRTypes.class);
             ValidationSupport.requireNonNull(operationDefinition.system, "system");
             ValidationSupport.requireNonNull(operationDefinition.type, "type");
             ValidationSupport.requireNonNull(operationDefinition.instance, "instance");
@@ -1654,7 +1917,9 @@ public class OperationDefinition extends DomainResource {
         protected Builder from(OperationDefinition operationDefinition) {
             super.from(operationDefinition);
             url = operationDefinition.url;
+            identifier.addAll(operationDefinition.identifier);
             version = operationDefinition.version;
+            versionAlgorithm = operationDefinition.versionAlgorithm;
             name = operationDefinition.name;
             title = operationDefinition.title;
             status = operationDefinition.status;
@@ -1667,6 +1932,8 @@ public class OperationDefinition extends DomainResource {
             useContext.addAll(operationDefinition.useContext);
             jurisdiction.addAll(operationDefinition.jurisdiction);
             purpose = operationDefinition.purpose;
+            copyright = operationDefinition.copyright;
+            copyrightLabel = operationDefinition.copyrightLabel;
             affectsState = operationDefinition.affectsState;
             code = operationDefinition.code;
             comment = operationDefinition.comment;
@@ -1693,28 +1960,41 @@ public class OperationDefinition extends DomainResource {
             bindingName = "OperationParameterUse",
             strength = BindingStrength.Value.REQUIRED,
             description = "Whether an operation parameter is an input or an output parameter.",
-            valueSet = "http://hl7.org/fhir/ValueSet/operation-parameter-use|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/operation-parameter-use|5.0.0"
         )
         @Required
         private final OperationParameterUse use;
+        @org.linuxforhealth.fhir.model.annotation.Binding(
+            bindingName = "OperationParameterScope",
+            strength = BindingStrength.Value.REQUIRED,
+            valueSet = "http://hl7.org/fhir/ValueSet/operation-parameter-scope|5.0.0"
+        )
+        private final List<OperationParameterScope> scope;
         @Required
         private final Integer min;
         @Required
         private final String max;
-        private final String documentation;
+        private final Markdown documentation;
         @org.linuxforhealth.fhir.model.annotation.Binding(
             bindingName = "FHIRAllTypes",
             strength = BindingStrength.Value.REQUIRED,
-            description = "A list of all the concrete types defined in this version of the FHIR specification - Abstract Types, Data Types and Resource Types.",
-            valueSet = "http://hl7.org/fhir/ValueSet/all-types|4.3.0"
+            description = "A list of all the types defined in this version of the FHIR specification - Abstract Types, Data Types and Resource Types.",
+            valueSet = "http://hl7.org/fhir/ValueSet/fhir-types|5.0.0"
         )
         private final FHIRAllTypes type;
+        @org.linuxforhealth.fhir.model.annotation.Binding(
+            bindingName = "FHIRAllTypes",
+            strength = BindingStrength.Value.REQUIRED,
+            description = "A list of all the types defined in this version of the FHIR specification - Abstract Types, Data Types and Resource Types.",
+            valueSet = "http://hl7.org/fhir/ValueSet/fhir-types|5.0.0"
+        )
+        private final List<FHIRAllTypes> allowedType;
         private final List<Canonical> targetProfile;
         @org.linuxforhealth.fhir.model.annotation.Binding(
             bindingName = "SearchParamType",
             strength = BindingStrength.Value.REQUIRED,
             description = "Data types allowed to be used for search parameters.",
-            valueSet = "http://hl7.org/fhir/ValueSet/search-param-type|4.3.0"
+            valueSet = "http://hl7.org/fhir/ValueSet/search-param-type|5.0.0"
         )
         private final SearchParamType searchType;
         private final Binding binding;
@@ -1725,10 +2005,12 @@ public class OperationDefinition extends DomainResource {
             super(builder);
             name = builder.name;
             use = builder.use;
+            scope = Collections.unmodifiableList(builder.scope);
             min = builder.min;
             max = builder.max;
             documentation = builder.documentation;
             type = builder.type;
+            allowedType = Collections.unmodifiableList(builder.allowedType);
             targetProfile = Collections.unmodifiableList(builder.targetProfile);
             searchType = builder.searchType;
             binding = builder.binding;
@@ -1757,6 +2039,16 @@ public class OperationDefinition extends DomainResource {
         }
 
         /**
+         * If present, indicates that the parameter applies when the operation is being invoked at the specified level.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link OperationParameterScope} that may be empty.
+         */
+        public List<OperationParameterScope> getScope() {
+            return scope;
+        }
+
+        /**
          * The minimum number of times this parameter SHALL appear in the request or response.
          * 
          * @return
@@ -1780,9 +2072,9 @@ public class OperationDefinition extends DomainResource {
          * Describes the meaning or use of this parameter.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link Markdown} that may be null.
          */
-        public String getDocumentation() {
+        public Markdown getDocumentation() {
             return documentation;
         }
 
@@ -1794,6 +2086,17 @@ public class OperationDefinition extends DomainResource {
          */
         public FHIRAllTypes getType() {
             return type;
+        }
+
+        /**
+         * Support for polymorphic types. If the parameter type is abstract, this element lists allowed sub-types for the 
+         * parameter.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link FHIRAllTypes} that may be empty.
+         */
+        public List<FHIRAllTypes> getAllowedType() {
+            return allowedType;
         }
 
         /**
@@ -1811,7 +2114,7 @@ public class OperationDefinition extends DomainResource {
         }
 
         /**
-         * How the parameter is understood as a search parameter. This is only used if the parameter type is 'string'.
+         * How the parameter is understood if/when it used as search parameter. This is only used if the parameter is a string.
          * 
          * @return
          *     An immutable object of type {@link SearchParamType} that may be null.
@@ -1855,10 +2158,12 @@ public class OperationDefinition extends DomainResource {
             return super.hasChildren() || 
                 (name != null) || 
                 (use != null) || 
+                !scope.isEmpty() || 
                 (min != null) || 
                 (max != null) || 
                 (documentation != null) || 
                 (type != null) || 
+                !allowedType.isEmpty() || 
                 !targetProfile.isEmpty() || 
                 (searchType != null) || 
                 (binding != null) || 
@@ -1877,10 +2182,12 @@ public class OperationDefinition extends DomainResource {
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(name, "name", visitor);
                     accept(use, "use", visitor);
+                    accept(scope, "scope", visitor, OperationParameterScope.class);
                     accept(min, "min", visitor);
                     accept(max, "max", visitor);
                     accept(documentation, "documentation", visitor);
                     accept(type, "type", visitor);
+                    accept(allowedType, "allowedType", visitor, FHIRAllTypes.class);
                     accept(targetProfile, "targetProfile", visitor, Canonical.class);
                     accept(searchType, "searchType", visitor);
                     accept(binding, "binding", visitor);
@@ -1909,10 +2216,12 @@ public class OperationDefinition extends DomainResource {
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(name, other.name) && 
                 Objects.equals(use, other.use) && 
+                Objects.equals(scope, other.scope) && 
                 Objects.equals(min, other.min) && 
                 Objects.equals(max, other.max) && 
                 Objects.equals(documentation, other.documentation) && 
                 Objects.equals(type, other.type) && 
+                Objects.equals(allowedType, other.allowedType) && 
                 Objects.equals(targetProfile, other.targetProfile) && 
                 Objects.equals(searchType, other.searchType) && 
                 Objects.equals(binding, other.binding) && 
@@ -1929,10 +2238,12 @@ public class OperationDefinition extends DomainResource {
                     modifierExtension, 
                     name, 
                     use, 
+                    scope, 
                     min, 
                     max, 
                     documentation, 
                     type, 
+                    allowedType, 
                     targetProfile, 
                     searchType, 
                     binding, 
@@ -1955,10 +2266,12 @@ public class OperationDefinition extends DomainResource {
         public static class Builder extends BackboneElement.Builder {
             private Code name;
             private OperationParameterUse use;
+            private List<OperationParameterScope> scope = new ArrayList<>();
             private Integer min;
             private String max;
-            private String documentation;
+            private Markdown documentation;
             private FHIRAllTypes type;
+            private List<FHIRAllTypes> allowedType = new ArrayList<>();
             private List<Canonical> targetProfile = new ArrayList<>();
             private SearchParamType searchType;
             private Binding binding;
@@ -1986,7 +2299,7 @@ public class OperationDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2006,7 +2319,7 @@ public class OperationDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2031,7 +2344,7 @@ public class OperationDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2056,7 +2369,7 @@ public class OperationDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2109,6 +2422,45 @@ public class OperationDefinition extends DomainResource {
              */
             public Builder use(OperationParameterUse use) {
                 this.use = use;
+                return this;
+            }
+
+            /**
+             * If present, indicates that the parameter applies when the operation is being invoked at the specified level.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param scope
+             *     instance | type | system
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder scope(OperationParameterScope... scope) {
+                for (OperationParameterScope value : scope) {
+                    this.scope.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * If present, indicates that the parameter applies when the operation is being invoked at the specified level.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param scope
+             *     instance | type | system
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder scope(Collection<OperationParameterScope> scope) {
+                this.scope = new ArrayList<>(scope);
                 return this;
             }
 
@@ -2181,22 +2533,6 @@ public class OperationDefinition extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code documentation}.
-             * 
-             * @param documentation
-             *     Description of meaning/use
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #documentation(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder documentation(java.lang.String documentation) {
-                this.documentation = (documentation == null) ? null : String.of(documentation);
-                return this;
-            }
-
-            /**
              * Describes the meaning or use of this parameter.
              * 
              * @param documentation
@@ -2205,7 +2541,7 @@ public class OperationDefinition extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder documentation(String documentation) {
+            public Builder documentation(Markdown documentation) {
                 this.documentation = documentation;
                 return this;
             }
@@ -2225,6 +2561,47 @@ public class OperationDefinition extends DomainResource {
             }
 
             /**
+             * Support for polymorphic types. If the parameter type is abstract, this element lists allowed sub-types for the 
+             * parameter.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param allowedType
+             *     Allowed sub-type this parameter can have (if type is abstract)
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder allowedType(FHIRAllTypes... allowedType) {
+                for (FHIRAllTypes value : allowedType) {
+                    this.allowedType.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * Support for polymorphic types. If the parameter type is abstract, this element lists allowed sub-types for the 
+             * parameter.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param allowedType
+             *     Allowed sub-type this parameter can have (if type is abstract)
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder allowedType(Collection<FHIRAllTypes> allowedType) {
+                this.allowedType = new ArrayList<>(allowedType);
+                return this;
+            }
+
+            /**
              * Used when the type is "Reference" or "canonical", and identifies a profile structure or implementation Guide that 
              * applies to the target of the reference this parameter refers to. If any profiles are specified, then the content must 
              * conform to at least one of them. The URL can be a local reference - to a contained StructureDefinition, or a reference 
@@ -2235,7 +2612,8 @@ public class OperationDefinition extends DomainResource {
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param targetProfile
-             *     If type is Reference | canonical, allowed targets
+             *     If type is Reference | canonical, allowed targets. If type is 'Resource', then this constrains the allowed resource 
+             *     types
              * 
              * @return
              *     A reference to this Builder instance
@@ -2258,7 +2636,8 @@ public class OperationDefinition extends DomainResource {
              * If any of the elements are null, calling {@link #build()} will fail.
              * 
              * @param targetProfile
-             *     If type is Reference | canonical, allowed targets
+             *     If type is Reference | canonical, allowed targets. If type is 'Resource', then this constrains the allowed resource 
+             *     types
              * 
              * @return
              *     A reference to this Builder instance
@@ -2272,7 +2651,7 @@ public class OperationDefinition extends DomainResource {
             }
 
             /**
-             * How the parameter is understood as a search parameter. This is only used if the parameter type is 'string'.
+             * How the parameter is understood if/when it used as search parameter. This is only used if the parameter is a string.
              * 
              * @param searchType
              *     number | date | string | token | reference | composite | quantity | uri | special
@@ -2406,8 +2785,10 @@ public class OperationDefinition extends DomainResource {
                 super.validate(parameter);
                 ValidationSupport.requireNonNull(parameter.name, "name");
                 ValidationSupport.requireNonNull(parameter.use, "use");
+                ValidationSupport.checkList(parameter.scope, "scope", OperationParameterScope.class);
                 ValidationSupport.requireNonNull(parameter.min, "min");
                 ValidationSupport.requireNonNull(parameter.max, "max");
+                ValidationSupport.checkList(parameter.allowedType, "allowedType", FHIRAllTypes.class);
                 ValidationSupport.checkList(parameter.targetProfile, "targetProfile", Canonical.class);
                 ValidationSupport.checkList(parameter.referencedFrom, "referencedFrom", ReferencedFrom.class);
                 ValidationSupport.checkList(parameter.part, "part", OperationDefinition.Parameter.class);
@@ -2418,10 +2799,12 @@ public class OperationDefinition extends DomainResource {
                 super.from(parameter);
                 name = parameter.name;
                 use = parameter.use;
+                scope.addAll(parameter.scope);
                 min = parameter.min;
                 max = parameter.max;
                 documentation = parameter.documentation;
                 type = parameter.type;
+                allowedType.addAll(parameter.allowedType);
                 targetProfile.addAll(parameter.targetProfile);
                 searchType = parameter.searchType;
                 binding = parameter.binding;
@@ -2439,7 +2822,7 @@ public class OperationDefinition extends DomainResource {
                 bindingName = "BindingStrength",
                 strength = BindingStrength.Value.REQUIRED,
                 description = "Indication of the degree of conformance expectations associated with a binding.",
-                valueSet = "http://hl7.org/fhir/ValueSet/binding-strength|4.3.0"
+                valueSet = "http://hl7.org/fhir/ValueSet/binding-strength|5.0.0"
             )
             @Required
             private final BindingStrength strength;
@@ -2564,7 +2947,7 @@ public class OperationDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2584,7 +2967,7 @@ public class OperationDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2609,7 +2992,7 @@ public class OperationDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2634,7 +3017,7 @@ public class OperationDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2856,7 +3239,7 @@ public class OperationDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2876,7 +3259,7 @@ public class OperationDefinition extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2901,7 +3284,7 @@ public class OperationDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2926,7 +3309,7 @@ public class OperationDefinition extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3178,7 +3561,7 @@ public class OperationDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3198,7 +3581,7 @@ public class OperationDefinition extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -3223,7 +3606,7 @@ public class OperationDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -3248,7 +3631,7 @@ public class OperationDefinition extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 

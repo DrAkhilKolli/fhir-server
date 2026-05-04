@@ -61,7 +61,7 @@ public class ContactPointSystem extends Code {
     /**
      * SMS
      * 
-     * <p>A contact that can be used for sending an sms message (e.g. mobile phones, some landlines).
+     * <p>A contact that can be used for sending a sms message (e.g. mobile phones, some landlines).
      */
     public static final ContactPointSystem SMS = ContactPointSystem.builder().value(Value.SMS).build();
 
@@ -280,7 +280,7 @@ public class ContactPointSystem extends Code {
         /**
          * SMS
          * 
-         * <p>A contact that can be used for sending an sms message (e.g. mobile phones, some landlines).
+         * <p>A contact that can be used for sending a sms message (e.g. mobile phones, some landlines).
          */
         SMS("sms"),
 

@@ -17,7 +17,7 @@ import org.testng.annotations.Test;
 
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.resource.Device;
-import org.linuxforhealth.fhir.model.resource.Device.Specialization;
+import org.linuxforhealth.fhir.model.resource.Device.ConformsTo;
 import org.linuxforhealth.fhir.model.resource.OperationOutcome.Issue;
 import org.linuxforhealth.fhir.model.resource.StructureDefinition;
 import org.linuxforhealth.fhir.model.type.Canonical;
@@ -133,13 +133,13 @@ public class MaxValueSetTest {
         assertEquals(FHIRValidationUtil.countWarnings(issues), 0);
 
         // Error for missing statusReason
-        device = buildDevice().toBuilder().statusReason(Collections.emptyList()).build();
+        device = buildDevice().toBuilder().safety(Collections.emptyList()).build();
         issues = FHIRValidator.validator().validate(device);
         assertEquals(FHIRValidationUtil.countErrors(issues), 1);
         assertEquals(FHIRValidationUtil.countWarnings(issues), 0);
 
         // Warning for statusReason
-        device = buildDevice().toBuilder().statusReason(Arrays.asList(
+        device = buildDevice().toBuilder().safety(Arrays.asList(
                 CodeableConcept.builder()
                         .coding(Coding.builder()
                                 .system(Uri.of("http://terminology.hl7.org/CodeSystem/device-status-reason"))
@@ -175,9 +175,9 @@ public class MaxValueSetTest {
         assertEquals(FHIRValidationUtil.countInformation(issues), 1);
 
         // Warning and error for specialization.systemType
-        device = buildDevice().toBuilder().specialization(Arrays.asList(
-                Specialization.builder().systemType(CodeableConcept.builder().coding(Coding.builder().system(Uri.of(ValidationSupport.BCP_47_URN)).code(Code.of("tlh")).build()).build()).build(),
-                Specialization.builder().systemType(CodeableConcept.builder().coding(Coding.builder().system(Uri.of(ValidationSupport.BCP_47_URN)).code(Code.of("invalidSystem")).build()).build()).build())).build();
+        device = buildDevice().toBuilder().conformsTo(Arrays.asList(
+                ConformsTo.builder().specification(CodeableConcept.builder().coding(Coding.builder().system(Uri.of(ValidationSupport.BCP_47_URN)).code(Code.of("tlh")).build()).build()).build(),
+                ConformsTo.builder().specification(CodeableConcept.builder().coding(Coding.builder().system(Uri.of(ValidationSupport.BCP_47_URN)).code(Code.of("invalidSystem")).build()).build()).build())).build();
         issues = FHIRValidator.validator().validate(device);
         assertEquals(FHIRValidationUtil.countErrors(issues), 2);
         assertEquals(FHIRValidationUtil.countWarnings(issues), 0);
@@ -258,9 +258,9 @@ public class MaxValueSetTest {
             .meta(Meta.builder()
                 .profile(Canonical.of("http://example.com/fhir/StructureDefinition/test-device|0.1.0"))
                 .build())
-            .statusReason(CodeableConcept.builder().coding(Coding.builder().system(Uri.of("http://terminology.hl7.org/CodeSystem/device-status-reason")).code(Code.of("online")).build()).build())
-            .specialization(Specialization.builder()
-                    .systemType(CodeableConcept.builder().coding(Coding.builder().system(Uri.of(ValidationSupport.BCP_47_URN)).code(Code.of(ENGLISH_US)).build()).build()).build())
+            .safety(CodeableConcept.builder().coding(Coding.builder().system(Uri.of("http://terminology.hl7.org/CodeSystem/device-status-reason")).code(Code.of("online")).build()).build())
+            .conformsTo(ConformsTo.builder()
+                    .specification(CodeableConcept.builder().coding(Coding.builder().system(Uri.of(ValidationSupport.BCP_47_URN)).code(Code.of(ENGLISH_US)).build()).build()).build())
             .extension(Extension.builder().url("http://example.com/fhir/StructureDefinition/test-language-primary-extension")
                     .value(CodeableConcept.builder().coding(Coding.builder().system(Uri.of(ValidationSupport.BCP_47_URN)).code(Code.of(ENGLISH_US)).build()).build()).build(),
                     Extension.builder().url("http://example.com/fhir/StructureDefinition/test-language-secondary-extension")

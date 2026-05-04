@@ -22,22 +22,25 @@ public class DiscriminatorType extends Code {
     /**
      * Value
      * 
-     * <p>The slices have different values in the nominated element.
+     * <p>The slices have different values in the nominated element, as determined by the applicable fixed value, pattern, or 
+     * required ValueSet binding.
      */
     public static final DiscriminatorType VALUE = DiscriminatorType.builder().value(Value.VALUE).build();
 
     /**
      * Exists
      * 
-     * <p>The slices are differentiated by the presence or absence of the nominated element.
+     * <p>The slices are differentiated by the presence or absence of the nominated element. There SHALL be no more than two 
+     * slices. The slices are differentiated by the fact that one must have a max of 0 and the other must have a min of 1 (or 
+     * more). The order in which the slices are declared doesn't matter.
      */
     public static final DiscriminatorType EXISTS = DiscriminatorType.builder().value(Value.EXISTS).build();
 
     /**
      * Pattern
      * 
-     * <p>The slices have different values in the nominated element, as determined by testing them against the applicable 
-     * ElementDefinition.pattern[x].
+     * <p>The slices have different values in the nominated element, as determined by the applicable fixed value, pattern, or 
+     * required ValueSet binding. This has the same meaning as 'value' and is deprecated.
      */
     public static final DiscriminatorType PATTERN = DiscriminatorType.builder().value(Value.PATTERN).build();
 
@@ -56,6 +59,14 @@ public class DiscriminatorType extends Code {
      * profiles is required to differentiate the slices.
      */
     public static final DiscriminatorType PROFILE = DiscriminatorType.builder().value(Value.PROFILE).build();
+
+    /**
+     * Position
+     * 
+     * <p>The slices are differentiated by their index. This is only possible if all but the last slice have min=max 
+     * cardinality, and the (optional) last slice contains other undifferentiated elements.
+     */
+    public static final DiscriminatorType POSITION = DiscriminatorType.builder().value(Value.POSITION).build();
 
     private volatile int hashCode;
 
@@ -85,6 +96,8 @@ public class DiscriminatorType extends Code {
             return TYPE;
         case PROFILE:
             return PROFILE;
+        case POSITION:
+            return POSITION;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -220,22 +233,25 @@ public class DiscriminatorType extends Code {
         /**
          * Value
          * 
-         * <p>The slices have different values in the nominated element.
+         * <p>The slices have different values in the nominated element, as determined by the applicable fixed value, pattern, or 
+         * required ValueSet binding.
          */
         VALUE("value"),
 
         /**
          * Exists
          * 
-         * <p>The slices are differentiated by the presence or absence of the nominated element.
+         * <p>The slices are differentiated by the presence or absence of the nominated element. There SHALL be no more than two 
+         * slices. The slices are differentiated by the fact that one must have a max of 0 and the other must have a min of 1 (or 
+         * more). The order in which the slices are declared doesn't matter.
          */
         EXISTS("exists"),
 
         /**
          * Pattern
          * 
-         * <p>The slices have different values in the nominated element, as determined by testing them against the applicable 
-         * ElementDefinition.pattern[x].
+         * <p>The slices have different values in the nominated element, as determined by the applicable fixed value, pattern, or 
+         * required ValueSet binding. This has the same meaning as 'value' and is deprecated.
          */
         PATTERN("pattern"),
 
@@ -253,7 +269,15 @@ public class DiscriminatorType extends Code {
          * specifies .resolve() then the profile is the target profile on the reference. In this case, validation by the possible 
          * profiles is required to differentiate the slices.
          */
-        PROFILE("profile");
+        PROFILE("profile"),
+
+        /**
+         * Position
+         * 
+         * <p>The slices are differentiated by their index. This is only possible if all but the last slice have min=max 
+         * cardinality, and the (optional) last slice contains other undifferentiated elements.
+         */
+        POSITION("position");
 
         private final java.lang.String value;
 
@@ -294,6 +318,8 @@ public class DiscriminatorType extends Code {
                 return TYPE;
             case "profile":
                 return PROFILE;
+            case "position":
+                return POSITION;
             default:
                 throw new IllegalArgumentException(value);
             }

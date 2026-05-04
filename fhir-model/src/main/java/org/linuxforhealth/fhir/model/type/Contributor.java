@@ -26,12 +26,13 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * A contributor to the content of a knowledge asset, including authors, editors, reviewers, and endorsers.
  */
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class Contributor extends Element {
+public class Contributor extends DataType {
     @Summary
     @Binding(
         bindingName = "ContributorType",
         strength = BindingStrength.Value.REQUIRED,
-        valueSet = "http://hl7.org/fhir/ValueSet/contributor-type|4.3.0"
+        description = "The type of contributor.",
+        valueSet = "http://hl7.org/fhir/ValueSet/contributor-type|5.0.0"
     )
     @Required
     private final ContributorType type;
@@ -145,7 +146,7 @@ public class Contributor extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private ContributorType type;
         private String name;
         private List<ContactDetail> contact = new ArrayList<>();
@@ -171,7 +172,7 @@ public class Contributor extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -191,7 +192,7 @@ public class Contributor extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 

@@ -33,12 +33,13 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     source = "http://hl7.org/fhir/StructureDefinition/ContactPoint"
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
-public class ContactPoint extends Element {
+public class ContactPoint extends DataType {
     @Summary
     @Binding(
         bindingName = "ContactPointSystem",
         strength = BindingStrength.Value.REQUIRED,
-        valueSet = "http://hl7.org/fhir/ValueSet/contact-point-system|4.3.0"
+        description = "Telecommunications form for contact point.",
+        valueSet = "http://hl7.org/fhir/ValueSet/contact-point-system|5.0.0"
     )
     private final ContactPointSystem system;
     @Summary
@@ -47,7 +48,8 @@ public class ContactPoint extends Element {
     @Binding(
         bindingName = "ContactPointUse",
         strength = BindingStrength.Value.REQUIRED,
-        valueSet = "http://hl7.org/fhir/ValueSet/contact-point-use|4.3.0"
+        description = "Use of contact point.",
+        valueSet = "http://hl7.org/fhir/ValueSet/contact-point-use|5.0.0"
     )
     private final ContactPointUse use;
     @Summary
@@ -191,7 +193,7 @@ public class ContactPoint extends Element {
         return new Builder();
     }
 
-    public static class Builder extends Element.Builder {
+    public static class Builder extends DataType.Builder {
         private ContactPointSystem system;
         private String value;
         private ContactPointUse use;
@@ -219,7 +221,7 @@ public class ContactPoint extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -239,7 +241,7 @@ public class ContactPoint extends Element {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 

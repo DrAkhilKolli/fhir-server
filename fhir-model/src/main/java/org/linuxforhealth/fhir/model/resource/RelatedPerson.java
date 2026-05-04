@@ -43,13 +43,13 @@ import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
- * Information about a person that is involved in the care for a patient, but who is not the target of healthcare, nor 
- * has a formal responsibility in the care process.
+ * Information about a person that is involved in a patient's health or the care for a patient, but who is not the target 
+ * of healthcare, nor has a formal responsibility in the care process.
  * 
- * <p>Maturity level: FMM2 (Trial Use)
+ * <p>Maturity level: FMM5 (Trial Use)
  */
 @Maturity(
-    level = 2,
+    level = 5,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
@@ -58,15 +58,6 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     location = "(base)",
     description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/relatedperson-relationshiptype",
     expression = "relationship.exists() implies (relationship.all(memberOf('http://hl7.org/fhir/ValueSet/relatedperson-relationshiptype', 'preferred')))",
-    source = "http://hl7.org/fhir/StructureDefinition/RelatedPerson",
-    generated = true
-)
-@Constraint(
-    id = "relatedPerson-1",
-    level = "Warning",
-    location = "communication.language",
-    description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/languages",
-    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/languages', 'preferred')",
     source = "http://hl7.org/fhir/StructureDefinition/RelatedPerson",
     generated = true
 )
@@ -97,7 +88,7 @@ public class RelatedPerson extends DomainResource {
         bindingName = "AdministrativeGender",
         strength = BindingStrength.Value.REQUIRED,
         description = "The gender of a person used for administrative purposes.",
-        valueSet = "http://hl7.org/fhir/ValueSet/administrative-gender|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/administrative-gender|5.0.0"
     )
     private final AdministrativeGender gender;
     @Summary
@@ -155,7 +146,7 @@ public class RelatedPerson extends DomainResource {
     }
 
     /**
-     * The nature of the relationship between a patient and the related person.
+     * The nature of the relationship between the related person and the patient.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
@@ -237,7 +228,7 @@ public class RelatedPerson extends DomainResource {
     }
 
     /**
-     * A language which may be used to communicate with about the patient's health.
+     * A language which may be used to communicate with the related person about the patient's health.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Communication} that may be empty.
@@ -463,7 +454,8 @@ public class RelatedPerson extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -481,7 +473,8 @@ public class RelatedPerson extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -502,7 +495,7 @@ public class RelatedPerson extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -522,7 +515,7 @@ public class RelatedPerson extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -547,9 +540,9 @@ public class RelatedPerson extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -572,9 +565,9 @@ public class RelatedPerson extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -687,13 +680,13 @@ public class RelatedPerson extends DomainResource {
         }
 
         /**
-         * The nature of the relationship between a patient and the related person.
+         * The nature of the relationship between the related person and the patient.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param relationship
-         *     The nature of the relationship
+         *     The relationship of the related person to the patient
          * 
          * @return
          *     A reference to this Builder instance
@@ -706,13 +699,13 @@ public class RelatedPerson extends DomainResource {
         }
 
         /**
-         * The nature of the relationship between a patient and the related person.
+         * The nature of the relationship between the related person and the patient.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param relationship
-         *     The nature of the relationship
+         *     The relationship of the related person to the patient
          * 
          * @return
          *     A reference to this Builder instance
@@ -942,13 +935,13 @@ public class RelatedPerson extends DomainResource {
         }
 
         /**
-         * A language which may be used to communicate with about the patient's health.
+         * A language which may be used to communicate with the related person about the patient's health.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param communication
-         *     A language which may be used to communicate with about the patient's health
+         *     A language which may be used to communicate with the related person about the patient's health
          * 
          * @return
          *     A reference to this Builder instance
@@ -961,13 +954,13 @@ public class RelatedPerson extends DomainResource {
         }
 
         /**
-         * A language which may be used to communicate with about the patient's health.
+         * A language which may be used to communicate with the related person about the patient's health.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param communication
-         *     A language which may be used to communicate with about the patient's health
+         *     A language which may be used to communicate with the related person about the patient's health
          * 
          * @return
          *     A reference to this Builder instance
@@ -1034,15 +1027,14 @@ public class RelatedPerson extends DomainResource {
     }
 
     /**
-     * A language which may be used to communicate with about the patient's health.
+     * A language which may be used to communicate with the related person about the patient's health.
      */
     public static class Communication extends BackboneElement {
         @Binding(
             bindingName = "Language",
-            strength = BindingStrength.Value.PREFERRED,
-            description = "IETF language tag",
-            valueSet = "http://hl7.org/fhir/ValueSet/languages",
-            maxValueSet = "http://hl7.org/fhir/ValueSet/all-languages"
+            strength = BindingStrength.Value.REQUIRED,
+            description = "IETF language tag for a human language",
+            valueSet = "http://hl7.org/fhir/ValueSet/all-languages|5.0.0"
         )
         @Required
         private final CodeableConcept language;
@@ -1056,8 +1048,8 @@ public class RelatedPerson extends DomainResource {
 
         /**
          * The ISO-639-1 alpha 2 code in lower case for the language, optionally followed by a hyphen and the ISO-3166-1 alpha 2 
-         * code for the region in upper case; e.g. "en" for English, or "en-US" for American English versus "en-EN" for England 
-         * English.
+         * code for the region in upper case; e.g. "en" for English, or "en-US" for American English versus "en-AU" for 
+         * Australian English.
          * 
          * @return
          *     An immutable object of type {@link CodeableConcept} that is non-null.
@@ -1067,7 +1059,8 @@ public class RelatedPerson extends DomainResource {
         }
 
         /**
-         * Indicates whether or not the patient prefers this language (over other languages he masters up a certain level).
+         * Indicates whether or not the related person prefers this language (over other languages he or she masters up a certain 
+         * level).
          * 
          * @return
          *     An immutable object of type {@link Boolean} that may be null.
@@ -1167,7 +1160,7 @@ public class RelatedPerson extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1187,7 +1180,7 @@ public class RelatedPerson extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1212,7 +1205,7 @@ public class RelatedPerson extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1237,7 +1230,7 @@ public class RelatedPerson extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1263,13 +1256,13 @@ public class RelatedPerson extends DomainResource {
 
             /**
              * The ISO-639-1 alpha 2 code in lower case for the language, optionally followed by a hyphen and the ISO-3166-1 alpha 2 
-             * code for the region in upper case; e.g. "en" for English, or "en-US" for American English versus "en-EN" for England 
-             * English.
+             * code for the region in upper case; e.g. "en" for English, or "en-US" for American English versus "en-AU" for 
+             * Australian English.
              * 
              * <p>This element is required.
              * 
              * @param language
-             *     The language which can be used to communicate with the patient about his or her health
+             *     The language which can be used to communicate with the related person about the patient's health
              * 
              * @return
              *     A reference to this Builder instance
@@ -1296,7 +1289,8 @@ public class RelatedPerson extends DomainResource {
             }
 
             /**
-             * Indicates whether or not the patient prefers this language (over other languages he masters up a certain level).
+             * Indicates whether or not the related person prefers this language (over other languages he or she masters up a certain 
+             * level).
              * 
              * @param preferred
              *     Language preference indicator

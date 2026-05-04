@@ -21,6 +21,7 @@ import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
 import org.linuxforhealth.fhir.model.annotation.Required;
 import org.linuxforhealth.fhir.model.annotation.Summary;
+import org.linuxforhealth.fhir.model.type.Annotation;
 import org.linuxforhealth.fhir.model.type.Attachment;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Code;
@@ -30,6 +31,7 @@ import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Instant;
+import org.linuxforhealth.fhir.model.type.Markdown;
 import org.linuxforhealth.fhir.model.type.Meta;
 import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
@@ -43,10 +45,11 @@ import org.linuxforhealth.fhir.model.util.ValidationSupport;
 import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
- * The findings and interpretation of diagnostic tests performed on patients, groups of patients, devices, and locations, 
- * and/or specimens derived from these. The report includes clinical context such as requesting and provider information, 
- * and some mix of atomic results, images, textual and coded interpretations, and formatted representation of diagnostic 
- * reports.
+ * The findings and interpretation of diagnostic tests performed on patients, groups of patients, products, substances, 
+ * devices, and locations, and/or specimens derived from these. The report includes clinical context such as requesting 
+ * provider information, and some mix of atomic results, images, textual and coded interpretations, and formatted 
+ * representation of diagnostic reports. The report also includes non-clinical context such as batch analysis and 
+ * stability reporting of products and substances.
  * 
  * <p>Maturity level: FMM3 (Trial Use)
  */
@@ -55,7 +58,15 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
-    id = "diagnosticReport-0",
+    id = "dgr-1",
+    level = "Rule",
+    location = "(base)",
+    description = "When a Composition is referenced in `Diagnostic.composition`, all Observation resources referenced in `Composition.entry` must also be referenced in `Diagnostic.entry` or in the references Observations in `Observation.hasMember`",
+    expression = "composition.exists() implies (composition.resolve().section.entry.reference.where(resolve() is Observation) in (result.reference|result.reference.resolve().hasMember.reference))",
+    source = "http://hl7.org/fhir/StructureDefinition/DiagnosticReport"
+)
+@Constraint(
+    id = "diagnosticReport-2",
     level = "Warning",
     location = "(base)",
     description = "SHOULD contain a code from value set http://hl7.org/fhir/ValueSet/report-codes",
@@ -74,7 +85,7 @@ public class DiagnosticReport extends DomainResource {
         bindingName = "DiagnosticReportStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The status of the diagnostic report.",
-        valueSet = "http://hl7.org/fhir/ValueSet/diagnostic-report-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/diagnostic-report-status|5.0.0"
     )
     @Required
     private final DiagnosticReportStatus status;
@@ -96,14 +107,14 @@ public class DiagnosticReport extends DomainResource {
     @Required
     private final CodeableConcept code;
     @Summary
-    @ReferenceTarget({ "Patient", "Group", "Device", "Location", "Organization", "Procedure", "Practitioner", "Medication", "Substance" })
+    @ReferenceTarget({ "Patient", "Group", "Device", "Location", "Organization", "Practitioner", "Medication", "Substance", "BiologicallyDerivedProduct" })
     private final Reference subject;
     @Summary
     @ReferenceTarget({ "Encounter" })
     private final Reference encounter;
     @Summary
     @Choice({ DateTime.class, Period.class })
-    private final Element effective;
+    private final org.linuxforhealth.fhir.model.type.Element effective;
     @Summary
     private final Instant issued;
     @Summary
@@ -116,11 +127,15 @@ public class DiagnosticReport extends DomainResource {
     private final List<Reference> specimen;
     @ReferenceTarget({ "Observation" })
     private final List<Reference> result;
-    @ReferenceTarget({ "ImagingStudy" })
-    private final List<Reference> imagingStudy;
+    private final List<Annotation> note;
+    @ReferenceTarget({ "GenomicStudy", "ImagingStudy" })
+    private final List<Reference> study;
+    private final List<SupportingInfo> supportingInfo;
     @Summary
     private final List<Media> media;
-    private final String conclusion;
+    @ReferenceTarget({ "Composition" })
+    private final Reference composition;
+    private final Markdown conclusion;
     @Binding(
         bindingName = "AdjunctDiagnosis",
         strength = BindingStrength.Value.EXAMPLE,
@@ -145,8 +160,11 @@ public class DiagnosticReport extends DomainResource {
         resultsInterpreter = Collections.unmodifiableList(builder.resultsInterpreter);
         specimen = Collections.unmodifiableList(builder.specimen);
         result = Collections.unmodifiableList(builder.result);
-        imagingStudy = Collections.unmodifiableList(builder.imagingStudy);
+        note = Collections.unmodifiableList(builder.note);
+        study = Collections.unmodifiableList(builder.study);
+        supportingInfo = Collections.unmodifiableList(builder.supportingInfo);
         media = Collections.unmodifiableList(builder.media);
+        composition = builder.composition;
         conclusion = builder.conclusion;
         conclusionCode = Collections.unmodifiableList(builder.conclusionCode);
         presentedForm = Collections.unmodifiableList(builder.presentedForm);
@@ -232,7 +250,7 @@ public class DiagnosticReport extends DomainResource {
      * @return
      *     An immutable object of type {@link DateTime} or {@link Period} that may be null.
      */
-    public Element getEffective() {
+    public org.linuxforhealth.fhir.model.type.Element getEffective() {
         return effective;
     }
 
@@ -288,20 +306,44 @@ public class DiagnosticReport extends DomainResource {
     }
 
     /**
-     * One or more links to full details of any imaging performed during the diagnostic investigation. Typically, this is 
-     * imaging performed by DICOM enabled modalities, but this is not required. A fully enabled PACS viewer can use this 
-     * information to provide views of the source images.
+     * Comments about the diagnostic report.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Annotation} that may be empty.
+     */
+    public List<Annotation> getNote() {
+        return note;
+    }
+
+    /**
+     * One or more links to full details of any study performed during the diagnostic investigation. An ImagingStudy might 
+     * comprise a set of radiologic images obtained via a procedure that are analyzed as a group. Typically, this is imaging 
+     * performed by DICOM enabled modalities, but this is not required. A fully enabled PACS viewer can use this information 
+     * to provide views of the source images. A GenomicStudy might comprise one or more analyses, each serving a specific 
+     * purpose. These analyses may vary in method (e.g., karyotyping, CNV, or SNV detection), performer, software, devices 
+     * used, or regions targeted.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
      */
-    public List<Reference> getImagingStudy() {
-        return imagingStudy;
+    public List<Reference> getStudy() {
+        return study;
     }
 
     /**
-     * A list of key images associated with this report. The images are generally created during the diagnostic process, and 
-     * may be directly of the patient, or of treated specimens (i.e. slides of interest).
+     * This backbone element contains supporting information that was used in the creation of the report not included in the 
+     * results already included in the report.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link SupportingInfo} that may be empty.
+     */
+    public List<SupportingInfo> getSupportingInfo() {
+        return supportingInfo;
+    }
+
+    /**
+     * A list of key images or data associated with this report. The images or data are generally created during the 
+     * diagnostic process, and may be directly of the patient, or of treated specimens (i.e. slides of interest).
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Media} that may be empty.
@@ -311,12 +353,23 @@ public class DiagnosticReport extends DomainResource {
     }
 
     /**
+     * Reference to a Composition resource instance that provides structure for organizing the contents of the 
+     * DiagnosticReport.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getComposition() {
+        return composition;
+    }
+
+    /**
      * Concise and clinically contextualized summary conclusion (interpretation/impression) of the diagnostic report.
      * 
      * @return
-     *     An immutable object of type {@link String} that may be null.
+     *     An immutable object of type {@link Markdown} that may be null.
      */
-    public String getConclusion() {
+    public Markdown getConclusion() {
         return conclusion;
     }
 
@@ -357,8 +410,11 @@ public class DiagnosticReport extends DomainResource {
             !resultsInterpreter.isEmpty() || 
             !specimen.isEmpty() || 
             !result.isEmpty() || 
-            !imagingStudy.isEmpty() || 
+            !note.isEmpty() || 
+            !study.isEmpty() || 
+            !supportingInfo.isEmpty() || 
             !media.isEmpty() || 
+            (composition != null) || 
             (conclusion != null) || 
             !conclusionCode.isEmpty() || 
             !presentedForm.isEmpty();
@@ -391,8 +447,11 @@ public class DiagnosticReport extends DomainResource {
                 accept(resultsInterpreter, "resultsInterpreter", visitor, Reference.class);
                 accept(specimen, "specimen", visitor, Reference.class);
                 accept(result, "result", visitor, Reference.class);
-                accept(imagingStudy, "imagingStudy", visitor, Reference.class);
+                accept(note, "note", visitor, Annotation.class);
+                accept(study, "study", visitor, Reference.class);
+                accept(supportingInfo, "supportingInfo", visitor, SupportingInfo.class);
                 accept(media, "media", visitor, Media.class);
+                accept(composition, "composition", visitor);
                 accept(conclusion, "conclusion", visitor);
                 accept(conclusionCode, "conclusionCode", visitor, CodeableConcept.class);
                 accept(presentedForm, "presentedForm", visitor, Attachment.class);
@@ -435,8 +494,11 @@ public class DiagnosticReport extends DomainResource {
             Objects.equals(resultsInterpreter, other.resultsInterpreter) && 
             Objects.equals(specimen, other.specimen) && 
             Objects.equals(result, other.result) && 
-            Objects.equals(imagingStudy, other.imagingStudy) && 
+            Objects.equals(note, other.note) && 
+            Objects.equals(study, other.study) && 
+            Objects.equals(supportingInfo, other.supportingInfo) && 
             Objects.equals(media, other.media) && 
+            Objects.equals(composition, other.composition) && 
             Objects.equals(conclusion, other.conclusion) && 
             Objects.equals(conclusionCode, other.conclusionCode) && 
             Objects.equals(presentedForm, other.presentedForm);
@@ -467,8 +529,11 @@ public class DiagnosticReport extends DomainResource {
                 resultsInterpreter, 
                 specimen, 
                 this.result, 
-                imagingStudy, 
+                note, 
+                study, 
+                supportingInfo, 
                 media, 
+                composition, 
                 conclusion, 
                 conclusionCode, 
                 presentedForm);
@@ -494,15 +559,18 @@ public class DiagnosticReport extends DomainResource {
         private CodeableConcept code;
         private Reference subject;
         private Reference encounter;
-        private Element effective;
+        private org.linuxforhealth.fhir.model.type.Element effective;
         private Instant issued;
         private List<Reference> performer = new ArrayList<>();
         private List<Reference> resultsInterpreter = new ArrayList<>();
         private List<Reference> specimen = new ArrayList<>();
         private List<Reference> result = new ArrayList<>();
-        private List<Reference> imagingStudy = new ArrayList<>();
+        private List<Annotation> note = new ArrayList<>();
+        private List<Reference> study = new ArrayList<>();
+        private List<SupportingInfo> supportingInfo = new ArrayList<>();
         private List<Media> media = new ArrayList<>();
-        private String conclusion;
+        private Reference composition;
+        private Markdown conclusion;
         private List<CodeableConcept> conclusionCode = new ArrayList<>();
         private List<Attachment> presentedForm = new ArrayList<>();
 
@@ -588,7 +656,8 @@ public class DiagnosticReport extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -606,7 +675,8 @@ public class DiagnosticReport extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -627,7 +697,7 @@ public class DiagnosticReport extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -647,7 +717,7 @@ public class DiagnosticReport extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -672,9 +742,9 @@ public class DiagnosticReport extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -697,9 +767,9 @@ public class DiagnosticReport extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -823,7 +893,8 @@ public class DiagnosticReport extends DomainResource {
          * <p>This element is required.
          * 
          * @param status
-         *     registered | partial | preliminary | final +
+         *     registered | partial | preliminary | modified | final | amended | corrected | appended | cancelled | entered-in-error 
+         *     | unknown
          * 
          * @return
          *     A reference to this Builder instance
@@ -901,10 +972,10 @@ public class DiagnosticReport extends DomainResource {
          * <li>{@link Device}</li>
          * <li>{@link Location}</li>
          * <li>{@link Organization}</li>
-         * <li>{@link Procedure}</li>
          * <li>{@link Practitioner}</li>
          * <li>{@link Medication}</li>
          * <li>{@link Substance}</li>
+         * <li>{@link BiologicallyDerivedProduct}</li>
          * </ul>
          * 
          * @param subject
@@ -954,7 +1025,7 @@ public class DiagnosticReport extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder effective(Element effective) {
+        public Builder effective(org.linuxforhealth.fhir.model.type.Element effective) {
             this.effective = effective;
             return this;
         }
@@ -1199,46 +1270,32 @@ public class DiagnosticReport extends DomainResource {
         }
 
         /**
-         * One or more links to full details of any imaging performed during the diagnostic investigation. Typically, this is 
-         * imaging performed by DICOM enabled modalities, but this is not required. A fully enabled PACS viewer can use this 
-         * information to provide views of the source images.
+         * Comments about the diagnostic report.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link ImagingStudy}</li>
-         * </ul>
-         * 
-         * @param imagingStudy
-         *     Reference to full details of imaging associated with the diagnostic report
+         * @param note
+         *     Comments about the diagnostic report
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder imagingStudy(Reference... imagingStudy) {
-            for (Reference value : imagingStudy) {
-                this.imagingStudy.add(value);
+        public Builder note(Annotation... note) {
+            for (Annotation value : note) {
+                this.note.add(value);
             }
             return this;
         }
 
         /**
-         * One or more links to full details of any imaging performed during the diagnostic investigation. Typically, this is 
-         * imaging performed by DICOM enabled modalities, but this is not required. A fully enabled PACS viewer can use this 
-         * information to provide views of the source images.
+         * Comments about the diagnostic report.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link ImagingStudy}</li>
-         * </ul>
-         * 
-         * @param imagingStudy
-         *     Reference to full details of imaging associated with the diagnostic report
+         * @param note
+         *     Comments about the diagnostic report
          * 
          * @return
          *     A reference to this Builder instance
@@ -1246,20 +1303,122 @@ public class DiagnosticReport extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder imagingStudy(Collection<Reference> imagingStudy) {
-            this.imagingStudy = new ArrayList<>(imagingStudy);
+        public Builder note(Collection<Annotation> note) {
+            this.note = new ArrayList<>(note);
             return this;
         }
 
         /**
-         * A list of key images associated with this report. The images are generally created during the diagnostic process, and 
-         * may be directly of the patient, or of treated specimens (i.e. slides of interest).
+         * One or more links to full details of any study performed during the diagnostic investigation. An ImagingStudy might 
+         * comprise a set of radiologic images obtained via a procedure that are analyzed as a group. Typically, this is imaging 
+         * performed by DICOM enabled modalities, but this is not required. A fully enabled PACS viewer can use this information 
+         * to provide views of the source images. A GenomicStudy might comprise one or more analyses, each serving a specific 
+         * purpose. These analyses may vary in method (e.g., karyotyping, CNV, or SNV detection), performer, software, devices 
+         * used, or regions targeted.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link GenomicStudy}</li>
+         * <li>{@link ImagingStudy}</li>
+         * </ul>
+         * 
+         * @param study
+         *     Reference to full details of an analysis associated with the diagnostic report
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder study(Reference... study) {
+            for (Reference value : study) {
+                this.study.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * One or more links to full details of any study performed during the diagnostic investigation. An ImagingStudy might 
+         * comprise a set of radiologic images obtained via a procedure that are analyzed as a group. Typically, this is imaging 
+         * performed by DICOM enabled modalities, but this is not required. A fully enabled PACS viewer can use this information 
+         * to provide views of the source images. A GenomicStudy might comprise one or more analyses, each serving a specific 
+         * purpose. These analyses may vary in method (e.g., karyotyping, CNV, or SNV detection), performer, software, devices 
+         * used, or regions targeted.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * <p>Allowed resource types for the references:
+         * <ul>
+         * <li>{@link GenomicStudy}</li>
+         * <li>{@link ImagingStudy}</li>
+         * </ul>
+         * 
+         * @param study
+         *     Reference to full details of an analysis associated with the diagnostic report
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder study(Collection<Reference> study) {
+            this.study = new ArrayList<>(study);
+            return this;
+        }
+
+        /**
+         * This backbone element contains supporting information that was used in the creation of the report not included in the 
+         * results already included in the report.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param supportingInfo
+         *     Additional information supporting the diagnostic report
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder supportingInfo(SupportingInfo... supportingInfo) {
+            for (SupportingInfo value : supportingInfo) {
+                this.supportingInfo.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * This backbone element contains supporting information that was used in the creation of the report not included in the 
+         * results already included in the report.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param supportingInfo
+         *     Additional information supporting the diagnostic report
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder supportingInfo(Collection<SupportingInfo> supportingInfo) {
+            this.supportingInfo = new ArrayList<>(supportingInfo);
+            return this;
+        }
+
+        /**
+         * A list of key images or data associated with this report. The images or data are generally created during the 
+         * diagnostic process, and may be directly of the patient, or of treated specimens (i.e. slides of interest).
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param media
-         *     Key images associated with this report
+         *     Key images or data associated with this report
          * 
          * @return
          *     A reference to this Builder instance
@@ -1272,14 +1431,14 @@ public class DiagnosticReport extends DomainResource {
         }
 
         /**
-         * A list of key images associated with this report. The images are generally created during the diagnostic process, and 
-         * may be directly of the patient, or of treated specimens (i.e. slides of interest).
+         * A list of key images or data associated with this report. The images or data are generally created during the 
+         * diagnostic process, and may be directly of the patient, or of treated specimens (i.e. slides of interest).
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param media
-         *     Key images associated with this report
+         *     Key images or data associated with this report
          * 
          * @return
          *     A reference to this Builder instance
@@ -1293,18 +1452,22 @@ public class DiagnosticReport extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code conclusion}.
+         * Reference to a Composition resource instance that provides structure for organizing the contents of the 
+         * DiagnosticReport.
          * 
-         * @param conclusion
-         *     Clinical conclusion (interpretation) of test results
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link Composition}</li>
+         * </ul>
+         * 
+         * @param composition
+         *     Reference to a Composition resource for the DiagnosticReport structure
          * 
          * @return
          *     A reference to this Builder instance
-         * 
-         * @see #conclusion(org.linuxforhealth.fhir.model.type.String)
          */
-        public Builder conclusion(java.lang.String conclusion) {
-            this.conclusion = (conclusion == null) ? null : String.of(conclusion);
+        public Builder composition(Reference composition) {
+            this.composition = composition;
             return this;
         }
 
@@ -1317,7 +1480,7 @@ public class DiagnosticReport extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder conclusion(String conclusion) {
+        public Builder conclusion(Markdown conclusion) {
             this.conclusion = conclusion;
             return this;
         }
@@ -1437,18 +1600,21 @@ public class DiagnosticReport extends DomainResource {
             ValidationSupport.checkList(diagnosticReport.resultsInterpreter, "resultsInterpreter", Reference.class);
             ValidationSupport.checkList(diagnosticReport.specimen, "specimen", Reference.class);
             ValidationSupport.checkList(diagnosticReport.result, "result", Reference.class);
-            ValidationSupport.checkList(diagnosticReport.imagingStudy, "imagingStudy", Reference.class);
+            ValidationSupport.checkList(diagnosticReport.note, "note", Annotation.class);
+            ValidationSupport.checkList(diagnosticReport.study, "study", Reference.class);
+            ValidationSupport.checkList(diagnosticReport.supportingInfo, "supportingInfo", SupportingInfo.class);
             ValidationSupport.checkList(diagnosticReport.media, "media", Media.class);
             ValidationSupport.checkList(diagnosticReport.conclusionCode, "conclusionCode", CodeableConcept.class);
             ValidationSupport.checkList(diagnosticReport.presentedForm, "presentedForm", Attachment.class);
             ValidationSupport.checkReferenceType(diagnosticReport.basedOn, "basedOn", "CarePlan", "ImmunizationRecommendation", "MedicationRequest", "NutritionOrder", "ServiceRequest");
-            ValidationSupport.checkReferenceType(diagnosticReport.subject, "subject", "Patient", "Group", "Device", "Location", "Organization", "Procedure", "Practitioner", "Medication", "Substance");
+            ValidationSupport.checkReferenceType(diagnosticReport.subject, "subject", "Patient", "Group", "Device", "Location", "Organization", "Practitioner", "Medication", "Substance", "BiologicallyDerivedProduct");
             ValidationSupport.checkReferenceType(diagnosticReport.encounter, "encounter", "Encounter");
             ValidationSupport.checkReferenceType(diagnosticReport.performer, "performer", "Practitioner", "PractitionerRole", "Organization", "CareTeam");
             ValidationSupport.checkReferenceType(diagnosticReport.resultsInterpreter, "resultsInterpreter", "Practitioner", "PractitionerRole", "Organization", "CareTeam");
             ValidationSupport.checkReferenceType(diagnosticReport.specimen, "specimen", "Specimen");
             ValidationSupport.checkReferenceType(diagnosticReport.result, "result", "Observation");
-            ValidationSupport.checkReferenceType(diagnosticReport.imagingStudy, "imagingStudy", "ImagingStudy");
+            ValidationSupport.checkReferenceType(diagnosticReport.study, "study", "GenomicStudy", "ImagingStudy");
+            ValidationSupport.checkReferenceType(diagnosticReport.composition, "composition", "Composition");
         }
 
         protected Builder from(DiagnosticReport diagnosticReport) {
@@ -1466,8 +1632,11 @@ public class DiagnosticReport extends DomainResource {
             resultsInterpreter.addAll(diagnosticReport.resultsInterpreter);
             specimen.addAll(diagnosticReport.specimen);
             result.addAll(diagnosticReport.result);
-            imagingStudy.addAll(diagnosticReport.imagingStudy);
+            note.addAll(diagnosticReport.note);
+            study.addAll(diagnosticReport.study);
+            supportingInfo.addAll(diagnosticReport.supportingInfo);
             media.addAll(diagnosticReport.media);
+            composition = diagnosticReport.composition;
             conclusion = diagnosticReport.conclusion;
             conclusionCode.addAll(diagnosticReport.conclusionCode);
             presentedForm.addAll(diagnosticReport.presentedForm);
@@ -1476,13 +1645,321 @@ public class DiagnosticReport extends DomainResource {
     }
 
     /**
-     * A list of key images associated with this report. The images are generally created during the diagnostic process, and 
-     * may be directly of the patient, or of treated specimens (i.e. slides of interest).
+     * This backbone element contains supporting information that was used in the creation of the report not included in the 
+     * results already included in the report.
+     */
+    public static class SupportingInfo extends BackboneElement {
+        @Binding(
+            bindingName = "DiagnosticReportSupportingInfoType",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "The code value for the role of the supporting information in the diagnostic report.",
+            valueSet = "http://terminology.hl7.org/ValueSet/v2-0936"
+        )
+        @Required
+        private final CodeableConcept type;
+        @ReferenceTarget({ "Procedure", "Observation", "DiagnosticReport", "Citation" })
+        @Required
+        private final Reference reference;
+
+        private SupportingInfo(Builder builder) {
+            super(builder);
+            type = builder.type;
+            reference = builder.reference;
+        }
+
+        /**
+         * The code value for the role of the supporting information in the diagnostic report.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that is non-null.
+         */
+        public CodeableConcept getType() {
+            return type;
+        }
+
+        /**
+         * The reference for the supporting information in the diagnostic report.
+         * 
+         * @return
+         *     An immutable object of type {@link Reference} that is non-null.
+         */
+        public Reference getReference() {
+            return reference;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (type != null) || 
+                (reference != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(type, "type", visitor);
+                    accept(reference, "reference", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            SupportingInfo other = (SupportingInfo) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(type, other.type) && 
+                Objects.equals(reference, other.reference);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    type, 
+                    reference);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private CodeableConcept type;
+            private Reference reference;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * The code value for the role of the supporting information in the diagnostic report.
+             * 
+             * <p>This element is required.
+             * 
+             * @param type
+             *     Supporting information role code
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder type(CodeableConcept type) {
+                this.type = type;
+                return this;
+            }
+
+            /**
+             * The reference for the supporting information in the diagnostic report.
+             * 
+             * <p>This element is required.
+             * 
+             * <p>Allowed resource types for this reference:
+             * <ul>
+             * <li>{@link Procedure}</li>
+             * <li>{@link Observation}</li>
+             * <li>{@link DiagnosticReport}</li>
+             * <li>{@link Citation}</li>
+             * </ul>
+             * 
+             * @param reference
+             *     Supporting information reference
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder reference(Reference reference) {
+                this.reference = reference;
+                return this;
+            }
+
+            /**
+             * Build the {@link SupportingInfo}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>type</li>
+             * <li>reference</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link SupportingInfo}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid SupportingInfo per the base specification
+             */
+            @Override
+            public SupportingInfo build() {
+                SupportingInfo supportingInfo = new SupportingInfo(this);
+                if (validating) {
+                    validate(supportingInfo);
+                }
+                return supportingInfo;
+            }
+
+            protected void validate(SupportingInfo supportingInfo) {
+                super.validate(supportingInfo);
+                ValidationSupport.requireNonNull(supportingInfo.type, "type");
+                ValidationSupport.requireNonNull(supportingInfo.reference, "reference");
+                ValidationSupport.checkReferenceType(supportingInfo.reference, "reference", "Procedure", "Observation", "DiagnosticReport", "Citation");
+                ValidationSupport.requireValueOrChildren(supportingInfo);
+            }
+
+            protected Builder from(SupportingInfo supportingInfo) {
+                super.from(supportingInfo);
+                type = supportingInfo.type;
+                reference = supportingInfo.reference;
+                return this;
+            }
+        }
+    }
+
+    /**
+     * A list of key images or data associated with this report. The images or data are generally created during the 
+     * diagnostic process, and may be directly of the patient, or of treated specimens (i.e. slides of interest).
      */
     public static class Media extends BackboneElement {
         private final String comment;
         @Summary
-        @ReferenceTarget({ "Media" })
+        @ReferenceTarget({ "DocumentReference" })
         @Required
         private final Reference link;
 
@@ -1493,8 +1970,8 @@ public class DiagnosticReport extends DomainResource {
         }
 
         /**
-         * A comment about the image. Typically, this is used to provide an explanation for why the image is included, or to draw 
-         * the viewer's attention to important features.
+         * A comment about the image or data. Typically, this is used to provide an explanation for why the image or data is 
+         * included, or to draw the viewer's attention to important features.
          * 
          * @return
          *     An immutable object of type {@link String} that may be null.
@@ -1504,7 +1981,7 @@ public class DiagnosticReport extends DomainResource {
         }
 
         /**
-         * Reference to the image source.
+         * Reference to the image or data source.
          * 
          * @return
          *     An immutable object of type {@link Reference} that is non-null.
@@ -1604,7 +2081,7 @@ public class DiagnosticReport extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1624,7 +2101,7 @@ public class DiagnosticReport extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1649,7 +2126,7 @@ public class DiagnosticReport extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1674,7 +2151,7 @@ public class DiagnosticReport extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1702,7 +2179,7 @@ public class DiagnosticReport extends DomainResource {
              * Convenience method for setting {@code comment}.
              * 
              * @param comment
-             *     Comment about the image (e.g. explanation)
+             *     Comment about the image or data (e.g. explanation)
              * 
              * @return
              *     A reference to this Builder instance
@@ -1715,11 +2192,11 @@ public class DiagnosticReport extends DomainResource {
             }
 
             /**
-             * A comment about the image. Typically, this is used to provide an explanation for why the image is included, or to draw 
-             * the viewer's attention to important features.
+             * A comment about the image or data. Typically, this is used to provide an explanation for why the image or data is 
+             * included, or to draw the viewer's attention to important features.
              * 
              * @param comment
-             *     Comment about the image (e.g. explanation)
+             *     Comment about the image or data (e.g. explanation)
              * 
              * @return
              *     A reference to this Builder instance
@@ -1730,17 +2207,17 @@ public class DiagnosticReport extends DomainResource {
             }
 
             /**
-             * Reference to the image source.
+             * Reference to the image or data source.
              * 
              * <p>This element is required.
              * 
              * <p>Allowed resource types for this reference:
              * <ul>
-             * <li>{@link Media}</li>
+             * <li>{@link DocumentReference}</li>
              * </ul>
              * 
              * @param link
-             *     Reference to the image source
+             *     Reference to the image or data source
              * 
              * @return
              *     A reference to this Builder instance
@@ -1775,7 +2252,7 @@ public class DiagnosticReport extends DomainResource {
             protected void validate(Media media) {
                 super.validate(media);
                 ValidationSupport.requireNonNull(media.link, "link");
-                ValidationSupport.checkReferenceType(media.link, "link", "Media");
+                ValidationSupport.checkReferenceType(media.link, "link", "DocumentReference");
                 ValidationSupport.requireValueOrChildren(media);
             }
 

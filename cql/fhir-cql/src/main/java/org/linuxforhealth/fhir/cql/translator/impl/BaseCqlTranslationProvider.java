@@ -24,7 +24,7 @@ public abstract class BaseCqlTranslationProvider implements CqlTranslationProvid
     public static final Format DEFAULT_TARGET_FORMAT = Format.XML;
 
     public List<Option> getDefaultOptions() {
-        List<Option> defaults = CqlTranslatorOptions.defaultOptions().getOptions().stream().map( o -> Option.valueOf( o.name() ) ).collect(Collectors.toList());
+        List<Option> defaults = CqlTranslatorOptions.defaultOptions().getCqlCompilerOptions().getOptions().stream().map( o -> Option.valueOf( o.name() ) ).collect(Collectors.toList());
         return defaults;
     }
 

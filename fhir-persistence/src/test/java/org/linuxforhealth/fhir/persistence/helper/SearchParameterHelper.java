@@ -19,7 +19,7 @@ import org.linuxforhealth.fhir.model.type.Range;
 import org.linuxforhealth.fhir.model.type.SimpleQuantity;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
-import org.linuxforhealth.fhir.model.type.code.ResourceTypeCode;
+import org.linuxforhealth.fhir.model.type.code.FHIRTypes;
 import org.linuxforhealth.fhir.model.type.code.SearchParamType;
 
 /**
@@ -36,8 +36,8 @@ public class SearchParameterHelper {
     }
 
     public static SearchParameter makeTestParameter(String name) {
-        List<ResourceTypeCode> base = new ArrayList<>();
-        base.add(ResourceTypeCode.PATIENT);
+        List<FHIRTypes> base = new ArrayList<>();
+        base.add(FHIRTypes.PATIENT);
 
         return SearchParameter.builder()
                               .url(Uri.of(dummyUri)).name(string(name))

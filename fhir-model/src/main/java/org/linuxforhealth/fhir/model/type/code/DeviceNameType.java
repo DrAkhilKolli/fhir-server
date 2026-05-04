@@ -20,46 +20,33 @@ import javax.annotation.Generated;
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class DeviceNameType extends Code {
     /**
-     * UDI Label name
+     * Registered name
      * 
-     * <p>UDI Label name.
+     * <p>The term assigned to a medical device by the entity who registers or submits information about it to a jurisdiction 
+     * or its databases. This may be considered the manufacturer assigned name (e.g., brand name assigned by the labeler or 
+     * manufacturer in US, or device name assigned by the manufacturer in EU) and may also be synonymous with proprietary 
+     * name or trade name of the device.
      */
-    public static final DeviceNameType UDI_LABEL_NAME = DeviceNameType.builder().value(Value.UDI_LABEL_NAME).build();
+    public static final DeviceNameType REGISTERED_NAME = DeviceNameType.builder().value(Value.REGISTERED_NAME).build();
 
     /**
      * User Friendly name
      * 
-     * <p>User Friendly name.
+     * <p>The term that generically describes the device by a name as assigned by the manufacturer that is recognized by lay 
+     * person. This common or generic name may be printed on the package it came in or some combination of that name with the 
+     * model number, serial number, or other attribute that makes the name easy to understand for the user of that device. It 
+     * is often exposed in communicating devices transport protocols. It is provided to help users identify the device when 
+     * reported in discovery operations.
      */
     public static final DeviceNameType USER_FRIENDLY_NAME = DeviceNameType.builder().value(Value.USER_FRIENDLY_NAME).build();
 
     /**
      * Patient Reported name
      * 
-     * <p>Patient Reported name.
+     * <p>the term used by the patient associated with the device when describing the device, for example 'knee implant', 
+     * when documented as a self-reported device.
      */
     public static final DeviceNameType PATIENT_REPORTED_NAME = DeviceNameType.builder().value(Value.PATIENT_REPORTED_NAME).build();
-
-    /**
-     * Manufacturer name
-     * 
-     * <p>Manufacturer name.
-     */
-    public static final DeviceNameType MANUFACTURER_NAME = DeviceNameType.builder().value(Value.MANUFACTURER_NAME).build();
-
-    /**
-     * Model name
-     * 
-     * <p>Model name.
-     */
-    public static final DeviceNameType MODEL_NAME = DeviceNameType.builder().value(Value.MODEL_NAME).build();
-
-    /**
-     * other
-     * 
-     * <p>other.
-     */
-    public static final DeviceNameType OTHER = DeviceNameType.builder().value(Value.OTHER).build();
 
     private volatile int hashCode;
 
@@ -79,18 +66,12 @@ public class DeviceNameType extends Code {
      */
     public static DeviceNameType of(Value value) {
         switch (value) {
-        case UDI_LABEL_NAME:
-            return UDI_LABEL_NAME;
+        case REGISTERED_NAME:
+            return REGISTERED_NAME;
         case USER_FRIENDLY_NAME:
             return USER_FRIENDLY_NAME;
         case PATIENT_REPORTED_NAME:
             return PATIENT_REPORTED_NAME;
-        case MANUFACTURER_NAME:
-            return MANUFACTURER_NAME;
-        case MODEL_NAME:
-            return MODEL_NAME;
-        case OTHER:
-            return OTHER;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -224,46 +205,33 @@ public class DeviceNameType extends Code {
 
     public enum Value {
         /**
-         * UDI Label name
+         * Registered name
          * 
-         * <p>UDI Label name.
+         * <p>The term assigned to a medical device by the entity who registers or submits information about it to a jurisdiction 
+         * or its databases. This may be considered the manufacturer assigned name (e.g., brand name assigned by the labeler or 
+         * manufacturer in US, or device name assigned by the manufacturer in EU) and may also be synonymous with proprietary 
+         * name or trade name of the device.
          */
-        UDI_LABEL_NAME("udi-label-name"),
+        REGISTERED_NAME("registered-name"),
 
         /**
          * User Friendly name
          * 
-         * <p>User Friendly name.
+         * <p>The term that generically describes the device by a name as assigned by the manufacturer that is recognized by lay 
+         * person. This common or generic name may be printed on the package it came in or some combination of that name with the 
+         * model number, serial number, or other attribute that makes the name easy to understand for the user of that device. It 
+         * is often exposed in communicating devices transport protocols. It is provided to help users identify the device when 
+         * reported in discovery operations.
          */
         USER_FRIENDLY_NAME("user-friendly-name"),
 
         /**
          * Patient Reported name
          * 
-         * <p>Patient Reported name.
+         * <p>the term used by the patient associated with the device when describing the device, for example 'knee implant', 
+         * when documented as a self-reported device.
          */
-        PATIENT_REPORTED_NAME("patient-reported-name"),
-
-        /**
-         * Manufacturer name
-         * 
-         * <p>Manufacturer name.
-         */
-        MANUFACTURER_NAME("manufacturer-name"),
-
-        /**
-         * Model name
-         * 
-         * <p>Model name.
-         */
-        MODEL_NAME("model-name"),
-
-        /**
-         * other
-         * 
-         * <p>other.
-         */
-        OTHER("other");
+        PATIENT_REPORTED_NAME("patient-reported-name");
 
         private final java.lang.String value;
 
@@ -294,18 +262,12 @@ public class DeviceNameType extends Code {
                 return null;
             }
             switch (value) {
-            case "udi-label-name":
-                return UDI_LABEL_NAME;
+            case "registered-name":
+                return REGISTERED_NAME;
             case "user-friendly-name":
                 return USER_FRIENDLY_NAME;
             case "patient-reported-name":
                 return PATIENT_REPORTED_NAME;
-            case "manufacturer-name":
-                return MANUFACTURER_NAME;
-            case "model-name":
-                return MODEL_NAME;
-            case "other":
-                return OTHER;
             default:
                 throw new IllegalArgumentException(value);
             }

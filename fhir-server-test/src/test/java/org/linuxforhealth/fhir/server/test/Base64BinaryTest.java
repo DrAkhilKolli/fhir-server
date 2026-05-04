@@ -137,7 +137,7 @@ public class Base64BinaryTest extends FHIRServerTestBase {
         listAgents.add(AuditEvent.Agent.builder()
                 .requestor(org.linuxforhealth.fhir.model.type.Boolean.TRUE).build());
         AuditEvent auditEvent = AuditEvent.builder()
-                .type(Coding.builder().code(Code.of("99")).build())
+                .code(CodeableConcept.builder().coding(Coding.builder().code(Code.of("99")).build()).build())
                 .recorded(Instant.of(ZonedDateTime.now()))
                 .agent(listAgents)
                 .source(AuditEvent.Source.builder()
@@ -146,7 +146,7 @@ public class Base64BinaryTest extends FHIRServerTestBase {
                                 .build())
                 .entity(AuditEvent.Entity.builder()
                         .detail(AuditEvent.Entity.Detail.builder()
-                                .type(string("Base64Binary test"))
+                                .type(CodeableConcept.builder().text(string("Base64Binary test")).build())
                                 .value(Base64Binary.builder().value(value).build()).build())
                         .build())
                 .build();
@@ -245,7 +245,7 @@ public class Base64BinaryTest extends FHIRServerTestBase {
                 .build());
 
         AuditEvent auditEvent = AuditEvent.builder()
-                .type(Coding.builder().code(Code.of("99")).build())
+                .code(CodeableConcept.builder().coding(Coding.builder().code(Code.of("99")).build()).build())
                 .recorded(Instant.of(ZonedDateTime.now()))
                 .agent(listAgents)
                 .source(AuditEvent.Source.builder()

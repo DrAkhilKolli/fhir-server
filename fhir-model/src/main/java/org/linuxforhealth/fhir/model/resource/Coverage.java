@@ -38,6 +38,7 @@ import org.linuxforhealth.fhir.model.type.SimpleQuantity;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
+import org.linuxforhealth.fhir.model.type.code.CoverageKind;
 import org.linuxforhealth.fhir.model.type.code.CoverageStatus;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
 import org.linuxforhealth.fhir.model.util.ValidationSupport;
@@ -47,10 +48,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * Financial instrument which may be used to reimburse or pay for health care products and services. Includes both 
  * insurance and self-payment.
  * 
- * <p>Maturity level: FMM2 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 2,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
@@ -98,10 +99,19 @@ public class Coverage extends DomainResource {
         bindingName = "CoverageStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "A code specifying the state of the resource instance.",
-        valueSet = "http://hl7.org/fhir/ValueSet/fm-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/fm-status|5.0.0"
     )
     @Required
     private final CoverageStatus status;
+    @Summary
+    @Binding(
+        bindingName = "CoverageKind",
+        strength = BindingStrength.Value.REQUIRED,
+        valueSet = "http://hl7.org/fhir/ValueSet/coverage-kind|5.0.0"
+    )
+    @Required
+    private final CoverageKind kind;
+    private final List<PaymentBy> paymentBy;
     @Summary
     @Binding(
         bindingName = "CoverageType",
@@ -117,7 +127,7 @@ public class Coverage extends DomainResource {
     @ReferenceTarget({ "Patient", "RelatedPerson" })
     private final Reference subscriber;
     @Summary
-    private final String subscriberId;
+    private final List<Identifier> subscriberId;
     @Summary
     @ReferenceTarget({ "Patient" })
     @Required
@@ -134,9 +144,8 @@ public class Coverage extends DomainResource {
     @Summary
     private final Period period;
     @Summary
-    @ReferenceTarget({ "Organization", "Patient", "RelatedPerson" })
-    @Required
-    private final List<Reference> payor;
+    @ReferenceTarget({ "Organization" })
+    private final Reference insurer;
     private final List<Class> clazz;
     @Summary
     private final PositiveInt order;
@@ -146,30 +155,35 @@ public class Coverage extends DomainResource {
     private final Boolean subrogation;
     @ReferenceTarget({ "Contract" })
     private final List<Reference> contract;
+    @ReferenceTarget({ "InsurancePlan" })
+    private final Reference insurancePlan;
 
     private Coverage(Builder builder) {
         super(builder);
         identifier = Collections.unmodifiableList(builder.identifier);
         status = builder.status;
+        kind = builder.kind;
+        paymentBy = Collections.unmodifiableList(builder.paymentBy);
         type = builder.type;
         policyHolder = builder.policyHolder;
         subscriber = builder.subscriber;
-        subscriberId = builder.subscriberId;
+        subscriberId = Collections.unmodifiableList(builder.subscriberId);
         beneficiary = builder.beneficiary;
         dependent = builder.dependent;
         relationship = builder.relationship;
         period = builder.period;
-        payor = Collections.unmodifiableList(builder.payor);
+        insurer = builder.insurer;
         clazz = Collections.unmodifiableList(builder.clazz);
         order = builder.order;
         network = builder.network;
         costToBeneficiary = Collections.unmodifiableList(builder.costToBeneficiary);
         subrogation = builder.subrogation;
         contract = Collections.unmodifiableList(builder.contract);
+        insurancePlan = builder.insurancePlan;
     }
 
     /**
-     * A unique identifier assigned to this coverage.
+     * The identifier of the coverage as issued by the insurer.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
@@ -186,6 +200,26 @@ public class Coverage extends DomainResource {
      */
     public CoverageStatus getStatus() {
         return status;
+    }
+
+    /**
+     * The nature of the coverage be it insurance, or cash payment such as self-pay.
+     * 
+     * @return
+     *     An immutable object of type {@link CoverageKind} that is non-null.
+     */
+    public CoverageKind getKind() {
+        return kind;
+    }
+
+    /**
+     * Link to the paying party and optionally what specifically they will be responsible to pay.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link PaymentBy} that may be empty.
+     */
+    public List<PaymentBy> getPaymentBy() {
+        return paymentBy;
     }
 
     /**
@@ -224,9 +258,9 @@ public class Coverage extends DomainResource {
      * The insurer assigned ID for the Subscriber.
      * 
      * @return
-     *     An immutable object of type {@link String} that may be null.
+     *     An unmodifiable list containing immutable objects of type {@link Identifier} that may be empty.
      */
-    public String getSubscriberId() {
+    public List<Identifier> getSubscriberId() {
         return subscriberId;
     }
 
@@ -241,7 +275,7 @@ public class Coverage extends DomainResource {
     }
 
     /**
-     * A unique identifier for a dependent under the coverage.
+     * A designator for a dependent under the coverage.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -272,14 +306,13 @@ public class Coverage extends DomainResource {
     }
 
     /**
-     * The program or plan underwriter or payor including both insurance and non-insurance agreements, such as patient-pay 
-     * agreements.
+     * The program or plan underwriter, payor, insurance company.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that is non-empty.
+     *     An immutable object of type {@link Reference} that may be null.
      */
-    public List<Reference> getPayor() {
-        return payor;
+    public Reference getInsurer() {
+        return insurer;
     }
 
     /**
@@ -295,7 +328,9 @@ public class Coverage extends DomainResource {
     /**
      * The order of applicability of this coverage relative to other coverages which are currently in force. Note, there may 
      * be gaps in the numbering and this does not imply primary, secondary etc. as the specific positioning of coverages 
-     * depends upon the episode of care.
+     * depends upon the episode of care. For example; a patient might have (0) auto insurance (1) their own health insurance 
+     * and (2) spouse's health insurance. When claiming for treatments which were not the result of an auto accident then 
+     * only coverages (1) and (2) above would be applicatble and would apply in the order specified in parenthesis.
      * 
      * @return
      *     An immutable object of type {@link PositiveInt} that may be null.
@@ -347,26 +382,39 @@ public class Coverage extends DomainResource {
         return contract;
     }
 
+    /**
+     * The insurance plan details, benefits and costs, which constitute this insurance coverage.
+     * 
+     * @return
+     *     An immutable object of type {@link Reference} that may be null.
+     */
+    public Reference getInsurancePlan() {
+        return insurancePlan;
+    }
+
     @Override
     public boolean hasChildren() {
         return super.hasChildren() || 
             !identifier.isEmpty() || 
             (status != null) || 
+            (kind != null) || 
+            !paymentBy.isEmpty() || 
             (type != null) || 
             (policyHolder != null) || 
             (subscriber != null) || 
-            (subscriberId != null) || 
+            !subscriberId.isEmpty() || 
             (beneficiary != null) || 
             (dependent != null) || 
             (relationship != null) || 
             (period != null) || 
-            !payor.isEmpty() || 
+            (insurer != null) || 
             !clazz.isEmpty() || 
             (order != null) || 
             (network != null) || 
             !costToBeneficiary.isEmpty() || 
             (subrogation != null) || 
-            !contract.isEmpty();
+            !contract.isEmpty() || 
+            (insurancePlan != null);
     }
 
     @Override
@@ -385,21 +433,24 @@ public class Coverage extends DomainResource {
                 accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(status, "status", visitor);
+                accept(kind, "kind", visitor);
+                accept(paymentBy, "paymentBy", visitor, PaymentBy.class);
                 accept(type, "type", visitor);
                 accept(policyHolder, "policyHolder", visitor);
                 accept(subscriber, "subscriber", visitor);
-                accept(subscriberId, "subscriberId", visitor);
+                accept(subscriberId, "subscriberId", visitor, Identifier.class);
                 accept(beneficiary, "beneficiary", visitor);
                 accept(dependent, "dependent", visitor);
                 accept(relationship, "relationship", visitor);
                 accept(period, "period", visitor);
-                accept(payor, "payor", visitor, Reference.class);
+                accept(insurer, "insurer", visitor);
                 accept(clazz, "class", visitor, Class.class);
                 accept(order, "order", visitor);
                 accept(network, "network", visitor);
                 accept(costToBeneficiary, "costToBeneficiary", visitor, CostToBeneficiary.class);
                 accept(subrogation, "subrogation", visitor);
                 accept(contract, "contract", visitor, Reference.class);
+                accept(insurancePlan, "insurancePlan", visitor);
             }
             visitor.visitEnd(elementName, elementIndex, this);
             visitor.postVisit(this);
@@ -428,6 +479,8 @@ public class Coverage extends DomainResource {
             Objects.equals(modifierExtension, other.modifierExtension) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(status, other.status) && 
+            Objects.equals(kind, other.kind) && 
+            Objects.equals(paymentBy, other.paymentBy) && 
             Objects.equals(type, other.type) && 
             Objects.equals(policyHolder, other.policyHolder) && 
             Objects.equals(subscriber, other.subscriber) && 
@@ -436,13 +489,14 @@ public class Coverage extends DomainResource {
             Objects.equals(dependent, other.dependent) && 
             Objects.equals(relationship, other.relationship) && 
             Objects.equals(period, other.period) && 
-            Objects.equals(payor, other.payor) && 
+            Objects.equals(insurer, other.insurer) && 
             Objects.equals(clazz, other.clazz) && 
             Objects.equals(order, other.order) && 
             Objects.equals(network, other.network) && 
             Objects.equals(costToBeneficiary, other.costToBeneficiary) && 
             Objects.equals(subrogation, other.subrogation) && 
-            Objects.equals(contract, other.contract);
+            Objects.equals(contract, other.contract) && 
+            Objects.equals(insurancePlan, other.insurancePlan);
     }
 
     @Override
@@ -459,6 +513,8 @@ public class Coverage extends DomainResource {
                 modifierExtension, 
                 identifier, 
                 status, 
+                kind, 
+                paymentBy, 
                 type, 
                 policyHolder, 
                 subscriber, 
@@ -467,13 +523,14 @@ public class Coverage extends DomainResource {
                 dependent, 
                 relationship, 
                 period, 
-                payor, 
+                insurer, 
                 clazz, 
                 order, 
                 network, 
                 costToBeneficiary, 
                 subrogation, 
-                contract);
+                contract, 
+                insurancePlan);
             hashCode = result;
         }
         return result;
@@ -491,21 +548,24 @@ public class Coverage extends DomainResource {
     public static class Builder extends DomainResource.Builder {
         private List<Identifier> identifier = new ArrayList<>();
         private CoverageStatus status;
+        private CoverageKind kind;
+        private List<PaymentBy> paymentBy = new ArrayList<>();
         private CodeableConcept type;
         private Reference policyHolder;
         private Reference subscriber;
-        private String subscriberId;
+        private List<Identifier> subscriberId = new ArrayList<>();
         private Reference beneficiary;
         private String dependent;
         private CodeableConcept relationship;
         private Period period;
-        private List<Reference> payor = new ArrayList<>();
+        private Reference insurer;
         private List<Class> clazz = new ArrayList<>();
         private PositiveInt order;
         private String network;
         private List<CostToBeneficiary> costToBeneficiary = new ArrayList<>();
         private Boolean subrogation;
         private List<Reference> contract = new ArrayList<>();
+        private Reference insurancePlan;
 
         private Builder() {
             super();
@@ -589,7 +649,8 @@ public class Coverage extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -607,7 +668,8 @@ public class Coverage extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -628,7 +690,7 @@ public class Coverage extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -648,7 +710,7 @@ public class Coverage extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -673,9 +735,9 @@ public class Coverage extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -698,9 +760,9 @@ public class Coverage extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -723,13 +785,13 @@ public class Coverage extends DomainResource {
         }
 
         /**
-         * A unique identifier assigned to this coverage.
+         * The identifier of the coverage as issued by the insurer.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param identifier
-         *     Business Identifier for the coverage
+         *     Business identifier(s) for this coverage
          * 
          * @return
          *     A reference to this Builder instance
@@ -742,13 +804,13 @@ public class Coverage extends DomainResource {
         }
 
         /**
-         * A unique identifier assigned to this coverage.
+         * The identifier of the coverage as issued by the insurer.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param identifier
-         *     Business Identifier for the coverage
+         *     Business identifier(s) for this coverage
          * 
          * @return
          *     A reference to this Builder instance
@@ -774,6 +836,61 @@ public class Coverage extends DomainResource {
          */
         public Builder status(CoverageStatus status) {
             this.status = status;
+            return this;
+        }
+
+        /**
+         * The nature of the coverage be it insurance, or cash payment such as self-pay.
+         * 
+         * <p>This element is required.
+         * 
+         * @param kind
+         *     insurance | self-pay | other
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder kind(CoverageKind kind) {
+            this.kind = kind;
+            return this;
+        }
+
+        /**
+         * Link to the paying party and optionally what specifically they will be responsible to pay.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param paymentBy
+         *     Self-pay parties and responsibility
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder paymentBy(PaymentBy... paymentBy) {
+            for (PaymentBy value : paymentBy) {
+                this.paymentBy.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Link to the paying party and optionally what specifically they will be responsible to pay.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param paymentBy
+         *     Self-pay parties and responsibility
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder paymentBy(Collection<PaymentBy> paymentBy) {
+            this.paymentBy = new ArrayList<>(paymentBy);
             return this;
         }
 
@@ -835,32 +952,41 @@ public class Coverage extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code subscriberId}.
+         * The insurer assigned ID for the Subscriber.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param subscriberId
          *     ID assigned to the subscriber
          * 
          * @return
          *     A reference to this Builder instance
-         * 
-         * @see #subscriberId(org.linuxforhealth.fhir.model.type.String)
          */
-        public Builder subscriberId(java.lang.String subscriberId) {
-            this.subscriberId = (subscriberId == null) ? null : String.of(subscriberId);
+        public Builder subscriberId(Identifier... subscriberId) {
+            for (Identifier value : subscriberId) {
+                this.subscriberId.add(value);
+            }
             return this;
         }
 
         /**
          * The insurer assigned ID for the Subscriber.
          * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
          * @param subscriberId
          *     ID assigned to the subscriber
          * 
          * @return
          *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
          */
-        public Builder subscriberId(String subscriberId) {
-            this.subscriberId = subscriberId;
+        public Builder subscriberId(Collection<Identifier> subscriberId) {
+            this.subscriberId = new ArrayList<>(subscriberId);
             return this;
         }
 
@@ -902,7 +1028,7 @@ public class Coverage extends DomainResource {
         }
 
         /**
-         * A unique identifier for a dependent under the coverage.
+         * A designator for a dependent under the coverage.
          * 
          * @param dependent
          *     Dependent number
@@ -945,61 +1071,21 @@ public class Coverage extends DomainResource {
         }
 
         /**
-         * The program or plan underwriter or payor including both insurance and non-insurance agreements, such as patient-pay 
-         * agreements.
+         * The program or plan underwriter, payor, insurance company.
          * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>This element is required.
-         * 
-         * <p>Allowed resource types for the references:
+         * <p>Allowed resource types for this reference:
          * <ul>
          * <li>{@link Organization}</li>
-         * <li>{@link Patient}</li>
-         * <li>{@link RelatedPerson}</li>
          * </ul>
          * 
-         * @param payor
+         * @param insurer
          *     Issuer of the policy
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder payor(Reference... payor) {
-            for (Reference value : payor) {
-                this.payor.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * The program or plan underwriter or payor including both insurance and non-insurance agreements, such as patient-pay 
-         * agreements.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>This element is required.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Organization}</li>
-         * <li>{@link Patient}</li>
-         * <li>{@link RelatedPerson}</li>
-         * </ul>
-         * 
-         * @param payor
-         *     Issuer of the policy
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder payor(Collection<Reference> payor) {
-            this.payor = new ArrayList<>(payor);
+        public Builder insurer(Reference insurer) {
+            this.insurer = insurer;
             return this;
         }
 
@@ -1045,7 +1131,9 @@ public class Coverage extends DomainResource {
         /**
          * The order of applicability of this coverage relative to other coverages which are currently in force. Note, there may 
          * be gaps in the numbering and this does not imply primary, secondary etc. as the specific positioning of coverages 
-         * depends upon the episode of care.
+         * depends upon the episode of care. For example; a patient might have (0) auto insurance (1) their own health insurance 
+         * and (2) spouse's health insurance. When claiming for treatments which were not the result of an auto accident then 
+         * only coverages (1) and (2) above would be applicatble and would apply in the order specified in parenthesis.
          * 
          * @param order
          *     Relative order of the coverage
@@ -1211,13 +1299,32 @@ public class Coverage extends DomainResource {
         }
 
         /**
+         * The insurance plan details, benefits and costs, which constitute this insurance coverage.
+         * 
+         * <p>Allowed resource types for this reference:
+         * <ul>
+         * <li>{@link InsurancePlan}</li>
+         * </ul>
+         * 
+         * @param insurancePlan
+         *     Insurance plan details
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder insurancePlan(Reference insurancePlan) {
+            this.insurancePlan = insurancePlan;
+            return this;
+        }
+
+        /**
          * Build the {@link Coverage}
          * 
          * <p>Required elements:
          * <ul>
          * <li>status</li>
+         * <li>kind</li>
          * <li>beneficiary</li>
-         * <li>payor</li>
          * </ul>
          * 
          * @return
@@ -1238,38 +1345,357 @@ public class Coverage extends DomainResource {
             super.validate(coverage);
             ValidationSupport.checkList(coverage.identifier, "identifier", Identifier.class);
             ValidationSupport.requireNonNull(coverage.status, "status");
+            ValidationSupport.requireNonNull(coverage.kind, "kind");
+            ValidationSupport.checkList(coverage.paymentBy, "paymentBy", PaymentBy.class);
+            ValidationSupport.checkList(coverage.subscriberId, "subscriberId", Identifier.class);
             ValidationSupport.requireNonNull(coverage.beneficiary, "beneficiary");
-            ValidationSupport.checkNonEmptyList(coverage.payor, "payor", Reference.class);
             ValidationSupport.checkList(coverage.clazz, "class", Class.class);
             ValidationSupport.checkList(coverage.costToBeneficiary, "costToBeneficiary", CostToBeneficiary.class);
             ValidationSupport.checkList(coverage.contract, "contract", Reference.class);
             ValidationSupport.checkReferenceType(coverage.policyHolder, "policyHolder", "Patient", "RelatedPerson", "Organization");
             ValidationSupport.checkReferenceType(coverage.subscriber, "subscriber", "Patient", "RelatedPerson");
             ValidationSupport.checkReferenceType(coverage.beneficiary, "beneficiary", "Patient");
-            ValidationSupport.checkReferenceType(coverage.payor, "payor", "Organization", "Patient", "RelatedPerson");
+            ValidationSupport.checkReferenceType(coverage.insurer, "insurer", "Organization");
             ValidationSupport.checkReferenceType(coverage.contract, "contract", "Contract");
+            ValidationSupport.checkReferenceType(coverage.insurancePlan, "insurancePlan", "InsurancePlan");
         }
 
         protected Builder from(Coverage coverage) {
             super.from(coverage);
             identifier.addAll(coverage.identifier);
             status = coverage.status;
+            kind = coverage.kind;
+            paymentBy.addAll(coverage.paymentBy);
             type = coverage.type;
             policyHolder = coverage.policyHolder;
             subscriber = coverage.subscriber;
-            subscriberId = coverage.subscriberId;
+            subscriberId.addAll(coverage.subscriberId);
             beneficiary = coverage.beneficiary;
             dependent = coverage.dependent;
             relationship = coverage.relationship;
             period = coverage.period;
-            payor.addAll(coverage.payor);
+            insurer = coverage.insurer;
             clazz.addAll(coverage.clazz);
             order = coverage.order;
             network = coverage.network;
             costToBeneficiary.addAll(coverage.costToBeneficiary);
             subrogation = coverage.subrogation;
             contract.addAll(coverage.contract);
+            insurancePlan = coverage.insurancePlan;
             return this;
+        }
+    }
+
+    /**
+     * Link to the paying party and optionally what specifically they will be responsible to pay.
+     */
+    public static class PaymentBy extends BackboneElement {
+        @Summary
+        @ReferenceTarget({ "Patient", "RelatedPerson", "Organization" })
+        @Required
+        private final Reference party;
+        @Summary
+        private final String responsibility;
+
+        private PaymentBy(Builder builder) {
+            super(builder);
+            party = builder.party;
+            responsibility = builder.responsibility;
+        }
+
+        /**
+         * The list of parties providing non-insurance payment for the treatment costs.
+         * 
+         * @return
+         *     An immutable object of type {@link Reference} that is non-null.
+         */
+        public Reference getParty() {
+            return party;
+        }
+
+        /**
+         *  Description of the financial responsibility.
+         * 
+         * @return
+         *     An immutable object of type {@link String} that may be null.
+         */
+        public String getResponsibility() {
+            return responsibility;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (party != null) || 
+                (responsibility != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(party, "party", visitor);
+                    accept(responsibility, "responsibility", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            PaymentBy other = (PaymentBy) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(party, other.party) && 
+                Objects.equals(responsibility, other.responsibility);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    party, 
+                    responsibility);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private Reference party;
+            private String responsibility;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * The list of parties providing non-insurance payment for the treatment costs.
+             * 
+             * <p>This element is required.
+             * 
+             * <p>Allowed resource types for this reference:
+             * <ul>
+             * <li>{@link Patient}</li>
+             * <li>{@link RelatedPerson}</li>
+             * <li>{@link Organization}</li>
+             * </ul>
+             * 
+             * @param party
+             *     Parties performing self-payment
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder party(Reference party) {
+                this.party = party;
+                return this;
+            }
+
+            /**
+             * Convenience method for setting {@code responsibility}.
+             * 
+             * @param responsibility
+             *     Party's responsibility
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #responsibility(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder responsibility(java.lang.String responsibility) {
+                this.responsibility = (responsibility == null) ? null : String.of(responsibility);
+                return this;
+            }
+
+            /**
+             *  Description of the financial responsibility.
+             * 
+             * @param responsibility
+             *     Party's responsibility
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder responsibility(String responsibility) {
+                this.responsibility = responsibility;
+                return this;
+            }
+
+            /**
+             * Build the {@link PaymentBy}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>party</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link PaymentBy}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid PaymentBy per the base specification
+             */
+            @Override
+            public PaymentBy build() {
+                PaymentBy paymentBy = new PaymentBy(this);
+                if (validating) {
+                    validate(paymentBy);
+                }
+                return paymentBy;
+            }
+
+            protected void validate(PaymentBy paymentBy) {
+                super.validate(paymentBy);
+                ValidationSupport.requireNonNull(paymentBy.party, "party");
+                ValidationSupport.checkReferenceType(paymentBy.party, "party", "Patient", "RelatedPerson", "Organization");
+                ValidationSupport.requireValueOrChildren(paymentBy);
+            }
+
+            protected Builder from(PaymentBy paymentBy) {
+                super.from(paymentBy);
+                party = paymentBy.party;
+                responsibility = paymentBy.responsibility;
+                return this;
+            }
         }
     }
 
@@ -1281,14 +1707,14 @@ public class Coverage extends DomainResource {
         @Binding(
             bindingName = "CoverageClass",
             strength = BindingStrength.Value.EXTENSIBLE,
-            description = "The policy classifications, eg. Group, Plan, Class, etc.",
+            description = "The policy classifications, e.g. Group, Plan, Class, etc.",
             valueSet = "http://hl7.org/fhir/ValueSet/coverage-class"
         )
         @Required
         private final CodeableConcept type;
         @Summary
         @Required
-        private final String value;
+        private final Identifier value;
         @Summary
         private final String name;
 
@@ -1300,8 +1726,8 @@ public class Coverage extends DomainResource {
         }
 
         /**
-         * The type of classification for which an insurer-specific class label or number and optional name is provided, for 
-         * example may be used to identify a class of coverage or employer group, Policy, Plan.
+         * The type of classification for which an insurer-specific class label or number and optional name is provided. For 
+         * example, type may be used to identify a class of coverage or employer group, policy, or plan.
          * 
          * @return
          *     An immutable object of type {@link CodeableConcept} that is non-null.
@@ -1311,12 +1737,12 @@ public class Coverage extends DomainResource {
         }
 
         /**
-         * The alphanumeric string value associated with the insurer issued label.
+         * The alphanumeric identifier associated with the insurer issued label.
          * 
          * @return
-         *     An immutable object of type {@link String} that is non-null.
+         *     An immutable object of type {@link Identifier} that is non-null.
          */
-        public String getValue() {
+        public Identifier getValue() {
             return value;
         }
 
@@ -1402,7 +1828,7 @@ public class Coverage extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private CodeableConcept type;
-            private String value;
+            private Identifier value;
             private String name;
 
             private Builder() {
@@ -1426,7 +1852,7 @@ public class Coverage extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1446,7 +1872,7 @@ public class Coverage extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1471,7 +1897,7 @@ public class Coverage extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1496,7 +1922,7 @@ public class Coverage extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1521,8 +1947,8 @@ public class Coverage extends DomainResource {
             }
 
             /**
-             * The type of classification for which an insurer-specific class label or number and optional name is provided, for 
-             * example may be used to identify a class of coverage or employer group, Policy, Plan.
+             * The type of classification for which an insurer-specific class label or number and optional name is provided. For 
+             * example, type may be used to identify a class of coverage or employer group, policy, or plan.
              * 
              * <p>This element is required.
              * 
@@ -1538,25 +1964,7 @@ public class Coverage extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code value}.
-             * 
-             * <p>This element is required.
-             * 
-             * @param value
-             *     Value associated with the type
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #value(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder value(java.lang.String value) {
-                this.value = (value == null) ? null : String.of(value);
-                return this;
-            }
-
-            /**
-             * The alphanumeric string value associated with the insurer issued label.
+             * The alphanumeric identifier associated with the insurer issued label.
              * 
              * <p>This element is required.
              * 
@@ -1566,7 +1974,7 @@ public class Coverage extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder value(String value) {
+            public Builder value(Identifier value) {
                 this.value = value;
                 return this;
             }
@@ -1654,15 +2062,42 @@ public class Coverage extends DomainResource {
             valueSet = "http://hl7.org/fhir/ValueSet/coverage-copay-type"
         )
         private final CodeableConcept type;
+        @Binding(
+            bindingName = "BenefitCategory",
+            strength = BindingStrength.Value.EXAMPLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/ex-benefitcategory"
+        )
+        private final CodeableConcept category;
+        @Binding(
+            bindingName = "BenefitNetwork",
+            strength = BindingStrength.Value.EXAMPLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/benefit-network"
+        )
+        private final CodeableConcept network;
+        @Binding(
+            bindingName = "BenefitUnit",
+            strength = BindingStrength.Value.EXAMPLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/benefit-unit"
+        )
+        private final CodeableConcept unit;
+        @Binding(
+            bindingName = "BenefitTerm",
+            strength = BindingStrength.Value.EXAMPLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/benefit-term"
+        )
+        private final CodeableConcept term;
         @Summary
         @Choice({ SimpleQuantity.class, Money.class })
-        @Required
-        private final Element value;
+        private final org.linuxforhealth.fhir.model.type.Element value;
         private final List<Exception> exception;
 
         private CostToBeneficiary(Builder builder) {
             super(builder);
             type = builder.type;
+            category = builder.category;
+            network = builder.network;
+            unit = builder.unit;
+            term = builder.term;
             value = builder.value;
             exception = Collections.unmodifiableList(builder.exception);
         }
@@ -1678,12 +2113,52 @@ public class Coverage extends DomainResource {
         }
 
         /**
+         * Code to identify the general type of benefits under which products and services are provided.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getCategory() {
+            return category;
+        }
+
+        /**
+         * Is a flag to indicate whether the benefits refer to in-network providers or out-of-network providers.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getNetwork() {
+            return network;
+        }
+
+        /**
+         * Indicates if the benefits apply to an individual or to the family.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getUnit() {
+            return unit;
+        }
+
+        /**
+         * The term or period of the values such as 'maximum lifetime benefit' or 'maximum annual visits'.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getTerm() {
+            return term;
+        }
+
+        /**
          * The amount due from the patient for the cost category.
          * 
          * @return
-         *     An immutable object of type {@link SimpleQuantity} or {@link Money} that is non-null.
+         *     An immutable object of type {@link SimpleQuantity} or {@link Money} that may be null.
          */
-        public Element getValue() {
+        public org.linuxforhealth.fhir.model.type.Element getValue() {
             return value;
         }
 
@@ -1701,6 +2176,10 @@ public class Coverage extends DomainResource {
         public boolean hasChildren() {
             return super.hasChildren() || 
                 (type != null) || 
+                (category != null) || 
+                (network != null) || 
+                (unit != null) || 
+                (term != null) || 
                 (value != null) || 
                 !exception.isEmpty();
         }
@@ -1715,6 +2194,10 @@ public class Coverage extends DomainResource {
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
                     accept(type, "type", visitor);
+                    accept(category, "category", visitor);
+                    accept(network, "network", visitor);
+                    accept(unit, "unit", visitor);
+                    accept(term, "term", visitor);
                     accept(value, "value", visitor);
                     accept(exception, "exception", visitor, Exception.class);
                 }
@@ -1739,6 +2222,10 @@ public class Coverage extends DomainResource {
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
                 Objects.equals(type, other.type) && 
+                Objects.equals(category, other.category) && 
+                Objects.equals(network, other.network) && 
+                Objects.equals(unit, other.unit) && 
+                Objects.equals(term, other.term) && 
                 Objects.equals(value, other.value) && 
                 Objects.equals(exception, other.exception);
         }
@@ -1751,6 +2238,10 @@ public class Coverage extends DomainResource {
                     extension, 
                     modifierExtension, 
                     type, 
+                    category, 
+                    network, 
+                    unit, 
+                    term, 
                     value, 
                     exception);
                 hashCode = result;
@@ -1769,7 +2260,11 @@ public class Coverage extends DomainResource {
 
         public static class Builder extends BackboneElement.Builder {
             private CodeableConcept type;
-            private Element value;
+            private CodeableConcept category;
+            private CodeableConcept network;
+            private CodeableConcept unit;
+            private CodeableConcept term;
+            private org.linuxforhealth.fhir.model.type.Element value;
             private List<Exception> exception = new ArrayList<>();
 
             private Builder() {
@@ -1793,7 +2288,7 @@ public class Coverage extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1813,7 +2308,7 @@ public class Coverage extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1838,7 +2333,7 @@ public class Coverage extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1863,7 +2358,7 @@ public class Coverage extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1902,9 +2397,63 @@ public class Coverage extends DomainResource {
             }
 
             /**
-             * The amount due from the patient for the cost category.
+             * Code to identify the general type of benefits under which products and services are provided.
              * 
-             * <p>This element is required.
+             * @param category
+             *     Benefit classification
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder category(CodeableConcept category) {
+                this.category = category;
+                return this;
+            }
+
+            /**
+             * Is a flag to indicate whether the benefits refer to in-network providers or out-of-network providers.
+             * 
+             * @param network
+             *     In or out of network
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder network(CodeableConcept network) {
+                this.network = network;
+                return this;
+            }
+
+            /**
+             * Indicates if the benefits apply to an individual or to the family.
+             * 
+             * @param unit
+             *     Individual or family
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder unit(CodeableConcept unit) {
+                this.unit = unit;
+                return this;
+            }
+
+            /**
+             * The term or period of the values such as 'maximum lifetime benefit' or 'maximum annual visits'.
+             * 
+             * @param term
+             *     Annual or lifetime
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder term(CodeableConcept term) {
+                this.term = term;
+                return this;
+            }
+
+            /**
+             * The amount due from the patient for the cost category.
              * 
              * <p>This is a choice element with the following allowed types:
              * <ul>
@@ -1918,7 +2467,7 @@ public class Coverage extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder value(Element value) {
+            public Builder value(org.linuxforhealth.fhir.model.type.Element value) {
                 this.value = value;
                 return this;
             }
@@ -1965,11 +2514,6 @@ public class Coverage extends DomainResource {
             /**
              * Build the {@link CostToBeneficiary}
              * 
-             * <p>Required elements:
-             * <ul>
-             * <li>value</li>
-             * </ul>
-             * 
              * @return
              *     An immutable object of type {@link CostToBeneficiary}
              * @throws IllegalStateException
@@ -1986,7 +2530,7 @@ public class Coverage extends DomainResource {
 
             protected void validate(CostToBeneficiary costToBeneficiary) {
                 super.validate(costToBeneficiary);
-                ValidationSupport.requireChoiceElement(costToBeneficiary.value, "value", SimpleQuantity.class, Money.class);
+                ValidationSupport.choiceElement(costToBeneficiary.value, "value", SimpleQuantity.class, Money.class);
                 ValidationSupport.checkList(costToBeneficiary.exception, "exception", Exception.class);
                 ValidationSupport.requireValueOrChildren(costToBeneficiary);
             }
@@ -1994,6 +2538,10 @@ public class Coverage extends DomainResource {
             protected Builder from(CostToBeneficiary costToBeneficiary) {
                 super.from(costToBeneficiary);
                 type = costToBeneficiary.type;
+                category = costToBeneficiary.category;
+                network = costToBeneficiary.network;
+                unit = costToBeneficiary.unit;
+                term = costToBeneficiary.term;
                 value = costToBeneficiary.value;
                 exception.addAll(costToBeneficiary.exception);
                 return this;
@@ -2033,7 +2581,7 @@ public class Coverage extends DomainResource {
             }
 
             /**
-             * The timeframe during when the exception is in force.
+             * The timeframe the exception is in force.
              * 
              * @return
              *     An immutable object of type {@link Period} that may be null.
@@ -2133,7 +2681,7 @@ public class Coverage extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2153,7 +2701,7 @@ public class Coverage extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -2178,7 +2726,7 @@ public class Coverage extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2203,7 +2751,7 @@ public class Coverage extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -2244,7 +2792,7 @@ public class Coverage extends DomainResource {
                 }
 
                 /**
-                 * The timeframe during when the exception is in force.
+                 * The timeframe the exception is in force.
                  * 
                  * @param period
                  *     The effective period of the exception

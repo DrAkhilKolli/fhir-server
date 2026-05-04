@@ -20,7 +20,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
  * ISO 4217 (system = "urn:iso:std:iso:4217" - currency).
  */
 @Constraint(
-    id = "mqty-1",
+    id = "mtqy-1",
     level = "Rule",
     location = "Quantity",
     description = "There SHALL be a code if there is a value and it SHALL be an expression of currency.  If system is present, it SHALL be ISO 4217 (system = \"urn:iso:std:iso:4217\" - currency).",
@@ -120,7 +120,7 @@ public class MoneyQuantity extends Quantity {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -140,7 +140,7 @@ public class MoneyQuantity extends Quantity {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -180,7 +180,7 @@ public class MoneyQuantity extends Quantity {
          * due to measurement issues; e.g. if the comparator is "&lt;" , then the real value is &lt; stated value.
          * 
          * @param comparator
-         *     &lt; | &lt;= | &gt;= | &gt; - how to understand the value
+         *     &lt; | &lt;= | &gt;= | &gt; | ad - how to understand the value
          * 
          * @return
          *     A reference to this Builder instance

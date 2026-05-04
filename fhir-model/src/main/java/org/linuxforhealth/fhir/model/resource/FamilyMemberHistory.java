@@ -28,6 +28,7 @@ import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.DateTime;
 import org.linuxforhealth.fhir.model.type.Element;
@@ -72,7 +73,24 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     source = "http://hl7.org/fhir/StructureDefinition/FamilyMemberHistory"
 )
 @Constraint(
-    id = "familyMemberHistory-3",
+    id = "fhs-3",
+    level = "Rule",
+    location = "(base)",
+    description = "Can have age[x] or deceased[x], but not both",
+    expression = "age.empty() or deceased.empty()",
+    source = "http://hl7.org/fhir/StructureDefinition/FamilyMemberHistory"
+)
+@Constraint(
+    id = "familyMemberHistory-4",
+    level = "Warning",
+    location = "participant.function",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/participation-role-type",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/participation-role-type', 'extensible')",
+    source = "http://hl7.org/fhir/StructureDefinition/FamilyMemberHistory",
+    generated = true
+)
+@Constraint(
+    id = "familyMemberHistory-5",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/administrative-gender",
@@ -93,7 +111,7 @@ public class FamilyMemberHistory extends DomainResource {
         bindingName = "FamilyHistoryStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "A code that identifies the status of the family history record.",
-        valueSet = "http://hl7.org/fhir/ValueSet/history-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/history-status|5.0.0"
     )
     @Required
     private final FamilyHistoryStatus status;
@@ -111,6 +129,8 @@ public class FamilyMemberHistory extends DomainResource {
     private final Reference patient;
     @Summary
     private final DateTime date;
+    @Summary
+    private final List<Participant> participant;
     @Summary
     private final String name;
     @Summary
@@ -131,15 +151,15 @@ public class FamilyMemberHistory extends DomainResource {
     )
     private final CodeableConcept sex;
     @Choice({ Period.class, Date.class, String.class })
-    private final Element born;
+    private final org.linuxforhealth.fhir.model.type.Element born;
     @Summary
     @Choice({ Age.class, Range.class, String.class })
-    private final Element age;
+    private final org.linuxforhealth.fhir.model.type.Element age;
     @Summary
     private final Boolean estimatedAge;
     @Summary
     @Choice({ Boolean.class, Age.class, Range.class, Date.class, String.class })
-    private final Element deceased;
+    private final org.linuxforhealth.fhir.model.type.Element deceased;
     @Summary
     @Binding(
         bindingName = "FamilyHistoryReason",
@@ -147,12 +167,10 @@ public class FamilyMemberHistory extends DomainResource {
         description = "Codes indicating why the family member history was done.",
         valueSet = "http://hl7.org/fhir/ValueSet/clinical-findings"
     )
-    private final List<CodeableConcept> reasonCode;
-    @Summary
-    @ReferenceTarget({ "Condition", "Observation", "AllergyIntolerance", "QuestionnaireResponse", "DiagnosticReport", "DocumentReference" })
-    private final List<Reference> reasonReference;
+    private final List<CodeableReference> reason;
     private final List<Annotation> note;
     private final List<Condition> condition;
+    private final List<Procedure> procedure;
 
     private FamilyMemberHistory(Builder builder) {
         super(builder);
@@ -163,6 +181,7 @@ public class FamilyMemberHistory extends DomainResource {
         dataAbsentReason = builder.dataAbsentReason;
         patient = builder.patient;
         date = builder.date;
+        participant = Collections.unmodifiableList(builder.participant);
         name = builder.name;
         relationship = builder.relationship;
         sex = builder.sex;
@@ -170,10 +189,10 @@ public class FamilyMemberHistory extends DomainResource {
         age = builder.age;
         estimatedAge = builder.estimatedAge;
         deceased = builder.deceased;
-        reasonCode = Collections.unmodifiableList(builder.reasonCode);
-        reasonReference = Collections.unmodifiableList(builder.reasonReference);
+        reason = Collections.unmodifiableList(builder.reason);
         note = Collections.unmodifiableList(builder.note);
         condition = Collections.unmodifiableList(builder.condition);
+        procedure = Collections.unmodifiableList(builder.procedure);
     }
 
     /**
@@ -250,6 +269,16 @@ public class FamilyMemberHistory extends DomainResource {
     }
 
     /**
+     * Indicates who or what participated in the activities related to the family member history and how they were involved.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Participant} that may be empty.
+     */
+    public List<Participant> getParticipant() {
+        return participant;
+    }
+
+    /**
      * This will either be a name or a description; e.g. "Aunt Susan", "my cousin with the red hair".
      * 
      * @return
@@ -285,7 +314,7 @@ public class FamilyMemberHistory extends DomainResource {
      * @return
      *     An immutable object of type {@link Period}, {@link Date} or {@link String} that may be null.
      */
-    public Element getBorn() {
+    public org.linuxforhealth.fhir.model.type.Element getBorn() {
         return born;
     }
 
@@ -295,7 +324,7 @@ public class FamilyMemberHistory extends DomainResource {
      * @return
      *     An immutable object of type {@link Age}, {@link Range} or {@link String} that may be null.
      */
-    public Element getAge() {
+    public org.linuxforhealth.fhir.model.type.Element getAge() {
         return age;
     }
 
@@ -317,29 +346,19 @@ public class FamilyMemberHistory extends DomainResource {
      *     An immutable object of type {@link Boolean}, {@link Age}, {@link Range}, {@link Date} or {@link String} that may be 
      *     null.
      */
-    public Element getDeceased() {
+    public org.linuxforhealth.fhir.model.type.Element getDeceased() {
         return deceased;
     }
 
     /**
-     * Describes why the family member history occurred in coded or textual form.
+     * Describes why the family member history occurred in coded or textual form, or Indicates a Condition, Observation, 
+     * AllergyIntolerance, or QuestionnaireResponse that justifies this family member history event.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<CodeableConcept> getReasonCode() {
-        return reasonCode;
-    }
-
-    /**
-     * Indicates a Condition, Observation, AllergyIntolerance, or QuestionnaireResponse that justifies this family member 
-     * history event.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-     */
-    public List<Reference> getReasonReference() {
-        return reasonReference;
+    public List<CodeableReference> getReason() {
+        return reason;
     }
 
     /**
@@ -365,6 +384,18 @@ public class FamilyMemberHistory extends DomainResource {
         return condition;
     }
 
+    /**
+     * The significant Procedures (or procedure) that the family member had. This is a repeating section to allow a system to 
+     * represent more than one procedure per resource, though there is nothing stopping multiple resources - one per 
+     * procedure.
+     * 
+     * @return
+     *     An unmodifiable list containing immutable objects of type {@link Procedure} that may be empty.
+     */
+    public List<Procedure> getProcedure() {
+        return procedure;
+    }
+
     @Override
     public boolean hasChildren() {
         return super.hasChildren() || 
@@ -375,6 +406,7 @@ public class FamilyMemberHistory extends DomainResource {
             (dataAbsentReason != null) || 
             (patient != null) || 
             (date != null) || 
+            !participant.isEmpty() || 
             (name != null) || 
             (relationship != null) || 
             (sex != null) || 
@@ -382,10 +414,10 @@ public class FamilyMemberHistory extends DomainResource {
             (age != null) || 
             (estimatedAge != null) || 
             (deceased != null) || 
-            !reasonCode.isEmpty() || 
-            !reasonReference.isEmpty() || 
+            !reason.isEmpty() || 
             !note.isEmpty() || 
-            !condition.isEmpty();
+            !condition.isEmpty() || 
+            !procedure.isEmpty();
     }
 
     @Override
@@ -409,6 +441,7 @@ public class FamilyMemberHistory extends DomainResource {
                 accept(dataAbsentReason, "dataAbsentReason", visitor);
                 accept(patient, "patient", visitor);
                 accept(date, "date", visitor);
+                accept(participant, "participant", visitor, Participant.class);
                 accept(name, "name", visitor);
                 accept(relationship, "relationship", visitor);
                 accept(sex, "sex", visitor);
@@ -416,10 +449,10 @@ public class FamilyMemberHistory extends DomainResource {
                 accept(age, "age", visitor);
                 accept(estimatedAge, "estimatedAge", visitor);
                 accept(deceased, "deceased", visitor);
-                accept(reasonCode, "reasonCode", visitor, CodeableConcept.class);
-                accept(reasonReference, "reasonReference", visitor, Reference.class);
+                accept(reason, "reason", visitor, CodeableReference.class);
                 accept(note, "note", visitor, Annotation.class);
                 accept(condition, "condition", visitor, Condition.class);
+                accept(procedure, "procedure", visitor, Procedure.class);
             }
             visitor.visitEnd(elementName, elementIndex, this);
             visitor.postVisit(this);
@@ -453,6 +486,7 @@ public class FamilyMemberHistory extends DomainResource {
             Objects.equals(dataAbsentReason, other.dataAbsentReason) && 
             Objects.equals(patient, other.patient) && 
             Objects.equals(date, other.date) && 
+            Objects.equals(participant, other.participant) && 
             Objects.equals(name, other.name) && 
             Objects.equals(relationship, other.relationship) && 
             Objects.equals(sex, other.sex) && 
@@ -460,10 +494,10 @@ public class FamilyMemberHistory extends DomainResource {
             Objects.equals(age, other.age) && 
             Objects.equals(estimatedAge, other.estimatedAge) && 
             Objects.equals(deceased, other.deceased) && 
-            Objects.equals(reasonCode, other.reasonCode) && 
-            Objects.equals(reasonReference, other.reasonReference) && 
+            Objects.equals(reason, other.reason) && 
             Objects.equals(note, other.note) && 
-            Objects.equals(condition, other.condition);
+            Objects.equals(condition, other.condition) && 
+            Objects.equals(procedure, other.procedure);
     }
 
     @Override
@@ -485,6 +519,7 @@ public class FamilyMemberHistory extends DomainResource {
                 dataAbsentReason, 
                 patient, 
                 date, 
+                participant, 
                 name, 
                 relationship, 
                 sex, 
@@ -492,10 +527,10 @@ public class FamilyMemberHistory extends DomainResource {
                 age, 
                 estimatedAge, 
                 deceased, 
-                reasonCode, 
-                reasonReference, 
+                reason, 
                 note, 
-                condition);
+                condition, 
+                procedure);
             hashCode = result;
         }
         return result;
@@ -518,17 +553,18 @@ public class FamilyMemberHistory extends DomainResource {
         private CodeableConcept dataAbsentReason;
         private Reference patient;
         private DateTime date;
+        private List<Participant> participant = new ArrayList<>();
         private String name;
         private CodeableConcept relationship;
         private CodeableConcept sex;
-        private Element born;
-        private Element age;
+        private org.linuxforhealth.fhir.model.type.Element born;
+        private org.linuxforhealth.fhir.model.type.Element age;
         private Boolean estimatedAge;
-        private Element deceased;
-        private List<CodeableConcept> reasonCode = new ArrayList<>();
-        private List<Reference> reasonReference = new ArrayList<>();
+        private org.linuxforhealth.fhir.model.type.Element deceased;
+        private List<CodeableReference> reason = new ArrayList<>();
         private List<Annotation> note = new ArrayList<>();
         private List<Condition> condition = new ArrayList<>();
+        private List<Procedure> procedure = new ArrayList<>();
 
         private Builder() {
             super();
@@ -612,7 +648,8 @@ public class FamilyMemberHistory extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -630,7 +667,8 @@ public class FamilyMemberHistory extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -651,7 +689,7 @@ public class FamilyMemberHistory extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -671,7 +709,7 @@ public class FamilyMemberHistory extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -696,9 +734,9 @@ public class FamilyMemberHistory extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -721,9 +759,9 @@ public class FamilyMemberHistory extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -934,6 +972,45 @@ public class FamilyMemberHistory extends DomainResource {
         }
 
         /**
+         * Indicates who or what participated in the activities related to the family member history and how they were involved.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param participant
+         *     Who or what participated in the activities related to the family member history and how they were involved
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder participant(Participant... participant) {
+            for (Participant value : participant) {
+                this.participant.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * Indicates who or what participated in the activities related to the family member history and how they were involved.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param participant
+         *     Who or what participated in the activities related to the family member history and how they were involved
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder participant(Collection<Participant> participant) {
+            this.participant = new ArrayList<>(participant);
+            return this;
+        }
+
+        /**
          * Convenience method for setting {@code name}.
          * 
          * @param name
@@ -1041,7 +1118,7 @@ public class FamilyMemberHistory extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder born(Element born) {
+        public Builder born(org.linuxforhealth.fhir.model.type.Element born) {
             this.born = born;
             return this;
         }
@@ -1078,7 +1155,7 @@ public class FamilyMemberHistory extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder age(Element age) {
+        public Builder age(org.linuxforhealth.fhir.model.type.Element age) {
             this.age = age;
             return this;
         }
@@ -1180,37 +1257,39 @@ public class FamilyMemberHistory extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder deceased(Element deceased) {
+        public Builder deceased(org.linuxforhealth.fhir.model.type.Element deceased) {
             this.deceased = deceased;
             return this;
         }
 
         /**
-         * Describes why the family member history occurred in coded or textual form.
+         * Describes why the family member history occurred in coded or textual form, or Indicates a Condition, Observation, 
+         * AllergyIntolerance, or QuestionnaireResponse that justifies this family member history event.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
+         * @param reason
          *     Why was family member history performed?
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder reasonCode(CodeableConcept... reasonCode) {
-            for (CodeableConcept value : reasonCode) {
-                this.reasonCode.add(value);
+        public Builder reason(CodeableReference... reason) {
+            for (CodeableReference value : reason) {
+                this.reason.add(value);
             }
             return this;
         }
 
         /**
-         * Describes why the family member history occurred in coded or textual form.
+         * Describes why the family member history occurred in coded or textual form, or Indicates a Condition, Observation, 
+         * AllergyIntolerance, or QuestionnaireResponse that justifies this family member history event.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
+         * @param reason
          *     Why was family member history performed?
          * 
          * @return
@@ -1219,69 +1298,8 @@ public class FamilyMemberHistory extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder reasonCode(Collection<CodeableConcept> reasonCode) {
-            this.reasonCode = new ArrayList<>(reasonCode);
-            return this;
-        }
-
-        /**
-         * Indicates a Condition, Observation, AllergyIntolerance, or QuestionnaireResponse that justifies this family member 
-         * history event.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link AllergyIntolerance}</li>
-         * <li>{@link QuestionnaireResponse}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Why was family member history performed?
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder reasonReference(Reference... reasonReference) {
-            for (Reference value : reasonReference) {
-                this.reasonReference.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Indicates a Condition, Observation, AllergyIntolerance, or QuestionnaireResponse that justifies this family member 
-         * history event.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * <li>{@link Observation}</li>
-         * <li>{@link AllergyIntolerance}</li>
-         * <li>{@link QuestionnaireResponse}</li>
-         * <li>{@link DiagnosticReport}</li>
-         * <li>{@link DocumentReference}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Why was family member history performed?
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder reasonReference(Collection<Reference> reasonReference) {
-            this.reasonReference = new ArrayList<>(reasonReference);
+        public Builder reason(Collection<CodeableReference> reason) {
+            this.reason = new ArrayList<>(reason);
             return this;
         }
 
@@ -1370,6 +1388,49 @@ public class FamilyMemberHistory extends DomainResource {
         }
 
         /**
+         * The significant Procedures (or procedure) that the family member had. This is a repeating section to allow a system to 
+         * represent more than one procedure per resource, though there is nothing stopping multiple resources - one per 
+         * procedure.
+         * 
+         * <p>Adds new element(s) to the existing list.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param procedure
+         *     Procedures that the related person had
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder procedure(Procedure... procedure) {
+            for (Procedure value : procedure) {
+                this.procedure.add(value);
+            }
+            return this;
+        }
+
+        /**
+         * The significant Procedures (or procedure) that the family member had. This is a repeating section to allow a system to 
+         * represent more than one procedure per resource, though there is nothing stopping multiple resources - one per 
+         * procedure.
+         * 
+         * <p>Replaces the existing list with a new one containing elements from the Collection.
+         * If any of the elements are null, calling {@link #build()} will fail.
+         * 
+         * @param procedure
+         *     Procedures that the related person had
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @throws NullPointerException
+         *     If the passed collection is null
+         */
+        public Builder procedure(Collection<Procedure> procedure) {
+            this.procedure = new ArrayList<>(procedure);
+            return this;
+        }
+
+        /**
          * Build the {@link FamilyMemberHistory}
          * 
          * <p>Required elements:
@@ -1400,16 +1461,16 @@ public class FamilyMemberHistory extends DomainResource {
             ValidationSupport.checkList(familyMemberHistory.instantiatesUri, "instantiatesUri", Uri.class);
             ValidationSupport.requireNonNull(familyMemberHistory.status, "status");
             ValidationSupport.requireNonNull(familyMemberHistory.patient, "patient");
+            ValidationSupport.checkList(familyMemberHistory.participant, "participant", Participant.class);
             ValidationSupport.requireNonNull(familyMemberHistory.relationship, "relationship");
             ValidationSupport.choiceElement(familyMemberHistory.born, "born", Period.class, Date.class, String.class);
             ValidationSupport.choiceElement(familyMemberHistory.age, "age", Age.class, Range.class, String.class);
             ValidationSupport.choiceElement(familyMemberHistory.deceased, "deceased", Boolean.class, Age.class, Range.class, Date.class, String.class);
-            ValidationSupport.checkList(familyMemberHistory.reasonCode, "reasonCode", CodeableConcept.class);
-            ValidationSupport.checkList(familyMemberHistory.reasonReference, "reasonReference", Reference.class);
+            ValidationSupport.checkList(familyMemberHistory.reason, "reason", CodeableReference.class);
             ValidationSupport.checkList(familyMemberHistory.note, "note", Annotation.class);
             ValidationSupport.checkList(familyMemberHistory.condition, "condition", Condition.class);
+            ValidationSupport.checkList(familyMemberHistory.procedure, "procedure", Procedure.class);
             ValidationSupport.checkReferenceType(familyMemberHistory.patient, "patient", "Patient");
-            ValidationSupport.checkReferenceType(familyMemberHistory.reasonReference, "reasonReference", "Condition", "Observation", "AllergyIntolerance", "QuestionnaireResponse", "DiagnosticReport", "DocumentReference");
         }
 
         protected Builder from(FamilyMemberHistory familyMemberHistory) {
@@ -1421,6 +1482,7 @@ public class FamilyMemberHistory extends DomainResource {
             dataAbsentReason = familyMemberHistory.dataAbsentReason;
             patient = familyMemberHistory.patient;
             date = familyMemberHistory.date;
+            participant.addAll(familyMemberHistory.participant);
             name = familyMemberHistory.name;
             relationship = familyMemberHistory.relationship;
             sex = familyMemberHistory.sex;
@@ -1428,11 +1490,317 @@ public class FamilyMemberHistory extends DomainResource {
             age = familyMemberHistory.age;
             estimatedAge = familyMemberHistory.estimatedAge;
             deceased = familyMemberHistory.deceased;
-            reasonCode.addAll(familyMemberHistory.reasonCode);
-            reasonReference.addAll(familyMemberHistory.reasonReference);
+            reason.addAll(familyMemberHistory.reason);
             note.addAll(familyMemberHistory.note);
             condition.addAll(familyMemberHistory.condition);
+            procedure.addAll(familyMemberHistory.procedure);
             return this;
+        }
+    }
+
+    /**
+     * Indicates who or what participated in the activities related to the family member history and how they were involved.
+     */
+    public static class Participant extends BackboneElement {
+        @Summary
+        @Binding(
+            bindingName = "FamilyMemberHistoryParticipantFunction",
+            strength = BindingStrength.Value.EXTENSIBLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/participation-role-type"
+        )
+        private final CodeableConcept function;
+        @Summary
+        @ReferenceTarget({ "Practitioner", "PractitionerRole", "Patient", "RelatedPerson", "Device", "Organization", "CareTeam" })
+        @Required
+        private final Reference actor;
+
+        private Participant(Builder builder) {
+            super(builder);
+            function = builder.function;
+            actor = builder.actor;
+        }
+
+        /**
+         * Distinguishes the type of involvement of the actor in the activities related to the family member history.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getFunction() {
+            return function;
+        }
+
+        /**
+         * Indicates who or what participated in the activities related to the family member history.
+         * 
+         * @return
+         *     An immutable object of type {@link Reference} that is non-null.
+         */
+        public Reference getActor() {
+            return actor;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (function != null) || 
+                (actor != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(function, "function", visitor);
+                    accept(actor, "actor", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Participant other = (Participant) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(function, other.function) && 
+                Objects.equals(actor, other.actor);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    function, 
+                    actor);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private CodeableConcept function;
+            private Reference actor;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * Distinguishes the type of involvement of the actor in the activities related to the family member history.
+             * 
+             * @param function
+             *     Type of involvement
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder function(CodeableConcept function) {
+                this.function = function;
+                return this;
+            }
+
+            /**
+             * Indicates who or what participated in the activities related to the family member history.
+             * 
+             * <p>This element is required.
+             * 
+             * <p>Allowed resource types for this reference:
+             * <ul>
+             * <li>{@link Practitioner}</li>
+             * <li>{@link PractitionerRole}</li>
+             * <li>{@link Patient}</li>
+             * <li>{@link RelatedPerson}</li>
+             * <li>{@link Device}</li>
+             * <li>{@link Organization}</li>
+             * <li>{@link CareTeam}</li>
+             * </ul>
+             * 
+             * @param actor
+             *     Who or what participated in the activities related to the family member history
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder actor(Reference actor) {
+                this.actor = actor;
+                return this;
+            }
+
+            /**
+             * Build the {@link Participant}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>actor</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link Participant}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Participant per the base specification
+             */
+            @Override
+            public Participant build() {
+                Participant participant = new Participant(this);
+                if (validating) {
+                    validate(participant);
+                }
+                return participant;
+            }
+
+            protected void validate(Participant participant) {
+                super.validate(participant);
+                ValidationSupport.requireNonNull(participant.actor, "actor");
+                ValidationSupport.checkReferenceType(participant.actor, "actor", "Practitioner", "PractitionerRole", "Patient", "RelatedPerson", "Device", "Organization", "CareTeam");
+                ValidationSupport.requireValueOrChildren(participant);
+            }
+
+            protected Builder from(Participant participant) {
+                super.from(participant);
+                function = participant.function;
+                actor = participant.actor;
+                return this;
+            }
         }
     }
 
@@ -1459,7 +1827,7 @@ public class FamilyMemberHistory extends DomainResource {
         private final CodeableConcept outcome;
         private final Boolean contributedToDeath;
         @Choice({ Age.class, Range.class, Period.class, String.class })
-        private final Element onset;
+        private final org.linuxforhealth.fhir.model.type.Element onset;
         private final List<Annotation> note;
 
         private Condition(Builder builder) {
@@ -1511,7 +1879,7 @@ public class FamilyMemberHistory extends DomainResource {
          * @return
          *     An immutable object of type {@link Age}, {@link Range}, {@link Period} or {@link String} that may be null.
          */
-        public Element getOnset() {
+        public org.linuxforhealth.fhir.model.type.Element getOnset() {
             return onset;
         }
 
@@ -1607,7 +1975,7 @@ public class FamilyMemberHistory extends DomainResource {
             private CodeableConcept code;
             private CodeableConcept outcome;
             private Boolean contributedToDeath;
-            private Element onset;
+            private org.linuxforhealth.fhir.model.type.Element onset;
             private List<Annotation> note = new ArrayList<>();
 
             private Builder() {
@@ -1631,7 +1999,7 @@ public class FamilyMemberHistory extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1651,7 +2019,7 @@ public class FamilyMemberHistory extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1676,7 +2044,7 @@ public class FamilyMemberHistory extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1701,7 +2069,7 @@ public class FamilyMemberHistory extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1747,7 +2115,7 @@ public class FamilyMemberHistory extends DomainResource {
              * relation.
              * 
              * @param outcome
-             *     deceased | permanent disability | etc.
+             *     deceased | permanent disability | etc
              * 
              * @return
              *     A reference to this Builder instance
@@ -1822,7 +2190,7 @@ public class FamilyMemberHistory extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder onset(Element onset) {
+            public Builder onset(org.linuxforhealth.fhir.model.type.Element onset) {
                 this.onset = onset;
                 return this;
             }
@@ -1903,6 +2271,480 @@ public class FamilyMemberHistory extends DomainResource {
                 contributedToDeath = condition.contributedToDeath;
                 onset = condition.onset;
                 note.addAll(condition.note);
+                return this;
+            }
+        }
+    }
+
+    /**
+     * The significant Procedures (or procedure) that the family member had. This is a repeating section to allow a system to 
+     * represent more than one procedure per resource, though there is nothing stopping multiple resources - one per 
+     * procedure.
+     */
+    public static class Procedure extends BackboneElement {
+        @Binding(
+            bindingName = "ProcedureCode",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "A code to identify a specific procedure.",
+            valueSet = "http://hl7.org/fhir/ValueSet/procedure-code"
+        )
+        @Required
+        private final CodeableConcept code;
+        @Binding(
+            bindingName = "ProcedureOutcome",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "The result of the procedure; e.g. death, permanent disability, temporary disability, etc.",
+            valueSet = "http://hl7.org/fhir/ValueSet/clinical-findings"
+        )
+        private final CodeableConcept outcome;
+        private final Boolean contributedToDeath;
+        @Choice({ Age.class, Range.class, Period.class, String.class, DateTime.class })
+        private final org.linuxforhealth.fhir.model.type.Element performed;
+        private final List<Annotation> note;
+
+        private Procedure(Builder builder) {
+            super(builder);
+            code = builder.code;
+            outcome = builder.outcome;
+            contributedToDeath = builder.contributedToDeath;
+            performed = builder.performed;
+            note = Collections.unmodifiableList(builder.note);
+        }
+
+        /**
+         * The actual procedure specified. Could be a coded procedure or a less specific string depending on how much is known 
+         * about the procedure and the capabilities of the creating system.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that is non-null.
+         */
+        public CodeableConcept getCode() {
+            return code;
+        }
+
+        /**
+         * Indicates what happened following the procedure. If the procedure resulted in death, deceased date is captured on the 
+         * relation.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getOutcome() {
+            return outcome;
+        }
+
+        /**
+         * This procedure contributed to the cause of death of the related person. If contributedToDeath is not populated, then 
+         * it is unknown.
+         * 
+         * @return
+         *     An immutable object of type {@link Boolean} that may be null.
+         */
+        public Boolean getContributedToDeath() {
+            return contributedToDeath;
+        }
+
+        /**
+         * Estimated or actual date, date-time, period, or age when the procedure was performed. Allows a period to support 
+         * complex procedures that span more than one date, and also allows for the length of the procedure to be captured.
+         * 
+         * @return
+         *     An immutable object of type {@link Age}, {@link Range}, {@link Period}, {@link String} or {@link DateTime} that may be 
+         *     null.
+         */
+        public org.linuxforhealth.fhir.model.type.Element getPerformed() {
+            return performed;
+        }
+
+        /**
+         * An area where general notes can be placed about this specific procedure.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link Annotation} that may be empty.
+         */
+        public List<Annotation> getNote() {
+            return note;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (code != null) || 
+                (outcome != null) || 
+                (contributedToDeath != null) || 
+                (performed != null) || 
+                !note.isEmpty();
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(code, "code", visitor);
+                    accept(outcome, "outcome", visitor);
+                    accept(contributedToDeath, "contributedToDeath", visitor);
+                    accept(performed, "performed", visitor);
+                    accept(note, "note", visitor, Annotation.class);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Procedure other = (Procedure) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(code, other.code) && 
+                Objects.equals(outcome, other.outcome) && 
+                Objects.equals(contributedToDeath, other.contributedToDeath) && 
+                Objects.equals(performed, other.performed) && 
+                Objects.equals(note, other.note);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    code, 
+                    outcome, 
+                    contributedToDeath, 
+                    performed, 
+                    note);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private CodeableConcept code;
+            private CodeableConcept outcome;
+            private Boolean contributedToDeath;
+            private org.linuxforhealth.fhir.model.type.Element performed;
+            private List<Annotation> note = new ArrayList<>();
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * The actual procedure specified. Could be a coded procedure or a less specific string depending on how much is known 
+             * about the procedure and the capabilities of the creating system.
+             * 
+             * <p>This element is required.
+             * 
+             * @param code
+             *     Procedures performed on the related person
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder code(CodeableConcept code) {
+                this.code = code;
+                return this;
+            }
+
+            /**
+             * Indicates what happened following the procedure. If the procedure resulted in death, deceased date is captured on the 
+             * relation.
+             * 
+             * @param outcome
+             *     What happened following the procedure
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder outcome(CodeableConcept outcome) {
+                this.outcome = outcome;
+                return this;
+            }
+
+            /**
+             * Convenience method for setting {@code contributedToDeath}.
+             * 
+             * @param contributedToDeath
+             *     Whether the procedure contributed to the cause of death
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #contributedToDeath(org.linuxforhealth.fhir.model.type.Boolean)
+             */
+            public Builder contributedToDeath(java.lang.Boolean contributedToDeath) {
+                this.contributedToDeath = (contributedToDeath == null) ? null : Boolean.of(contributedToDeath);
+                return this;
+            }
+
+            /**
+             * This procedure contributed to the cause of death of the related person. If contributedToDeath is not populated, then 
+             * it is unknown.
+             * 
+             * @param contributedToDeath
+             *     Whether the procedure contributed to the cause of death
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder contributedToDeath(Boolean contributedToDeath) {
+                this.contributedToDeath = contributedToDeath;
+                return this;
+            }
+
+            /**
+             * Convenience method for setting {@code performed} with choice type String.
+             * 
+             * @param performed
+             *     When the procedure was performed
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #performed(Element)
+             */
+            public Builder performed(java.lang.String performed) {
+                this.performed = (performed == null) ? null : String.of(performed);
+                return this;
+            }
+
+            /**
+             * Estimated or actual date, date-time, period, or age when the procedure was performed. Allows a period to support 
+             * complex procedures that span more than one date, and also allows for the length of the procedure to be captured.
+             * 
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link Age}</li>
+             * <li>{@link Range}</li>
+             * <li>{@link Period}</li>
+             * <li>{@link String}</li>
+             * <li>{@link DateTime}</li>
+             * </ul>
+             * 
+             * @param performed
+             *     When the procedure was performed
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder performed(org.linuxforhealth.fhir.model.type.Element performed) {
+                this.performed = performed;
+                return this;
+            }
+
+            /**
+             * An area where general notes can be placed about this specific procedure.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param note
+             *     Extra information about the procedure
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder note(Annotation... note) {
+                for (Annotation value : note) {
+                    this.note.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * An area where general notes can be placed about this specific procedure.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param note
+             *     Extra information about the procedure
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder note(Collection<Annotation> note) {
+                this.note = new ArrayList<>(note);
+                return this;
+            }
+
+            /**
+             * Build the {@link Procedure}
+             * 
+             * <p>Required elements:
+             * <ul>
+             * <li>code</li>
+             * </ul>
+             * 
+             * @return
+             *     An immutable object of type {@link Procedure}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Procedure per the base specification
+             */
+            @Override
+            public Procedure build() {
+                Procedure procedure = new Procedure(this);
+                if (validating) {
+                    validate(procedure);
+                }
+                return procedure;
+            }
+
+            protected void validate(Procedure procedure) {
+                super.validate(procedure);
+                ValidationSupport.requireNonNull(procedure.code, "code");
+                ValidationSupport.choiceElement(procedure.performed, "performed", Age.class, Range.class, Period.class, String.class, DateTime.class);
+                ValidationSupport.checkList(procedure.note, "note", Annotation.class);
+                ValidationSupport.requireValueOrChildren(procedure);
+            }
+
+            protected Builder from(Procedure procedure) {
+                super.from(procedure);
+                code = procedure.code;
+                outcome = procedure.outcome;
+                contributedToDeath = procedure.contributedToDeath;
+                performed = procedure.performed;
+                note.addAll(procedure.note);
                 return this;
             }
         }

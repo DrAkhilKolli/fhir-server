@@ -135,44 +135,17 @@
         </coding>
         <text value="NfQAVMilR0"/>
       </concept>
-      <reference>
-        <reference value="Basic/FsJ4r1LQ-J"/>
-        <type value="Basic"/>
-        <identifier>
-          <use value="old"/>
-          <type>
-            <coding>
-              <system value="KVgUjumA2P"/>
-              <version value="D6Z9exl0iZ"/>
-              <code value="UO6iuKuI7Z"/>
-              <display value="dmC1B5yHFY"/>
-              <userSelected value="true"/>
-            </coding>
-            <text value="elTwa6G8i6"/>
-          </type>
-          <system value="B45UpVn_FN"/>
-          <value value="5EBMzdndzz"/>
-          <period>
-            <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
-              <valueCode value="unknown"/>
-            </extension>
-          </period>
-        </identifier>
-        <display value="GhrowXvbzN"/>
-      </reference>
     </code>
     <strength>
       <presentationRatio>
         <numerator>
           <value value="0.353199753770339963665492177824489772319793701171875"/>
-          <comparator value="&gt;"/>
           <unit value="yz4F1uPYz0"/>
           <system value="SOylZAKJrC"/>
           <code value="AhrHo2cAv7"/>
         </numerator>
         <denominator>
           <value value="0.97619763100570555724999621816095896065235137939453125"/>
-          <comparator value="&lt;"/>
           <unit value="52Ws3nIh6N"/>
           <system value="MM6OLVngSe"/>
           <code value="m1AtOz0JgB"/>
@@ -182,14 +155,12 @@
       <concentrationRatio>
         <numerator>
           <value value="0.07894928522686904537319918517823680303990840911865234375"/>
-          <comparator value="&gt;"/>
           <unit value="NPQOMI7w2_"/>
           <system value="4Y00gvSqb6"/>
           <code value="ChETdkirZW"/>
         </numerator>
         <denominator>
           <value value="0.6465802354392786721604124977602623403072357177734375"/>
-          <comparator value="&lt;"/>
           <unit value="p_oOpaIniu"/>
           <system value="VjVg2DIgta"/>
           <code value="k8AKwOI6hB"/>
@@ -248,14 +219,12 @@
         <strengthRatio>
           <numerator>
             <value value="0.701022576741664682486998572130687534809112548828125"/>
-            <comparator value="&gt;="/>
             <unit value="qn9799mSOE"/>
             <system value="ooTGKYIuTD"/>
             <code value="8XHZCicOuU"/>
           </numerator>
           <denominator>
             <value value="0.529412161341018094873334121075458824634552001953125"/>
-            <comparator value="&lt;="/>
             <unit value="IqX_114_wD"/>
             <system value="LJ4iCr3zj3"/>
             <code value="kCXt2Jx_JN"/>

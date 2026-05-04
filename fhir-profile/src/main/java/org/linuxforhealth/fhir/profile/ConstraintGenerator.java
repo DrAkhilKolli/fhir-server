@@ -953,7 +953,8 @@ public class ConstraintGenerator {
             BindingStrength.Value baseStrength = (baseBinding != null) ? baseBinding.getStrength().getValueAsEnum() : null;
             String baseValueSet = (baseBinding != null && baseBinding.getValueSet() != null) ? baseBinding.getValueSet().getValue() : null;
 
-            return (isStronger(strength, baseStrength) || (strength.equals(baseStrength) && !valueSetEqualsIgnoreVersion(valueSet, baseValueSet)));
+            return (isStronger(strength, baseStrength) || (strength.equals(baseStrength) && !valueSetEqualsIgnoreVersion(valueSet, baseValueSet)))
+                    || strength.equals(BindingStrength.Value.REQUIRED);
         }
         return false;
     }
@@ -1047,7 +1048,22 @@ public class ConstraintGenerator {
     }
 
     private boolean isStronger(BindingStrength.Value strength, BindingStrength.Value baseStrength) {
-        return (baseStrength == null) || (strength.ordinal() < baseStrength.ordinal());
+        if (strength.equals(baseStrength)) {
+            return false;
+        }
+        if (baseStrength == null) {
+            return true;
+        }
+        switch (strength) {
+        case REQUIRED:
+            return true;
+        case EXTENSIBLE:
+            return BindingStrength.Value.PREFERRED.equals(baseStrength) || BindingStrength.Value.EXAMPLE.equals(baseStrength);
+        case PREFERRED:
+            return BindingStrength.Value.EXAMPLE.equals(baseStrength);
+        default:
+            return false;
+        }
     }
 
     private boolean isUriElement(ElementDefinition elementDefinition) {
@@ -1121,18 +1137,25 @@ public class ConstraintGenerator {
         return expr;
     }
 
-    private boolean valueSetEqualsIgnoreVersion(String valueSet, String baseValueSet) {
-        if (baseValueSet == null) {
+    private boolean valueSetEqualsIgnoreVersion(String valueSetA, String valueSetB) {
+        if (valueSetA == null && valueSetB == null) {
+            return true;
+        }
+        if (valueSetA == null || valueSetB == null) {
             return false;
         }
-
-        int index = valueSet.indexOf("|");
-        String url = (index != -1) ? valueSet.substring(0, index) : valueSet;
-
-        index = baseValueSet.indexOf("|");
-        String baseUrl = (index != -1) ? baseValueSet.substring(0, index) : baseValueSet;
-
-        return url.equals(baseUrl);
+        if (valueSetA.equals(valueSetB)) {
+            return true;
+        }
+        int pipeA = valueSetA.indexOf('|');
+        if (pipeA != -1) {
+            valueSetA = valueSetA.substring(0, pipeA);
+        }
+        int pipeB = valueSetB.indexOf('|');
+        if (pipeB != -1) {
+            valueSetB = valueSetB.substring(0, pipeB);
+        }
+        return valueSetA.equals(valueSetB);
     }
 
     static class Node {

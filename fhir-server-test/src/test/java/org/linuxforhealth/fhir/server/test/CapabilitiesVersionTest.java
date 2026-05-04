@@ -85,6 +85,7 @@ public class CapabilitiesVersionTest extends FHIRServerTestBase {
             }
             break;
         case VERSION_4_3_0:
+        case VERSION_5_0:
             // nothing to verify at the moment
             break;
         default:
@@ -106,7 +107,8 @@ public class CapabilitiesVersionTest extends FHIRServerTestBase {
             { "tenant1", "4.3", FHIRVersion.VERSION_4_3_0 },
             { "tenant2", null, FHIRVersion.VERSION_4_0_1 },
             { "tenant2", "4.0", FHIRVersion.VERSION_4_0_1 },
-            { "tenant2", "4.3", FHIRVersion.VERSION_4_3_0 }
+            { "tenant2", "4.3", FHIRVersion.VERSION_4_3_0 },
+            { "tenant2", "5.0", FHIRVersion.VERSION_5_0 }
         };
     }
 }

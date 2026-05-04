@@ -18,6 +18,7 @@ import org.testng.annotations.Test;
 
 import org.linuxforhealth.fhir.model.resource.Bundle;
 import org.linuxforhealth.fhir.model.resource.Patient;
+import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.HumanName;
 
 public class FHIRBundleCursorTest {
@@ -43,7 +44,7 @@ public class FHIRBundleCursorTest {
         Patient patient = john_doe();
         
         Bundle.Link link = Bundle.Link.builder()
-                .relation(fhirstring("next"))
+                .relation(Code.of("next"))
                 .url(fhiruri("http://dummy.com/fhir/Something?_page=X"))
                 .build();
         
@@ -69,7 +70,7 @@ public class FHIRBundleCursorTest {
         Patient patient = john_doe();
         
         Bundle.Link link = Bundle.Link.builder()
-                .relation(fhirstring("next"))
+                .relation(Code.of("next"))
                 .url(fhiruri("http://dummy.com/fhir/Something?_page=X"))
                 .build();
         

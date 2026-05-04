@@ -53,7 +53,7 @@ public class ProfileConstraintTest {
                 .beneficiary(Reference.builder()
                     .display(string("none"))
                     .build())
-                .payor(Reference.builder()
+                .insurer(Reference.builder()
                     .display(string("none"))
                     .build())
                 .period(Period.builder()

@@ -15,6 +15,7 @@ import java.util.Objects;
 import javax.annotation.Generated;
 
 import org.linuxforhealth.fhir.model.annotation.Binding;
+import org.linuxforhealth.fhir.model.annotation.Choice;
 import org.linuxforhealth.fhir.model.annotation.Constraint;
 import org.linuxforhealth.fhir.model.annotation.Maturity;
 import org.linuxforhealth.fhir.model.annotation.ReferenceTarget;
@@ -23,7 +24,9 @@ import org.linuxforhealth.fhir.model.type.Annotation;
 import org.linuxforhealth.fhir.model.type.BackboneElement;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.CodeableReference;
 import org.linuxforhealth.fhir.model.type.ContactPoint;
+import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Identifier;
 import org.linuxforhealth.fhir.model.type.Meta;
@@ -31,6 +34,7 @@ import org.linuxforhealth.fhir.model.type.Narrative;
 import org.linuxforhealth.fhir.model.type.Period;
 import org.linuxforhealth.fhir.model.type.Reference;
 import org.linuxforhealth.fhir.model.type.String;
+import org.linuxforhealth.fhir.model.type.Timing;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.CareTeamStatus;
@@ -40,7 +44,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 
 /**
  * The Care Team includes all the people and organizations who plan to participate in the coordination and delivery of 
- * care for a patient.
+ * care.
  * 
  * <p>Maturity level: FMM2 (Trial Use)
  */
@@ -53,7 +57,15 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Rule",
     location = "CareTeam.participant",
     description = "CareTeam.participant.onBehalfOf can only be populated when CareTeam.participant.member is a Practitioner",
-    expression = "onBehalfOf.exists() implies (member.resolve().iif(empty(), true, ofType(Practitioner).exists()))",
+    expression = "onBehalfOf.exists() implies (member.resolve() is Practitioner)",
+    source = "http://hl7.org/fhir/StructureDefinition/CareTeam"
+)
+@Constraint(
+    id = "ctm-2",
+    level = "Warning",
+    location = "CareTeam.participant",
+    description = "CareTeam.participant.role or CareTeam.participant.member exists",
+    expression = "role.exists() or member.exists()",
     source = "http://hl7.org/fhir/StructureDefinition/CareTeam"
 )
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
@@ -65,7 +77,7 @@ public class CareTeam extends DomainResource {
         bindingName = "CareTeamStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "Indicates the status of the care team.",
-        valueSet = "http://hl7.org/fhir/ValueSet/care-team-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/care-team-status|5.0.0"
     )
     private final CareTeamStatus status;
     @Summary
@@ -82,9 +94,6 @@ public class CareTeam extends DomainResource {
     @ReferenceTarget({ "Patient", "Group" })
     private final Reference subject;
     @Summary
-    @ReferenceTarget({ "Encounter" })
-    private final Reference encounter;
-    @Summary
     private final Period period;
     private final List<Participant> participant;
     @Binding(
@@ -93,9 +102,7 @@ public class CareTeam extends DomainResource {
         description = "Indicates the reason for the care team.",
         valueSet = "http://hl7.org/fhir/ValueSet/clinical-findings"
     )
-    private final List<CodeableConcept> reasonCode;
-    @ReferenceTarget({ "Condition" })
-    private final List<Reference> reasonReference;
+    private final List<CodeableReference> reason;
     @Summary
     @ReferenceTarget({ "Organization" })
     private final List<Reference> managingOrganization;
@@ -109,11 +116,9 @@ public class CareTeam extends DomainResource {
         category = Collections.unmodifiableList(builder.category);
         name = builder.name;
         subject = builder.subject;
-        encounter = builder.encounter;
         period = builder.period;
         participant = Collections.unmodifiableList(builder.participant);
-        reasonCode = Collections.unmodifiableList(builder.reasonCode);
-        reasonReference = Collections.unmodifiableList(builder.reasonReference);
+        reason = Collections.unmodifiableList(builder.reason);
         managingOrganization = Collections.unmodifiableList(builder.managingOrganization);
         telecom = Collections.unmodifiableList(builder.telecom);
         note = Collections.unmodifiableList(builder.note);
@@ -172,16 +177,6 @@ public class CareTeam extends DomainResource {
     }
 
     /**
-     * The Encounter during which this CareTeam was created or to which the creation of this record is tightly associated.
-     * 
-     * @return
-     *     An immutable object of type {@link Reference} that may be null.
-     */
-    public Reference getEncounter() {
-        return encounter;
-    }
-
-    /**
      * Indicates when the team did (or is intended to) come into effect and end.
      * 
      * @return
@@ -205,20 +200,10 @@ public class CareTeam extends DomainResource {
      * Describes why the care team exists.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link CodeableReference} that may be empty.
      */
-    public List<CodeableConcept> getReasonCode() {
-        return reasonCode;
-    }
-
-    /**
-     * Condition(s) that this care team addresses.
-     * 
-     * @return
-     *     An unmodifiable list containing immutable objects of type {@link Reference} that may be empty.
-     */
-    public List<Reference> getReasonReference() {
-        return reasonReference;
+    public List<CodeableReference> getReason() {
+        return reason;
     }
 
     /**
@@ -259,11 +244,9 @@ public class CareTeam extends DomainResource {
             !category.isEmpty() || 
             (name != null) || 
             (subject != null) || 
-            (encounter != null) || 
             (period != null) || 
             !participant.isEmpty() || 
-            !reasonCode.isEmpty() || 
-            !reasonReference.isEmpty() || 
+            !reason.isEmpty() || 
             !managingOrganization.isEmpty() || 
             !telecom.isEmpty() || 
             !note.isEmpty();
@@ -288,11 +271,9 @@ public class CareTeam extends DomainResource {
                 accept(category, "category", visitor, CodeableConcept.class);
                 accept(name, "name", visitor);
                 accept(subject, "subject", visitor);
-                accept(encounter, "encounter", visitor);
                 accept(period, "period", visitor);
                 accept(participant, "participant", visitor, Participant.class);
-                accept(reasonCode, "reasonCode", visitor, CodeableConcept.class);
-                accept(reasonReference, "reasonReference", visitor, Reference.class);
+                accept(reason, "reason", visitor, CodeableReference.class);
                 accept(managingOrganization, "managingOrganization", visitor, Reference.class);
                 accept(telecom, "telecom", visitor, ContactPoint.class);
                 accept(note, "note", visitor, Annotation.class);
@@ -327,11 +308,9 @@ public class CareTeam extends DomainResource {
             Objects.equals(category, other.category) && 
             Objects.equals(name, other.name) && 
             Objects.equals(subject, other.subject) && 
-            Objects.equals(encounter, other.encounter) && 
             Objects.equals(period, other.period) && 
             Objects.equals(participant, other.participant) && 
-            Objects.equals(reasonCode, other.reasonCode) && 
-            Objects.equals(reasonReference, other.reasonReference) && 
+            Objects.equals(reason, other.reason) && 
             Objects.equals(managingOrganization, other.managingOrganization) && 
             Objects.equals(telecom, other.telecom) && 
             Objects.equals(note, other.note);
@@ -354,11 +333,9 @@ public class CareTeam extends DomainResource {
                 category, 
                 name, 
                 subject, 
-                encounter, 
                 period, 
                 participant, 
-                reasonCode, 
-                reasonReference, 
+                reason, 
                 managingOrganization, 
                 telecom, 
                 note);
@@ -382,11 +359,9 @@ public class CareTeam extends DomainResource {
         private List<CodeableConcept> category = new ArrayList<>();
         private String name;
         private Reference subject;
-        private Reference encounter;
         private Period period;
         private List<Participant> participant = new ArrayList<>();
-        private List<CodeableConcept> reasonCode = new ArrayList<>();
-        private List<Reference> reasonReference = new ArrayList<>();
+        private List<CodeableReference> reason = new ArrayList<>();
         private List<Reference> managingOrganization = new ArrayList<>();
         private List<ContactPoint> telecom = new ArrayList<>();
         private List<Annotation> note = new ArrayList<>();
@@ -473,7 +448,8 @@ public class CareTeam extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -491,7 +467,8 @@ public class CareTeam extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -512,7 +489,7 @@ public class CareTeam extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -532,7 +509,7 @@ public class CareTeam extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -557,9 +534,9 @@ public class CareTeam extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -582,9 +559,9 @@ public class CareTeam extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -753,25 +730,6 @@ public class CareTeam extends DomainResource {
         }
 
         /**
-         * The Encounter during which this CareTeam was created or to which the creation of this record is tightly associated.
-         * 
-         * <p>Allowed resource types for this reference:
-         * <ul>
-         * <li>{@link Encounter}</li>
-         * </ul>
-         * 
-         * @param encounter
-         *     Encounter created as part of
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder encounter(Reference encounter) {
-            this.encounter = encounter;
-            return this;
-        }
-
-        /**
          * Indicates when the team did (or is intended to) come into effect and end.
          * 
          * @param period
@@ -830,15 +788,15 @@ public class CareTeam extends DomainResource {
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
+         * @param reason
          *     Why the care team exists
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder reasonCode(CodeableConcept... reasonCode) {
-            for (CodeableConcept value : reasonCode) {
-                this.reasonCode.add(value);
+        public Builder reason(CodeableReference... reason) {
+            for (CodeableReference value : reason) {
+                this.reason.add(value);
             }
             return this;
         }
@@ -849,7 +807,7 @@ public class CareTeam extends DomainResource {
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param reasonCode
+         * @param reason
          *     Why the care team exists
          * 
          * @return
@@ -858,57 +816,8 @@ public class CareTeam extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder reasonCode(Collection<CodeableConcept> reasonCode) {
-            this.reasonCode = new ArrayList<>(reasonCode);
-            return this;
-        }
-
-        /**
-         * Condition(s) that this care team addresses.
-         * 
-         * <p>Adds new element(s) to the existing list.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Why the care team exists
-         * 
-         * @return
-         *     A reference to this Builder instance
-         */
-        public Builder reasonReference(Reference... reasonReference) {
-            for (Reference value : reasonReference) {
-                this.reasonReference.add(value);
-            }
-            return this;
-        }
-
-        /**
-         * Condition(s) that this care team addresses.
-         * 
-         * <p>Replaces the existing list with a new one containing elements from the Collection.
-         * If any of the elements are null, calling {@link #build()} will fail.
-         * 
-         * <p>Allowed resource types for the references:
-         * <ul>
-         * <li>{@link Condition}</li>
-         * </ul>
-         * 
-         * @param reasonReference
-         *     Why the care team exists
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @throws NullPointerException
-         *     If the passed collection is null
-         */
-        public Builder reasonReference(Collection<Reference> reasonReference) {
-            this.reasonReference = new ArrayList<>(reasonReference);
+        public Builder reason(Collection<CodeableReference> reason) {
+            this.reason = new ArrayList<>(reason);
             return this;
         }
 
@@ -1061,14 +970,11 @@ public class CareTeam extends DomainResource {
             ValidationSupport.checkList(careTeam.identifier, "identifier", Identifier.class);
             ValidationSupport.checkList(careTeam.category, "category", CodeableConcept.class);
             ValidationSupport.checkList(careTeam.participant, "participant", Participant.class);
-            ValidationSupport.checkList(careTeam.reasonCode, "reasonCode", CodeableConcept.class);
-            ValidationSupport.checkList(careTeam.reasonReference, "reasonReference", Reference.class);
+            ValidationSupport.checkList(careTeam.reason, "reason", CodeableReference.class);
             ValidationSupport.checkList(careTeam.managingOrganization, "managingOrganization", Reference.class);
             ValidationSupport.checkList(careTeam.telecom, "telecom", ContactPoint.class);
             ValidationSupport.checkList(careTeam.note, "note", Annotation.class);
             ValidationSupport.checkReferenceType(careTeam.subject, "subject", "Patient", "Group");
-            ValidationSupport.checkReferenceType(careTeam.encounter, "encounter", "Encounter");
-            ValidationSupport.checkReferenceType(careTeam.reasonReference, "reasonReference", "Condition");
             ValidationSupport.checkReferenceType(careTeam.managingOrganization, "managingOrganization", "Organization");
         }
 
@@ -1079,11 +985,9 @@ public class CareTeam extends DomainResource {
             category.addAll(careTeam.category);
             name = careTeam.name;
             subject = careTeam.subject;
-            encounter = careTeam.encounter;
             period = careTeam.period;
             participant.addAll(careTeam.participant);
-            reasonCode.addAll(careTeam.reasonCode);
-            reasonReference.addAll(careTeam.reasonReference);
+            reason.addAll(careTeam.reason);
             managingOrganization.addAll(careTeam.managingOrganization);
             telecom.addAll(careTeam.telecom);
             note.addAll(careTeam.note);
@@ -1100,23 +1004,24 @@ public class CareTeam extends DomainResource {
             bindingName = "CareTeamParticipantRole",
             strength = BindingStrength.Value.EXAMPLE,
             description = "Indicates specific responsibility of an individual within the care team, such as \"Primary physician\", \"Team coordinator\", \"Caregiver\", etc.",
-            valueSet = "http://hl7.org/fhir/ValueSet/careteam-participant-role"
+            valueSet = "http://hl7.org/fhir/ValueSet/participant-role"
         )
-        private final List<CodeableConcept> role;
+        private final CodeableConcept role;
         @Summary
         @ReferenceTarget({ "Practitioner", "PractitionerRole", "RelatedPerson", "Patient", "Organization", "CareTeam" })
         private final Reference member;
         @Summary
         @ReferenceTarget({ "Organization" })
         private final Reference onBehalfOf;
-        private final Period period;
+        @Choice({ Period.class, Timing.class })
+        private final org.linuxforhealth.fhir.model.type.Element coverage;
 
         private Participant(Builder builder) {
             super(builder);
-            role = Collections.unmodifiableList(builder.role);
+            role = builder.role;
             member = builder.member;
             onBehalfOf = builder.onBehalfOf;
-            period = builder.period;
+            coverage = builder.coverage;
         }
 
         /**
@@ -1124,9 +1029,9 @@ public class CareTeam extends DomainResource {
          * social worker counselor", "Caregiver", etc.
          * 
          * @return
-         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+         *     An immutable object of type {@link CodeableConcept} that may be null.
          */
-        public List<CodeableConcept> getRole() {
+        public CodeableConcept getRole() {
             return role;
         }
 
@@ -1151,22 +1056,22 @@ public class CareTeam extends DomainResource {
         }
 
         /**
-         * Indicates when the specific member or organization did (or is intended to) come into effect and end.
+         * When the member is generally available within this care team.
          * 
          * @return
-         *     An immutable object of type {@link Period} that may be null.
+         *     An immutable object of type {@link Period} or {@link Timing} that may be null.
          */
-        public Period getPeriod() {
-            return period;
+        public org.linuxforhealth.fhir.model.type.Element getCoverage() {
+            return coverage;
         }
 
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
-                !role.isEmpty() || 
+                (role != null) || 
                 (member != null) || 
                 (onBehalfOf != null) || 
-                (period != null);
+                (coverage != null);
         }
 
         @Override
@@ -1178,10 +1083,10 @@ public class CareTeam extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
-                    accept(role, "role", visitor, CodeableConcept.class);
+                    accept(role, "role", visitor);
                     accept(member, "member", visitor);
                     accept(onBehalfOf, "onBehalfOf", visitor);
-                    accept(period, "period", visitor);
+                    accept(coverage, "coverage", visitor);
                 }
                 visitor.visitEnd(elementName, elementIndex, this);
                 visitor.postVisit(this);
@@ -1206,7 +1111,7 @@ public class CareTeam extends DomainResource {
                 Objects.equals(role, other.role) && 
                 Objects.equals(member, other.member) && 
                 Objects.equals(onBehalfOf, other.onBehalfOf) && 
-                Objects.equals(period, other.period);
+                Objects.equals(coverage, other.coverage);
         }
 
         @Override
@@ -1219,7 +1124,7 @@ public class CareTeam extends DomainResource {
                     role, 
                     member, 
                     onBehalfOf, 
-                    period);
+                    coverage);
                 hashCode = result;
             }
             return result;
@@ -1235,10 +1140,10 @@ public class CareTeam extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
-            private List<CodeableConcept> role = new ArrayList<>();
+            private CodeableConcept role;
             private Reference member;
             private Reference onBehalfOf;
-            private Period period;
+            private org.linuxforhealth.fhir.model.type.Element coverage;
 
             private Builder() {
                 super();
@@ -1261,7 +1166,7 @@ public class CareTeam extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1281,7 +1186,7 @@ public class CareTeam extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -1306,7 +1211,7 @@ public class CareTeam extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1331,7 +1236,7 @@ public class CareTeam extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -1359,40 +1264,14 @@ public class CareTeam extends DomainResource {
              * Indicates specific responsibility of an individual within the care team, such as "Primary care physician", "Trained 
              * social worker counselor", "Caregiver", etc.
              * 
-             * <p>Adds new element(s) to the existing list.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
              * @param role
              *     Type of involvement
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder role(CodeableConcept... role) {
-                for (CodeableConcept value : role) {
-                    this.role.add(value);
-                }
-                return this;
-            }
-
-            /**
-             * Indicates specific responsibility of an individual within the care team, such as "Primary care physician", "Trained 
-             * social worker counselor", "Caregiver", etc.
-             * 
-             * <p>Replaces the existing list with a new one containing elements from the Collection.
-             * If any of the elements are null, calling {@link #build()} will fail.
-             * 
-             * @param role
-             *     Type of involvement
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @throws NullPointerException
-             *     If the passed collection is null
-             */
-            public Builder role(Collection<CodeableConcept> role) {
-                this.role = new ArrayList<>(role);
+            public Builder role(CodeableConcept role) {
+                this.role = role;
                 return this;
             }
 
@@ -1440,16 +1319,22 @@ public class CareTeam extends DomainResource {
             }
 
             /**
-             * Indicates when the specific member or organization did (or is intended to) come into effect and end.
+             * When the member is generally available within this care team.
              * 
-             * @param period
-             *     Time period of participant
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link Period}</li>
+             * <li>{@link Timing}</li>
+             * </ul>
+             * 
+             * @param coverage
+             *     When the member is generally available within this care team
              * 
              * @return
              *     A reference to this Builder instance
              */
-            public Builder period(Period period) {
-                this.period = period;
+            public Builder coverage(org.linuxforhealth.fhir.model.type.Element coverage) {
+                this.coverage = coverage;
                 return this;
             }
 
@@ -1472,7 +1357,7 @@ public class CareTeam extends DomainResource {
 
             protected void validate(Participant participant) {
                 super.validate(participant);
-                ValidationSupport.checkList(participant.role, "role", CodeableConcept.class);
+                ValidationSupport.choiceElement(participant.coverage, "coverage", Period.class, Timing.class);
                 ValidationSupport.checkReferenceType(participant.member, "member", "Practitioner", "PractitionerRole", "RelatedPerson", "Patient", "Organization", "CareTeam");
                 ValidationSupport.checkReferenceType(participant.onBehalfOf, "onBehalfOf", "Organization");
                 ValidationSupport.requireValueOrChildren(participant);
@@ -1480,10 +1365,10 @@ public class CareTeam extends DomainResource {
 
             protected Builder from(Participant participant) {
                 super.from(participant);
-                role.addAll(participant.role);
+                role = participant.role;
                 member = participant.member;
                 onBehalfOf = participant.onBehalfOf;
-                period = participant.period;
+                coverage = participant.coverage;
                 return this;
             }
         }

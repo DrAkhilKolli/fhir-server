@@ -1,103 +1,17 @@
 <Endpoint xmlns="http://hl7.org/fhir">
-  <meta>
-    <versionId value="IQRNOgczj0"/>
-    <lastUpdated value="2022-05-13T14:23:02.176255-04:00"/>
-    <source value="9FzhrWf7p9"/>
-    <profile value="wWzsD00oHy"/>
-    <security>
-      <system value="RURnM29B2K"/>
-      <version value="b6BQxk1R5I"/>
-      <code value="gOpB4gGMeJ"/>
-      <display value="xPgLRyTE0e"/>
-      <userSelected value="true"/>
-    </security>
-    <tag>
-      <system value="VGzpFWNJaN"/>
-      <version value="PizWtmgp8t"/>
-      <code value="7JZaUiRP11"/>
-      <display value="daV8DhOTsh"/>
-      <userSelected value="true"/>
-    </tag>
-    <tag>
-      <code value="ibm/complete-mock"/>
-    </tag>
-  </meta>
-  <implicitRules value="2TQB8fio13"/>
-  <language value="en-US"/>
-  <text>
-    <status value="empty"/>
-    <div xmlns="http://www.w3.org/1999/xhtml"></div>
-  </text>
-  <identifier>
-    <use value="official"/>
-    <type>
-      <coding>
-        <system value="PwL518cWpY"/>
-        <version value="o5zSVc4X_i"/>
-        <code value="dh1vyAReYP"/>
-        <display value="jN3CbSAUMp"/>
-        <userSelected value="true"/>
-      </coding>
-      <text value="QYE7frFkud"/>
-    </type>
-    <system value="7J4qzMeMYs"/>
-    <value value="NpAOIe9YWB"/>
-    <period>
-      <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
-        <valueCode value="unknown"/>
-      </extension>
-    </period>
-  </identifier>
-  <status value="entered-in-error"/>
-  <connectionType>
-    <system value="q_H9iyvbKb"/>
-    <version value="ZDNdAcrCcx"/>
-    <code value="_N9Dt5nJHH"/>
-    <display value="YU_YD3Jggw"/>
-    <userSelected value="true"/>
-  </connectionType>
-  <name value="B2xgg51VVv"/>
-  <managingOrganization>
-    <reference value="Organization/JsIZchTznn"/>
-    <type value="Organization"/>
-    <identifier>
-      <use value="temp"/>
-      <type>
+    <status value="active"/>
+    <connectionType>
         <coding>
-          <system value="DwzrYJZ6Pn"/>
-          <version value="5BVoU0Riig"/>
-          <code value="thmpC1b25h"/>
-          <display value="1uHvUs1Vmw"/>
-          <userSelected value="true"/>
+            <code value="hl7-fhir-rest"/>
         </coding>
-        <text value="YCqTFV1FTO"/>
-      </type>
-      <system value="NHFnwOQ8E4"/>
-      <value value="4_SIj1mnKt"/>
-      <period>
-        <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
-          <valueCode value="unknown"/>
-        </extension>
-      </period>
-    </identifier>
-    <display value="8m_IgzrW0E"/>
-  </managingOrganization>
-  <contact>
-    <system value="sms"/>
-    <value value="C7DXmvEov4"/>
-    <use value="old"/>
-    <rank value="413939913"/>
-    <period>
-      <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
-        <valueCode value="unknown"/>
-      </extension>
-    </period>
-  </contact>
-  <period>
-    <extension url="http://hl7.org/fhir/StructureDefinition/data-absent-reason">
-      <valueCode value="unknown"/>
-    </extension>
-  </period>
+    </connectionType>
+    <payload>
+        <type>
+            <text value="Patient"/>
+        </type>
+    </payload>
+    <address value="https://example.com/fhir"/>
+</Endpoint>
   <payloadType>
     <coding>
       <system value="1lPJVuta79"/>

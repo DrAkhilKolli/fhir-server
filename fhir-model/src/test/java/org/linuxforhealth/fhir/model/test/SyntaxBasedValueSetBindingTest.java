@@ -56,10 +56,12 @@ public class SyntaxBasedValueSetBindingTest {
             Practitioner practitioner = TestUtil.getMinimalResource(Practitioner.class);
 
             practitioner.toBuilder()
-                    .communication(CodeableConcept.builder()
-                            .coding(Coding.builder()
-                                    .system(Uri.of(ValidationSupport.BCP_47_URN))
-                                    .code(Code.of("ar"))
+                    .communication(Practitioner.Communication.builder()
+                            .language(CodeableConcept.builder()
+                                    .coding(Coding.builder()
+                                            .system(Uri.of(ValidationSupport.BCP_47_URN))
+                                            .code(Code.of("ar"))
+                                            .build())
                                     .build())
                             .build())
                     .build();
@@ -72,14 +74,16 @@ public class SyntaxBasedValueSetBindingTest {
 
             try {
                 practitioner.toBuilder()
-                        .communication(CodeableConcept.builder()
-                                .coding(Coding.builder()
-                                        .system(Uri.of("invalidSystem"))
-                                        .code(Code.of("ar"))
-                                        .build())
-                                .coding(Coding.builder()
-                                        .system(Uri.of(ValidationSupport.BCP_47_URN))
-                                        .code(Code.of("invalidLanguageCode"))
+                        .communication(Practitioner.Communication.builder()
+                                .language(CodeableConcept.builder()
+                                        .coding(Coding.builder()
+                                                .system(Uri.of("invalidSystem"))
+                                                .code(Code.of("ar"))
+                                                .build())
+                                        .coding(Coding.builder()
+                                                .system(Uri.of(ValidationSupport.BCP_47_URN))
+                                                .code(Code.of("invalidLanguageCode"))
+                                                .build())
                                         .build())
                                 .build())
                         .build();

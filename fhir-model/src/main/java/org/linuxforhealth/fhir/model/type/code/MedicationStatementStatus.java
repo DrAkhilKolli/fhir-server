@@ -20,63 +20,26 @@ import javax.annotation.Generated;
 @Generated("org.linuxforhealth.fhir.tools.CodeGenerator")
 public class MedicationStatementStatus extends Code {
     /**
-     * Active
+     * Recorded
      * 
-     * <p>The medication is still being taken.
+     * <p>The action of recording the medication statement is finished.
      */
-    public static final MedicationStatementStatus ACTIVE = MedicationStatementStatus.builder().value(Value.ACTIVE).build();
-
-    /**
-     * Completed
-     * 
-     * <p>The medication is no longer being taken.
-     */
-    public static final MedicationStatementStatus COMPLETED = MedicationStatementStatus.builder().value(Value.COMPLETED).build();
+    public static final MedicationStatementStatus RECORDED = MedicationStatementStatus.builder().value(Value.RECORDED).build();
 
     /**
      * Entered in Error
      * 
-     * <p>Some of the actions that are implied by the medication statement may have occurred. For example, the patient may 
-     * have taken some of the medication. Clinical decision support systems should take this status into account.
+     * <p>Some of the actions that are implied by the medication usage may have occurred. For example, the patient may have 
+     * taken some of the medication. Clinical decision support systems should take this status into account.
      */
     public static final MedicationStatementStatus ENTERED_IN_ERROR = MedicationStatementStatus.builder().value(Value.ENTERED_IN_ERROR).build();
 
     /**
-     * Intended
+     * Draft
      * 
-     * <p>The medication may be taken at some time in the future.
+     * <p>The medication usage is draft or preliminary.
      */
-    public static final MedicationStatementStatus INTENDED = MedicationStatementStatus.builder().value(Value.INTENDED).build();
-
-    /**
-     * Stopped
-     * 
-     * <p>Actions implied by the statement have been permanently halted, before all of them occurred. This should not be used 
-     * if the statement was entered in error.
-     */
-    public static final MedicationStatementStatus STOPPED = MedicationStatementStatus.builder().value(Value.STOPPED).build();
-
-    /**
-     * On Hold
-     * 
-     * <p>Actions implied by the statement have been temporarily halted, but are expected to continue later. May also be 
-     * called 'suspended'.
-     */
-    public static final MedicationStatementStatus ON_HOLD = MedicationStatementStatus.builder().value(Value.ON_HOLD).build();
-
-    /**
-     * Unknown
-     * 
-     * <p>The state of the medication use is not currently known.
-     */
-    public static final MedicationStatementStatus UNKNOWN = MedicationStatementStatus.builder().value(Value.UNKNOWN).build();
-
-    /**
-     * Not Taken
-     * 
-     * <p>The medication was not consumed by the patient
-     */
-    public static final MedicationStatementStatus NOT_TAKEN = MedicationStatementStatus.builder().value(Value.NOT_TAKEN).build();
+    public static final MedicationStatementStatus DRAFT = MedicationStatementStatus.builder().value(Value.DRAFT).build();
 
     private volatile int hashCode;
 
@@ -96,22 +59,12 @@ public class MedicationStatementStatus extends Code {
      */
     public static MedicationStatementStatus of(Value value) {
         switch (value) {
-        case ACTIVE:
-            return ACTIVE;
-        case COMPLETED:
-            return COMPLETED;
+        case RECORDED:
+            return RECORDED;
         case ENTERED_IN_ERROR:
             return ENTERED_IN_ERROR;
-        case INTENDED:
-            return INTENDED;
-        case STOPPED:
-            return STOPPED;
-        case ON_HOLD:
-            return ON_HOLD;
-        case UNKNOWN:
-            return UNKNOWN;
-        case NOT_TAKEN:
-            return NOT_TAKEN;
+        case DRAFT:
+            return DRAFT;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -245,63 +198,26 @@ public class MedicationStatementStatus extends Code {
 
     public enum Value {
         /**
-         * Active
+         * Recorded
          * 
-         * <p>The medication is still being taken.
+         * <p>The action of recording the medication statement is finished.
          */
-        ACTIVE("active"),
-
-        /**
-         * Completed
-         * 
-         * <p>The medication is no longer being taken.
-         */
-        COMPLETED("completed"),
+        RECORDED("recorded"),
 
         /**
          * Entered in Error
          * 
-         * <p>Some of the actions that are implied by the medication statement may have occurred. For example, the patient may 
-         * have taken some of the medication. Clinical decision support systems should take this status into account.
+         * <p>Some of the actions that are implied by the medication usage may have occurred. For example, the patient may have 
+         * taken some of the medication. Clinical decision support systems should take this status into account.
          */
         ENTERED_IN_ERROR("entered-in-error"),
 
         /**
-         * Intended
+         * Draft
          * 
-         * <p>The medication may be taken at some time in the future.
+         * <p>The medication usage is draft or preliminary.
          */
-        INTENDED("intended"),
-
-        /**
-         * Stopped
-         * 
-         * <p>Actions implied by the statement have been permanently halted, before all of them occurred. This should not be used 
-         * if the statement was entered in error.
-         */
-        STOPPED("stopped"),
-
-        /**
-         * On Hold
-         * 
-         * <p>Actions implied by the statement have been temporarily halted, but are expected to continue later. May also be 
-         * called 'suspended'.
-         */
-        ON_HOLD("on-hold"),
-
-        /**
-         * Unknown
-         * 
-         * <p>The state of the medication use is not currently known.
-         */
-        UNKNOWN("unknown"),
-
-        /**
-         * Not Taken
-         * 
-         * <p>The medication was not consumed by the patient
-         */
-        NOT_TAKEN("not-taken");
+        DRAFT("draft");
 
         private final java.lang.String value;
 
@@ -332,22 +248,12 @@ public class MedicationStatementStatus extends Code {
                 return null;
             }
             switch (value) {
-            case "active":
-                return ACTIVE;
-            case "completed":
-                return COMPLETED;
+            case "recorded":
+                return RECORDED;
             case "entered-in-error":
                 return ENTERED_IN_ERROR;
-            case "intended":
-                return INTENDED;
-            case "stopped":
-                return STOPPED;
-            case "on-hold":
-                return ON_HOLD;
-            case "unknown":
-                return UNKNOWN;
-            case "not-taken":
-                return NOT_TAKEN;
+            case "draft":
+                return DRAFT;
             default:
                 throw new IllegalArgumentException(value);
             }

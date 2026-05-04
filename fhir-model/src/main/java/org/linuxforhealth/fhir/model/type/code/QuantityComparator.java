@@ -47,6 +47,13 @@ public class QuantityComparator extends Code {
      */
     public static final QuantityComparator GREATER_THAN = QuantityComparator.builder().value(Value.GREATER_THAN).build();
 
+    /**
+     * Sufficient to achieve this total quantity
+     * 
+     * <p>The actual value is sufficient for the total quantity to equal the given value.
+     */
+    public static final QuantityComparator AD = QuantityComparator.builder().value(Value.AD).build();
+
     private volatile int hashCode;
 
     private QuantityComparator(Builder builder) {
@@ -73,6 +80,8 @@ public class QuantityComparator extends Code {
             return GREATER_OR_EQUALS;
         case GREATER_THAN:
             return GREATER_THAN;
+        case AD:
+            return AD;
         default:
             throw new IllegalStateException(value.name());
         }
@@ -231,7 +240,14 @@ public class QuantityComparator extends Code {
          * 
          * <p>The actual value is greater than the given value.
          */
-        GREATER_THAN(">");
+        GREATER_THAN(">"),
+
+        /**
+         * Sufficient to achieve this total quantity
+         * 
+         * <p>The actual value is sufficient for the total quantity to equal the given value.
+         */
+        AD("ad");
 
         private final java.lang.String value;
 
@@ -270,6 +286,8 @@ public class QuantityComparator extends Code {
                 return GREATER_OR_EQUALS;
             case ">":
                 return GREATER_THAN;
+            case "ad":
+                return AD;
             default:
                 throw new IllegalArgumentException(value);
             }

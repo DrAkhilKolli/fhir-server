@@ -26,6 +26,7 @@ import org.linuxforhealth.fhir.model.type.Boolean;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
+import org.linuxforhealth.fhir.model.type.Coding;
 import org.linuxforhealth.fhir.model.type.ContactDetail;
 import org.linuxforhealth.fhir.model.type.Date;
 import org.linuxforhealth.fhir.model.type.DateTime;
@@ -42,6 +43,7 @@ import org.linuxforhealth.fhir.model.type.RelatedArtifact;
 import org.linuxforhealth.fhir.model.type.String;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.UsageContext;
+import org.linuxforhealth.fhir.model.type.code.BasisType;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.PublicationStatus;
 import org.linuxforhealth.fhir.model.type.code.StandardsStatus;
@@ -51,10 +53,10 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
 /**
  * The Measure resource provides the definition of a quality measure.
  * 
- * <p>Maturity level: FMM3 (Trial Use)
+ * <p>Maturity level: FMM4 (Trial Use)
  */
 @Maturity(
-    level = 3,
+    level = 4,
     status = StandardsStatus.Value.TRIAL_USE
 )
 @Constraint(
@@ -62,7 +64,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     level = "Warning",
     location = "(base)",
     description = "Name should be usable as an identifier for the module by machine processing applications such as code generation",
-    expression = "name.exists() implies name.matches('[A-Z]([A-Za-z0-9_]){0,254}')",
+    expression = "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')",
     source = "http://hl7.org/fhir/StructureDefinition/Measure"
 )
 @Constraint(
@@ -74,16 +76,73 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     source = "http://hl7.org/fhir/StructureDefinition/Measure"
 )
 @Constraint(
-    id = "measure-2",
+    id = "cnl-1",
+    level = "Warning",
+    location = "Measure.url",
+    description = "URL should not contain | or # - these characters make processing canonical references problematic",
+    expression = "exists() implies matches('^[^|# ]+$')",
+    source = "http://hl7.org/fhir/StructureDefinition/Measure"
+)
+@Constraint(
+    id = "mea-2",
+    level = "Warning",
+    location = "Measure.group.linkId",
+    description = "Link ids should be 255 characters or less",
+    expression = "$this.length() <= 255",
+    source = "http://hl7.org/fhir/StructureDefinition/Measure"
+)
+@Constraint(
+    id = "mea-3",
+    level = "Warning",
+    location = "Measure.group.population.linkId",
+    description = "Link ids should be 255 characters or less",
+    expression = "$this.length() <= 255",
+    source = "http://hl7.org/fhir/StructureDefinition/Measure"
+)
+@Constraint(
+    id = "mea-4",
+    level = "Warning",
+    location = "Measure.group.stratifier.linkId",
+    description = "Link ids should be 255 characters or less",
+    expression = "$this.length() <= 255",
+    source = "http://hl7.org/fhir/StructureDefinition/Measure"
+)
+@Constraint(
+    id = "mea-5",
+    level = "Warning",
+    location = "Measure.group.stratifier.component.linkId",
+    description = "Link ids should be 255 characters or less",
+    expression = "$this.length() <= 255",
+    source = "http://hl7.org/fhir/StructureDefinition/Measure"
+)
+@Constraint(
+    id = "mea-6",
+    level = "Warning",
+    location = "Measure.supplementalData.linkId",
+    description = "Link ids should be 255 characters or less",
+    expression = "$this.length() <= 255",
+    source = "http://hl7.org/fhir/StructureDefinition/Measure"
+)
+@Constraint(
+    id = "measure-7",
     level = "Warning",
     location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/subject-type",
-    expression = "subject.as(CodeableConcept).exists() implies (subject.as(CodeableConcept).memberOf('http://hl7.org/fhir/ValueSet/subject-type', 'extensible'))",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/version-algorithm",
+    expression = "versionAlgorithm.as(String).exists() implies (versionAlgorithm.as(String).memberOf('http://hl7.org/fhir/ValueSet/version-algorithm', 'extensible'))",
     source = "http://hl7.org/fhir/StructureDefinition/Measure",
     generated = true
 )
 @Constraint(
-    id = "measure-3",
+    id = "measure-8",
+    level = "Warning",
+    location = "(base)",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/participant-resource-types",
+    expression = "subject.as(CodeableConcept).exists() implies (subject.as(CodeableConcept).memberOf('http://hl7.org/fhir/ValueSet/participant-resource-types', 'extensible'))",
+    source = "http://hl7.org/fhir/StructureDefinition/Measure",
+    generated = true
+)
+@Constraint(
+    id = "measure-9",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/jurisdiction",
@@ -92,16 +151,16 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "measure-4",
+    id = "measure-10",
     level = "Warning",
     location = "(base)",
-    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/measure-scoring",
-    expression = "scoring.exists() implies (scoring.memberOf('http://hl7.org/fhir/ValueSet/measure-scoring', 'extensible'))",
+    description = "SHALL, if possible, contain a code from value set http://terminology.hl7.org/ValueSet/measure-scoring",
+    expression = "scoring.exists() implies (scoring.memberOf('http://terminology.hl7.org/ValueSet/measure-scoring', 'extensible'))",
     source = "http://hl7.org/fhir/StructureDefinition/Measure",
     generated = true
 )
 @Constraint(
-    id = "measure-5",
+    id = "measure-11",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/composite-measure-scoring",
@@ -110,7 +169,7 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "measure-6",
+    id = "measure-12",
     level = "Warning",
     location = "(base)",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/measure-type",
@@ -119,7 +178,34 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "measure-7",
+    id = "measure-13",
+    level = "Warning",
+    location = "group.type",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/measure-type",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/measure-type', 'extensible')",
+    source = "http://hl7.org/fhir/StructureDefinition/Measure",
+    generated = true
+)
+@Constraint(
+    id = "measure-14",
+    level = "Warning",
+    location = "group.subject",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/participant-resource-types",
+    expression = "$this.as(CodeableConcept).memberOf('http://hl7.org/fhir/ValueSet/participant-resource-types', 'extensible')",
+    source = "http://hl7.org/fhir/StructureDefinition/Measure",
+    generated = true
+)
+@Constraint(
+    id = "measure-15",
+    level = "Warning",
+    location = "group.scoring",
+    description = "SHALL, if possible, contain a code from value set http://terminology.hl7.org/ValueSet/measure-scoring",
+    expression = "$this.memberOf('http://terminology.hl7.org/ValueSet/measure-scoring', 'extensible')",
+    source = "http://hl7.org/fhir/StructureDefinition/Measure",
+    generated = true
+)
+@Constraint(
+    id = "measure-16",
     level = "Warning",
     location = "group.population.code",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/measure-population",
@@ -128,7 +214,16 @@ import org.linuxforhealth.fhir.model.visitor.Visitor;
     generated = true
 )
 @Constraint(
-    id = "measure-8",
+    id = "measure-17",
+    level = "Warning",
+    location = "group.population.aggregateMethod",
+    description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/measure-aggregate-method",
+    expression = "$this.memberOf('http://hl7.org/fhir/ValueSet/measure-aggregate-method', 'extensible')",
+    source = "http://hl7.org/fhir/StructureDefinition/Measure",
+    generated = true
+)
+@Constraint(
+    id = "measure-18",
     level = "Warning",
     location = "supplementalData.usage",
     description = "SHALL, if possible, contain a code from value set http://hl7.org/fhir/ValueSet/measure-data-usage",
@@ -145,6 +240,13 @@ public class Measure extends DomainResource {
     @Summary
     private final String version;
     @Summary
+    @Choice({ String.class, Coding.class })
+    @Binding(
+        strength = BindingStrength.Value.EXTENSIBLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/version-algorithm"
+    )
+    private final org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
+    @Summary
     private final String name;
     @Summary
     private final String title;
@@ -154,7 +256,7 @@ public class Measure extends DomainResource {
         bindingName = "PublicationStatus",
         strength = BindingStrength.Value.REQUIRED,
         description = "The lifecycle status of an artifact.",
-        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/publication-status|5.0.0"
     )
     @Required
     private final PublicationStatus status;
@@ -166,9 +268,16 @@ public class Measure extends DomainResource {
         bindingName = "SubjectType",
         strength = BindingStrength.Value.EXTENSIBLE,
         description = "The possible types of subjects for a measure (E.g. Patient, Practitioner, Organization, Location, etc.).",
-        valueSet = "http://hl7.org/fhir/ValueSet/subject-type"
+        valueSet = "http://hl7.org/fhir/ValueSet/participant-resource-types"
     )
-    private final Element subject;
+    private final org.linuxforhealth.fhir.model.type.Element subject;
+    @Summary
+    @Binding(
+        bindingName = "BasisType",
+        strength = BindingStrength.Value.REQUIRED,
+        valueSet = "http://hl7.org/fhir/ValueSet/fhir-types|5.0.0"
+    )
+    private final BasisType basis;
     @Summary
     private final DateTime date;
     @Summary
@@ -188,8 +297,9 @@ public class Measure extends DomainResource {
     )
     private final List<CodeableConcept> jurisdiction;
     private final Markdown purpose;
-    private final String usage;
+    private final Markdown usage;
     private final Markdown copyright;
+    private final String copyrightLabel;
     private final Date approvalDate;
     private final Date lastReviewDate;
     @Summary
@@ -214,9 +324,16 @@ public class Measure extends DomainResource {
         bindingName = "MeasureScoring",
         strength = BindingStrength.Value.EXTENSIBLE,
         description = "The scoring type of the measure.",
-        valueSet = "http://hl7.org/fhir/ValueSet/measure-scoring"
+        valueSet = "http://terminology.hl7.org/ValueSet/measure-scoring"
     )
     private final CodeableConcept scoring;
+    @Summary
+    @Binding(
+        bindingName = "MeasureScoringUnit",
+        strength = BindingStrength.Value.EXAMPLE,
+        valueSet = "http://hl7.org/fhir/ValueSet/measure-scoring-unit"
+    )
+    private final CodeableConcept scoringUnit;
     @Summary
     @Binding(
         bindingName = "CompositeMeasureScoring",
@@ -234,9 +351,9 @@ public class Measure extends DomainResource {
     )
     private final List<CodeableConcept> type;
     @Summary
-    private final String riskAdjustment;
+    private final Markdown riskAdjustment;
     @Summary
-    private final String rateAggregation;
+    private final Markdown rateAggregation;
     @Summary
     private final Markdown rationale;
     @Summary
@@ -246,11 +363,10 @@ public class Measure extends DomainResource {
         bindingName = "MeasureImprovementNotation",
         strength = BindingStrength.Value.REQUIRED,
         description = "Observation values that indicate what change in a measurement value or score is indicative of an improvement in the measured item or scored issue.",
-        valueSet = "http://hl7.org/fhir/ValueSet/measure-improvement-notation|4.3.0"
+        valueSet = "http://hl7.org/fhir/ValueSet/measure-improvement-notation|5.0.0"
     )
     private final CodeableConcept improvementNotation;
-    @Summary
-    private final List<Markdown> definition;
+    private final List<Term> term;
     @Summary
     private final Markdown guidance;
     private final List<Group> group;
@@ -261,12 +377,14 @@ public class Measure extends DomainResource {
         url = builder.url;
         identifier = Collections.unmodifiableList(builder.identifier);
         version = builder.version;
+        versionAlgorithm = builder.versionAlgorithm;
         name = builder.name;
         title = builder.title;
         subtitle = builder.subtitle;
         status = builder.status;
         experimental = builder.experimental;
         subject = builder.subject;
+        basis = builder.basis;
         date = builder.date;
         publisher = builder.publisher;
         contact = Collections.unmodifiableList(builder.contact);
@@ -276,6 +394,7 @@ public class Measure extends DomainResource {
         purpose = builder.purpose;
         usage = builder.usage;
         copyright = builder.copyright;
+        copyrightLabel = builder.copyrightLabel;
         approvalDate = builder.approvalDate;
         lastReviewDate = builder.lastReviewDate;
         effectivePeriod = builder.effectivePeriod;
@@ -288,6 +407,7 @@ public class Measure extends DomainResource {
         library = Collections.unmodifiableList(builder.library);
         disclaimer = builder.disclaimer;
         scoring = builder.scoring;
+        scoringUnit = builder.scoringUnit;
         compositeScoring = builder.compositeScoring;
         type = Collections.unmodifiableList(builder.type);
         riskAdjustment = builder.riskAdjustment;
@@ -295,7 +415,7 @@ public class Measure extends DomainResource {
         rationale = builder.rationale;
         clinicalRecommendationStatement = builder.clinicalRecommendationStatement;
         improvementNotation = builder.improvementNotation;
-        definition = Collections.unmodifiableList(builder.definition);
+        term = Collections.unmodifiableList(builder.term);
         guidance = builder.guidance;
         group = Collections.unmodifiableList(builder.group);
         supplementalData = Collections.unmodifiableList(builder.supplementalData);
@@ -304,8 +424,8 @@ public class Measure extends DomainResource {
     /**
      * An absolute URI that is used to identify this measure when it is referenced in a specification, model, design or an 
      * instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
-     * which at which an authoritative instance of this measure is (or will be) published. This URL can be the target of a 
-     * canonical reference. It SHALL remain the same when the measure is stored on different servers.
+     * which an authoritative instance of this measure is (or will be) published. This URL can be the target of a canonical 
+     * reference. It SHALL remain the same when the measure is stored on different servers.
      * 
      * @return
      *     An immutable object of type {@link Uri} that may be null.
@@ -339,6 +459,16 @@ public class Measure extends DomainResource {
      */
     public String getVersion() {
         return version;
+    }
+
+    /**
+     * Indicates the mechanism used to compare versions to determine which is more current.
+     * 
+     * @return
+     *     An immutable object of type {@link String} or {@link Coding} that may be null.
+     */
+    public org.linuxforhealth.fhir.model.type.Element getVersionAlgorithm() {
+        return versionAlgorithm;
     }
 
     /**
@@ -400,14 +530,28 @@ public class Measure extends DomainResource {
      * @return
      *     An immutable object of type {@link CodeableConcept} or {@link Reference} that may be null.
      */
-    public Element getSubject() {
+    public org.linuxforhealth.fhir.model.type.Element getSubject() {
         return subject;
     }
 
     /**
-     * The date (and optionally time) when the measure was published. The date must change when the business version changes 
-     * and it must change if the status code changes. In addition, it should change when the substantive content of the 
-     * measure changes.
+     * The population basis specifies the type of elements in the population. For a subject-based measure, this is boolean 
+     * (because the subject and the population basis are the same, and the population criteria define yes/no values for each 
+     * individual in the population). For measures that have a population basis that is different than the subject, this 
+     * element specifies the type of the population basis. For example, an encounter-based measure has a subject of Patient 
+     * and a population basis of Encounter, and the population criteria all return lists of Encounters.
+     * 
+     * @return
+     *     An immutable object of type {@link BasisType} that may be null.
+     */
+    public BasisType getBasis() {
+        return basis;
+    }
+
+    /**
+     * The date (and optionally time) when the measure was last significantly changed. The date must change when the business 
+     * version changes and it must change if the status code changes. In addition, it should change when the substantive 
+     * content of the measure changes.
      * 
      * @return
      *     An immutable object of type {@link DateTime} that may be null.
@@ -417,7 +561,7 @@ public class Measure extends DomainResource {
     }
 
     /**
-     * The name of the organization or individual that published the measure.
+     * The name of the organization or individual responsible for the release and ongoing maintenance of the measure.
      * 
      * @return
      *     An immutable object of type {@link String} that may be null.
@@ -482,9 +626,9 @@ public class Measure extends DomainResource {
      * A detailed description, from a clinical perspective, of how the measure is used.
      * 
      * @return
-     *     An immutable object of type {@link String} that may be null.
+     *     An immutable object of type {@link Markdown} that may be null.
      */
-    public String getUsage() {
+    public Markdown getUsage() {
         return usage;
     }
 
@@ -497,6 +641,17 @@ public class Measure extends DomainResource {
      */
     public Markdown getCopyright() {
         return copyright;
+    }
+
+    /**
+     * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+     * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+     * 
+     * @return
+     *     An immutable object of type {@link String} that may be null.
+     */
+    public String getCopyrightLabel() {
+        return copyrightLabel;
     }
 
     /**
@@ -563,7 +718,8 @@ public class Measure extends DomainResource {
     }
 
     /**
-     * An individual or organization primarily responsible for review of some aspect of the content.
+     * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+     * content.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
@@ -573,7 +729,8 @@ public class Measure extends DomainResource {
     }
 
     /**
-     * An individual or organization responsible for officially endorsing the content for use in some setting.
+     * An individual or organization asserted by the publisher to be responsible for officially endorsing the content for use 
+     * in some setting.
      * 
      * @return
      *     An unmodifiable list containing immutable objects of type {@link ContactDetail} that may be empty.
@@ -625,6 +782,16 @@ public class Measure extends DomainResource {
     }
 
     /**
+     * Defines the expected units of measure for the measure score. This element SHOULD be specified as a UCUM unit.
+     * 
+     * @return
+     *     An immutable object of type {@link CodeableConcept} that may be null.
+     */
+    public CodeableConcept getScoringUnit() {
+        return scoringUnit;
+    }
+
+    /**
      * If this is a composite measure, the scoring method used to combine the component measures to determine the composite 
      * score.
      * 
@@ -651,9 +818,9 @@ public class Measure extends DomainResource {
      * accounted for when computing and reporting measure results.
      * 
      * @return
-     *     An immutable object of type {@link String} that may be null.
+     *     An immutable object of type {@link Markdown} that may be null.
      */
-    public String getRiskAdjustment() {
+    public Markdown getRiskAdjustment() {
         return riskAdjustment;
     }
 
@@ -662,9 +829,9 @@ public class Measure extends DomainResource {
      * summarized result.
      * 
      * @return
-     *     An immutable object of type {@link String} that may be null.
+     *     An immutable object of type {@link Markdown} that may be null.
      */
-    public String getRateAggregation() {
+    public Markdown getRateAggregation() {
         return rateAggregation;
     }
 
@@ -704,10 +871,10 @@ public class Measure extends DomainResource {
      * Provides a description of an individual term used within the measure.
      * 
      * @return
-     *     An unmodifiable list containing immutable objects of type {@link Markdown} that may be empty.
+     *     An unmodifiable list containing immutable objects of type {@link Term} that may be empty.
      */
-    public List<Markdown> getDefinition() {
-        return definition;
+    public List<Term> getTerm() {
+        return term;
     }
 
     /**
@@ -747,12 +914,14 @@ public class Measure extends DomainResource {
             (url != null) || 
             !identifier.isEmpty() || 
             (version != null) || 
+            (versionAlgorithm != null) || 
             (name != null) || 
             (title != null) || 
             (subtitle != null) || 
             (status != null) || 
             (experimental != null) || 
             (subject != null) || 
+            (basis != null) || 
             (date != null) || 
             (publisher != null) || 
             !contact.isEmpty() || 
@@ -762,6 +931,7 @@ public class Measure extends DomainResource {
             (purpose != null) || 
             (usage != null) || 
             (copyright != null) || 
+            (copyrightLabel != null) || 
             (approvalDate != null) || 
             (lastReviewDate != null) || 
             (effectivePeriod != null) || 
@@ -774,6 +944,7 @@ public class Measure extends DomainResource {
             !library.isEmpty() || 
             (disclaimer != null) || 
             (scoring != null) || 
+            (scoringUnit != null) || 
             (compositeScoring != null) || 
             !type.isEmpty() || 
             (riskAdjustment != null) || 
@@ -781,7 +952,7 @@ public class Measure extends DomainResource {
             (rationale != null) || 
             (clinicalRecommendationStatement != null) || 
             (improvementNotation != null) || 
-            !definition.isEmpty() || 
+            !term.isEmpty() || 
             (guidance != null) || 
             !group.isEmpty() || 
             !supplementalData.isEmpty();
@@ -804,12 +975,14 @@ public class Measure extends DomainResource {
                 accept(url, "url", visitor);
                 accept(identifier, "identifier", visitor, Identifier.class);
                 accept(version, "version", visitor);
+                accept(versionAlgorithm, "versionAlgorithm", visitor);
                 accept(name, "name", visitor);
                 accept(title, "title", visitor);
                 accept(subtitle, "subtitle", visitor);
                 accept(status, "status", visitor);
                 accept(experimental, "experimental", visitor);
                 accept(subject, "subject", visitor);
+                accept(basis, "basis", visitor);
                 accept(date, "date", visitor);
                 accept(publisher, "publisher", visitor);
                 accept(contact, "contact", visitor, ContactDetail.class);
@@ -819,6 +992,7 @@ public class Measure extends DomainResource {
                 accept(purpose, "purpose", visitor);
                 accept(usage, "usage", visitor);
                 accept(copyright, "copyright", visitor);
+                accept(copyrightLabel, "copyrightLabel", visitor);
                 accept(approvalDate, "approvalDate", visitor);
                 accept(lastReviewDate, "lastReviewDate", visitor);
                 accept(effectivePeriod, "effectivePeriod", visitor);
@@ -831,6 +1005,7 @@ public class Measure extends DomainResource {
                 accept(library, "library", visitor, Canonical.class);
                 accept(disclaimer, "disclaimer", visitor);
                 accept(scoring, "scoring", visitor);
+                accept(scoringUnit, "scoringUnit", visitor);
                 accept(compositeScoring, "compositeScoring", visitor);
                 accept(type, "type", visitor, CodeableConcept.class);
                 accept(riskAdjustment, "riskAdjustment", visitor);
@@ -838,7 +1013,7 @@ public class Measure extends DomainResource {
                 accept(rationale, "rationale", visitor);
                 accept(clinicalRecommendationStatement, "clinicalRecommendationStatement", visitor);
                 accept(improvementNotation, "improvementNotation", visitor);
-                accept(definition, "definition", visitor, Markdown.class);
+                accept(term, "term", visitor, Term.class);
                 accept(guidance, "guidance", visitor);
                 accept(group, "group", visitor, Group.class);
                 accept(supplementalData, "supplementalData", visitor, SupplementalData.class);
@@ -871,12 +1046,14 @@ public class Measure extends DomainResource {
             Objects.equals(url, other.url) && 
             Objects.equals(identifier, other.identifier) && 
             Objects.equals(version, other.version) && 
+            Objects.equals(versionAlgorithm, other.versionAlgorithm) && 
             Objects.equals(name, other.name) && 
             Objects.equals(title, other.title) && 
             Objects.equals(subtitle, other.subtitle) && 
             Objects.equals(status, other.status) && 
             Objects.equals(experimental, other.experimental) && 
             Objects.equals(subject, other.subject) && 
+            Objects.equals(basis, other.basis) && 
             Objects.equals(date, other.date) && 
             Objects.equals(publisher, other.publisher) && 
             Objects.equals(contact, other.contact) && 
@@ -886,6 +1063,7 @@ public class Measure extends DomainResource {
             Objects.equals(purpose, other.purpose) && 
             Objects.equals(usage, other.usage) && 
             Objects.equals(copyright, other.copyright) && 
+            Objects.equals(copyrightLabel, other.copyrightLabel) && 
             Objects.equals(approvalDate, other.approvalDate) && 
             Objects.equals(lastReviewDate, other.lastReviewDate) && 
             Objects.equals(effectivePeriod, other.effectivePeriod) && 
@@ -898,6 +1076,7 @@ public class Measure extends DomainResource {
             Objects.equals(library, other.library) && 
             Objects.equals(disclaimer, other.disclaimer) && 
             Objects.equals(scoring, other.scoring) && 
+            Objects.equals(scoringUnit, other.scoringUnit) && 
             Objects.equals(compositeScoring, other.compositeScoring) && 
             Objects.equals(type, other.type) && 
             Objects.equals(riskAdjustment, other.riskAdjustment) && 
@@ -905,7 +1084,7 @@ public class Measure extends DomainResource {
             Objects.equals(rationale, other.rationale) && 
             Objects.equals(clinicalRecommendationStatement, other.clinicalRecommendationStatement) && 
             Objects.equals(improvementNotation, other.improvementNotation) && 
-            Objects.equals(definition, other.definition) && 
+            Objects.equals(term, other.term) && 
             Objects.equals(guidance, other.guidance) && 
             Objects.equals(group, other.group) && 
             Objects.equals(supplementalData, other.supplementalData);
@@ -926,12 +1105,14 @@ public class Measure extends DomainResource {
                 url, 
                 identifier, 
                 version, 
+                versionAlgorithm, 
                 name, 
                 title, 
                 subtitle, 
                 status, 
                 experimental, 
                 subject, 
+                basis, 
                 date, 
                 publisher, 
                 contact, 
@@ -941,6 +1122,7 @@ public class Measure extends DomainResource {
                 purpose, 
                 usage, 
                 copyright, 
+                copyrightLabel, 
                 approvalDate, 
                 lastReviewDate, 
                 effectivePeriod, 
@@ -953,6 +1135,7 @@ public class Measure extends DomainResource {
                 library, 
                 disclaimer, 
                 scoring, 
+                scoringUnit, 
                 compositeScoring, 
                 type, 
                 riskAdjustment, 
@@ -960,7 +1143,7 @@ public class Measure extends DomainResource {
                 rationale, 
                 clinicalRecommendationStatement, 
                 improvementNotation, 
-                definition, 
+                term, 
                 guidance, 
                 group, 
                 supplementalData);
@@ -982,12 +1165,14 @@ public class Measure extends DomainResource {
         private Uri url;
         private List<Identifier> identifier = new ArrayList<>();
         private String version;
+        private org.linuxforhealth.fhir.model.type.Element versionAlgorithm;
         private String name;
         private String title;
         private String subtitle;
         private PublicationStatus status;
         private Boolean experimental;
-        private Element subject;
+        private org.linuxforhealth.fhir.model.type.Element subject;
+        private BasisType basis;
         private DateTime date;
         private String publisher;
         private List<ContactDetail> contact = new ArrayList<>();
@@ -995,8 +1180,9 @@ public class Measure extends DomainResource {
         private List<UsageContext> useContext = new ArrayList<>();
         private List<CodeableConcept> jurisdiction = new ArrayList<>();
         private Markdown purpose;
-        private String usage;
+        private Markdown usage;
         private Markdown copyright;
+        private String copyrightLabel;
         private Date approvalDate;
         private Date lastReviewDate;
         private Period effectivePeriod;
@@ -1009,14 +1195,15 @@ public class Measure extends DomainResource {
         private List<Canonical> library = new ArrayList<>();
         private Markdown disclaimer;
         private CodeableConcept scoring;
+        private CodeableConcept scoringUnit;
         private CodeableConcept compositeScoring;
         private List<CodeableConcept> type = new ArrayList<>();
-        private String riskAdjustment;
-        private String rateAggregation;
+        private Markdown riskAdjustment;
+        private Markdown rateAggregation;
         private Markdown rationale;
         private Markdown clinicalRecommendationStatement;
         private CodeableConcept improvementNotation;
-        private List<Markdown> definition = new ArrayList<>();
+        private List<Term> term = new ArrayList<>();
         private Markdown guidance;
         private List<Group> group = new ArrayList<>();
         private List<SupplementalData> supplementalData = new ArrayList<>();
@@ -1103,7 +1290,8 @@ public class Measure extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1121,7 +1309,8 @@ public class Measure extends DomainResource {
 
         /**
          * These resources do not have an independent existence apart from the resource that contains them - they cannot be 
-         * identified independently, and nor can they have their own independent transaction scope.
+         * identified independently, nor can they have their own independent transaction scope. This is allowed to be a 
+         * Parameters resource if and only if it is referenced by a resource that provides context/meaning.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1142,7 +1331,7 @@ public class Measure extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -1162,7 +1351,7 @@ public class Measure extends DomainResource {
 
         /**
          * May be used to represent additional information that is not part of the basic definition of the resource. To make the 
-         * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+         * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
          * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
          * of the definition of the extension.
          * 
@@ -1187,9 +1376,9 @@ public class Measure extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1212,9 +1401,9 @@ public class Measure extends DomainResource {
          * May be used to represent additional information that is not part of the basic definition of the resource and that 
          * modifies the understanding of the element that contains it and/or the understanding of the containing element's 
          * descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and 
-         * manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
-         * implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the 
-         * definition of the extension. Applications processing a resource are required to check for modifier extensions.
+         * managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer 
+         * is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+         * extension. Applications processing a resource are required to check for modifier extensions.
          * 
          * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
          * change the meaning of modifierExtension itself).
@@ -1239,8 +1428,8 @@ public class Measure extends DomainResource {
         /**
          * An absolute URI that is used to identify this measure when it is referenced in a specification, model, design or an 
          * instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at 
-         * which at which an authoritative instance of this measure is (or will be) published. This URL can be the target of a 
-         * canonical reference. It SHALL remain the same when the measure is stored on different servers.
+         * which an authoritative instance of this measure is (or will be) published. This URL can be the target of a canonical 
+         * reference. It SHALL remain the same when the measure is stored on different servers.
          * 
          * @param url
          *     Canonical identifier for this measure, represented as a URI (globally unique)
@@ -1327,6 +1516,42 @@ public class Measure extends DomainResource {
          */
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code versionAlgorithm} with choice type String.
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #versionAlgorithm(Element)
+         */
+        public Builder versionAlgorithm(java.lang.String versionAlgorithm) {
+            this.versionAlgorithm = (versionAlgorithm == null) ? null : String.of(versionAlgorithm);
+            return this;
+        }
+
+        /**
+         * Indicates the mechanism used to compare versions to determine which is more current.
+         * 
+         * <p>This is a choice element with the following allowed types:
+         * <ul>
+         * <li>{@link String}</li>
+         * <li>{@link Coding}</li>
+         * </ul>
+         * 
+         * @param versionAlgorithm
+         *     How to compare versions
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder versionAlgorithm(org.linuxforhealth.fhir.model.type.Element versionAlgorithm) {
+            this.versionAlgorithm = versionAlgorithm;
             return this;
         }
 
@@ -1489,15 +1714,33 @@ public class Measure extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder subject(Element subject) {
+        public Builder subject(org.linuxforhealth.fhir.model.type.Element subject) {
             this.subject = subject;
             return this;
         }
 
         /**
-         * The date (and optionally time) when the measure was published. The date must change when the business version changes 
-         * and it must change if the status code changes. In addition, it should change when the substantive content of the 
-         * measure changes.
+         * The population basis specifies the type of elements in the population. For a subject-based measure, this is boolean 
+         * (because the subject and the population basis are the same, and the population criteria define yes/no values for each 
+         * individual in the population). For measures that have a population basis that is different than the subject, this 
+         * element specifies the type of the population basis. For example, an encounter-based measure has a subject of Patient 
+         * and a population basis of Encounter, and the population criteria all return lists of Encounters.
+         * 
+         * @param basis
+         *     Population basis
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder basis(BasisType basis) {
+            this.basis = basis;
+            return this;
+        }
+
+        /**
+         * The date (and optionally time) when the measure was last significantly changed. The date must change when the business 
+         * version changes and it must change if the status code changes. In addition, it should change when the substantive 
+         * content of the measure changes.
          * 
          * @param date
          *     Date last changed
@@ -1514,7 +1757,7 @@ public class Measure extends DomainResource {
          * Convenience method for setting {@code publisher}.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1527,10 +1770,10 @@ public class Measure extends DomainResource {
         }
 
         /**
-         * The name of the organization or individual that published the measure.
+         * The name of the organization or individual responsible for the release and ongoing maintenance of the measure.
          * 
          * @param publisher
-         *     Name of the publisher (organization or individual)
+         *     Name of the publisher/steward (organization or individual)
          * 
          * @return
          *     A reference to this Builder instance
@@ -1690,22 +1933,6 @@ public class Measure extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code usage}.
-         * 
-         * @param usage
-         *     Describes the clinical usage of the measure
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #usage(org.linuxforhealth.fhir.model.type.String)
-         */
-        public Builder usage(java.lang.String usage) {
-            this.usage = (usage == null) ? null : String.of(usage);
-            return this;
-        }
-
-        /**
          * A detailed description, from a clinical perspective, of how the measure is used.
          * 
          * @param usage
@@ -1714,7 +1941,7 @@ public class Measure extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder usage(String usage) {
+        public Builder usage(Markdown usage) {
             this.usage = usage;
             return this;
         }
@@ -1731,6 +1958,37 @@ public class Measure extends DomainResource {
          */
         public Builder copyright(Markdown copyright) {
             this.copyright = copyright;
+            return this;
+        }
+
+        /**
+         * Convenience method for setting {@code copyrightLabel}.
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         * 
+         * @see #copyrightLabel(org.linuxforhealth.fhir.model.type.String)
+         */
+        public Builder copyrightLabel(java.lang.String copyrightLabel) {
+            this.copyrightLabel = (copyrightLabel == null) ? null : String.of(copyrightLabel);
+            return this;
+        }
+
+        /**
+         * A short string (&lt;50 characters), suitable for inclusion in a page footer that identifies the copyright holder, 
+         * effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').
+         * 
+         * @param copyrightLabel
+         *     Copyright holder and year(s)
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder copyrightLabel(String copyrightLabel) {
+            this.copyrightLabel = copyrightLabel;
             return this;
         }
 
@@ -1769,7 +2027,7 @@ public class Measure extends DomainResource {
          * Convenience method for setting {@code lastReviewDate}.
          * 
          * @param lastReviewDate
-         *     When the measure was last reviewed
+         *     When the measure was last reviewed by the publisher
          * 
          * @return
          *     A reference to this Builder instance
@@ -1786,7 +2044,7 @@ public class Measure extends DomainResource {
          * change the original approval date.
          * 
          * @param lastReviewDate
-         *     When the measure was last reviewed
+         *     When the measure was last reviewed by the publisher
          * 
          * @return
          *     A reference to this Builder instance
@@ -1818,7 +2076,7 @@ public class Measure extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param topic
-         *     The category of the measure, such as Education, Treatment, Assessment, etc.
+         *     The category of the measure, such as Education, Treatment, Assessment, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -1838,7 +2096,7 @@ public class Measure extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param topic
-         *     The category of the measure, such as Education, Treatment, Assessment, etc.
+         *     The category of the measure, such as Education, Treatment, Assessment, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -1930,7 +2188,8 @@ public class Measure extends DomainResource {
         }
 
         /**
-         * An individual or organization primarily responsible for review of some aspect of the content.
+         * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+         * content.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1949,7 +2208,8 @@ public class Measure extends DomainResource {
         }
 
         /**
-         * An individual or organization primarily responsible for review of some aspect of the content.
+         * An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the 
+         * content.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1969,7 +2229,8 @@ public class Measure extends DomainResource {
         }
 
         /**
-         * An individual or organization responsible for officially endorsing the content for use in some setting.
+         * An individual or organization asserted by the publisher to be responsible for officially endorsing the content for use 
+         * in some setting.
          * 
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -1988,7 +2249,8 @@ public class Measure extends DomainResource {
         }
 
         /**
-         * An individual or organization responsible for officially endorsing the content for use in some setting.
+         * An individual or organization asserted by the publisher to be responsible for officially endorsing the content for use 
+         * in some setting.
          * 
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
@@ -2014,7 +2276,7 @@ public class Measure extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param relatedArtifact
-         *     Additional documentation, citations, etc.
+         *     Additional documentation, citations, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -2033,7 +2295,7 @@ public class Measure extends DomainResource {
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
          * @param relatedArtifact
-         *     Additional documentation, citations, etc.
+         *     Additional documentation, citations, etc
          * 
          * @return
          *     A reference to this Builder instance
@@ -2116,6 +2378,20 @@ public class Measure extends DomainResource {
         }
 
         /**
+         * Defines the expected units of measure for the measure score. This element SHOULD be specified as a UCUM unit.
+         * 
+         * @param scoringUnit
+         *     What units?
+         * 
+         * @return
+         *     A reference to this Builder instance
+         */
+        public Builder scoringUnit(CodeableConcept scoringUnit) {
+            this.scoringUnit = scoringUnit;
+            return this;
+        }
+
+        /**
          * If this is a composite measure, the scoring method used to combine the component measures to determine the composite 
          * score.
          * 
@@ -2172,22 +2448,6 @@ public class Measure extends DomainResource {
         }
 
         /**
-         * Convenience method for setting {@code riskAdjustment}.
-         * 
-         * @param riskAdjustment
-         *     How risk adjustment is applied for this measure
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #riskAdjustment(org.linuxforhealth.fhir.model.type.String)
-         */
-        public Builder riskAdjustment(java.lang.String riskAdjustment) {
-            this.riskAdjustment = (riskAdjustment == null) ? null : String.of(riskAdjustment);
-            return this;
-        }
-
-        /**
          * A description of the risk adjustment factors that may impact the resulting score for the measure and how they may be 
          * accounted for when computing and reporting measure results.
          * 
@@ -2197,24 +2457,8 @@ public class Measure extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder riskAdjustment(String riskAdjustment) {
+        public Builder riskAdjustment(Markdown riskAdjustment) {
             this.riskAdjustment = riskAdjustment;
-            return this;
-        }
-
-        /**
-         * Convenience method for setting {@code rateAggregation}.
-         * 
-         * @param rateAggregation
-         *     How is rate aggregation performed for this measure
-         * 
-         * @return
-         *     A reference to this Builder instance
-         * 
-         * @see #rateAggregation(org.linuxforhealth.fhir.model.type.String)
-         */
-        public Builder rateAggregation(java.lang.String rateAggregation) {
-            this.rateAggregation = (rateAggregation == null) ? null : String.of(rateAggregation);
             return this;
         }
 
@@ -2228,7 +2472,7 @@ public class Measure extends DomainResource {
          * @return
          *     A reference to this Builder instance
          */
-        public Builder rateAggregation(String rateAggregation) {
+        public Builder rateAggregation(Markdown rateAggregation) {
             this.rateAggregation = rateAggregation;
             return this;
         }
@@ -2283,15 +2527,15 @@ public class Measure extends DomainResource {
          * <p>Adds new element(s) to the existing list.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param definition
+         * @param term
          *     Defined terms used in the measure documentation
          * 
          * @return
          *     A reference to this Builder instance
          */
-        public Builder definition(Markdown... definition) {
-            for (Markdown value : definition) {
-                this.definition.add(value);
+        public Builder term(Term... term) {
+            for (Term value : term) {
+                this.term.add(value);
             }
             return this;
         }
@@ -2302,7 +2546,7 @@ public class Measure extends DomainResource {
          * <p>Replaces the existing list with a new one containing elements from the Collection.
          * If any of the elements are null, calling {@link #build()} will fail.
          * 
-         * @param definition
+         * @param term
          *     Defined terms used in the measure documentation
          * 
          * @return
@@ -2311,8 +2555,8 @@ public class Measure extends DomainResource {
          * @throws NullPointerException
          *     If the passed collection is null
          */
-        public Builder definition(Collection<Markdown> definition) {
-            this.definition = new ArrayList<>(definition);
+        public Builder term(Collection<Term> term) {
+            this.term = new ArrayList<>(term);
             return this;
         }
 
@@ -2320,7 +2564,7 @@ public class Measure extends DomainResource {
          * Additional guidance for the measure including how it can be used in a clinical context, and the intent of the measure.
          * 
          * @param guidance
-         *     Additional guidance for implementers
+         *     Additional guidance for implementers (deprecated)
          * 
          * @return
          *     A reference to this Builder instance
@@ -2435,6 +2679,7 @@ public class Measure extends DomainResource {
         protected void validate(Measure measure) {
             super.validate(measure);
             ValidationSupport.checkList(measure.identifier, "identifier", Identifier.class);
+            ValidationSupport.choiceElement(measure.versionAlgorithm, "versionAlgorithm", String.class, Coding.class);
             ValidationSupport.requireNonNull(measure.status, "status");
             ValidationSupport.choiceElement(measure.subject, "subject", CodeableConcept.class, Reference.class);
             ValidationSupport.checkList(measure.contact, "contact", ContactDetail.class);
@@ -2448,10 +2693,9 @@ public class Measure extends DomainResource {
             ValidationSupport.checkList(measure.relatedArtifact, "relatedArtifact", RelatedArtifact.class);
             ValidationSupport.checkList(measure.library, "library", Canonical.class);
             ValidationSupport.checkList(measure.type, "type", CodeableConcept.class);
-            ValidationSupport.checkList(measure.definition, "definition", Markdown.class);
+            ValidationSupport.checkList(measure.term, "term", Term.class);
             ValidationSupport.checkList(measure.group, "group", Group.class);
             ValidationSupport.checkList(measure.supplementalData, "supplementalData", SupplementalData.class);
-            ValidationSupport.checkValueSetBinding(measure.improvementNotation, "improvementNotation", "http://hl7.org/fhir/ValueSet/measure-improvement-notation", "http://terminology.hl7.org/CodeSystem/measure-improvement-notation", "increase", "decrease");
             ValidationSupport.checkReferenceType(measure.subject, "subject", "Group");
         }
 
@@ -2460,12 +2704,14 @@ public class Measure extends DomainResource {
             url = measure.url;
             identifier.addAll(measure.identifier);
             version = measure.version;
+            versionAlgorithm = measure.versionAlgorithm;
             name = measure.name;
             title = measure.title;
             subtitle = measure.subtitle;
             status = measure.status;
             experimental = measure.experimental;
             subject = measure.subject;
+            basis = measure.basis;
             date = measure.date;
             publisher = measure.publisher;
             contact.addAll(measure.contact);
@@ -2475,6 +2721,7 @@ public class Measure extends DomainResource {
             purpose = measure.purpose;
             usage = measure.usage;
             copyright = measure.copyright;
+            copyrightLabel = measure.copyrightLabel;
             approvalDate = measure.approvalDate;
             lastReviewDate = measure.lastReviewDate;
             effectivePeriod = measure.effectivePeriod;
@@ -2487,6 +2734,7 @@ public class Measure extends DomainResource {
             library.addAll(measure.library);
             disclaimer = measure.disclaimer;
             scoring = measure.scoring;
+            scoringUnit = measure.scoringUnit;
             compositeScoring = measure.compositeScoring;
             type.addAll(measure.type);
             riskAdjustment = measure.riskAdjustment;
@@ -2494,7 +2742,7 @@ public class Measure extends DomainResource {
             rationale = measure.rationale;
             clinicalRecommendationStatement = measure.clinicalRecommendationStatement;
             improvementNotation = measure.improvementNotation;
-            definition.addAll(measure.definition);
+            term.addAll(measure.term);
             guidance = measure.guidance;
             group.addAll(measure.group);
             supplementalData.addAll(measure.supplementalData);
@@ -2503,9 +2751,293 @@ public class Measure extends DomainResource {
     }
 
     /**
+     * Provides a description of an individual term used within the measure.
+     */
+    public static class Term extends BackboneElement {
+        @Binding(
+            bindingName = "DefinitionCode",
+            strength = BindingStrength.Value.EXAMPLE,
+            description = "Codeable representations of measure definition terms.",
+            valueSet = "http://hl7.org/fhir/ValueSet/measure-definition-example"
+        )
+        private final CodeableConcept code;
+        private final Markdown definition;
+
+        private Term(Builder builder) {
+            super(builder);
+            code = builder.code;
+            definition = builder.definition;
+        }
+
+        /**
+         * A codeable representation of the defined term.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getCode() {
+            return code;
+        }
+
+        /**
+         * Provides a definition for the term as used within the measure.
+         * 
+         * @return
+         *     An immutable object of type {@link Markdown} that may be null.
+         */
+        public Markdown getDefinition() {
+            return definition;
+        }
+
+        @Override
+        public boolean hasChildren() {
+            return super.hasChildren() || 
+                (code != null) || 
+                (definition != null);
+        }
+
+        @Override
+        public void accept(java.lang.String elementName, int elementIndex, Visitor visitor) {
+            if (visitor.preVisit(this)) {
+                visitor.visitStart(elementName, elementIndex, this);
+                if (visitor.visit(elementName, elementIndex, this)) {
+                    // visit children
+                    accept(id, "id", visitor);
+                    accept(extension, "extension", visitor, Extension.class);
+                    accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(code, "code", visitor);
+                    accept(definition, "definition", visitor);
+                }
+                visitor.visitEnd(elementName, elementIndex, this);
+                visitor.postVisit(this);
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Term other = (Term) obj;
+            return Objects.equals(id, other.id) && 
+                Objects.equals(extension, other.extension) && 
+                Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(code, other.code) && 
+                Objects.equals(definition, other.definition);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hashCode;
+            if (result == 0) {
+                result = Objects.hash(id, 
+                    extension, 
+                    modifierExtension, 
+                    code, 
+                    definition);
+                hashCode = result;
+            }
+            return result;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return new Builder().from(this);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder extends BackboneElement.Builder {
+            private CodeableConcept code;
+            private Markdown definition;
+
+            private Builder() {
+                super();
+            }
+
+            /**
+             * Unique id for the element within a resource (for internal references). This may be any string value that does not 
+             * contain spaces.
+             * 
+             * @param id
+             *     Unique id for inter-element referencing
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder id(java.lang.String id) {
+                return (Builder) super.id(id);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder extension(Extension... extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element. To make the 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
+             * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
+             * of the definition of the extension.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param extension
+             *     Additional content defined by implementations
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder extension(Collection<Extension> extension) {
+                return (Builder) super.extension(extension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            @Override
+            public Builder modifierExtension(Extension... modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * May be used to represent additional information that is not part of the basic definition of the element and that 
+             * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
+             * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
+             * extension. Applications processing a resource are required to check for modifier extensions.
+             * 
+             * <p>Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot 
+             * change the meaning of modifierExtension itself).
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param modifierExtension
+             *     Extensions that cannot be ignored even if unrecognized
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            @Override
+            public Builder modifierExtension(Collection<Extension> modifierExtension) {
+                return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * A codeable representation of the defined term.
+             * 
+             * @param code
+             *     What term?
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder code(CodeableConcept code) {
+                this.code = code;
+                return this;
+            }
+
+            /**
+             * Provides a definition for the term as used within the measure.
+             * 
+             * @param definition
+             *     Meaning of the term
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder definition(Markdown definition) {
+                this.definition = definition;
+                return this;
+            }
+
+            /**
+             * Build the {@link Term}
+             * 
+             * @return
+             *     An immutable object of type {@link Term}
+             * @throws IllegalStateException
+             *     if the current state cannot be built into a valid Term per the base specification
+             */
+            @Override
+            public Term build() {
+                Term term = new Term(this);
+                if (validating) {
+                    validate(term);
+                }
+                return term;
+            }
+
+            protected void validate(Term term) {
+                super.validate(term);
+                ValidationSupport.requireValueOrChildren(term);
+            }
+
+            protected Builder from(Term term) {
+                super.from(term);
+                code = term.code;
+                definition = term.definition;
+                return this;
+            }
+        }
+    }
+
+    /**
      * A group of population criteria for the measure.
      */
     public static class Group extends BackboneElement {
+        private final String linkId;
         @Binding(
             bindingName = "MeasureGroupExample",
             strength = BindingStrength.Value.EXAMPLE,
@@ -2513,16 +3045,82 @@ public class Measure extends DomainResource {
             valueSet = "http://hl7.org/fhir/ValueSet/measure-group-example"
         )
         private final CodeableConcept code;
-        private final String description;
+        private final Markdown description;
+        @Summary
+        @Binding(
+            bindingName = "MeasureType",
+            strength = BindingStrength.Value.EXTENSIBLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/measure-type"
+        )
+        private final List<CodeableConcept> type;
+        @ReferenceTarget({ "Group" })
+        @Choice({ CodeableConcept.class, Reference.class })
+        @Binding(
+            bindingName = "SubjectType",
+            strength = BindingStrength.Value.EXTENSIBLE,
+            description = "The possible types of subjects for a measure (E.g. Patient, Practitioner, Organization, Location, etc.).",
+            valueSet = "http://hl7.org/fhir/ValueSet/participant-resource-types"
+        )
+        private final org.linuxforhealth.fhir.model.type.Element subject;
+        @Summary
+        @Binding(
+            bindingName = "BasisType",
+            strength = BindingStrength.Value.REQUIRED,
+            valueSet = "http://hl7.org/fhir/ValueSet/fhir-types|5.0.0"
+        )
+        private final BasisType basis;
+        @Summary
+        @Binding(
+            bindingName = "MeasureScoring",
+            strength = BindingStrength.Value.EXTENSIBLE,
+            valueSet = "http://terminology.hl7.org/ValueSet/measure-scoring"
+        )
+        private final CodeableConcept scoring;
+        @Summary
+        @Binding(
+            bindingName = "MeasureScoringUnit",
+            strength = BindingStrength.Value.EXAMPLE,
+            valueSet = "http://hl7.org/fhir/ValueSet/measure-scoring-unit"
+        )
+        private final CodeableConcept scoringUnit;
+        @Summary
+        private final Markdown rateAggregation;
+        @Summary
+        @Binding(
+            bindingName = "MeasureImprovementNotation",
+            strength = BindingStrength.Value.REQUIRED,
+            valueSet = "http://hl7.org/fhir/ValueSet/measure-improvement-notation|5.0.0"
+        )
+        private final CodeableConcept improvementNotation;
+        private final List<Canonical> library;
         private final List<Population> population;
         private final List<Stratifier> stratifier;
 
         private Group(Builder builder) {
             super(builder);
+            linkId = builder.linkId;
             code = builder.code;
             description = builder.description;
+            type = Collections.unmodifiableList(builder.type);
+            subject = builder.subject;
+            basis = builder.basis;
+            scoring = builder.scoring;
+            scoringUnit = builder.scoringUnit;
+            rateAggregation = builder.rateAggregation;
+            improvementNotation = builder.improvementNotation;
+            library = Collections.unmodifiableList(builder.library);
             population = Collections.unmodifiableList(builder.population);
             stratifier = Collections.unmodifiableList(builder.stratifier);
+        }
+
+        /**
+         * An identifier that is unique within the Measure allowing linkage to the equivalent item in a MeasureReport resource.
+         * 
+         * @return
+         *     An immutable object of type {@link String} that may be null.
+         */
+        public String getLinkId() {
+            return linkId;
         }
 
         /**
@@ -2540,10 +3138,99 @@ public class Measure extends DomainResource {
          * The human readable description of this population group.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link Markdown} that may be null.
          */
-        public String getDescription() {
+        public Markdown getDescription() {
             return description;
+        }
+
+        /**
+         * Indicates whether the measure is used to examine a process, an outcome over time, a patient-reported outcome, or a 
+         * structure measure such as utilization.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link CodeableConcept} that may be empty.
+         */
+        public List<CodeableConcept> getType() {
+            return type;
+        }
+
+        /**
+         * The intended subjects for the measure. If this element is not provided, a Patient subject is assumed, but the subject 
+         * of the measure can be anything.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} or {@link Reference} that may be null.
+         */
+        public org.linuxforhealth.fhir.model.type.Element getSubject() {
+            return subject;
+        }
+
+        /**
+         * The population basis specifies the type of elements in the population. For a subject-based measure, this is boolean 
+         * (because the subject and the population basis are the same, and the population criteria define yes/no values for each 
+         * individual in the population). For measures that have a population basis that is different than the subject, this 
+         * element specifies the type of the population basis. For example, an encounter-based measure has a subject of Patient 
+         * and a population basis of Encounter, and the population criteria all return lists of Encounters.
+         * 
+         * @return
+         *     An immutable object of type {@link BasisType} that may be null.
+         */
+        public BasisType getBasis() {
+            return basis;
+        }
+
+        /**
+         * Indicates how the calculation is performed for the measure, including proportion, ratio, continuous-variable, and 
+         * cohort. The value set is extensible, allowing additional measure scoring types to be represented.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getScoring() {
+            return scoring;
+        }
+
+        /**
+         * Defines the expected units of measure for the measure score. This element SHOULD be specified as a UCUM unit.
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getScoringUnit() {
+            return scoringUnit;
+        }
+
+        /**
+         * Describes how to combine the information calculated, based on logic in each of several populations, into one 
+         * summarized result.
+         * 
+         * @return
+         *     An immutable object of type {@link Markdown} that may be null.
+         */
+        public Markdown getRateAggregation() {
+            return rateAggregation;
+        }
+
+        /**
+         * Information on whether an increase or decrease in score is the preferred result (e.g., a higher score indicates better 
+         * quality OR a lower score indicates better quality OR quality is within a range).
+         * 
+         * @return
+         *     An immutable object of type {@link CodeableConcept} that may be null.
+         */
+        public CodeableConcept getImprovementNotation() {
+            return improvementNotation;
+        }
+
+        /**
+         * A reference to a Library resource containing the formal logic used by the measure group.
+         * 
+         * @return
+         *     An unmodifiable list containing immutable objects of type {@link Canonical} that may be empty.
+         */
+        public List<Canonical> getLibrary() {
+            return library;
         }
 
         /**
@@ -2570,8 +3257,17 @@ public class Measure extends DomainResource {
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
+                (linkId != null) || 
                 (code != null) || 
                 (description != null) || 
+                !type.isEmpty() || 
+                (subject != null) || 
+                (basis != null) || 
+                (scoring != null) || 
+                (scoringUnit != null) || 
+                (rateAggregation != null) || 
+                (improvementNotation != null) || 
+                !library.isEmpty() || 
                 !population.isEmpty() || 
                 !stratifier.isEmpty();
         }
@@ -2585,8 +3281,17 @@ public class Measure extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(linkId, "linkId", visitor);
                     accept(code, "code", visitor);
                     accept(description, "description", visitor);
+                    accept(type, "type", visitor, CodeableConcept.class);
+                    accept(subject, "subject", visitor);
+                    accept(basis, "basis", visitor);
+                    accept(scoring, "scoring", visitor);
+                    accept(scoringUnit, "scoringUnit", visitor);
+                    accept(rateAggregation, "rateAggregation", visitor);
+                    accept(improvementNotation, "improvementNotation", visitor);
+                    accept(library, "library", visitor, Canonical.class);
                     accept(population, "population", visitor, Population.class);
                     accept(stratifier, "stratifier", visitor, Stratifier.class);
                 }
@@ -2610,8 +3315,17 @@ public class Measure extends DomainResource {
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(linkId, other.linkId) && 
                 Objects.equals(code, other.code) && 
                 Objects.equals(description, other.description) && 
+                Objects.equals(type, other.type) && 
+                Objects.equals(subject, other.subject) && 
+                Objects.equals(basis, other.basis) && 
+                Objects.equals(scoring, other.scoring) && 
+                Objects.equals(scoringUnit, other.scoringUnit) && 
+                Objects.equals(rateAggregation, other.rateAggregation) && 
+                Objects.equals(improvementNotation, other.improvementNotation) && 
+                Objects.equals(library, other.library) && 
                 Objects.equals(population, other.population) && 
                 Objects.equals(stratifier, other.stratifier);
         }
@@ -2623,8 +3337,17 @@ public class Measure extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
+                    linkId, 
                     code, 
                     description, 
+                    type, 
+                    subject, 
+                    basis, 
+                    scoring, 
+                    scoringUnit, 
+                    rateAggregation, 
+                    improvementNotation, 
+                    library, 
                     population, 
                     stratifier);
                 hashCode = result;
@@ -2642,8 +3365,17 @@ public class Measure extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
+            private String linkId;
             private CodeableConcept code;
-            private String description;
+            private Markdown description;
+            private List<CodeableConcept> type = new ArrayList<>();
+            private org.linuxforhealth.fhir.model.type.Element subject;
+            private BasisType basis;
+            private CodeableConcept scoring;
+            private CodeableConcept scoringUnit;
+            private Markdown rateAggregation;
+            private CodeableConcept improvementNotation;
+            private List<Canonical> library = new ArrayList<>();
             private List<Population> population = new ArrayList<>();
             private List<Stratifier> stratifier = new ArrayList<>();
 
@@ -2668,7 +3400,7 @@ public class Measure extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2688,7 +3420,7 @@ public class Measure extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -2713,7 +3445,7 @@ public class Measure extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2738,7 +3470,7 @@ public class Measure extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -2763,6 +3495,36 @@ public class Measure extends DomainResource {
             }
 
             /**
+             * Convenience method for setting {@code linkId}.
+             * 
+             * @param linkId
+             *     Unique id for group in measure
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #linkId(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder linkId(java.lang.String linkId) {
+                this.linkId = (linkId == null) ? null : String.of(linkId);
+                return this;
+            }
+
+            /**
+             * An identifier that is unique within the Measure allowing linkage to the equivalent item in a MeasureReport resource.
+             * 
+             * @param linkId
+             *     Unique id for group in measure
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder linkId(String linkId) {
+                this.linkId = linkId;
+                return this;
+            }
+
+            /**
              * Indicates a meaning for the group. This can be as simple as a unique identifier, or it can establish meaning in a 
              * broader context by drawing from a terminology, allowing groups to be correlated across measures.
              * 
@@ -2778,22 +3540,6 @@ public class Measure extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code description}.
-             * 
-             * @param description
-             *     Summary description
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #description(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder description(java.lang.String description) {
-                this.description = (description == null) ? null : String.of(description);
-                return this;
-            }
-
-            /**
              * The human readable description of this population group.
              * 
              * @param description
@@ -2802,8 +3548,191 @@ public class Measure extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder description(String description) {
+            public Builder description(Markdown description) {
                 this.description = description;
+                return this;
+            }
+
+            /**
+             * Indicates whether the measure is used to examine a process, an outcome over time, a patient-reported outcome, or a 
+             * structure measure such as utilization.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param type
+             *     process | outcome | structure | patient-reported-outcome | composite
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder type(CodeableConcept... type) {
+                for (CodeableConcept value : type) {
+                    this.type.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * Indicates whether the measure is used to examine a process, an outcome over time, a patient-reported outcome, or a 
+             * structure measure such as utilization.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param type
+             *     process | outcome | structure | patient-reported-outcome | composite
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder type(Collection<CodeableConcept> type) {
+                this.type = new ArrayList<>(type);
+                return this;
+            }
+
+            /**
+             * The intended subjects for the measure. If this element is not provided, a Patient subject is assumed, but the subject 
+             * of the measure can be anything.
+             * 
+             * <p>This is a choice element with the following allowed types:
+             * <ul>
+             * <li>{@link CodeableConcept}</li>
+             * <li>{@link Reference}</li>
+             * </ul>
+             * 
+             * When of type {@link Reference}, the allowed resource types for this reference are:
+             * <ul>
+             * <li>{@link Group}</li>
+             * </ul>
+             * 
+             * @param subject
+             *     E.g. Patient, Practitioner, RelatedPerson, Organization, Location, Device
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder subject(org.linuxforhealth.fhir.model.type.Element subject) {
+                this.subject = subject;
+                return this;
+            }
+
+            /**
+             * The population basis specifies the type of elements in the population. For a subject-based measure, this is boolean 
+             * (because the subject and the population basis are the same, and the population criteria define yes/no values for each 
+             * individual in the population). For measures that have a population basis that is different than the subject, this 
+             * element specifies the type of the population basis. For example, an encounter-based measure has a subject of Patient 
+             * and a population basis of Encounter, and the population criteria all return lists of Encounters.
+             * 
+             * @param basis
+             *     Population basis
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder basis(BasisType basis) {
+                this.basis = basis;
+                return this;
+            }
+
+            /**
+             * Indicates how the calculation is performed for the measure, including proportion, ratio, continuous-variable, and 
+             * cohort. The value set is extensible, allowing additional measure scoring types to be represented.
+             * 
+             * @param scoring
+             *     proportion | ratio | continuous-variable | cohort
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder scoring(CodeableConcept scoring) {
+                this.scoring = scoring;
+                return this;
+            }
+
+            /**
+             * Defines the expected units of measure for the measure score. This element SHOULD be specified as a UCUM unit.
+             * 
+             * @param scoringUnit
+             *     What units?
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder scoringUnit(CodeableConcept scoringUnit) {
+                this.scoringUnit = scoringUnit;
+                return this;
+            }
+
+            /**
+             * Describes how to combine the information calculated, based on logic in each of several populations, into one 
+             * summarized result.
+             * 
+             * @param rateAggregation
+             *     How is rate aggregation performed for this measure
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder rateAggregation(Markdown rateAggregation) {
+                this.rateAggregation = rateAggregation;
+                return this;
+            }
+
+            /**
+             * Information on whether an increase or decrease in score is the preferred result (e.g., a higher score indicates better 
+             * quality OR a lower score indicates better quality OR quality is within a range).
+             * 
+             * @param improvementNotation
+             *     increase | decrease
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder improvementNotation(CodeableConcept improvementNotation) {
+                this.improvementNotation = improvementNotation;
+                return this;
+            }
+
+            /**
+             * A reference to a Library resource containing the formal logic used by the measure group.
+             * 
+             * <p>Adds new element(s) to the existing list.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param library
+             *     Logic used by the measure group
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder library(Canonical... library) {
+                for (Canonical value : library) {
+                    this.library.add(value);
+                }
+                return this;
+            }
+
+            /**
+             * A reference to a Library resource containing the formal logic used by the measure group.
+             * 
+             * <p>Replaces the existing list with a new one containing elements from the Collection.
+             * If any of the elements are null, calling {@link #build()} will fail.
+             * 
+             * @param library
+             *     Logic used by the measure group
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @throws NullPointerException
+             *     If the passed collection is null
+             */
+            public Builder library(Collection<Canonical> library) {
+                this.library = new ArrayList<>(library);
                 return this;
             }
 
@@ -2906,15 +3835,28 @@ public class Measure extends DomainResource {
 
             protected void validate(Group group) {
                 super.validate(group);
+                ValidationSupport.checkList(group.type, "type", CodeableConcept.class);
+                ValidationSupport.choiceElement(group.subject, "subject", CodeableConcept.class, Reference.class);
+                ValidationSupport.checkList(group.library, "library", Canonical.class);
                 ValidationSupport.checkList(group.population, "population", Population.class);
                 ValidationSupport.checkList(group.stratifier, "stratifier", Stratifier.class);
+                ValidationSupport.checkReferenceType(group.subject, "subject", "Group");
                 ValidationSupport.requireValueOrChildren(group);
             }
 
             protected Builder from(Group group) {
                 super.from(group);
+                linkId = group.linkId;
                 code = group.code;
                 description = group.description;
+                type.addAll(group.type);
+                subject = group.subject;
+                basis = group.basis;
+                scoring = group.scoring;
+                scoringUnit = group.scoringUnit;
+                rateAggregation = group.rateAggregation;
+                improvementNotation = group.improvementNotation;
+                library.addAll(group.library);
                 population.addAll(group.population);
                 stratifier.addAll(group.stratifier);
                 return this;
@@ -2925,6 +3867,7 @@ public class Measure extends DomainResource {
          * A population criteria for the measure.
          */
         public static class Population extends BackboneElement {
+            private final String linkId;
             @Binding(
                 bindingName = "MeasurePopulationType",
                 strength = BindingStrength.Value.EXTENSIBLE,
@@ -2932,15 +3875,38 @@ public class Measure extends DomainResource {
                 valueSet = "http://hl7.org/fhir/ValueSet/measure-population"
             )
             private final CodeableConcept code;
-            private final String description;
-            @Required
+            private final Markdown description;
             private final Expression criteria;
+            @ReferenceTarget({ "Group" })
+            private final Reference groupDefinition;
+            private final String inputPopulationId;
+            @Binding(
+                bindingName = "MeasureAggregateMethod",
+                strength = BindingStrength.Value.EXTENSIBLE,
+                valueSet = "http://hl7.org/fhir/ValueSet/measure-aggregate-method"
+            )
+            private final CodeableConcept aggregateMethod;
 
             private Population(Builder builder) {
                 super(builder);
+                linkId = builder.linkId;
                 code = builder.code;
                 description = builder.description;
                 criteria = builder.criteria;
+                groupDefinition = builder.groupDefinition;
+                inputPopulationId = builder.inputPopulationId;
+                aggregateMethod = builder.aggregateMethod;
+            }
+
+            /**
+             * An identifier that is unique within the Measure allowing linkage to the equivalent population in a MeasureReport 
+             * resource.
+             * 
+             * @return
+             *     An immutable object of type {@link String} that may be null.
+             */
+            public String getLinkId() {
+                return linkId;
             }
 
             /**
@@ -2957,9 +3923,9 @@ public class Measure extends DomainResource {
              * The human readable description of this population criteria.
              * 
              * @return
-             *     An immutable object of type {@link String} that may be null.
+             *     An immutable object of type {@link Markdown} that may be null.
              */
-            public String getDescription() {
+            public Markdown getDescription() {
                 return description;
             }
 
@@ -2967,18 +3933,58 @@ public class Measure extends DomainResource {
              * An expression that specifies the criteria for the population, typically the name of an expression in a library.
              * 
              * @return
-             *     An immutable object of type {@link Expression} that is non-null.
+             *     An immutable object of type {@link Expression} that may be null.
              */
             public Expression getCriteria() {
                 return criteria;
             }
 
+            /**
+             * A Group resource that defines this population as a set of characteristics.
+             * 
+             * @return
+             *     An immutable object of type {@link Reference} that may be null.
+             */
+            public Reference getGroupDefinition() {
+                return groupDefinition;
+            }
+
+            /**
+             * The id of a population element in this measure that provides the input for this population criteria. In most cases, 
+             * the scoring structure of the measure implies specific relationships (e.g. the Numerator uses the Denominator as the 
+             * source in a proportion scoring). In some cases, however, multiple possible choices exist and must be resolved 
+             * explicitly. For example in a ratio measure with multiple initial populations, the denominator must specify which 
+             * population should be used as the starting point.
+             * 
+             * @return
+             *     An immutable object of type {@link String} that may be null.
+             */
+            public String getInputPopulationId() {
+                return inputPopulationId;
+            }
+
+            /**
+             * Specifies which method should be used to aggregate measure observation values. For most scoring types, this is implied 
+             * by scoring (e.g. a proportion measure counts members of the populations). For continuous variables, however, this 
+             * information must be specified to ensure correct calculation.
+             * 
+             * @return
+             *     An immutable object of type {@link CodeableConcept} that may be null.
+             */
+            public CodeableConcept getAggregateMethod() {
+                return aggregateMethod;
+            }
+
             @Override
             public boolean hasChildren() {
                 return super.hasChildren() || 
+                    (linkId != null) || 
                     (code != null) || 
                     (description != null) || 
-                    (criteria != null);
+                    (criteria != null) || 
+                    (groupDefinition != null) || 
+                    (inputPopulationId != null) || 
+                    (aggregateMethod != null);
             }
 
             @Override
@@ -2990,9 +3996,13 @@ public class Measure extends DomainResource {
                         accept(id, "id", visitor);
                         accept(extension, "extension", visitor, Extension.class);
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                        accept(linkId, "linkId", visitor);
                         accept(code, "code", visitor);
                         accept(description, "description", visitor);
                         accept(criteria, "criteria", visitor);
+                        accept(groupDefinition, "groupDefinition", visitor);
+                        accept(inputPopulationId, "inputPopulationId", visitor);
+                        accept(aggregateMethod, "aggregateMethod", visitor);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
                     visitor.postVisit(this);
@@ -3014,9 +4024,13 @@ public class Measure extends DomainResource {
                 return Objects.equals(id, other.id) && 
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(linkId, other.linkId) && 
                     Objects.equals(code, other.code) && 
                     Objects.equals(description, other.description) && 
-                    Objects.equals(criteria, other.criteria);
+                    Objects.equals(criteria, other.criteria) && 
+                    Objects.equals(groupDefinition, other.groupDefinition) && 
+                    Objects.equals(inputPopulationId, other.inputPopulationId) && 
+                    Objects.equals(aggregateMethod, other.aggregateMethod);
             }
 
             @Override
@@ -3026,9 +4040,13 @@ public class Measure extends DomainResource {
                     result = Objects.hash(id, 
                         extension, 
                         modifierExtension, 
+                        linkId, 
                         code, 
                         description, 
-                        criteria);
+                        criteria, 
+                        groupDefinition, 
+                        inputPopulationId, 
+                        aggregateMethod);
                     hashCode = result;
                 }
                 return result;
@@ -3044,9 +4062,13 @@ public class Measure extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
+                private String linkId;
                 private CodeableConcept code;
-                private String description;
+                private Markdown description;
                 private Expression criteria;
+                private Reference groupDefinition;
+                private String inputPopulationId;
+                private CodeableConcept aggregateMethod;
 
                 private Builder() {
                     super();
@@ -3069,7 +4091,7 @@ public class Measure extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3089,7 +4111,7 @@ public class Measure extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3114,7 +4136,7 @@ public class Measure extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3139,7 +4161,7 @@ public class Measure extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3164,6 +4186,37 @@ public class Measure extends DomainResource {
                 }
 
                 /**
+                 * Convenience method for setting {@code linkId}.
+                 * 
+                 * @param linkId
+                 *     Unique id for population in measure
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #linkId(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder linkId(java.lang.String linkId) {
+                    this.linkId = (linkId == null) ? null : String.of(linkId);
+                    return this;
+                }
+
+                /**
+                 * An identifier that is unique within the Measure allowing linkage to the equivalent population in a MeasureReport 
+                 * resource.
+                 * 
+                 * @param linkId
+                 *     Unique id for population in measure
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder linkId(String linkId) {
+                    this.linkId = linkId;
+                    return this;
+                }
+
+                /**
                  * The type of population criteria.
                  * 
                  * @param code
@@ -3179,22 +4232,6 @@ public class Measure extends DomainResource {
                 }
 
                 /**
-                 * Convenience method for setting {@code description}.
-                 * 
-                 * @param description
-                 *     The human readable description of this population criteria
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @see #description(org.linuxforhealth.fhir.model.type.String)
-                 */
-                public Builder description(java.lang.String description) {
-                    this.description = (description == null) ? null : String.of(description);
-                    return this;
-                }
-
-                /**
                  * The human readable description of this population criteria.
                  * 
                  * @param description
@@ -3203,15 +4240,13 @@ public class Measure extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder description(String description) {
+                public Builder description(Markdown description) {
                     this.description = description;
                     return this;
                 }
 
                 /**
                  * An expression that specifies the criteria for the population, typically the name of an expression in a library.
-                 * 
-                 * <p>This element is required.
                  * 
                  * @param criteria
                  *     The criteria that defines this population
@@ -3225,12 +4260,76 @@ public class Measure extends DomainResource {
                 }
 
                 /**
-                 * Build the {@link Population}
+                 * A Group resource that defines this population as a set of characteristics.
                  * 
-                 * <p>Required elements:
+                 * <p>Allowed resource types for this reference:
                  * <ul>
-                 * <li>criteria</li>
+                 * <li>{@link Group}</li>
                  * </ul>
+                 * 
+                 * @param groupDefinition
+                 *     A group resource that defines this population
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder groupDefinition(Reference groupDefinition) {
+                    this.groupDefinition = groupDefinition;
+                    return this;
+                }
+
+                /**
+                 * Convenience method for setting {@code inputPopulationId}.
+                 * 
+                 * @param inputPopulationId
+                 *     Which population
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #inputPopulationId(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder inputPopulationId(java.lang.String inputPopulationId) {
+                    this.inputPopulationId = (inputPopulationId == null) ? null : String.of(inputPopulationId);
+                    return this;
+                }
+
+                /**
+                 * The id of a population element in this measure that provides the input for this population criteria. In most cases, 
+                 * the scoring structure of the measure implies specific relationships (e.g. the Numerator uses the Denominator as the 
+                 * source in a proportion scoring). In some cases, however, multiple possible choices exist and must be resolved 
+                 * explicitly. For example in a ratio measure with multiple initial populations, the denominator must specify which 
+                 * population should be used as the starting point.
+                 * 
+                 * @param inputPopulationId
+                 *     Which population
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder inputPopulationId(String inputPopulationId) {
+                    this.inputPopulationId = inputPopulationId;
+                    return this;
+                }
+
+                /**
+                 * Specifies which method should be used to aggregate measure observation values. For most scoring types, this is implied 
+                 * by scoring (e.g. a proportion measure counts members of the populations). For continuous variables, however, this 
+                 * information must be specified to ensure correct calculation.
+                 * 
+                 * @param aggregateMethod
+                 *     Aggregation method for a measure score (e.g. sum, average, median, minimum, maximum, count)
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder aggregateMethod(CodeableConcept aggregateMethod) {
+                    this.aggregateMethod = aggregateMethod;
+                    return this;
+                }
+
+                /**
+                 * Build the {@link Population}
                  * 
                  * @return
                  *     An immutable object of type {@link Population}
@@ -3248,15 +4347,19 @@ public class Measure extends DomainResource {
 
                 protected void validate(Population population) {
                     super.validate(population);
-                    ValidationSupport.requireNonNull(population.criteria, "criteria");
+                    ValidationSupport.checkReferenceType(population.groupDefinition, "groupDefinition", "Group");
                     ValidationSupport.requireValueOrChildren(population);
                 }
 
                 protected Builder from(Population population) {
                     super.from(population);
+                    linkId = population.linkId;
                     code = population.code;
                     description = population.description;
                     criteria = population.criteria;
+                    groupDefinition = population.groupDefinition;
+                    inputPopulationId = population.inputPopulationId;
+                    aggregateMethod = population.aggregateMethod;
                     return this;
                 }
             }
@@ -3267,6 +4370,7 @@ public class Measure extends DomainResource {
          * a referenced library or a valid FHIR Resource Path.
          */
         public static class Stratifier extends BackboneElement {
+            private final String linkId;
             @Binding(
                 bindingName = "MeasureStratifierExample",
                 strength = BindingStrength.Value.EXAMPLE,
@@ -3274,16 +4378,30 @@ public class Measure extends DomainResource {
                 valueSet = "http://hl7.org/fhir/ValueSet/measure-stratifier-example"
             )
             private final CodeableConcept code;
-            private final String description;
+            private final Markdown description;
             private final Expression criteria;
+            @ReferenceTarget({ "Group" })
+            private final Reference groupDefinition;
             private final List<Component> component;
 
             private Stratifier(Builder builder) {
                 super(builder);
+                linkId = builder.linkId;
                 code = builder.code;
                 description = builder.description;
                 criteria = builder.criteria;
+                groupDefinition = builder.groupDefinition;
                 component = Collections.unmodifiableList(builder.component);
+            }
+
+            /**
+             * An identifier that is unique within the Measure allowing linkage to the equivalent item in a MeasureReport resource.
+             * 
+             * @return
+             *     An immutable object of type {@link String} that may be null.
+             */
+            public String getLinkId() {
+                return linkId;
             }
 
             /**
@@ -3301,9 +4419,9 @@ public class Measure extends DomainResource {
              * The human readable description of this stratifier criteria.
              * 
              * @return
-             *     An immutable object of type {@link String} that may be null.
+             *     An immutable object of type {@link Markdown} that may be null.
              */
-            public String getDescription() {
+            public Markdown getDescription() {
                 return description;
             }
 
@@ -3316,6 +4434,16 @@ public class Measure extends DomainResource {
              */
             public Expression getCriteria() {
                 return criteria;
+            }
+
+            /**
+             * A Group resource that defines this population as a set of characteristics.
+             * 
+             * @return
+             *     An immutable object of type {@link Reference} that may be null.
+             */
+            public Reference getGroupDefinition() {
+                return groupDefinition;
             }
 
             /**
@@ -3332,9 +4460,11 @@ public class Measure extends DomainResource {
             @Override
             public boolean hasChildren() {
                 return super.hasChildren() || 
+                    (linkId != null) || 
                     (code != null) || 
                     (description != null) || 
                     (criteria != null) || 
+                    (groupDefinition != null) || 
                     !component.isEmpty();
             }
 
@@ -3347,9 +4477,11 @@ public class Measure extends DomainResource {
                         accept(id, "id", visitor);
                         accept(extension, "extension", visitor, Extension.class);
                         accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                        accept(linkId, "linkId", visitor);
                         accept(code, "code", visitor);
                         accept(description, "description", visitor);
                         accept(criteria, "criteria", visitor);
+                        accept(groupDefinition, "groupDefinition", visitor);
                         accept(component, "component", visitor, Component.class);
                     }
                     visitor.visitEnd(elementName, elementIndex, this);
@@ -3372,9 +4504,11 @@ public class Measure extends DomainResource {
                 return Objects.equals(id, other.id) && 
                     Objects.equals(extension, other.extension) && 
                     Objects.equals(modifierExtension, other.modifierExtension) && 
+                    Objects.equals(linkId, other.linkId) && 
                     Objects.equals(code, other.code) && 
                     Objects.equals(description, other.description) && 
                     Objects.equals(criteria, other.criteria) && 
+                    Objects.equals(groupDefinition, other.groupDefinition) && 
                     Objects.equals(component, other.component);
             }
 
@@ -3385,9 +4519,11 @@ public class Measure extends DomainResource {
                     result = Objects.hash(id, 
                         extension, 
                         modifierExtension, 
+                        linkId, 
                         code, 
                         description, 
                         criteria, 
+                        groupDefinition, 
                         component);
                     hashCode = result;
                 }
@@ -3404,9 +4540,11 @@ public class Measure extends DomainResource {
             }
 
             public static class Builder extends BackboneElement.Builder {
+                private String linkId;
                 private CodeableConcept code;
-                private String description;
+                private Markdown description;
                 private Expression criteria;
+                private Reference groupDefinition;
                 private List<Component> component = new ArrayList<>();
 
                 private Builder() {
@@ -3430,7 +4568,7 @@ public class Measure extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3450,7 +4588,7 @@ public class Measure extends DomainResource {
 
                 /**
                  * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                 * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                 * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                  * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                  * of the definition of the extension.
                  * 
@@ -3475,7 +4613,7 @@ public class Measure extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3500,7 +4638,7 @@ public class Measure extends DomainResource {
                  * May be used to represent additional information that is not part of the basic definition of the element and that 
                  * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                  * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                 * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                 * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                  * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                  * extension. Applications processing a resource are required to check for modifier extensions.
                  * 
@@ -3525,6 +4663,36 @@ public class Measure extends DomainResource {
                 }
 
                 /**
+                 * Convenience method for setting {@code linkId}.
+                 * 
+                 * @param linkId
+                 *     Unique id for stratifier in measure
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 * 
+                 * @see #linkId(org.linuxforhealth.fhir.model.type.String)
+                 */
+                public Builder linkId(java.lang.String linkId) {
+                    this.linkId = (linkId == null) ? null : String.of(linkId);
+                    return this;
+                }
+
+                /**
+                 * An identifier that is unique within the Measure allowing linkage to the equivalent item in a MeasureReport resource.
+                 * 
+                 * @param linkId
+                 *     Unique id for stratifier in measure
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder linkId(String linkId) {
+                    this.linkId = linkId;
+                    return this;
+                }
+
+                /**
                  * Indicates a meaning for the stratifier. This can be as simple as a unique identifier, or it can establish meaning in a 
                  * broader context by drawing from a terminology, allowing stratifiers to be correlated across measures.
                  * 
@@ -3540,22 +4708,6 @@ public class Measure extends DomainResource {
                 }
 
                 /**
-                 * Convenience method for setting {@code description}.
-                 * 
-                 * @param description
-                 *     The human readable description of this stratifier
-                 * 
-                 * @return
-                 *     A reference to this Builder instance
-                 * 
-                 * @see #description(org.linuxforhealth.fhir.model.type.String)
-                 */
-                public Builder description(java.lang.String description) {
-                    this.description = (description == null) ? null : String.of(description);
-                    return this;
-                }
-
-                /**
                  * The human readable description of this stratifier criteria.
                  * 
                  * @param description
@@ -3564,7 +4716,7 @@ public class Measure extends DomainResource {
                  * @return
                  *     A reference to this Builder instance
                  */
-                public Builder description(String description) {
+                public Builder description(Markdown description) {
                     this.description = description;
                     return this;
                 }
@@ -3581,6 +4733,25 @@ public class Measure extends DomainResource {
                  */
                 public Builder criteria(Expression criteria) {
                     this.criteria = criteria;
+                    return this;
+                }
+
+                /**
+                 * A Group resource that defines this population as a set of characteristics.
+                 * 
+                 * <p>Allowed resource types for this reference:
+                 * <ul>
+                 * <li>{@link Group}</li>
+                 * </ul>
+                 * 
+                 * @param groupDefinition
+                 *     A group resource that defines this population
+                 * 
+                 * @return
+                 *     A reference to this Builder instance
+                 */
+                public Builder groupDefinition(Reference groupDefinition) {
+                    this.groupDefinition = groupDefinition;
                     return this;
                 }
 
@@ -3645,14 +4816,17 @@ public class Measure extends DomainResource {
                 protected void validate(Stratifier stratifier) {
                     super.validate(stratifier);
                     ValidationSupport.checkList(stratifier.component, "component", Component.class);
+                    ValidationSupport.checkReferenceType(stratifier.groupDefinition, "groupDefinition", "Group");
                     ValidationSupport.requireValueOrChildren(stratifier);
                 }
 
                 protected Builder from(Stratifier stratifier) {
                     super.from(stratifier);
+                    linkId = stratifier.linkId;
                     code = stratifier.code;
                     description = stratifier.description;
                     criteria = stratifier.criteria;
+                    groupDefinition = stratifier.groupDefinition;
                     component.addAll(stratifier.component);
                     return this;
                 }
@@ -3663,6 +4837,7 @@ public class Measure extends DomainResource {
              * defined within a referenced library or a valid FHIR Resource Path.
              */
             public static class Component extends BackboneElement {
+                private final String linkId;
                 @Binding(
                     bindingName = "MeasureStratifierExample",
                     strength = BindingStrength.Value.EXAMPLE,
@@ -3670,15 +4845,28 @@ public class Measure extends DomainResource {
                     valueSet = "http://hl7.org/fhir/ValueSet/measure-stratifier-example"
                 )
                 private final CodeableConcept code;
-                private final String description;
-                @Required
+                private final Markdown description;
                 private final Expression criteria;
+                @ReferenceTarget({ "Group" })
+                private final Reference groupDefinition;
 
                 private Component(Builder builder) {
                     super(builder);
+                    linkId = builder.linkId;
                     code = builder.code;
                     description = builder.description;
                     criteria = builder.criteria;
+                    groupDefinition = builder.groupDefinition;
+                }
+
+                /**
+                 * An identifier that is unique within the Measure allowing linkage to the equivalent item in a MeasureReport resource.
+                 * 
+                 * @return
+                 *     An immutable object of type {@link String} that may be null.
+                 */
+                public String getLinkId() {
+                    return linkId;
                 }
 
                 /**
@@ -3696,9 +4884,9 @@ public class Measure extends DomainResource {
                  * The human readable description of this stratifier criteria component.
                  * 
                  * @return
-                 *     An immutable object of type {@link String} that may be null.
+                 *     An immutable object of type {@link Markdown} that may be null.
                  */
-                public String getDescription() {
+                public Markdown getDescription() {
                     return description;
                 }
 
@@ -3707,18 +4895,30 @@ public class Measure extends DomainResource {
                  * expression defined within a referenced library, but it may also be a path to a stratifier element.
                  * 
                  * @return
-                 *     An immutable object of type {@link Expression} that is non-null.
+                 *     An immutable object of type {@link Expression} that may be null.
                  */
                 public Expression getCriteria() {
                     return criteria;
                 }
 
+                /**
+                 * A Group resource that defines this population as a set of characteristics.
+                 * 
+                 * @return
+                 *     An immutable object of type {@link Reference} that may be null.
+                 */
+                public Reference getGroupDefinition() {
+                    return groupDefinition;
+                }
+
                 @Override
                 public boolean hasChildren() {
                     return super.hasChildren() || 
+                        (linkId != null) || 
                         (code != null) || 
                         (description != null) || 
-                        (criteria != null);
+                        (criteria != null) || 
+                        (groupDefinition != null);
                 }
 
                 @Override
@@ -3730,9 +4930,11 @@ public class Measure extends DomainResource {
                             accept(id, "id", visitor);
                             accept(extension, "extension", visitor, Extension.class);
                             accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                            accept(linkId, "linkId", visitor);
                             accept(code, "code", visitor);
                             accept(description, "description", visitor);
                             accept(criteria, "criteria", visitor);
+                            accept(groupDefinition, "groupDefinition", visitor);
                         }
                         visitor.visitEnd(elementName, elementIndex, this);
                         visitor.postVisit(this);
@@ -3754,9 +4956,11 @@ public class Measure extends DomainResource {
                     return Objects.equals(id, other.id) && 
                         Objects.equals(extension, other.extension) && 
                         Objects.equals(modifierExtension, other.modifierExtension) && 
+                        Objects.equals(linkId, other.linkId) && 
                         Objects.equals(code, other.code) && 
                         Objects.equals(description, other.description) && 
-                        Objects.equals(criteria, other.criteria);
+                        Objects.equals(criteria, other.criteria) && 
+                        Objects.equals(groupDefinition, other.groupDefinition);
                 }
 
                 @Override
@@ -3766,9 +4970,11 @@ public class Measure extends DomainResource {
                         result = Objects.hash(id, 
                             extension, 
                             modifierExtension, 
+                            linkId, 
                             code, 
                             description, 
-                            criteria);
+                            criteria, 
+                            groupDefinition);
                         hashCode = result;
                     }
                     return result;
@@ -3784,9 +4990,11 @@ public class Measure extends DomainResource {
                 }
 
                 public static class Builder extends BackboneElement.Builder {
+                    private String linkId;
                     private CodeableConcept code;
-                    private String description;
+                    private Markdown description;
                     private Expression criteria;
+                    private Reference groupDefinition;
 
                     private Builder() {
                         super();
@@ -3809,7 +5017,7 @@ public class Measure extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -3829,7 +5037,7 @@ public class Measure extends DomainResource {
 
                     /**
                      * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-                     * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+                     * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
                      * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
                      * of the definition of the extension.
                      * 
@@ -3854,7 +5062,7 @@ public class Measure extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -3879,7 +5087,7 @@ public class Measure extends DomainResource {
                      * May be used to represent additional information that is not part of the basic definition of the element and that 
                      * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
                      * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-                     * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+                     * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
                      * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
                      * extension. Applications processing a resource are required to check for modifier extensions.
                      * 
@@ -3904,6 +5112,36 @@ public class Measure extends DomainResource {
                     }
 
                     /**
+                     * Convenience method for setting {@code linkId}.
+                     * 
+                     * @param linkId
+                     *     Unique id for stratifier component in measure
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     * 
+                     * @see #linkId(org.linuxforhealth.fhir.model.type.String)
+                     */
+                    public Builder linkId(java.lang.String linkId) {
+                        this.linkId = (linkId == null) ? null : String.of(linkId);
+                        return this;
+                    }
+
+                    /**
+                     * An identifier that is unique within the Measure allowing linkage to the equivalent item in a MeasureReport resource.
+                     * 
+                     * @param linkId
+                     *     Unique id for stratifier component in measure
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder linkId(String linkId) {
+                        this.linkId = linkId;
+                        return this;
+                    }
+
+                    /**
                      * Indicates a meaning for the stratifier component. This can be as simple as a unique identifier, or it can establish 
                      * meaning in a broader context by drawing from a terminology, allowing stratifiers to be correlated across measures.
                      * 
@@ -3919,22 +5157,6 @@ public class Measure extends DomainResource {
                     }
 
                     /**
-                     * Convenience method for setting {@code description}.
-                     * 
-                     * @param description
-                     *     The human readable description of this stratifier component
-                     * 
-                     * @return
-                     *     A reference to this Builder instance
-                     * 
-                     * @see #description(org.linuxforhealth.fhir.model.type.String)
-                     */
-                    public Builder description(java.lang.String description) {
-                        this.description = (description == null) ? null : String.of(description);
-                        return this;
-                    }
-
-                    /**
                      * The human readable description of this stratifier criteria component.
                      * 
                      * @param description
@@ -3943,7 +5165,7 @@ public class Measure extends DomainResource {
                      * @return
                      *     A reference to this Builder instance
                      */
-                    public Builder description(String description) {
+                    public Builder description(Markdown description) {
                         this.description = description;
                         return this;
                     }
@@ -3951,8 +5173,6 @@ public class Measure extends DomainResource {
                     /**
                      * An expression that specifies the criteria for this component of the stratifier. This is typically the name of an 
                      * expression defined within a referenced library, but it may also be a path to a stratifier element.
-                     * 
-                     * <p>This element is required.
                      * 
                      * @param criteria
                      *     Component of how the measure should be stratified
@@ -3966,12 +5186,26 @@ public class Measure extends DomainResource {
                     }
 
                     /**
-                     * Build the {@link Component}
+                     * A Group resource that defines this population as a set of characteristics.
                      * 
-                     * <p>Required elements:
+                     * <p>Allowed resource types for this reference:
                      * <ul>
-                     * <li>criteria</li>
+                     * <li>{@link Group}</li>
                      * </ul>
+                     * 
+                     * @param groupDefinition
+                     *     A group resource that defines this population
+                     * 
+                     * @return
+                     *     A reference to this Builder instance
+                     */
+                    public Builder groupDefinition(Reference groupDefinition) {
+                        this.groupDefinition = groupDefinition;
+                        return this;
+                    }
+
+                    /**
+                     * Build the {@link Component}
                      * 
                      * @return
                      *     An immutable object of type {@link Component}
@@ -3989,15 +5223,17 @@ public class Measure extends DomainResource {
 
                     protected void validate(Component component) {
                         super.validate(component);
-                        ValidationSupport.requireNonNull(component.criteria, "criteria");
+                        ValidationSupport.checkReferenceType(component.groupDefinition, "groupDefinition", "Group");
                         ValidationSupport.requireValueOrChildren(component);
                     }
 
                     protected Builder from(Component component) {
                         super.from(component);
+                        linkId = component.linkId;
                         code = component.code;
                         description = component.description;
                         criteria = component.criteria;
+                        groupDefinition = component.groupDefinition;
                         return this;
                     }
                 }
@@ -4010,6 +5246,7 @@ public class Measure extends DomainResource {
      * referenced library, or a valid FHIR Resource Path.
      */
     public static class SupplementalData extends BackboneElement {
+        private final String linkId;
         @Binding(
             bindingName = "MeasureSupplementalDataExample",
             strength = BindingStrength.Value.EXAMPLE,
@@ -4024,16 +5261,27 @@ public class Measure extends DomainResource {
             valueSet = "http://hl7.org/fhir/ValueSet/measure-data-usage"
         )
         private final List<CodeableConcept> usage;
-        private final String description;
+        private final Markdown description;
         @Required
         private final Expression criteria;
 
         private SupplementalData(Builder builder) {
             super(builder);
+            linkId = builder.linkId;
             code = builder.code;
             usage = Collections.unmodifiableList(builder.usage);
             description = builder.description;
             criteria = builder.criteria;
+        }
+
+        /**
+         * An identifier that is unique within the Measure allowing linkage to the equivalent item in a MeasureReport resource.
+         * 
+         * @return
+         *     An immutable object of type {@link String} that may be null.
+         */
+        public String getLinkId() {
+            return linkId;
         }
 
         /**
@@ -4064,9 +5312,9 @@ public class Measure extends DomainResource {
          * The human readable description of this supplemental data.
          * 
          * @return
-         *     An immutable object of type {@link String} that may be null.
+         *     An immutable object of type {@link Markdown} that may be null.
          */
-        public String getDescription() {
+        public Markdown getDescription() {
             return description;
         }
 
@@ -4085,6 +5333,7 @@ public class Measure extends DomainResource {
         @Override
         public boolean hasChildren() {
             return super.hasChildren() || 
+                (linkId != null) || 
                 (code != null) || 
                 !usage.isEmpty() || 
                 (description != null) || 
@@ -4100,6 +5349,7 @@ public class Measure extends DomainResource {
                     accept(id, "id", visitor);
                     accept(extension, "extension", visitor, Extension.class);
                     accept(modifierExtension, "modifierExtension", visitor, Extension.class);
+                    accept(linkId, "linkId", visitor);
                     accept(code, "code", visitor);
                     accept(usage, "usage", visitor, CodeableConcept.class);
                     accept(description, "description", visitor);
@@ -4125,6 +5375,7 @@ public class Measure extends DomainResource {
             return Objects.equals(id, other.id) && 
                 Objects.equals(extension, other.extension) && 
                 Objects.equals(modifierExtension, other.modifierExtension) && 
+                Objects.equals(linkId, other.linkId) && 
                 Objects.equals(code, other.code) && 
                 Objects.equals(usage, other.usage) && 
                 Objects.equals(description, other.description) && 
@@ -4138,6 +5389,7 @@ public class Measure extends DomainResource {
                 result = Objects.hash(id, 
                     extension, 
                     modifierExtension, 
+                    linkId, 
                     code, 
                     usage, 
                     description, 
@@ -4157,9 +5409,10 @@ public class Measure extends DomainResource {
         }
 
         public static class Builder extends BackboneElement.Builder {
+            private String linkId;
             private CodeableConcept code;
             private List<CodeableConcept> usage = new ArrayList<>();
-            private String description;
+            private Markdown description;
             private Expression criteria;
 
             private Builder() {
@@ -4183,7 +5436,7 @@ public class Measure extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4203,7 +5456,7 @@ public class Measure extends DomainResource {
 
             /**
              * May be used to represent additional information that is not part of the basic definition of the element. To make the 
-             * use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of 
+             * use of extensions safe and managable, there is a strict set of governance applied to the definition and use of 
              * extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part 
              * of the definition of the extension.
              * 
@@ -4228,7 +5481,7 @@ public class Measure extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4253,7 +5506,7 @@ public class Measure extends DomainResource {
              * May be used to represent additional information that is not part of the basic definition of the element and that 
              * modifies the understanding of the element in which it is contained and/or the understanding of the containing 
              * element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe 
-             * and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any 
+             * and managable, there is a strict set of governance applied to the definition and use of extensions. Though any 
              * implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the 
              * extension. Applications processing a resource are required to check for modifier extensions.
              * 
@@ -4275,6 +5528,36 @@ public class Measure extends DomainResource {
             @Override
             public Builder modifierExtension(Collection<Extension> modifierExtension) {
                 return (Builder) super.modifierExtension(modifierExtension);
+            }
+
+            /**
+             * Convenience method for setting {@code linkId}.
+             * 
+             * @param linkId
+             *     Unique id for supplementalData in measure
+             * 
+             * @return
+             *     A reference to this Builder instance
+             * 
+             * @see #linkId(org.linuxforhealth.fhir.model.type.String)
+             */
+            public Builder linkId(java.lang.String linkId) {
+                this.linkId = (linkId == null) ? null : String.of(linkId);
+                return this;
+            }
+
+            /**
+             * An identifier that is unique within the Measure allowing linkage to the equivalent item in a MeasureReport resource.
+             * 
+             * @param linkId
+             *     Unique id for supplementalData in measure
+             * 
+             * @return
+             *     A reference to this Builder instance
+             */
+            public Builder linkId(String linkId) {
+                this.linkId = linkId;
+                return this;
             }
 
             /**
@@ -4337,22 +5620,6 @@ public class Measure extends DomainResource {
             }
 
             /**
-             * Convenience method for setting {@code description}.
-             * 
-             * @param description
-             *     The human readable description of this supplemental data
-             * 
-             * @return
-             *     A reference to this Builder instance
-             * 
-             * @see #description(org.linuxforhealth.fhir.model.type.String)
-             */
-            public Builder description(java.lang.String description) {
-                this.description = (description == null) ? null : String.of(description);
-                return this;
-            }
-
-            /**
              * The human readable description of this supplemental data.
              * 
              * @param description
@@ -4361,7 +5628,7 @@ public class Measure extends DomainResource {
              * @return
              *     A reference to this Builder instance
              */
-            public Builder description(String description) {
+            public Builder description(Markdown description) {
                 this.description = description;
                 return this;
             }
@@ -4415,6 +5682,7 @@ public class Measure extends DomainResource {
 
             protected Builder from(SupplementalData supplementalData) {
                 super.from(supplementalData);
+                linkId = supplementalData.linkId;
                 code = supplementalData.code;
                 usage.addAll(supplementalData.usage);
                 description = supplementalData.description;
