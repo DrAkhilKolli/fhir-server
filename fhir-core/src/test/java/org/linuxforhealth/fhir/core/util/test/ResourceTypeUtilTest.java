@@ -8,6 +8,7 @@ package org.linuxforhealth.fhir.core.util.test;
 
 import static org.linuxforhealth.fhir.core.FHIRVersionParam.VERSION_40;
 import static org.linuxforhealth.fhir.core.FHIRVersionParam.VERSION_43;
+import static org.linuxforhealth.fhir.core.FHIRVersionParam.VERSION_50;
 import static org.linuxforhealth.fhir.core.util.ResourceTypeUtil.getCompatibleResourceTypes;
 import static org.linuxforhealth.fhir.core.util.ResourceTypeUtil.isCompatible;
 import static org.testng.Assert.assertEquals;
@@ -35,8 +36,14 @@ public class ResourceTypeUtilTest {
         Set<String> backwardCompatibleTypes = ResourceTypeUtil.getCompatibleResourceTypes(VERSION_40, VERSION_43);
         assertEquals(backwardCompatibleTypes.size(), 126, "number of r4b resource types that are backwards-compatible with r4");
 
+        Set<String> r4ToR5Types = ResourceTypeUtil.getCompatibleResourceTypes(VERSION_40, VERSION_50);
+        assertEquals(r4ToR5Types.size(), 126, "number of r5 resource types that are backwards-compatible with r4");
+
         Set<String> forwardCompatibleTypes = ResourceTypeUtil.getCompatibleResourceTypes(VERSION_43, VERSION_40);
         assertEquals(forwardCompatibleTypes.size(), 124, "number of r4 resource types that are forwards-compatible with r4b");
+
+        Set<String> r5Types = ResourceTypeUtil.getCompatibleResourceTypes(VERSION_50, VERSION_50);
+        assertEquals(r5Types.size(), 141, "number of r5 resource types");
     }
 
     @Test
@@ -53,6 +60,17 @@ public class ResourceTypeUtilTest {
         // should always be compatible within the same version
         assertTrue(isCompatible("Evidence", VERSION_40, VERSION_40));
         assertTrue(isCompatible("Evidence", VERSION_43, VERSION_43));
+        assertTrue(isCompatible("Evidence", VERSION_50, VERSION_50));
+    }
+
+    @Test
+    public void testR5Compatibility() {
+        assertFalse(isCompatible("Evidence", VERSION_40, VERSION_50));
+        assertTrue(isCompatible("ActivityDefinition", VERSION_40, VERSION_50));
+        assertTrue(isCompatible("ActivityDefinition", VERSION_43, VERSION_50));
+        assertFalse(isCompatible("Evidence", VERSION_50, VERSION_40));
+        assertFalse(isCompatible("ActivityDefinition", VERSION_50, VERSION_40));
+        assertTrue(isCompatible("PlanDefinition", VERSION_50, VERSION_43));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)

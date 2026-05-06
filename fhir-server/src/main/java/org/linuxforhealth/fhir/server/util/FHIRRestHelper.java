@@ -3113,7 +3113,7 @@ public class FHIRRestHelper implements FHIRResourceHelpers {
         }
 
         // ensure that the resource type and fhirVersion for the interaction is compatible with the fhirVersion of the server
-        if (!ResourceType.RESOURCE.value().equals(resourceType) && !ResourceTypeUtil.isCompatible(resourceType, fhirVersion, FHIRVersionParam.VERSION_43)) {
+        if (!ResourceType.RESOURCE.value().equals(resourceType) && !ResourceTypeUtil.isCompatible(resourceType, fhirVersion, FHIRVersionParam.VERSION_50)) {
             throw buildRestException("The requested resource type '" + resourceType + "' is not supported for fhirVersion " + fhirVersion.value(),
                     IssueType.NOT_SUPPORTED, IssueSeverity.ERROR);
         }

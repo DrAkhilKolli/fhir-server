@@ -22,6 +22,8 @@ ibm-web-ext.xml
 
 # Output folders
 target/
+# Pre-built provider JARs copied into Liberty userlib at build time
+fhir-server-webapp/src/main/liberty/config/userlib/*.jar
 test-output/
 
 # Test DB and schematool logs
