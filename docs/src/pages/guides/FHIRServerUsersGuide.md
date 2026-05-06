@@ -2875,22 +2875,25 @@ A copy of this snippet is provided here for illustrative purposes:
 ```xml
 <server description="fhir-server">
     <featureManager>
-        <feature>mpJwt-1.1</feature>
+        <feature>mpJwt-1.2</feature>
     </featureManager>
 
     <!-- Override the application-bnd binding of the main webapp -->
     <webApplication contextRoot="fhir-server/api/v4" id="fhir-server-webapp" location="fhir-server.war" name="fhir-server-webapp">
         <application-bnd id="bind">
             <security-role id="users" name="FHIRUsers">
-                <group id="usersGroup" access-id="group:https://localhost:8443/auth/realms/test/fhirUser"/>
+                <group id="usersGroup" name="FHIRUsers"/>
+            </security-role>
+            <security-role id="admin" name="FHIRAdmins">
+                <group id="operationAdminGroup" name="FHIRAdmins"/>
             </security-role>
         </application-bnd>
     </webApplication>
 
     <mpJwt id="jwtConsumer"
-           jwksUri="http://keycloak:8080/auth/realms/test/protocol/openid-connect/certs"
-           issuer="https://localhost:8443/auth/realms/test"
-           audiences="http://fhir-server:9080/fhir-server/api/v4"
+           jwksUri="http://localhost:8080/realms/smart/protocol/openid-connect/certs"
+           issuer="http://localhost:8080/realms/smart"
+           audiences="https://localhost:9443/fhir-server/api/v4"
            userNameAttribute="sub"
            groupNameAttribute="group"
            authFilterRef="filter"/>
@@ -2903,11 +2906,11 @@ A copy of this snippet is provided here for illustrative purposes:
 </server>
 ```
 
-In the snippet above, the `mpJwt` element is configured to obtain JWK information from http://keycloak:8080/auth/realms/test/protocol/openid-connect/certs and use this to validate JWT tokens that are passed to the server.
+In the snippet above, the `mpJwt` element is configured to obtain JWK information from the Keycloak realm certs endpoint and use this to validate JWT tokens that are passed to the server.
 
 Additionally, the server will validate the `iss` (issuer) and `aud` (audiences) claims of the JWT and use the `sub` claim as the user principal (for audit logging).
 
-Finally, the value(s) of the `group` claim are used to map this user into a corresponding JEE security-role as defined in the `application-bnd` section of the `webApplication` element.
+Finally, the value(s) of the `group` claim are used to map this user into a corresponding JEE security-role as defined in the `application-bnd` section of the `webApplication` element. When using the bundled Keycloak SMART realm template, emit `FHIRUsers` in the `group` claim for normal API access.
 
 ### 5.3.2 Advertise the OAuth endpoints via fhir-server-config
 To make the FHIR Server advertise the OAuth endpoints of the configured provider, supply values for at least the following properties in the default fhir-server-config.json file:
@@ -2929,15 +2932,15 @@ For example, the following excerpt from a CapabilityStatement shows sample OAuth
                 "extension": [
                     {
                         "url": "authorize",
-                        "valueUri": "https://localhost:8443/auth/realms/test/protocol/openid-connect/auth"
+                        "valueUri": "http://localhost:8080/realms/smart/protocol/openid-connect/auth"
                     },
                     {
                         "url": "token",
-                        "valueUri": "https://localhost:8443/auth/realms/test/protocol/openid-connect/token"
+                        "valueUri": "http://localhost:8080/realms/smart/protocol/openid-connect/token"
                     },
                     {
                         "url": "register",
-                        "valueUri": "https://localhost:8443/auth/realms/test/clients-registrations/openid-connect"
+                        "valueUri": "http://localhost:8080/realms/smart/clients-registrations/openid-connect"
                     }
                 ]
             }
@@ -2959,6 +2962,8 @@ To enforce authorization policy on the server, drop the `fhir-smart` module into
 This component uses the LinuxForHealth FHIR Server's PersistenceInterceptor feature to automatically scope searches to the compartments for which the user has access (as indicated by a special `patient_id` claim in the access token).
 
 Additionally, before returning resources to the client, the `fhir-smart` component performs authorization policy enforcement based on the list of SMART scopes included in the token's `scope` claim and the list of patient compartments in the `patient_id` claim.
+
+When using a SMART-enabled Keycloak realm, ensure the authorization server emits `patient_id` in the access token for patient-scoped launch context. The optional `patient` value returned in the OAuth token response is a separate SMART App Launch response field and does not replace `patient_id` for server-side authorization enforcement.
 
 When the HTTP header `Prefer: return=minimal` is specified on a search or history request, only minimal resource metadata is retrieved. In those cases, either `user` or `system` SMART scopes must be used, since the resource data necessary to enforce access via `patient` SMART scopes is not available.
 

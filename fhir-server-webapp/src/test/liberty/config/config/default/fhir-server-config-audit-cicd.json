@@ -21,9 +21,9 @@
             },
             "oauth": {
                 "enabled": false,
-                "regUrl": "https://<host>:9443/oauth2/endpoint/oauth2-provider/registration",
-                "authUrl": "https://<host>:9443/oauth2/endpoint/oauth2-provider/authorize",
-                "tokenUrl": "https://<host>:9443/oauth2/endpoint/oauth2-provider/token",
+                "regUrl": "http://localhost:8080/realms/smart/clients-registrations/openid-connect",
+                "authUrl": "http://localhost:8080/realms/smart/protocol/openid-connect/auth",
+                "tokenUrl": "http://localhost:8080/realms/smart/protocol/openid-connect/token",
                 "smart": {
                     "enabled": false,
                     "scopes": ["openid",

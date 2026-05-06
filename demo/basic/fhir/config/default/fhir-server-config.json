@@ -225,7 +225,7 @@
     "security": {
       "cors": true,
       "basic": {
-        "enabled": false
+        "enabled": true
       },
       "certificates": {
         "enabled": false,
@@ -237,9 +237,9 @@
       },
       "oauth": {
         "enabled": true,
-        "regUrl": "https://<host>/auth/realms/master/clients-registrations/openid-connect",
-        "authUrl": "https://<host>/auth/realms/master/protocol/openid-connect/auth",
-        "tokenUrl": "https://<host>/auth/realms/master/protocol/openid-connect/token",
+        "regUrl": "http://localhost:8080/realms/smart/clients-registrations/openid-connect",
+        "authUrl": "http://localhost:8080/realms/smart/protocol/openid-connect/auth",
+        "tokenUrl": "http://localhost:8080/realms/smart/protocol/openid-connect/token",
         "smart": {
           "enabled": true,
           "scopes": ["openid", "profile", "fhirUser", "launch/patient", "offline_access",

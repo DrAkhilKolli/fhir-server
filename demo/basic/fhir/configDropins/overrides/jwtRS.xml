@@ -1,0 +1,29 @@
+<server description="fhir-server-smart-demo">
+    <featureManager>
+        <feature>mpJwt-1.2</feature>
+    </featureManager>
+
+    <webApplication contextRoot="fhir-server/api/v4" id="fhir-server-webapp" location="fhir-server.war" name="fhir-server-webapp">
+        <application-bnd id="bind">
+            <security-role id="users" name="FHIRUsers">
+                <group id="usersGroup" name="FHIRUsers"/>
+            </security-role>
+            <security-role id="admin" name="FHIRAdmins">
+                <group id="operationAdminGroup" name="FHIRAdmins"/>
+            </security-role>
+        </application-bnd>
+    </webApplication>
+
+    <mpJwt id="jwtConsumer"
+           jwksUri="http://host.docker.internal:8080/realms/smart/protocol/openid-connect/certs"
+           issuer="http://localhost:8080/realms/smart"
+           audiences="https://localhost:9443/fhir-server/api/v4"
+           userNameAttribute="sub"
+           groupNameAttribute="group"
+           authFilterRef="filter"/>
+
+    <authFilter id="filter">
+        <requestUrl id="excluded-request-1" matchType="notContain" urlPattern="/fhir-server/api/v4/metadata" />
+        <requestUrl id="excluded-request-2" matchType="notContain" urlPattern="/fhir-server/api/v4/.well-known/smart-configuration" />
+    </authFilter>
+</server>
