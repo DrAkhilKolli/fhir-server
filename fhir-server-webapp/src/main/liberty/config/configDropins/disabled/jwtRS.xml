@@ -1,24 +1,33 @@
 <server description="fhir-server">
     <featureManager>
-        <!-- mpJwt-1.1 is already enabled in the default server.xml, but it doesn't hurt to repeat it here -->
-        <feature>mpJwt-1.1</feature>
+        <!-- server.xml already enables mpJwt-1.2, but repeating it here keeps this snippet self-contained -->
+        <feature>mpJwt-1.2</feature>
     </featureManager>
 
-    <!-- Override the application-bnd binding of the main webapp -->
+    <!-- Override the application-bnd binding of the main webapp. The JWT group claim
+         must contain FHIRUsers for normal API access and can optionally contain
+         FHIRAdmins for admin-only operations.
+    -->
     <webApplication contextRoot="fhir-server/api/v4" id="fhir-server-webapp" location="fhir-server.war" name="fhir-server-webapp">
         <application-bnd id="bind">
             <security-role id="users" name="FHIRUsers">
-                <group id="usersGroup" access-id="group:https://localhost:8443/auth/realms/test/fhirUser"/>
+                <group id="usersGroup" name="FHIRUsers"/>
+            </security-role>
+            <security-role id="admin" name="FHIRAdmins">
+                <group id="operationAdminGroup" name="FHIRAdmins"/>
             </security-role>
         </application-bnd>
     </webApplication>
 
-    <!-- The MP JWT configuration that injects the caller's JWT into a
-         ResourceScoped bean for inspection. -->
+    <!-- Replace the placeholders below with the public Keycloak realm URLs and the
+         public FHIR base URL. The JWT iss claim must match issuer exactly, the aud
+         claim must match audiences, and the Keycloak group mapper should emit the
+         claim name "group" to match groupNameAttribute.
+    -->
     <mpJwt id="jwtConsumer"
-           jwksUri="http://keycloak:8080/auth/realms/test/protocol/openid-connect/certs"
-           issuer="https://localhost:8443/auth/realms/test"
-           audiences="http://fhir-server:9080/fhir-server/api/v4"
+           jwksUri="http://localhost:8080/realms/smart/protocol/openid-connect/certs"
+           issuer="http://localhost:8080/realms/smart"
+           audiences="https://localhost:9443/fhir-server/api/v4"
            userNameAttribute="sub"
            groupNameAttribute="group"
            authFilterRef="filter"/>

@@ -13,7 +13,16 @@
         <!-- mpJwt-1.2 isn't used by default,
              but we include it here to avoid NoClassDefFound in our classes that *can* use it -->
         <feature>mpJwt-1.2</feature>
+        <feature>openapi-3.1</feature>
     </featureManager>
+
+    <mpJwt
+        id="myMpJwt"
+        jwksUri="http://keycloak:8080/realms/smart/protocol/openid-connect/certs"
+        issuer="http://keycloak:8080/realms/smart"
+        audiences="${env.SMART_CLIENT_ID}"
+        userNameAttribute="sub"
+        groupNameAttribute="groups" />
 
     <!-- Disable welcome page so that internal server info won't be revealed in responses
          to requests with an invalid context root.
@@ -38,7 +47,8 @@
         Note: on Linux, the server must be running with root priviledges in order to
         listen on ports <= 1024.
      -->
-    <httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="-1" httpsPort="9443" onError="FAIL"/>
+    <!-- httpPort enabled on 9080 for local development. Set httpPort="-1" for production. -->
+    <httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="9080" httpsPort="9443" onError="FAIL"/>
 
     <!-- Prevent the HTTP channel from throwing an I/O exception when an inbound connection is closed while still in use. -->
     <httpOptions id="defaultHttpOptions" ThrowIOEForInboundConnections="false"/>
@@ -94,6 +104,27 @@
     <library id="sharedLibPostgres">
         <fileset dir="${shared.resource.dir}/lib/postgresql" includes="*.jar"/>
     </library>
+
+    <!--
+        Default tenant / default datastore — points at Supabase.
+        JNDI name follows the LFH convention: jdbc/fhir-<tenantId>_<datastoreId>.
+        Override FHIR_DB_* in your .env file to change the target database.
+        To add a new tenant (clinic), define an additional dataSource here with the
+        JNDI name jdbc/fhir-<clinicId>_default and add a matching tenant config directory.
+    -->
+    <dataSource id="fhir-default-default" jndiName="jdbc/fhir-default_default" transactional="true">
+        <jdbcDriver libraryRef="sharedLibPostgres"/>
+        <properties.postgresql
+            serverName="${env.FHIR_DB_HOST}"
+            portNumber="${env.FHIR_DB_PORT}"
+            databaseName="${env.FHIR_DB_NAME}"
+            currentSchema="${env.FHIR_DB_SCHEMA}"
+            user="${env.FHIR_DB_USER}"
+            password="${env.FHIR_DB_PASS}"
+            ssl="true"
+            sslmode="${env.FHIR_DB_SSL_MODE}"/>
+        <connectionManager maxPoolSize="20" minPoolSize="5"/>
+    </dataSource>
 
     <webAppSecurity allowFailOverToBasicAuth="true" singleSignonEnabled="false"/>
     

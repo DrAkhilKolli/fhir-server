@@ -41,12 +41,12 @@
                     ]
                 },
                 "abac": {
-                    "enabled": false,
-                    "requireTenantClaim": false,
-                    "requireOrgClaim": false,
-                    "allowedPurposes": "",
-                    "resourceTenantSystem": "https://linuxforhealth.org/fhir/abac/tenant",
-                    "resourceOrgSystem": "https://linuxforhealth.org/fhir/abac/org"
+                    "enabled": ${ABAC_ENABLED},
+                    "requireTenantClaim": ${ABAC_REQUIRE_TENANT},
+                    "requireOrgClaim": ${ABAC_REQUIRE_ORG},
+                    "allowedPurposes": "${ABAC_ALLOWED_PURPOSES}",
+                    "resourceTenantSystem": "${ABAC_RESOURCE_TENANT_SYSTEM}",
+                    "resourceOrgSystem": "${ABAC_RESOURCE_ORG_SYSTEM}"
                 }
             },
             "validateBinarySecurityContext" : true

@@ -97,6 +97,19 @@ import jakarta.json.JsonValue;
 public class AuthzPolicyEnforcementPersistenceInterceptor implements FHIRPersistenceInterceptor {
     private static final Logger log = Logger.getLogger(AuthzPolicyEnforcementPersistenceInterceptor.class.getName());
 
+    // ABAC extension properties (disabled by default to preserve existing behavior)
+    private static final String ABAC_ENABLED_PROPERTY = "fhirServer/security/oauth/smart/abac/enabled";
+    private static final String ABAC_REQUIRE_TENANT_CLAIM_PROPERTY = "fhirServer/security/oauth/smart/abac/requireTenantClaim";
+    private static final String ABAC_REQUIRE_ORG_CLAIM_PROPERTY = "fhirServer/security/oauth/smart/abac/requireOrgClaim";
+    private static final String ABAC_ALLOWED_PURPOSES_PROPERTY = "fhirServer/security/oauth/smart/abac/allowedPurposes";
+    private static final String ABAC_RESOURCE_TENANT_SYSTEM_PROPERTY = "fhirServer/security/oauth/smart/abac/resourceTenantSystem";
+    private static final String ABAC_RESOURCE_ORG_SYSTEM_PROPERTY = "fhirServer/security/oauth/smart/abac/resourceOrgSystem";
+    private static final String CLAIM_TENANT_ID = "tenant_id";
+    private static final String CLAIM_ORG_ID = "org_id";
+    private static final String CLAIM_PURPOSE_OF_USE = "purpose_of_use";
+    private static final String DEFAULT_RESOURCE_TENANT_SYSTEM = "https://linuxforhealth.org/fhir/abac/tenant";
+    private static final String DEFAULT_RESOURCE_ORG_SYSTEM = "https://linuxforhealth.org/fhir/abac/org";
+
     private static final String DAVINCI_DRUG_FORMULARY_COVERAGE_PLAN =
             "http://hl7.org/fhir/us/davinci-drug-formulary/StructureDefinition/usdf-CoveragePlan";
 
@@ -129,6 +142,7 @@ public class AuthzPolicyEnforcementPersistenceInterceptor implements FHIRPersist
         }
 
         DecodedJWT jwt = JWT.decode(getAccessToken());
+        enforceAbacSystemOperation(jwt, resourceTypes);
         List<Scope> systemScopesFromToken = getScopesFromToken(jwt).get(ContextType.SYSTEM);
 
         for (String resourceType : resourceTypes) {
@@ -252,6 +266,8 @@ public class AuthzPolicyEnforcementPersistenceInterceptor implements FHIRPersist
         String resourceType = event.getFhirResourceType();
         DecodedJWT jwt = JWT.decode(getAccessToken());
 
+        enforceAbacRead(event.getFhirResourceType(), event.getFhirResourceId(), null, jwt);
+
         ContextType approvedContext = checkScopes(resourceType, Permission.READ, getScopesFromToken(jwt));
         if (approvedContext == ContextType.PATIENT) {
             assertPatientIdClaimIsValued(jwt);
@@ -270,6 +286,8 @@ public class AuthzPolicyEnforcementPersistenceInterceptor implements FHIRPersist
     public void beforeVread(FHIRPersistenceEvent event) throws FHIRPersistenceInterceptorException {
         String resourceType = event.getFhirResourceType();
         DecodedJWT jwt = JWT.decode(getAccessToken());
+
+        enforceAbacRead(event.getFhirResourceType(), event.getFhirResourceId(), null, jwt);
 
         ContextType approvedContext = checkScopes(resourceType, Permission.READ, getScopesFromToken(jwt));
         if (approvedContext == ContextType.PATIENT) {
@@ -363,6 +381,8 @@ public class AuthzPolicyEnforcementPersistenceInterceptor implements FHIRPersist
         DecodedJWT jwt = JWT.decode(getAccessToken());
         FHIRSearchContext searchContext = event.getSearchContextImpl();
 
+        enforceAbacSearch(resourceType, jwt);
+
         if (RESOURCE.equals(resourceType)) {
             // System-level search
             enforceSystemLevelAccess(resourceType, searchContext.getSearchResourceTypes(), jwt);
@@ -446,6 +466,7 @@ public class AuthzPolicyEnforcementPersistenceInterceptor implements FHIRPersist
     @Override
     public void beforeCreate(FHIRPersistenceEvent event) throws FHIRPersistenceInterceptorException {
         DecodedJWT jwt = JWT.decode(getAccessToken());
+        enforceAbacWrite(event.getFhirResourceType(), event.getFhirResource(), jwt);
         enforce(event.getFhirResource(), getPatientIdFromToken(jwt), Permission.WRITE, getScopesFromToken(jwt));
         validateBinarySecurityContext(event.getFhirResourceType(), event.getFhirResource());
     }
@@ -453,6 +474,7 @@ public class AuthzPolicyEnforcementPersistenceInterceptor implements FHIRPersist
     @Override
     public void beforeDelete(FHIRPersistenceEvent event) throws FHIRPersistenceInterceptorException {
         DecodedJWT jwt = JWT.decode(getAccessToken());
+        enforceAbacWrite(event.getFhirResourceType(), event.getPrevFhirResource(), jwt);
         enforce(event.getPrevFhirResource(), getPatientIdFromToken(jwt), Permission.WRITE, getScopesFromToken(jwt));
     }
 
@@ -468,6 +490,7 @@ public class AuthzPolicyEnforcementPersistenceInterceptor implements FHIRPersist
 
     private void beforeUpdateOrPatch(FHIRPersistenceEvent event) throws FHIRPersistenceInterceptorException {
         DecodedJWT jwt = JWT.decode(getAccessToken());
+        enforceAbacWrite(event.getFhirResourceType(), event.getFhirResource(), jwt);
         Set<String> patientIdFromToken = getPatientIdFromToken(jwt);
         Map<ContextType, List<Scope>> scopesFromToken = getScopesFromToken(jwt);
 
@@ -491,9 +514,11 @@ public class AuthzPolicyEnforcementPersistenceInterceptor implements FHIRPersist
             // Patient differs from other resource types in that we enforce on null
             // to avoid leaking "does this resource id exist on the system?" to unauthorized users
             enforce(resourceType, resourceId, resource, patientIdFromToken, Permission.READ, scopesFromToken);
+            enforceAbacRead(resourceType, resourceId, resource, jwt);
         } else if (resource != null) {
             enforceDirectProvenanceAccess(event, resource, patientIdFromToken, scopesFromToken);
             enforce(resource, patientIdFromToken, Permission.READ, scopesFromToken);
+            enforceAbacRead(resourceType, resourceId, resource, jwt);
         }
     }
 
@@ -510,9 +535,11 @@ public class AuthzPolicyEnforcementPersistenceInterceptor implements FHIRPersist
             // Patient differs from other resource types in that we enforce on null
             // to avoid leaking "does this resource id exist on the system?" to unauthorized users
             enforce(resourceType, resourceId, resource, patientIdFromToken, Permission.READ, scopesFromToken);
+            enforceAbacRead(resourceType, resourceId, resource, jwt);
         } else if (resource != null) {
             enforceDirectProvenanceAccess(event, resource, patientIdFromToken, scopesFromToken);
             enforce(resource, patientIdFromToken, Permission.READ, scopesFromToken);
+            enforceAbacRead(resourceType, resourceId, resource, jwt);
         }
     }
 
@@ -672,6 +699,7 @@ public class AuthzPolicyEnforcementPersistenceInterceptor implements FHIRPersist
                 String resourceId = getResourceId(entry);
                 if (resourceType != null && resourceId != null) {
                     enforce(resourceType, resourceId, entry.getResource(), patientIdFromToken, Permission.READ, scopesFromToken);
+                    enforceAbacRead(resourceType, resourceId, entry.getResource(), jwt);
                 } else {
                     throw new FHIRPersistenceInterceptorException("Unable to enforce authorization for search interaction "
                             + "due to failure to compute the resource type and id for one or more response Bundle entries.");
@@ -1141,5 +1169,189 @@ public class AuthzPolicyEnforcementPersistenceInterceptor implements FHIRPersist
                 log.warning(msg);
             }
         }
+    }
+
+    /**
+     * ABAC hook for read interactions.
+     *
+     * TODO(ABAC): Implement concrete attribute checks for the target resource using claims like:
+     * - tenant_id
+     * - org_id
+     * - purpose_of_use
+     */
+    private void enforceAbacRead(String resourceType, String resourceId, Resource resource, DecodedJWT jwt)
+            throws FHIRPersistenceInterceptorException {
+        if (!isAbacEnabled()) {
+            return;
+        }
+
+        validateRequiredAbacClaims(jwt);
+        validatePurposeOfUse(jwt);
+
+        // beforeRead/beforeVread may not have the full resource yet; evaluate claims-only there.
+        if (resource != null) {
+            assertClaimMatchesResource(resourceType, resourceId, resource, jwt, CLAIM_TENANT_ID,
+                ABAC_RESOURCE_TENANT_SYSTEM_PROPERTY, DEFAULT_RESOURCE_TENANT_SYSTEM, true);
+            assertClaimMatchesResource(resourceType, resourceId, resource, jwt, CLAIM_ORG_ID,
+                ABAC_RESOURCE_ORG_SYSTEM_PROPERTY, DEFAULT_RESOURCE_ORG_SYSTEM, true);
+        }
+    }
+
+    /**
+     * ABAC hook for write interactions.
+     *
+     * TODO(ABAC): Implement create/update/delete policy checks such as tenant/org ownership and purpose.
+     */
+    private void enforceAbacWrite(String resourceType, Resource resource, DecodedJWT jwt)
+            throws FHIRPersistenceInterceptorException {
+        if (!isAbacEnabled()) {
+            return;
+        }
+
+        validateRequiredAbacClaims(jwt);
+        validatePurposeOfUse(jwt);
+
+        if (resource != null) {
+            assertClaimMatchesResource(resourceType, resource.getId(), resource, jwt, CLAIM_TENANT_ID,
+                ABAC_RESOURCE_TENANT_SYSTEM_PROPERTY, DEFAULT_RESOURCE_TENANT_SYSTEM, true);
+            assertClaimMatchesResource(resourceType, resource.getId(), resource, jwt, CLAIM_ORG_ID,
+                ABAC_RESOURCE_ORG_SYSTEM_PROPERTY, DEFAULT_RESOURCE_ORG_SYSTEM, true);
+        }
+    }
+
+    /**
+     * ABAC hook for search interactions.
+     *
+     * TODO(ABAC): Implement query-level policy constraints and post-filtering rules.
+     */
+    private void enforceAbacSearch(String resourceType, DecodedJWT jwt) throws FHIRPersistenceInterceptorException {
+        if (!isAbacEnabled()) {
+            return;
+        }
+
+        validateRequiredAbacClaims(jwt);
+        validatePurposeOfUse(jwt);
+
+        // Search query rewriting can be added here in future if tenant/org are represented as indexed search parameters.
+    }
+
+    /**
+     * ABAC hook for system operations (bulk import/export/status).
+     */
+    private void enforceAbacSystemOperation(DecodedJWT jwt, Set<String> resourceTypes)
+            throws FHIRPersistenceInterceptorException {
+        if (!isAbacEnabled()) {
+            return;
+        }
+
+        validateRequiredAbacClaims(jwt);
+        validatePurposeOfUse(jwt);
+
+        // Bulk/system operations rely on claims and purpose-of-use checks here.
+        // Resource-level checks execute when resources are materialized in normal read/search flows.
+    }
+
+    private void assertClaimMatchesResource(String resourceType, String resourceId, Resource resource, DecodedJWT jwt,
+            String claimName,
+            String claimSystemConfigPath, String defaultClaimSystem, boolean requireResourceLabel)
+            throws FHIRPersistenceInterceptorException {
+        String claimValue = getStringClaim(jwt, claimName);
+        if (claimValue == null) {
+            return;
+        }
+
+        String labelSystem = FHIRConfigHelper.getStringProperty(claimSystemConfigPath, defaultClaimSystem);
+        if (labelSystem == null || labelSystem.isBlank()) {
+            return;
+        }
+
+        Set<String> resourceValues = getResourceLabelValues(resource, labelSystem);
+        if (resourceValues.isEmpty()) {
+            if (requireResourceLabel) {
+                String target = resourceType + (resourceId != null ? "/" + resourceId : "");
+                throwForbidden("ABAC denied: resource '" + target + "' is missing required label system '" + labelSystem + "'");
+            }
+            return;
+        }
+
+        if (!resourceValues.contains(claimValue)) {
+            String target = resourceType + (resourceId != null ? "/" + resourceId : "");
+            throwForbidden("ABAC denied: claim '" + claimName + "' does not match labels on resource '" + target + "'");
+        }
+    }
+
+    private Set<String> getResourceLabelValues(Resource resource, String labelSystem) {
+        if (resource.getMeta() == null) {
+            return Collections.emptySet();
+        }
+
+        Set<String> values = new HashSet<>();
+
+        // Prefer security labels when present, then include tags as fallback.
+        resource.getMeta().getSecurity().stream()
+                .filter(c -> c.getSystem() != null && labelSystem.equals(c.getSystem().getValue()))
+                .filter(c -> c.getCode() != null && c.getCode().getValue() != null && !c.getCode().getValue().isBlank())
+                .map(c -> c.getCode().getValue())
+                .forEach(values::add);
+
+        resource.getMeta().getTag().stream()
+                .filter(c -> c.getSystem() != null && labelSystem.equals(c.getSystem().getValue()))
+                .filter(c -> c.getCode() != null && c.getCode().getValue() != null && !c.getCode().getValue().isBlank())
+                .map(c -> c.getCode().getValue())
+                .forEach(values::add);
+
+        return values;
+    }
+
+    private boolean isAbacEnabled() {
+        return FHIRConfigHelper.getBooleanProperty(ABAC_ENABLED_PROPERTY, false);
+    }
+
+    private void validateRequiredAbacClaims(DecodedJWT jwt) throws FHIRPersistenceInterceptorException {
+        if (FHIRConfigHelper.getBooleanProperty(ABAC_REQUIRE_TENANT_CLAIM_PROPERTY, false)
+                && getStringClaim(jwt, CLAIM_TENANT_ID) == null) {
+            throwForbidden("Access token is missing required ABAC claim '" + CLAIM_TENANT_ID + "'");
+        }
+
+        if (FHIRConfigHelper.getBooleanProperty(ABAC_REQUIRE_ORG_CLAIM_PROPERTY, false)
+                && getStringClaim(jwt, CLAIM_ORG_ID) == null) {
+            throwForbidden("Access token is missing required ABAC claim '" + CLAIM_ORG_ID + "'");
+        }
+    }
+
+    private void validatePurposeOfUse(DecodedJWT jwt) throws FHIRPersistenceInterceptorException {
+        String configuredPurposes = FHIRConfigHelper.getStringProperty(ABAC_ALLOWED_PURPOSES_PROPERTY, null);
+        if (configuredPurposes == null || configuredPurposes.isBlank()) {
+            return;
+        }
+
+        Set<String> allowedPurposes = Arrays.stream(configuredPurposes.split(","))
+                .map(String::trim)
+                .filter(v -> !v.isEmpty())
+                .collect(Collectors.toSet());
+
+        if (allowedPurposes.isEmpty()) {
+            return;
+        }
+
+        String purposeOfUse = getStringClaim(jwt, CLAIM_PURPOSE_OF_USE);
+        if (purposeOfUse == null || !allowedPurposes.contains(purposeOfUse)) {
+            throwForbidden("Access token purpose_of_use is not allowed by ABAC policy");
+        }
+    }
+
+    private String getStringClaim(DecodedJWT jwt, String claimName) {
+        Claim claim = jwt.getClaim(claimName);
+        if (claim.isMissing() || claim.isNull()) {
+            return null;
+        }
+
+        String asString = claim.asString();
+        return asString == null || asString.isBlank() ? null : asString;
+    }
+
+    private void throwForbidden(String message) throws FHIRPersistenceInterceptorException {
+        throw new FHIRPersistenceInterceptorException(message)
+                .withIssue(FHIRUtil.buildOperationOutcomeIssue(message, IssueType.FORBIDDEN));
     }
 }

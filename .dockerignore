@@ -1,0 +1,20 @@
+# Exclude everything by default, then whitelist only what the Dockerfile needs.
+# This keeps the Docker build context small (only ~350 MB instead of the full
+# source tree) and dramatically speeds up `docker build`.
+
+**
+
+# ── Liberty pre-assembled server (Stage runtime) ─────────────────────────────
+!fhir-server-webapp/target/liberty/wlp/
+
+# ── Packaged WAR (replaces the loose-app XML that has absolute local paths) ──
+!fhir-server-webapp/target/fhir-server.war
+
+# ── Customised configuration overrides ───────────────────────────────────────
+!fhir-server-webapp/src/main/liberty/config/server.xml
+!fhir-server-webapp/src/main/liberty/config/config/
+!fhir-server-webapp/src/main/liberty/config/config/default/
+!fhir-server-webapp/src/main/liberty/config/config/default/fhir-server-config.json
+
+# ── Keep the Dockerfile itself ────────────────────────────────────────────────
+!Dockerfile
