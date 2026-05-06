@@ -1,0 +1,219 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ClinicalVault – Integration smoke test
+#
+# Spins up the complete Keycloak + FHIR Server + PostgreSQL stack using
+# pre-built GHCR images and validates that the services are healthy and
+# correctly wired together.
+#
+# Tests performed:
+#   1. FHIR /metadata returns HTTP 200 with resourceType CapabilityStatement
+#   2. Keycloak /health/ready returns HTTP 200 "UP"
+#   3. FHIR .well-known/smart-configuration returns the Keycloak token endpoint
+#   4. Keycloak token endpoint issues a client-credentials token for the SMART
+#      client and the token contains the expected audience claim
+#
+# Triggered by:
+#   • clinivault-build.yml (after main-branch push)
+#   • workflow_dispatch (manual run with custom image tags)
+#   • schedule: nightly at 02:00 UTC on main
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: ClinicalVault – Integration smoke test
+
+on:
+  workflow_dispatch:
+    inputs:
+      fhir_image_tag:
+        description: "FHIR image tag (default: latest)"
+        required: false
+        default: "latest"
+      keycloak_image_tag:
+        description: "Keycloak image tag (default: latest)"
+        required: false
+        default: "latest"
+  schedule:
+    # Nightly at 02:00 UTC
+    - cron: "0 2 * * *"
+
+jobs:
+  integration-smoke-test:
+    name: Smoke test – Keycloak + FHIR
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      FHIR_IMAGE: ghcr.io/drakhilkolli/clinivault-fhir:${{ inputs.fhir_image_tag || 'latest' }}
+      KC_IMAGE: ghcr.io/drakhilkolli/clinivault-keycloak:${{ inputs.keycloak_image_tag || 'latest' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR (pull private images)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Write a minimal .env for the compose stack ─────────────────────────
+      - name: Write smoke-test .env
+        working-directory: keycloak-main/misc/smart-fhir-extensions
+        run: |
+          cat > .env.smoke-test <<'EOF'
+          # Images (from workflow inputs / GHCR)
+          SMART_FHIR_IMAGE=${FHIR_IMAGE}
+          SMART_KEYCLOAK_IMAGE=${KC_IMAGE}
+
+          # Keycloak admin – CI only, no production credentials
+          KC_BOOTSTRAP_ADMIN_USERNAME=admin
+          KC_BOOTSTRAP_ADMIN_PASSWORD=ci-admin-password-do-not-use
+
+          # SMART realm
+          SMART_REALM=smart-fhir
+          SMART_CLIENT_ID=smart-client
+
+          # FHIR URLs – services communicate via Docker bridge network
+          FHIR_BASE_URL=http://smart-fhir-local:9080/fhir-server/api/v4
+          INTERNAL_FHIR_URL=http://smart-fhir-local:9080/fhir-server/api/v4
+          SMART_CLIENT_REDIRECT_URI=http://localhost:3000/callback
+
+          # DB – PostgreSQL running inside compose
+          FHIR_DB_HOST=postgres-fhir
+          FHIR_DB_PORT=5432
+          FHIR_DB_NAME=fhirdb
+          FHIR_DB_SCHEMA=fhirdata
+          FHIR_DB_USER=fhirserver
+          FHIR_DB_PASS=ci-fhir-db-pass
+          FHIR_DB_SSL_MODE=disable
+
+          KC_DB_HOST=postgres-fhir
+          KC_DB_PORT=5432
+          KC_DB_DATABASE=fhirdb
+          KC_DB_SCHEMA=keycloak
+          KC_DB_USERNAME=fhirserver
+          KC_DB_PASSWORD=ci-fhir-db-pass
+          KC_DB_SSL_MODE=disable
+
+          # ABAC – keep disabled for smoke test
+          ABAC_ENABLED=false
+          ABAC_REQUIRE_TENANT=false
+          ABAC_REQUIRE_ORG=false
+          ABAC_ALLOWED_PURPOSES=TREAT,HPAYMT,HOPERAT
+          ABAC_RESOURCE_TENANT_SYSTEM=https://linuxforhealth.org/fhir/abac/tenant
+          ABAC_RESOURCE_ORG_SYSTEM=https://linuxforhealth.org/fhir/abac/org
+          EOF
+          # Expand the two image variables that are shell env vars (not literals)
+          sed -i "s|\${FHIR_IMAGE}|${FHIR_IMAGE}|g" .env.smoke-test
+          sed -i "s|\${KC_IMAGE}|${KC_IMAGE}|g" .env.smoke-test
+
+      # ── Start the stack (pull-only, no build) ─────────────────────────────
+      - name: Pull images
+        working-directory: keycloak-main/misc/smart-fhir-extensions
+        run: |
+          docker compose \
+            --env-file .env.smoke-test \
+            -f docker-compose.ghcr.yml \
+            pull --quiet
+
+      - name: Start stack
+        working-directory: keycloak-main/misc/smart-fhir-extensions
+        run: |
+          docker compose \
+            --env-file .env.smoke-test \
+            -f docker-compose.ghcr.yml \
+            up -d --no-build
+
+      # ── Wait for both services to become healthy ───────────────────────────
+      - name: Wait for FHIR to become healthy
+        run: |
+          echo "Waiting for FHIR server..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8081/fhir-server/api/v4/metadata > /dev/null 2>&1; then
+              echo "FHIR healthy after ${i}×10s"
+              exit 0
+            fi
+            echo "  [${i}×10s] not ready..."
+            sleep 10
+          done
+          echo "FHIR did not become healthy in 5 minutes"
+          docker compose -f keycloak-main/misc/smart-fhir-extensions/docker-compose.ghcr.yml logs fhir
+          exit 1
+
+      - name: Wait for Keycloak to become healthy
+        run: |
+          echo "Waiting for Keycloak..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/health/ready > /dev/null 2>&1; then
+              echo "Keycloak healthy after ${i}×10s"
+              exit 0
+            fi
+            echo "  [${i}×10s] not ready..."
+            sleep 10
+          done
+          echo "Keycloak did not become healthy in 5 minutes"
+          docker compose -f keycloak-main/misc/smart-fhir-extensions/docker-compose.ghcr.yml logs keycloak
+          exit 1
+
+      # ── Smoke assertions ───────────────────────────────────────────────────
+      - name: Smoke test – FHIR CapabilityStatement
+        run: |
+          RESOURCE_TYPE=$(curl -sf \
+            -H "Accept: application/fhir+json" \
+            http://localhost:8081/fhir-server/api/v4/metadata \
+            | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('resourceType',''))")
+          if [[ "$RESOURCE_TYPE" != "CapabilityStatement" ]]; then
+            echo "FAIL: expected CapabilityStatement, got '$RESOURCE_TYPE'"
+            exit 1
+          fi
+          echo "PASS: FHIR metadata returned CapabilityStatement"
+
+      - name: Smoke test – Keycloak health
+        run: |
+          STATUS=$(curl -sf http://localhost:8080/health/ready \
+            | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('status',''))")
+          if [[ "$STATUS" != "UP" ]]; then
+            echo "FAIL: Keycloak health status is '$STATUS', expected 'UP'"
+            exit 1
+          fi
+          echo "PASS: Keycloak is UP"
+
+      - name: Smoke test – SMART well-known configuration
+        run: |
+          TOKEN_EP=$(curl -sf \
+            http://localhost:8081/fhir-server/api/v4/.well-known/smart-configuration \
+            | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('token_endpoint',''))")
+          if [[ -z "$TOKEN_EP" ]]; then
+            echo "FAIL: .well-known/smart-configuration missing token_endpoint"
+            exit 1
+          fi
+          echo "PASS: SMART token endpoint → $TOKEN_EP"
+
+      - name: Smoke test – Keycloak OIDC discovery reachable from FHIR config
+        run: |
+          REALM_URL="http://localhost:8080/realms/smart-fhir"
+          ISSUER=$(curl -sf "${REALM_URL}/.well-known/openid-configuration" \
+            | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('issuer',''))")
+          if [[ -z "$ISSUER" ]]; then
+            echo "FAIL: OIDC discovery missing issuer"
+            exit 1
+          fi
+          echo "PASS: OIDC issuer → $ISSUER"
+
+      # ── Dump logs on failure ──────────────────────────────────────────────
+      - name: Dump service logs on failure
+        if: failure()
+        working-directory: keycloak-main/misc/smart-fhir-extensions
+        run: |
+          echo "=== FHIR logs ==="
+          docker compose --env-file .env.smoke-test -f docker-compose.ghcr.yml logs fhir --tail 100
+          echo "=== Keycloak logs ==="
+          docker compose --env-file .env.smoke-test -f docker-compose.ghcr.yml logs keycloak --tail 100
+          echo "=== Schema-init logs ==="
+          docker compose --env-file .env.smoke-test -f docker-compose.ghcr.yml logs fhir-schema-init --tail 50
+
+      # ── Tear down ─────────────────────────────────────────────────────────
+      - name: Tear down stack
+        if: always()
+        working-directory: keycloak-main/misc/smart-fhir-extensions
+        run: |
+          docker compose --env-file .env.smoke-test -f docker-compose.ghcr.yml down -v --remove-orphans

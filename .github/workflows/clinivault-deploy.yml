@@ -1,0 +1,199 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ClinicalVault – Cloud deployment
+#
+# Deploys pre-built GHCR images to the target cloud environment.
+# Currently targets: Docker Compose over SSH (VPS/VM).
+# Extend with additional jobs for ECS / GKE / AKS / Fly.io as needed.
+#
+# Triggers:
+#   • Push of a version tag: v*  (automatic production deploy)
+#   • workflow_dispatch            (manual deploy with selectable environment + tag)
+#
+# Required GitHub Secrets:
+#   DEPLOY_HOST          – SSH hostname or IP of the target server
+#   DEPLOY_SSH_KEY       – Private SSH key (RSA/Ed25519) for the deploy user
+#   DEPLOY_USER          – SSH user (default: deploy)
+#   DEPLOY_PATH          – Absolute path on server where docker-compose.prod.yml lives
+#   KC_BOOTSTRAP_ADMIN_USERNAME
+#   KC_BOOTSTRAP_ADMIN_PASSWORD
+#   FHIR_DB_PASS
+#   KC_DB_PASSWORD
+#   SMART_REALM
+#   SMART_CLIENT_ID
+#   FHIR_BASE_URL
+#   INTERNAL_FHIR_URL
+#   SMART_CLIENT_REDIRECT_URI
+#   KC_DB_HOST
+#   KC_DB_DATABASE
+#   KC_DB_SCHEMA
+#   KC_DB_SSL_MODE
+#
+# Optional secrets for ABAC enforcement:
+#   ABAC_ENABLED               (default: false)
+#   ABAC_REQUIRE_TENANT        (default: false)
+#   ABAC_REQUIRE_ORG           (default: false)
+#   ABAC_ALLOWED_PURPOSES
+#   ABAC_RESOURCE_TENANT_SYSTEM
+#   ABAC_RESOURCE_ORG_SYSTEM
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: ClinicalVault – Deploy to cloud
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
+      fhir_image_tag:
+        description: "FHIR image tag (e.g. latest, v1.2.0, sha-abc1234)"
+        required: false
+        default: "latest"
+      keycloak_image_tag:
+        description: "Keycloak image tag (e.g. latest, v1.2.0)"
+        required: false
+        default: "latest"
+      run_schema_migration:
+        description: "Run DB schema migration before starting services?"
+        required: false
+        default: "true"
+        type: boolean
+
+jobs:
+  deploy-vps:
+    name: Deploy to ${{ inputs.environment || 'production' }} (VPS/VM)
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'production' }}
+    concurrency:
+      group: deploy-${{ inputs.environment || 'production' }}
+      cancel-in-progress: false     # never cancel an in-flight deploy
+
+    env:
+      FHIR_TAG: ${{ inputs.fhir_image_tag || (startsWith(github.ref, 'refs/tags/') && github.ref_name || 'latest') }}
+      KC_TAG:   ${{ inputs.keycloak_image_tag || (startsWith(github.ref, 'refs/tags/') && github.ref_name || 'latest') }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── SSH agent setup ──────────────────────────────────────────────────
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Add server to known_hosts
+        run: |
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+
+      # ── Copy compose file to server ──────────────────────────────────────
+      - name: Copy docker-compose.prod.yml to server
+        run: |
+          scp keycloak-main/misc/smart-fhir-extensions/docker-compose.prod.yml \
+            "${{ secrets.DEPLOY_USER || 'deploy' }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/docker-compose.prod.yml"
+
+      # ── Write .env on server (secrets never written to disk locally) ─────
+      - name: Write production .env on server
+        run: |
+          ssh "${{ secrets.DEPLOY_USER || 'deploy' }}@${{ secrets.DEPLOY_HOST }}" \
+            "cat > ${{ secrets.DEPLOY_PATH }}/.env.prod" <<EOF
+          # ── Images ─────────────────────────────────────────────────────────
+          SMART_FHIR_IMAGE=ghcr.io/drakhilkolli/clinivault-fhir:${FHIR_TAG}
+          SMART_KEYCLOAK_IMAGE=ghcr.io/drakhilkolli/clinivault-keycloak:${KC_TAG}
+
+          # ── Keycloak admin ─────────────────────────────────────────────────
+          KC_BOOTSTRAP_ADMIN_USERNAME=${{ secrets.KC_BOOTSTRAP_ADMIN_USERNAME }}
+          KC_BOOTSTRAP_ADMIN_PASSWORD=${{ secrets.KC_BOOTSTRAP_ADMIN_PASSWORD }}
+
+          # ── SMART realm ────────────────────────────────────────────────────
+          SMART_REALM=${{ secrets.SMART_REALM }}
+          SMART_CLIENT_ID=${{ secrets.SMART_CLIENT_ID }}
+          FHIR_BASE_URL=${{ secrets.FHIR_BASE_URL }}
+          INTERNAL_FHIR_URL=${{ secrets.INTERNAL_FHIR_URL }}
+          SMART_CLIENT_REDIRECT_URI=${{ secrets.SMART_CLIENT_REDIRECT_URI }}
+
+          # ── FHIR DB (Supabase / managed Postgres) ─────────────────────────
+          FHIR_DB_HOST=${{ secrets.FHIR_DB_HOST }}
+          FHIR_DB_PORT=5432
+          FHIR_DB_NAME=${{ secrets.FHIR_DB_NAME }}
+          FHIR_DB_SCHEMA=${{ secrets.FHIR_DB_SCHEMA }}
+          FHIR_DB_USER=${{ secrets.FHIR_DB_USER }}
+          FHIR_DB_PASS=${{ secrets.FHIR_DB_PASS }}
+          FHIR_DB_SSL_MODE=require
+
+          # ── Keycloak DB ────────────────────────────────────────────────────
+          KC_DB_HOST=${{ secrets.KC_DB_HOST }}
+          KC_DB_PORT=5432
+          KC_DB_DATABASE=${{ secrets.KC_DB_DATABASE }}
+          KC_DB_SCHEMA=${{ secrets.KC_DB_SCHEMA }}
+          KC_DB_USERNAME=${{ secrets.KC_DB_USERNAME }}
+          KC_DB_PASSWORD=${{ secrets.KC_DB_PASSWORD }}
+          KC_DB_SSL_MODE=${{ secrets.KC_DB_SSL_MODE || 'require' }}
+
+          # ── ABAC ───────────────────────────────────────────────────────────
+          ABAC_ENABLED=${{ secrets.ABAC_ENABLED || 'false' }}
+          ABAC_REQUIRE_TENANT=${{ secrets.ABAC_REQUIRE_TENANT || 'false' }}
+          ABAC_REQUIRE_ORG=${{ secrets.ABAC_REQUIRE_ORG || 'false' }}
+          ABAC_ALLOWED_PURPOSES=${{ secrets.ABAC_ALLOWED_PURPOSES || 'TREAT,HPAYMT,HOPERAT' }}
+          ABAC_RESOURCE_TENANT_SYSTEM=${{ secrets.ABAC_RESOURCE_TENANT_SYSTEM || 'https://linuxforhealth.org/fhir/abac/tenant' }}
+          ABAC_RESOURCE_ORG_SYSTEM=${{ secrets.ABAC_RESOURCE_ORG_SYSTEM || 'https://linuxforhealth.org/fhir/abac/org' }}
+          EOF
+
+      # ── Pull images on server ─────────────────────────────────────────────
+      - name: Pull images on server
+        run: |
+          ssh "${{ secrets.DEPLOY_USER || 'deploy' }}@${{ secrets.DEPLOY_HOST }}" \
+            "cd ${{ secrets.DEPLOY_PATH }} && \
+             echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u '${{ github.actor }}' --password-stdin && \
+             docker compose --env-file .env.prod -f docker-compose.prod.yml pull"
+
+      # ── Optional: run schema migration before starting services ──────────
+      - name: Run schema migration
+        if: ${{ inputs.run_schema_migration == 'true' || inputs.run_schema_migration == '' }}
+        run: |
+          ssh "${{ secrets.DEPLOY_USER || 'deploy' }}@${{ secrets.DEPLOY_HOST }}" \
+            "cd ${{ secrets.DEPLOY_PATH }} && \
+             docker compose --env-file .env.prod -f docker-compose.prod.yml \
+               run --rm fhir-schema-init"
+
+      # ── Rolling update: restart services with new images ─────────────────
+      - name: Deploy (rolling update)
+        run: |
+          ssh "${{ secrets.DEPLOY_USER || 'deploy' }}@${{ secrets.DEPLOY_HOST }}" \
+            "cd ${{ secrets.DEPLOY_PATH }} && \
+             docker compose --env-file .env.prod -f docker-compose.prod.yml \
+               up -d --no-build fhir keycloak"
+
+      # ── Post-deploy health check ─────────────────────────────────────────
+      - name: Post-deploy health check
+        run: |
+          FHIR_URL="${{ secrets.FHIR_BASE_URL }}/metadata"
+          KC_HEALTH="http://${{ secrets.DEPLOY_HOST }}:8080/health/ready"
+          echo "Checking FHIR: $FHIR_URL"
+          for i in $(seq 1 18); do
+            if curl -sf "$FHIR_URL" > /dev/null; then
+              echo "FHIR healthy"
+              break
+            fi
+            echo "  [${i}×10s] waiting..."
+            sleep 10
+          done
+          echo "Checking Keycloak: $KC_HEALTH"
+          for i in $(seq 1 18); do
+            STATUS=$(curl -sf "$KC_HEALTH" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('status',''))" 2>/dev/null || echo "")
+            if [[ "$STATUS" == "UP" ]]; then
+              echo "Keycloak healthy"
+              exit 0
+            fi
+            echo "  [${i}×10s] status=$STATUS"
+            sleep 10
+          done
+          echo "One or more services did not become healthy"
+          exit 1

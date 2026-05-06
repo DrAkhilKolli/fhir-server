@@ -80,6 +80,14 @@ COPY fhir-server-webapp/src/main/liberty/config/config/default/fhir-server-confi
 
 COPY fhir-server-webapp/src/main/liberty/config/start.sh /start.sh
 
+# ── 3b. Bake in the schema CLI jar ────────────────────────────────────────────
+#    This allows the same image to run DB schema migrations (used by the
+#    docker-compose fhir-schema-init one-shot service) without needing a
+#    separate image.  The entrypoint is overridden to /bin/bash -c for that
+#    service; normal Liberty startup uses /start.sh as normal.
+COPY fhir-persistence-schema/target/fhir-persistence-schema-*-cli.jar \
+     /opt/fhir-schema-cli.jar
+
 # ── 4. Add PostgreSQL JDBC driver ─────────────────────────────────────────────
 #    The liberty-maven-plugin copies Derby but not PostgreSQL. We download
 #    the same version declared in fhir-parent/pom.xml (42.7.11) at image-build
@@ -93,6 +101,7 @@ RUN mkdir -p ${WLP_DIR}/usr/shared/resources/lib/postgresql \
 RUN groupadd -g 1001 liberty 2>/dev/null || true \
     && useradd -u 1001 -g 1001 -s /bin/false -d ${WLP_DIR} liberty 2>/dev/null || true \
     && chown -R 1001:1001 ${WLP_DIR} \
+    && chown 1001:1001 /opt/fhir-schema-cli.jar \
     && chmod +x /start.sh
 
 USER 1001
