@@ -1,0 +1,120 @@
+<server>
+    <!-- ============================================================== -->
+    <!-- MULTI-TENANT DATASOURCE CONFIGURATION                          -->
+    <!-- ============================================================== -->
+    <!-- Each datasource represents a separate Supabase project          -->
+    <!-- Keycloak runs on the default Clinivault project                -->
+    <!-- ============================================================== -->
+
+    <!-- ============================================================== -->
+    <!-- TENANT: default (Clinivault)                                   -->
+    <!-- DSID: default                                                  -->
+    <!-- TYPE: read-write                                               -->
+    <!-- Project URL: db.sjuqqlwmpidhhipplprn.supabase.co               -->
+    <!-- ============================================================== -->
+    <dataSource id="fhirDatasourceDefaultDefault" jndiName="jdbc/fhir-default_default" type="javax.sql.XADataSource" statementCacheSize="200" syncQueryTimeoutWithTransactionTimeout="true">
+        <jdbcDriver javax.sql.XADataSource="org.postgresql.xa.PGXADataSource" libraryRef="sharedLibPostgres"/>
+        <properties.postgresql
+             serverName="db.sjuqqlwmpidhhipplprn.supabase.co"
+             portNumber="5432"
+             databaseName="postgres"
+             user="postgres"
+             password="nlzATKDn2pFkfhLp"
+             currentSchema="fhirdata"
+             ssl="true"
+             sslMode="require"
+         />
+        <connectionManager maxPoolSize="200" minPoolSize="20" connectionTimeout="60s" maxIdleTime="2m" numConnectionsPerThreadLocal="0"/>
+    </dataSource>
+
+    <!-- Bulk data / batch datasource for default tenant — same Supabase DB -->
+    <dataSource id="fhirbatchDS" jndiName="jdbc/fhirbatchDB" type="javax.sql.XADataSource" statementCacheSize="200" syncQueryTimeoutWithTransactionTimeout="true">
+        <jdbcDriver javax.sql.XADataSource="org.postgresql.xa.PGXADataSource" libraryRef="sharedLibPostgres"/>
+        <properties.postgresql
+            serverName="db.sjuqqlwmpidhhipplprn.supabase.co"
+            portNumber="5432"
+            databaseName="postgres"
+            user="postgres"
+            password="nlzATKDn2pFkfhLp"
+            currentSchema="fhirdata"
+            ssl="true"
+            sslMode="require"
+          />
+        <connectionManager maxPoolSize="10" minPoolSize="1" connectionTimeout="60s" maxIdleTime="2m"/>
+    </dataSource>
+
+    <!-- ============================================================== -->
+    <!-- TENANT: TestHospitalA-1                                        -->
+    <!-- DSID: testhospitala1                                           -->
+    <!-- TYPE: read-write                                               -->
+    <!-- Project URL: db.yorlwnnnkoqcdxucavxd.supabase.co               -->
+    <!-- ============================================================== -->
+    <dataSource id="fhirDatasourceTesthospitala1Default" jndiName="jdbc/fhir-testhospitala1_default" type="javax.sql.XADataSource" statementCacheSize="200" syncQueryTimeoutWithTransactionTimeout="true">
+        <jdbcDriver javax.sql.XADataSource="org.postgresql.xa.PGXADataSource" libraryRef="sharedLibPostgres"/>
+        <properties.postgresql
+             serverName="db.yorlwnnnkoqcdxucavxd.supabase.co"
+             portNumber="5432"
+             databaseName="postgres"
+             user="postgres"
+             password="Bupkyw-kothez-9hyktu"
+             currentSchema="fhirdata"
+             ssl="true"
+             sslMode="require"
+         />
+        <connectionManager maxPoolSize="200" minPoolSize="20" connectionTimeout="60s" maxIdleTime="2m" numConnectionsPerThreadLocal="0"/>
+    </dataSource>
+
+    <!-- Bulk data / batch datasource for testhospitala1 tenant — same Supabase DB -->
+    <dataSource id="fhirbatchDSTesthospitala1" jndiName="jdbc/fhirbatchDB-testhospitala1" type="javax.sql.XADataSource" statementCacheSize="200" syncQueryTimeoutWithTransactionTimeout="true">
+        <jdbcDriver javax.sql.XADataSource="org.postgresql.xa.PGXADataSource" libraryRef="sharedLibPostgres"/>
+        <properties.postgresql
+            serverName="db.yorlwnnnkoqcdxucavxd.supabase.co"
+            portNumber="5432"
+            databaseName="postgres"
+            user="postgres"
+            password="Bupkyw-kothez-9hyktu"
+            currentSchema="fhirdata"
+            ssl="true"
+            sslMode="require"
+          />
+        <connectionManager maxPoolSize="10" minPoolSize="1" connectionTimeout="60s" maxIdleTime="2m"/>
+    </dataSource>
+
+    <!-- ============================================================== -->
+    <!-- TENANT: TestHospitalA-2                                        -->
+    <!-- DSID: testhospitala2                                           -->
+    <!-- TYPE: read-write                                               -->
+    <!-- Project URL: db.cfeagtgzypepuyvgbagf.supabase.co               -->
+    <!-- ============================================================== -->
+    <dataSource id="fhirDatasourceTesthospitala2Default" jndiName="jdbc/fhir-testhospitala2_default" type="javax.sql.XADataSource" statementCacheSize="200" syncQueryTimeoutWithTransactionTimeout="true">
+        <jdbcDriver javax.sql.XADataSource="org.postgresql.xa.PGXADataSource" libraryRef="sharedLibPostgres"/>
+        <properties.postgresql
+             serverName="db.cfeagtgzypepuyvgbagf.supabase.co"
+             portNumber="5432"
+             databaseName="postgres"
+             user="postgres"
+             password="pyqcag-jEkqer-necpy1"
+             currentSchema="fhirdata"
+             ssl="true"
+             sslMode="require"
+         />
+        <connectionManager maxPoolSize="200" minPoolSize="20" connectionTimeout="60s" maxIdleTime="2m" numConnectionsPerThreadLocal="0"/>
+    </dataSource>
+
+    <!-- Bulk data / batch datasource for testhospitala2 tenant — same Supabase DB -->
+    <dataSource id="fhirbatchDSTesthospitala2" jndiName="jdbc/fhirbatchDB-testhospitala2" type="javax.sql.XADataSource" statementCacheSize="200" syncQueryTimeoutWithTransactionTimeout="true">
+        <jdbcDriver javax.sql.XADataSource="org.postgresql.xa.PGXADataSource" libraryRef="sharedLibPostgres"/>
+        <properties.postgresql
+            serverName="db.cfeagtgzypepuyvgbagf.supabase.co"
+            portNumber="5432"
+            databaseName="postgres"
+            user="postgres"
+            password="pyqcag-jEkqer-necpy1"
+            currentSchema="fhirdata"
+            ssl="true"
+            sslMode="require"
+          />
+        <connectionManager maxPoolSize="10" minPoolSize="1" connectionTimeout="60s" maxIdleTime="2m"/>
+    </dataSource>
+
+</server>

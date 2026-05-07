@@ -1,0 +1,59 @@
+version: 0.2
+# ─────────────────────────────────────────────────────────────────────────────
+# CodeBuild buildspec – build linux/amd64 FHIR image and push to ECR
+# Environment variables required (set in CodeBuild project):
+#   AWS_ACCOUNT_ID   – e.g. 079235168869
+#   AWS_REGION       – e.g. ap-south-1
+#   IMAGE_TAG        – e.g. 3a61749-prod
+# ─────────────────────────────────────────────────────────────────────────────
+
+env:
+  variables:
+    MAVEN_OPTS: "-Xmx2g"
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto11
+    commands:
+      - echo "=== Installing Maven ==="
+      - mvn --version
+      - java -version
+
+  pre_build:
+    commands:
+      - echo "=== Logging in to ECR ==="
+      - ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+      - FHIR_IMAGE="${ECR_REGISTRY}/clinivault-fhir:${IMAGE_TAG}"
+      - FHIR_IMAGE_DEV="${ECR_REGISTRY}/clinivault-fhir:dev"
+      - echo "Building image $FHIR_IMAGE"
+
+  build:
+    commands:
+      - echo "=== Maven build ==="
+      - cd fhir-server
+      - mvn -B -q install -f fhir-tools -Dmaven.test.skip=true
+      - |
+        mvn -B -q install -f fhir-parent -Dmaven.test.skip=true \
+          -pl fhir-core,fhir-model,fhir-config,fhir-search,fhir-persistence,fhir-smart,fhir-server,fhir-server-spi \
+          -am
+      - mvn -B -q package -f fhir-persistence-schema -Dmaven.test.skip=true
+      - mvn -B -q package -f fhir-server-webapp -Dmaven.test.skip=true
+      - echo "=== Docker build (linux/amd64) ==="
+      - docker build --platform linux/amd64 -t $FHIR_IMAGE -t $FHIR_IMAGE_DEV .
+      - echo "Build complete"
+
+  post_build:
+    commands:
+      - echo "=== Pushing to ECR ==="
+      - docker push $FHIR_IMAGE
+      - docker push $FHIR_IMAGE_DEV
+      - echo "=== Image pushed successfully ==="
+      - printf '[{"name":"fhir","imageUri":"%s"}]' "$FHIR_IMAGE" > /tmp/imagedefinitions.json
+      - cat /tmp/imagedefinitions.json
+
+artifacts:
+  files:
+    - /tmp/imagedefinitions.json
+  discard-paths: yes

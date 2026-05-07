@@ -1,0 +1,130 @@
+name: Deploy AWS ECS (Fargate)
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Terraform action"
+        required: true
+        default: "plan"
+        type: choice
+        options:
+          - plan
+          - apply
+      aws_region:
+        description: "AWS region"
+        required: true
+        default: "ap-southeast-2"
+      fhir_image:
+        description: "FHIR image (full ref)"
+        required: true
+        default: "ghcr.io/drakhilkolli/clinivault-fhir:latest"
+      keycloak_image:
+        description: "Keycloak image (full ref)"
+        required: true
+        default: "ghcr.io/drakhilkolli/clinivault-keycloak:latest"
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TF_DIR: infra/aws-ecs
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init
+
+      - name: Write terraform.tfvars
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          cat > terraform.tfvars <<EOF
+          aws_region               = "${{ inputs.aws_region }}"
+          project                  = "clinivault"
+          environment              = "prod"
+
+          vpc_id                   = "${{ secrets.AWS_VPC_ID }}"
+          public_subnet_ids        = ["${{ secrets.AWS_PUBLIC_SUBNET_1 }}", "${{ secrets.AWS_PUBLIC_SUBNET_2 }}"]
+          task_subnet_ids          = ["${{ secrets.AWS_TASK_SUBNET_1 }}", "${{ secrets.AWS_TASK_SUBNET_2 }}"]
+          task_assign_public_ip    = true
+          acm_certificate_arn      = "${{ secrets.AWS_ACM_CERTIFICATE_ARN }}"
+
+          fhir_domain              = "${{ secrets.FHIR_DOMAIN }}"
+          keycloak_domain          = "${{ secrets.KEYCLOAK_DOMAIN }}"
+
+          fhir_image               = "${{ inputs.fhir_image }}"
+          keycloak_image           = "${{ inputs.keycloak_image }}"
+
+          smart_client_id          = "${{ secrets.SMART_CLIENT_ID }}"
+          smart_realm              = "${{ secrets.SMART_REALM }}"
+          fhir_base_url            = "${{ secrets.FHIR_BASE_URL }}"
+          internal_fhir_url        = "${{ secrets.INTERNAL_FHIR_URL }}"
+          smart_client_redirect_uri = "${{ secrets.SMART_CLIENT_REDIRECT_URI }}"
+
+          fhir_db_host             = "${{ secrets.FHIR_DB_HOST }}"
+          fhir_db_port             = 5432
+          fhir_db_name             = "${{ secrets.FHIR_DB_NAME }}"
+          fhir_db_schema           = "${{ secrets.FHIR_DB_SCHEMA }}"
+          fhir_db_user             = "${{ secrets.FHIR_DB_USER }}"
+          fhir_db_ssl_mode         = "require"
+
+          kc_db_host               = "${{ secrets.KC_DB_HOST }}"
+          kc_db_port               = 5432
+          kc_db_database           = "${{ secrets.KC_DB_DATABASE }}"
+          kc_db_schema             = "${{ secrets.KC_DB_SCHEMA }}"
+          kc_db_username           = "${{ secrets.KC_DB_USERNAME }}"
+          kc_db_ssl_mode           = "${{ secrets.KC_DB_SSL_MODE }}"
+
+          kc_bootstrap_admin_username = "${{ secrets.KC_BOOTSTRAP_ADMIN_USERNAME }}"
+
+          fhir_db_pass_param_arn                = "${{ secrets.FHIR_DB_PASS_PARAM_ARN }}"
+          kc_db_password_param_arn              = "${{ secrets.KC_DB_PASSWORD_PARAM_ARN }}"
+          kc_bootstrap_admin_password_param_arn = "${{ secrets.KC_BOOTSTRAP_ADMIN_PASSWORD_PARAM_ARN }}"
+
+          abac_enabled               = "${{ secrets.ABAC_ENABLED }}"
+          abac_require_tenant        = "${{ secrets.ABAC_REQUIRE_TENANT }}"
+          abac_require_org           = "${{ secrets.ABAC_REQUIRE_ORG }}"
+          abac_allowed_purposes      = "${{ secrets.ABAC_ALLOWED_PURPOSES }}"
+          abac_resource_tenant_system = "${{ secrets.ABAC_RESOURCE_TENANT_SYSTEM }}"
+          abac_resource_org_system    = "${{ secrets.ABAC_RESOURCE_ORG_SYSTEM }}"
+
+          fhir_min_capacity          = 1
+          fhir_max_capacity          = 20
+          keycloak_min_capacity      = 1
+          keycloak_max_capacity      = 10
+
+          fargate_weight             = 1
+          fargate_spot_weight_fhir   = 4
+          fargate_spot_weight_keycloak = 0
+          EOF
+
+      - name: Terraform validate
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform validate
+
+      - name: Terraform plan
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform plan -out=tfplan
+
+      - name: Terraform apply
+        if: ${{ inputs.action == 'apply' }}
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform apply -auto-approve tfplan

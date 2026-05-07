@@ -19,7 +19,8 @@ FROM eclipse-temurin:11-jre-jammy
 # ── Environment ───────────────────────────────────────────────────────────────
 ENV WLP_DIR=/opt/ibm/wlp \
     SERVER_NAME=defaultServer
-ENV SERVER_DIR=${WLP_DIR}/usr/servers/${SERVER_NAME}
+ENV SERVER_DIR=${WLP_DIR}/usr/servers/${SERVER_NAME} \
+    FHIR_CONFIG_HOME=${WLP_DIR}/usr/servers/defaultServer/
 
 USER root
 
@@ -58,6 +59,7 @@ RUN rm -f  ${SERVER_DIR}/apps/fhir-server.war.xml \
     && rm -f ${SERVER_DIR}/configDropins/overrides/liberty-plugin-variable-config.xml \
     && rm -f ${SERVER_DIR}/dropins/fhir-bulkdata-webapp.war \
     && rm -f ${SERVER_DIR}/configDropins/defaults/bulkdata.xml \
+    && rm -f ${SERVER_DIR}/userlib/fhir-operation-test-*.jar \
     && rm -rf ${SERVER_DIR}/apps/expanded/fhir-bulkdata-webapp.war
 
 # ── 3. Apply our customised server configuration ──────────────────────────────
@@ -69,6 +71,9 @@ RUN rm -f  ${SERVER_DIR}/apps/fhir-server.war.xml \
 #                             SMART AuthzPolicyEnforcement interceptor enabled.
 COPY fhir-server-webapp/src/main/liberty/config/server.xml \
      ${SERVER_DIR}/server.xml
+
+# ── Ensure config directory structure exists ────────────────────────────────────
+RUN mkdir -p ${SERVER_DIR}/config/default
 
 # Copy the config template; start.sh renders it to fhir-server-config.json at startup.
 COPY fhir-server-webapp/src/main/liberty/config/config/default/fhir-server-config.json.tmpl \

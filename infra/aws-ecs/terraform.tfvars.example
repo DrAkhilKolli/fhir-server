@@ -1,0 +1,58 @@
+aws_region              = "ap-southeast-2"
+project                 = "clinivault"
+environment             = "prod"
+
+vpc_id                  = "vpc-xxxxxxxx"
+public_subnet_ids       = ["subnet-aaaa", "subnet-bbbb"]
+task_subnet_ids         = ["subnet-aaaa", "subnet-bbbb"]
+task_assign_public_ip   = true
+acm_certificate_arn     = "arn:aws:acm:ap-southeast-2:123456789012:certificate/xxxx"
+
+fhir_domain             = "fhir.example.com"
+keycloak_domain         = "auth.example.com"
+enable_host_routing     = false
+
+fhir_image              = "ghcr.io/drakhilkolli/clinivault-fhir:latest"
+keycloak_image          = "ghcr.io/drakhilkolli/clinivault-keycloak:latest"
+
+smart_client_id         = "smart-client"
+smart_realm             = "smart-fhir"
+fhir_base_url           = "https://fhir.example.com/fhir-server/api/v4"
+internal_fhir_url       = "http://clinivault-prod-fhir:9080/fhir-server/api/v4"
+smart_client_redirect_uri = "https://app.example.com/callback"
+
+fhir_db_host            = "aws-1-ap-southeast-2.pooler.supabase.com"
+fhir_db_name            = "postgres"
+fhir_db_schema          = "fhirdata"
+fhir_db_user            = "postgres.xxxxx"
+fhir_db_ssl_mode        = "require"
+
+kc_db_host              = "aws-1-ap-southeast-2.pooler.supabase.com"
+kc_db_database          = "postgres"
+kc_db_schema            = "keycloak"
+kc_db_username          = "postgres.xxxxx"
+kc_db_ssl_mode          = "require"
+
+kc_bootstrap_admin_username = "test_admin@healthcare"
+
+# Put secret values in SSM Parameter Store (SecureString) and pass ARNs here
+fhir_db_pass_param_arn                 = "arn:aws:ssm:ap-southeast-2:123456789012:parameter/clinivault/prod/fhir_db_pass"
+kc_db_password_param_arn               = "arn:aws:ssm:ap-southeast-2:123456789012:parameter/clinivault/prod/kc_db_password"
+kc_bootstrap_admin_password_param_arn  = "arn:aws:ssm:ap-southeast-2:123456789012:parameter/clinivault/prod/kc_admin_password"
+
+abac_enabled               = "true"
+abac_require_tenant        = "true"
+abac_require_org           = "true"
+abac_allowed_purposes      = "TREAT,HPAYMT,HOPERAT"
+abac_resource_tenant_system = "https://linuxforhealth.org/fhir/abac/tenant"
+abac_resource_org_system    = "https://linuxforhealth.org/fhir/abac/org"
+
+fhir_min_capacity         = 1
+fhir_max_capacity         = 20
+keycloak_min_capacity     = 1
+keycloak_max_capacity     = 10
+
+# Cost profile: most FHIR tasks on Spot, Keycloak on on-demand
+fargate_weight            = 1
+fargate_spot_weight_fhir  = 4
+fargate_spot_weight_keycloak = 0

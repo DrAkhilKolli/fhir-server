@@ -69,7 +69,7 @@
                 "enabled": false
             },
             "kafka": {
-                "enabled": true,
+                "enabled": false,
                 "topicName": "fhirNotifications",
                 "connectionProperties": {
                     "group.id": "fhir-server-group",
@@ -116,8 +116,28 @@
             ],
             "datasources": {
                 "default": {
-                    "__comment": "Default Supabase (PostgreSQL) datasource. JNDI name must match server.xml.",
+                    "__comment": "Default Supabase (PostgreSQL) datasource (Clinivault). JNDI name must match server.xml.",
                     "jndiName": "jdbc/fhir-default_default",
+                    "type": "postgresql",
+                    "currentSchema": "fhirdata",
+                    "searchOptimizerOptions": {
+                        "from_collapse_limit": 12,
+                        "join_collapse_limit": 12
+                    }
+                },
+                "testhospitala1": {
+                    "__comment": "Tenant datasource for TestHospitalA-1 (db.yorlwnnnkoqcdxucavxd.supabase.co)",
+                    "jndiName": "jdbc/fhir-testhospitala1_default",
+                    "type": "postgresql",
+                    "currentSchema": "fhirdata",
+                    "searchOptimizerOptions": {
+                        "from_collapse_limit": 12,
+                        "join_collapse_limit": 12
+                    }
+                },
+                "testhospitala2": {
+                    "__comment": "Tenant datasource for TestHospitalA-2 (db.cfeagtgzypepuyvgbagf.supabase.co)",
+                    "jndiName": "jdbc/fhir-testhospitala2_default",
                     "type": "postgresql",
                     "currentSchema": "fhirdata",
                     "searchOptimizerOptions": {
