@@ -217,6 +217,26 @@
                     "FHIRUsers"
                 ]
             }
+        },
+        "term": {
+            "__comment": "Disable built-in JanusGraph provider (causes fatal Error when JanusGraph is not configured). Delegate all terminology lookups to FHIR-MCP via remoteTermServiceProviders.",
+            "graphTermServiceProviders": [
+                { "enabled": false }
+            ],
+            "remoteTermServiceProviders": [
+                {
+                    "enabled": true,
+                    "base": "http://fhir-mcp:8100/fhir/r4",
+                    "httpTimeout": 180000,
+                    "supports": [
+                        { "system": "http://snomed.info/sct" },
+                        { "system": "http://loinc.org" },
+                        { "system": "http://www.ama-assn.org/go/cpt" },
+                        { "system": "http://www.nlm.nih.gov/research/umls/rxnorm" },
+                        { "system": "http://hl7.org/fhir/sid/icd-10-cm" }
+                    ]
+                }
+            ]
         }
     }
 }
