@@ -7,8 +7,8 @@
             "originalRequestUriHeaderName": "X-FHIR-FORWARDED-URL",
             "checkReferenceTypes": true,
             "conditionalDeleteMaxNumber": 10,
-            "__comment": "The Server Registry Resource Provider is a server-wide setting. The default is false, and the CI changes to true in the build and test.",
-            "serverRegistryResourceProviderEnabled": false,
+            "__comment": "The Server Registry Resource Provider is a server-wide setting. Enabled so that CodeSystem resources POSTed to the server (content=not-present) are available to the term service for remote delegation to FHIR-MCP.",
+            "serverRegistryResourceProviderEnabled": true,
             "disabledOperations": "",
             "defaultFhirVersion": "4.0"
         },
@@ -23,10 +23,10 @@
             },
             "oauth": {
                 "enabled": true,
-                "__comment": "Local SMART defaults aligned to keycloak-main/misc/smart-fhir-extensions and the LinuxForHealth FHIR server running on localhost.",
-                "regUrl": "http://keycloak:8080/realms/smart/clients-registrations/openid-connect",
-                "authUrl": "http://keycloak:8080/realms/smart/protocol/openid-connect/auth",
-                "tokenUrl": "http://keycloak:8080/realms/smart/protocol/openid-connect/token",
+                "__comment": "Cloud Keycloak endpoints — values injected via KC_ISSUER env var at container startup.",
+                "regUrl": "https://auth.fhirvault.com/realms/smart-fhir/clients-registrations/openid-connect",
+                "authUrl": "https://auth.fhirvault.com/realms/smart-fhir/protocol/openid-connect/auth",
+                "tokenUrl": "https://auth.fhirvault.com/realms/smart-fhir/protocol/openid-connect/token",
                 "smart": {
                     "enabled": true,
                     "scopes": ["openid", "profile", "fhirUser", "launch/patient", "patient/*.*", "offline_access"],
@@ -116,28 +116,8 @@
             ],
             "datasources": {
                 "default": {
-                    "__comment": "Default Supabase (PostgreSQL) datasource (Clinivault). JNDI name must match server.xml.",
+                    "__comment": "Default Supabase (PostgreSQL) datasource. JNDI name must match server.xml.",
                     "jndiName": "jdbc/fhir-default_default",
-                    "type": "postgresql",
-                    "currentSchema": "fhirdata",
-                    "searchOptimizerOptions": {
-                        "from_collapse_limit": 12,
-                        "join_collapse_limit": 12
-                    }
-                },
-                "testhospitala1": {
-                    "__comment": "Tenant datasource for TestHospitalA-1 (db.yorlwnnnkoqcdxucavxd.supabase.co)",
-                    "jndiName": "jdbc/fhir-testhospitala1_default",
-                    "type": "postgresql",
-                    "currentSchema": "fhirdata",
-                    "searchOptimizerOptions": {
-                        "from_collapse_limit": 12,
-                        "join_collapse_limit": 12
-                    }
-                },
-                "testhospitala2": {
-                    "__comment": "Tenant datasource for TestHospitalA-2 (db.cfeagtgzypepuyvgbagf.supabase.co)",
-                    "jndiName": "jdbc/fhir-testhospitala2_default",
                     "type": "postgresql",
                     "currentSchema": "fhirdata",
                     "searchOptimizerOptions": {
@@ -233,7 +213,8 @@
                         { "system": "http://loinc.org" },
                         { "system": "http://www.ama-assn.org/go/cpt" },
                         { "system": "http://www.nlm.nih.gov/research/umls/rxnorm" },
-                        { "system": "http://hl7.org/fhir/sid/icd-10-cm" }
+                        { "system": "http://hl7.org/fhir/sid/icd-10-cm" },
+                        { "system": "http://snomed.info/sct/in/drug-extension" }
                     ]
                 }
             ]

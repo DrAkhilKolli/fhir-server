@@ -7,8 +7,8 @@
             "originalRequestUriHeaderName": "X-FHIR-FORWARDED-URL",
             "checkReferenceTypes": true,
             "conditionalDeleteMaxNumber": 10,
-            "__comment": "The Server Registry Resource Provider is a server-wide setting. The default is false, and the CI changes to true in the build and test.",
-            "serverRegistryResourceProviderEnabled": false,
+            "__comment": "The Server Registry Resource Provider is a server-wide setting. Enabled so that CodeSystem resources POSTed to the server (content=not-present) are available to the term service for remote delegation to FHIR-MCP.",
+            "serverRegistryResourceProviderEnabled": true,
             "disabledOperations": "",
             "defaultFhirVersion": "4.0"
         },
@@ -23,10 +23,10 @@
             },
             "oauth": {
                 "enabled": true,
-                "__comment": "Local SMART defaults aligned to keycloak-main/misc/smart-fhir-extensions and the LinuxForHealth FHIR server running on localhost.",
-                "regUrl": "http://keycloak:8080/realms/smart/clients-registrations/openid-connect",
-                "authUrl": "http://keycloak:8080/realms/smart/protocol/openid-connect/auth",
-                "tokenUrl": "http://keycloak:8080/realms/smart/protocol/openid-connect/token",
+                "__comment": "Cloud Keycloak endpoints — values injected via KC_ISSUER env var (e.g. https://auth.fhirvault.com/realms/smart-fhir).",
+                "regUrl": "${KC_ISSUER}/clients-registrations/openid-connect",
+                "authUrl": "${KC_ISSUER}/protocol/openid-connect/auth",
+                "tokenUrl": "${KC_ISSUER}/protocol/openid-connect/token",
                 "smart": {
                     "enabled": true,
                     "scopes": ["openid", "profile", "fhirUser", "launch/patient", "patient/*.*", "offline_access"],
@@ -197,6 +197,27 @@
                     "FHIRUsers"
                 ]
             }
+        },
+        "term": {
+            "__comment": "Disable built-in JanusGraph graph term provider (requires Cassandra/JanusGraph infrastructure not present in this deployment). Delegate all terminology operations to FHIR-MCP, which is backed by UMLS/Supabase.",
+            "graphTermServiceProviders": [
+                { "enabled": false }
+            ],
+            "remoteTermServiceProviders": [
+                {
+                    "enabled": true,
+                    "base": "${FHIR_MCP_INTERNAL_URL}/fhir/r4",
+                    "httpTimeout": 180000,
+                    "supports": [
+                        { "system": "http://snomed.info/sct" },
+                        { "system": "http://loinc.org" },
+                        { "system": "http://www.ama-assn.org/go/cpt" },
+                        { "system": "http://www.nlm.nih.gov/research/umls/rxnorm" },
+                        { "system": "http://hl7.org/fhir/sid/icd-10-cm" },
+                        { "system": "http://snomed.info/sct/in/drug-extension" }
+                    ]
+                }
+            ]
         }
     }
 }

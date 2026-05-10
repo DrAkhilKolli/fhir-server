@@ -17,6 +17,12 @@ export ABAC_ALLOWED_PURPOSES="${ABAC_ALLOWED_PURPOSES:-}"
 export ABAC_RESOURCE_TENANT_SYSTEM="${ABAC_RESOURCE_TENANT_SYSTEM:-https://linuxforhealth.org/fhir/abac/tenant}"
 export ABAC_RESOURCE_ORG_SYSTEM="${ABAC_RESOURCE_ORG_SYSTEM:-https://linuxforhealth.org/fhir/abac/org}"
 
+# ── Terminology / FHIR-MCP defaults ──────────────────────────────────────────
+# Base URL of the FHIR-MCP service reachable from within this container.
+# In ECS this is the public ALB URL for the mcp subdomain (e.g. https://mcp.fhirvault.com).
+# If not set, remoteTermServiceProviders will have an empty base and be effectively disabled.
+export FHIR_MCP_INTERNAL_URL="${FHIR_MCP_INTERNAL_URL:-}"
+
 # ── Render config ─────────────────────────────────────────────────────────────
 envsubst < "${CONFIG_TMPL}" > "${CONFIG_OUT}"
 

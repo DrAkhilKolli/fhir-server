@@ -17,12 +17,18 @@
     </featureManager>
 
     <mpJwt
-        id="myMpJwt"
-        jwksUri="http://keycloak:8080/realms/smart/protocol/openid-connect/certs"
-        issuer="http://keycloak:8080/realms/smart"
+        id="jwtConsumer"
+        jwksUri="${env.KC_JWKS_URI}"
+        issuer="${env.KC_ISSUER}"
         audiences="${env.SMART_CLIENT_ID}"
         userNameAttribute="sub"
-        groupNameAttribute="groups" />
+        groupNameAttribute="groups"
+        authFilterRef="fhirAuthFilter" />
+
+    <authFilter id="fhirAuthFilter">
+        <requestUrl id="excluded-metadata"         matchType="notContain" urlPattern="/fhir-server/api/v4/metadata" />
+        <requestUrl id="excluded-smart-config"     matchType="notContain" urlPattern="/fhir-server/api/v4/.well-known/smart-configuration" />
+    </authFilter>
 
     <!-- Disable welcome page so that internal server info won't be revealed in responses
          to requests with an invalid context root.
@@ -80,7 +86,7 @@
         <!-- Include id attributes to make it easier to override this via dropinConfig -->
         <application-bnd id="bind">
             <security-role id="users" name="FHIRUsers">
-                <group id="usersGroup" name="FHIRUsers"/>
+                <special-subject type="ALL_AUTHENTICATED_USERS"/>
             </security-role>
             <security-role id="admin" name="FHIRAdmins">
                 <group id="operationAdminGroup" name="FHIRAdmins"/>
