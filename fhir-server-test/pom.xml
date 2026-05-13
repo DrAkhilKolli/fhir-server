@@ -201,7 +201,7 @@
                 <configuration>
                     <printSummary>true</printSummary>
                     <forkCount>1C</forkCount>
-                    <argLine>-Xms2G -Xmx4G</argLine>
+                    <argLine>-Xms2G -Xmx4G --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED</argLine>
                     <systemPropertyVariables>
                         <org.linuxforhealth.fhir.server.test.R4ExampleServerTest.index>${fhir-server-test.index}</org.linuxforhealth.fhir.server.test.R4ExampleServerTest.index>
                     </systemPropertyVariables>

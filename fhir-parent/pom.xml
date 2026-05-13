@@ -940,7 +940,7 @@
                         <isOffline>true</isOffline>
                         <!-- no matter the JDK running the javadoc, it's
                             important this be at the minimum level we support, which is 11. -->
-                        <source>11</source>
+                        <source>21</source>
                         <!-- we don't need package -->
                         <show>package</show>
                         <!-- verbose if you are debugging -->
@@ -1212,7 +1212,7 @@
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <inherited>false</inherited>
                         <configuration>
-                            <source>11</source>
+                            <source>21</source>
                             <verbose>true</verbose>
                             <doclint>none</doclint>
                             <minmemory>2g</minmemory>
@@ -1254,7 +1254,7 @@
                             <isOffline>true</isOffline>
                             <!-- no matter the JDK running the javadoc, it's
                                 important this be at the minimum level we support, which is 11. -->
-                            <source>11</source>
+                            <source>21</source>
                             <!-- we don't need package -->
                             <show>package</show>
                             <!-- verbose if you are debugging -->
@@ -1510,7 +1510,7 @@
                     <isOffline>true</isOffline>
                     <!-- no matter the JDK running the javadoc, it's important
                         this be at the minimum level we support, which is 11. -->
-                    <source>11</source>
+                    <source>21</source>
                     <!-- we don't need package -->
                     <show>package</show>
                     <!-- verbose if you are debugging -->

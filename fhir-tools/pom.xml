@@ -17,7 +17,7 @@
         <jacoco.plugin.version>0.8.2</jacoco.plugin.version>
         <argLine>-Dfile.encoding=UTF-8</argLine>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>11</java.version>
+        <java.version>21</java.version>
         <maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
         <maven.deploy.skip>true</maven.deploy.skip>
     </properties>
@@ -27,7 +27,7 @@
             <plugins>
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.8.1</version>
+                    <version>3.13.0</version>
                     <configuration>
                         <source>${java.version}</source>
                         <target>${java.version}</target>
@@ -308,7 +308,7 @@
                             <isOffline>true</isOffline>
                             <!-- no matter the JDK running the javadoc, it's 
                                 important this be at the minimum level we support, which is 11. -->
-                            <source>11</source>
+                            <source>21</source>
                             <!-- we don't need package -->
                             <show>package</show>
                             <!-- verbose if you are debugging -->
@@ -498,7 +498,7 @@
                             <isOffline>true</isOffline>
                             <!-- no matter the JDK running the javadoc, it's
                                 important this be at the minimum level we support, which is 11. -->
-                            <source>11</source>
+                            <source>21</source>
                             <!-- we don't need package -->
                             <show>package</show>
                             <!-- verbose if you are debugging -->
