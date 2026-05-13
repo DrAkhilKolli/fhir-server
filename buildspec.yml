@@ -14,7 +14,7 @@ env:
 phases:
   install:
     runtime-versions:
-      java: corretto11
+      java: corretto21
     commands:
       - echo "=== Installing Maven ==="
       - mvn --version

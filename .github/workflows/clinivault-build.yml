@@ -52,7 +52,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "11"
+          java-version: "21"
           cache: maven
 
       # Build only the modules needed for the container image:

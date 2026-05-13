@@ -14,7 +14,7 @@
 #   - Multi-tenant config directory (mount as a volume for zero-rebuild
 #     tenant onboarding)
 # ─────────────────────────────────────────────────────────────────────────────
-FROM eclipse-temurin:11-jre-jammy
+FROM eclipse-temurin:21-jre-jammy
 
 # ── Environment ───────────────────────────────────────────────────────────────
 ENV WLP_DIR=/opt/ibm/wlp \
