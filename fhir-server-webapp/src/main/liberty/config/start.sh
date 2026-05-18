@@ -17,6 +17,12 @@ export ABAC_ALLOWED_PURPOSES="${ABAC_ALLOWED_PURPOSES:-}"
 export ABAC_RESOURCE_TENANT_SYSTEM="${ABAC_RESOURCE_TENANT_SYSTEM:-https://linuxforhealth.org/fhir/abac/tenant}"
 export ABAC_RESOURCE_ORG_SYSTEM="${ABAC_RESOURCE_ORG_SYSTEM:-https://linuxforhealth.org/fhir/abac/org}"
 
+# ── Keycloak issuer ───────────────────────────────────────────────────────────
+# Full realm base URL published in /.well-known/smart-configuration.
+# Must be the public HTTPS URL (e.g. https://auth.fhirvault.com/realms/smart-fhir).
+# Required: leave empty and the SMART discovery doc will have broken auth endpoints.
+export KC_ISSUER="${KC_ISSUER:-}"
+
 # ── Terminology / FHIR-MCP defaults ──────────────────────────────────────────
 # Base URL of the FHIR-MCP service reachable from within this container.
 # In ECS this is the public ALB URL for the mcp subdomain (e.g. https://mcp.fhirvault.com).
