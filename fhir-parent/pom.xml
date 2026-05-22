@@ -112,6 +112,7 @@
         <module>../fhir-server-webapp</module>
         <module>../fhir-server-test</module>
         <module>../fhir-smart</module>
+        <module>../fhir-interceptors-clinivault</module>
         <module>../fhir-bucket</module>
         <module>../fhir-swagger-generator</module>
         <module>../fhir-openapi</module>

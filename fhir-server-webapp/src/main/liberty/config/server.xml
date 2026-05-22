@@ -3,32 +3,21 @@
     <!-- Enable features -->
     <featureManager>
         <feature>transportSecurity-1.0</feature>
-        <feature>appSecurity-2.0</feature>
+        <feature>appSecurity-5.0</feature>
         <feature>jaxrs-2.1</feature>
         <feature>servlet-4.0</feature>
         <feature>jsonp-1.1</feature>
         <feature>jdbc-4.1</feature>
         <feature>websocket-1.1</feature>
         <feature>localConnector-1.0</feature>
-        <!-- mpJwt-1.2 isn't used by default,
-             but we include it here to avoid NoClassDefFound in our classes that *can* use it -->
-        <feature>mpJwt-1.2</feature>
+        <feature>mpJwt-2.1</feature>
         <feature>openapi-3.1</feature>
     </featureManager>
 
-    <mpJwt
-        id="jwtConsumer"
-        jwksUri="${env.KC_JWKS_URI}"
-        issuer="${env.KC_ISSUER}"
-        audiences="${env.SMART_CLIENT_ID}"
-        userNameAttribute="sub"
-        groupNameAttribute="groups"
-        authFilterRef="fhirAuthFilter" />
-
-    <authFilter id="fhirAuthFilter">
-        <requestUrl id="excluded-metadata"         matchType="notContain" urlPattern="/fhir-server/api/v4/metadata" />
-        <requestUrl id="excluded-smart-config"     matchType="notContain" urlPattern="/fhir-server/api/v4/.well-known/smart-configuration" />
-    </authFilter>
+    <!-- mpJwt elements and authFilter are in configDropins/defaults/mpJwt.xml.
+         start.sh generates configDropins/overrides/mpJwt-tenants.xml at container
+         start with one <mpJwt> per registered realm (shared SaaS) or one dedicated
+         element (dedicated mode). -->
 
     <!-- Disable welcome page so that internal server info won't be revealed in responses
          to requests with an invalid context root.

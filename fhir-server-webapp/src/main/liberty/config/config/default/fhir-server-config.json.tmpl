@@ -112,7 +112,11 @@
                 "enableResourceTypesCache": true
             },
             "interceptors": [
-                "org.linuxforhealth.fhir.smart.AuthzPolicyEnforcementPersistenceInterceptor"
+                "org.clinivault.fhir.interceptors.TenantValidationInterceptor",
+                "org.clinivault.fhir.interceptors.RealmValidationInterceptor",
+                "org.clinivault.fhir.interceptors.DSIDValidationInterceptor",
+                "org.linuxforhealth.fhir.smart.AuthzPolicyEnforcementPersistenceInterceptor",
+                "org.clinivault.fhir.interceptors.AuditPersistenceInterceptor"
             ],
             "datasources": {
                 "default": {

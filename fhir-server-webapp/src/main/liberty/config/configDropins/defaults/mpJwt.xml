@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Shared authFilter definition for the FHIR resource-server mpJwt elements.
+
+  The actual <mpJwt> elements are NOT defined here. They are generated at
+  container start by start.sh into:
+    configDropins/overrides/mpJwt-tenants.xml
+
+  In shared-SaaS mode the script emits one <mpJwt id="jwt_<tenant_id>"> per
+  realm in the tenant registry. In dedicated mode it emits a single
+  <mpJwt id="jwtDedicated"> using KC_ISSUER / KC_JWKS_URI env vars.
+
+  All generated elements reference the authFilter defined below so that
+  the metadata and SMART discovery endpoints remain unauthenticated.
+-->
+<server description="FHIR authFilter (mpJwt dropin)">
+
+    <authFilter id="fhirAuthFilter">
+        <requestUrl id="excluded-metadata"
+            matchType="notContain"
+            urlPattern="/fhir-server/api/v4/metadata" />
+        <requestUrl id="excluded-smart-config"
+            matchType="notContain"
+            urlPattern="/fhir-server/api/v4/.well-known/smart-configuration" />
+    </authFilter>
+
+</server>

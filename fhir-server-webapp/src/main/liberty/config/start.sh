@@ -1,35 +1,115 @@
 #!/bin/sh
 # Entrypoint for the ClinicalVault FHIR Server container.
-# Renders fhir-server-config.json from its template before starting Liberty,
-# so ABAC (and other) settings can be controlled via environment variables
-# without rebuilding the image.
+# 1. Optionally downloads the tenant registry from S3.
+# 2. Generates configDropins/overrides/mpJwt-tenants.xml (one <mpJwt> per realm).
+# 3. Renders fhir-server-config.json from its template via envsubst.
+# 4. Starts Open Liberty.
 
 set -eu
 
 CONFIG_TMPL="${SERVER_DIR}/config/default/fhir-server-config.json.tmpl"
 CONFIG_OUT="${SERVER_DIR}/config/default/fhir-server-config.json"
 
-# ── ABAC defaults ─────────────────────────────────────────────────────────────
-export ABAC_ENABLED="${ABAC_ENABLED:-false}"
-export ABAC_REQUIRE_TENANT="${ABAC_REQUIRE_TENANT:-false}"
-export ABAC_REQUIRE_ORG="${ABAC_REQUIRE_ORG:-false}"
-export ABAC_ALLOWED_PURPOSES="${ABAC_ALLOWED_PURPOSES:-}"
+# ── ABAC defaults (enabled in production) ────────────────────────────────────
+export ABAC_ENABLED="${ABAC_ENABLED:-true}"
+export ABAC_REQUIRE_TENANT="${ABAC_REQUIRE_TENANT:-true}"
+export ABAC_REQUIRE_ORG="${ABAC_REQUIRE_ORG:-true}"
+export ABAC_ALLOWED_PURPOSES="${ABAC_ALLOWED_PURPOSES:-TREAT,HPAYMT,HOPERAT}"
 export ABAC_RESOURCE_TENANT_SYSTEM="${ABAC_RESOURCE_TENANT_SYSTEM:-https://linuxforhealth.org/fhir/abac/tenant}"
 export ABAC_RESOURCE_ORG_SYSTEM="${ABAC_RESOURCE_ORG_SYSTEM:-https://linuxforhealth.org/fhir/abac/org}"
 
 # ── Keycloak issuer ───────────────────────────────────────────────────────────
-# Full realm base URL published in /.well-known/smart-configuration.
-# Must be the public HTTPS URL (e.g. https://auth.fhirvault.com/realms/smart-fhir).
-# Required: leave empty and the SMART discovery doc will have broken auth endpoints.
 export KC_ISSUER="${KC_ISSUER:-}"
+export KC_JWKS_URI="${KC_JWKS_URI:-${KC_ISSUER}/protocol/openid-connect/certs}"
 
 # ── Terminology / FHIR-MCP defaults ──────────────────────────────────────────
-# Base URL of the FHIR-MCP service reachable from within this container.
-# In ECS this is the public ALB URL for the mcp subdomain (e.g. https://mcp.fhirvault.com).
-# If not set, remoteTermServiceProviders will have an empty base and be effectively disabled.
 export FHIR_MCP_INTERNAL_URL="${FHIR_MCP_INTERNAL_URL:-}"
 
-# ── Render config ─────────────────────────────────────────────────────────────
+# ── Tenant registry (shared-SaaS mode) ───────────────────────────────────────
+# In shared-SaaS mode, CLINIVAULT_TENANT_REGISTRY_URL points at the S3 object
+# that lists all registered realms. start.sh downloads it before generating the
+# mpJwt dropin so that every realm's JWKS URI is trusted on first request.
+REGISTRY_FILE="/opt/clinivault/tenant-registry.json"
+if [ -n "${CLINIVAULT_TENANT_REGISTRY_URL:-}" ]; then
+    mkdir -p "$(dirname "${REGISTRY_FILE}")"
+    aws s3 cp "${CLINIVAULT_TENANT_REGISTRY_URL}" "${REGISTRY_FILE}" \
+        2>&1 | sed 's/^/[start.sh] s3-cp: /' || true
+fi
+
+# ── Per-realm mpJwt dropin generation (Option C) ─────────────────────────────
+# Generates configDropins/overrides/mpJwt-tenants.xml so Open Liberty trusts
+# every registered realm's JWKS without image rebuilds.
+# - Shared-SaaS mode: one <mpJwt> per tenant entry in the registry.
+# - Dedicated mode:   one <mpJwt id="jwtDedicated"> from KC_ISSUER/KC_JWKS_URI.
+DROPIN_DIR="${SERVER_DIR}/configDropins/overrides"
+mkdir -p "${DROPIN_DIR}"
+python3 - << 'PYEOF'
+import json, os, sys
+
+registry_file = '/opt/clinivault/tenant-registry.json'
+server_dir    = os.environ.get('SERVER_DIR', '/opt/ibm/wlp/usr/servers/defaultServer')
+dropin_out    = os.path.join(server_dir, 'configDropins', 'overrides', 'mpJwt-tenants.xml')
+os.makedirs(os.path.dirname(dropin_out), exist_ok=True)
+
+elements = []
+if os.path.exists(registry_file):
+    with open(registry_file) as f:
+        data = json.load(f)
+    tenants = data if isinstance(data, list) else data.get('tenants', [])
+    for t in tenants:
+        tid      = t.get('tenant_id', '')
+        jwks_uri = t.get('jwks_uri', '')
+        issuer   = t.get('issuer', jwks_uri.replace('/protocol/openid-connect/certs', ''))
+        if tid and jwks_uri:
+            safe_id = ''.join(c if c.isalnum() or c == '_' else '_' for c in tid)
+            elements.append(
+                f'    <mpJwt id="jwt_{safe_id}"\n'
+                f'        issuer="{issuer}"\n'
+                f'        jwksUri="{jwks_uri}"\n'
+                f'        audiences="fhir-server"\n'
+                f'        userNameAttribute="preferred_username"\n'
+                f'        groupNameAttribute="groups"\n'
+                f'        authFilterRef="fhirAuthFilter" />'
+            )
+
+if not elements:
+    kc_issuer = os.environ.get('KC_ISSUER', '')
+    kc_jwks   = os.environ.get('KC_JWKS_URI',
+                    f'{kc_issuer}/protocol/openid-connect/certs' if kc_issuer else '')
+    if kc_issuer and kc_jwks:
+        elements.append(
+            f'    <mpJwt id="jwtDedicated"\n'
+            f'        issuer="{kc_issuer}"\n'
+            f'        jwksUri="{kc_jwks}"\n'
+            f'        audiences="fhir-server"\n'
+            f'        userNameAttribute="preferred_username"\n'
+            f'        groupNameAttribute="groups"\n'
+            f'        authFilterRef="fhirAuthFilter" />'
+        )
+
+xml = (
+    '<?xml version="1.0" encoding="UTF-8"?>\n'
+    '<!-- Auto-generated by start.sh — do not edit. Regenerated on each container start. -->\n'
+    '<server description="Per-realm mpJwt elements">\n'
+    + '\n'.join(elements) + ('\n' if elements else '')
+    + '</server>\n'
+)
+
+with open(dropin_out, 'w') as f:
+    f.write(xml)
+
+count = len(elements)
+print(f'[start.sh] Generated {count} mpJwt element(s) -> {dropin_out}', flush=True)
+if count == 0:
+    print(
+        '[start.sh] WARNING: No mpJwt elements generated. '
+        'Set KC_ISSUER/KC_JWKS_URI or provide tenant-registry.json.',
+        file=sys.stderr, flush=True,
+    )
+PYEOF
+
+# ── Render fhir-server-config.json ───────────────────────────────────────────
 envsubst < "${CONFIG_TMPL}" > "${CONFIG_OUT}"
 
 exec /opt/ibm/wlp/bin/server run defaultServer
+

@@ -1,0 +1,4 @@
+org.clinivault.fhir.interceptors.TenantValidationInterceptor
+org.clinivault.fhir.interceptors.RealmValidationInterceptor
+org.clinivault.fhir.interceptors.DSIDValidationInterceptor
+org.clinivault.fhir.interceptors.AuditPersistenceInterceptor
