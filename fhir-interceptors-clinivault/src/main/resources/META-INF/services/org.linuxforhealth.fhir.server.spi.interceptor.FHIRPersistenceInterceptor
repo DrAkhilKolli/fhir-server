@@ -1,4 +1,7 @@
 org.clinivault.fhir.interceptors.TenantValidationInterceptor
 org.clinivault.fhir.interceptors.RealmValidationInterceptor
 org.clinivault.fhir.interceptors.DSIDValidationInterceptor
+org.clinivault.fhir.interceptors.SmartScopeEnforcementInterceptor
+org.clinivault.fhir.interceptors.CompartmentEnforcementInterceptor
 org.clinivault.fhir.interceptors.AuditPersistenceInterceptor
+org.clinivault.fhir.interceptors.ProvenanceGenerationInterceptor
