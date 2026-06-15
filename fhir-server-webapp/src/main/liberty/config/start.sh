@@ -2,8 +2,9 @@
 # Entrypoint for the ClinicalVault FHIR Server container.
 # 1. Optionally downloads the tenant registry from S3.
 # 2. Generates configDropins/overrides/mpJwt-tenants.xml (one <mpJwt> per realm).
-# 3. Renders fhir-server-config.json from its template via envsubst.
-# 4. Starts Open Liberty.
+# 3. Downloads per-tenant fhir-server-config.json and datasource.xml from S3.
+# 4. Renders fhir-server-config.json from its template via envsubst.
+# 5. Starts Open Liberty.
 
 set -eu
 
@@ -107,6 +108,117 @@ if count == 0:
         file=sys.stderr, flush=True,
     )
 PYEOF
+
+# ── Per-tenant fhir-server-config.json and datasource.xml (shared-SaaS mode) ─
+# For each tenant in the registry, download their fhir-server-config.json from S3
+# into ${SERVER_DIR}/config/${tenantId}/ and merge their datasource.xml entries
+# into a single configDropins dropin so Liberty registers all JNDI datasources.
+# This enables zero-image-rebuild tenant onboarding.
+TENANT_CONFIG_BUCKET="${CLINIVAULT_TENANT_CONFIG_S3_BUCKET:-}"
+TENANT_CONFIG_PREFIX="${CLINIVAULT_TENANT_CONFIG_S3_PREFIX:-${TENANT_FHIR_CONFIG_S3_PREFIX:-fhir-tenant-configs}}"
+if [ -f "${REGISTRY_FILE}" ]; then
+    python3 - << 'PYEOF'
+import json, os, subprocess, sys
+
+registry_file = '/opt/clinivault/tenant-registry.json'
+server_dir    = os.environ.get('SERVER_DIR', '/opt/ibm/wlp/usr/servers/defaultServer')
+bucket        = os.environ.get('CLINIVAULT_TENANT_CONFIG_S3_BUCKET', '').strip()
+prefix        = (
+    os.environ.get('CLINIVAULT_TENANT_CONFIG_S3_PREFIX', '').strip()
+    or os.environ.get('TENANT_FHIR_CONFIG_S3_PREFIX', '').strip()
+    or 'fhir-tenant-configs'
+)
+registry_url  = os.environ.get('CLINIVAULT_TENANT_REGISTRY_URL', '').strip()
+
+if not bucket and registry_url.startswith('s3://'):
+    without_scheme = registry_url[5:]
+    slash = without_scheme.find('/')
+    bucket = without_scheme if slash < 0 else without_scheme[:slash]
+    print(f'[start.sh] Derived tenant-config bucket from registry URL: {bucket}', flush=True)
+
+if not bucket:
+    print('[start.sh] CLINIVAULT_TENANT_CONFIG_S3_BUCKET not set — skipping per-tenant config load', flush=True)
+    sys.exit(0)
+
+with open(registry_file) as f:
+    data = json.load(f)
+tenants = data if isinstance(data, list) else data.get('tenants', [])
+
+datasource_fragments = []
+loaded = 0
+
+def _candidate_keys(tenant_id: str, file_name: str):
+    keys = []
+    if prefix:
+        keys.append(f'{prefix}/{tenant_id}/{file_name}')
+    keys.append(f'tenants/{tenant_id}/{file_name}')
+    keys.append(f'{tenant_id}/{file_name}')
+    deduped = []
+    seen = set()
+    for key in keys:
+        normalized = key.strip('/')
+        if normalized and normalized not in seen:
+            seen.add(normalized)
+            deduped.append(normalized)
+    return deduped
+
+def _s3_copy_first(bucket_name: str, keys, dst_path: str):
+    for key in keys:
+        s3_uri = f's3://{bucket_name}/{key}'
+        res = subprocess.run(['aws', 's3', 'cp', s3_uri, dst_path], capture_output=True, text=True)
+        if res.returncode == 0:
+            return key
+    return ''
+
+for t in tenants:
+    tid = (t.get('tenant_id') or t.get('tenantId') or t.get('id') or '').strip()
+    if not tid or tid == 'default':
+        continue
+
+    # ── fhir-server-config.json ──────────────────────────────────────────────
+    config_dir = os.path.join(server_dir, 'config', tid)
+    os.makedirs(config_dir, exist_ok=True)
+    config_out = os.path.join(config_dir, 'fhir-server-config.json')
+    config_keys = _candidate_keys(tid, 'fhir-server-config.json')
+    config_key = _s3_copy_first(bucket, config_keys, config_out)
+    if not config_key:
+        attempted = ', '.join(config_keys)
+        print(f'[start.sh] WARN: no fhir-server-config for {tid}; attempted keys: {attempted}', flush=True)
+        continue
+
+    # ── datasource.xml fragment ───────────────────────────────────────────────
+    ds_tmp = f'/tmp/datasource_{tid}.xml'
+    ds_keys = _candidate_keys(tid, 'datasource.xml')
+    ds_key = _s3_copy_first(bucket, ds_keys, ds_tmp)
+    if ds_key:
+        with open(ds_tmp) as fh:
+            content = fh.read()
+        # Extract inner <dataSource ...>...</dataSource> elements (skip <server> wrapper)
+        import re
+        fragments = re.findall(r'<dataSource\b.*?</dataSource>', content, re.DOTALL)
+        datasource_fragments.extend(fragments)
+        os.remove(ds_tmp)
+    else:
+        attempted_ds = ', '.join(ds_keys)
+        print(f'[start.sh] WARN: no datasource.xml for {tid}; attempted keys: {attempted_ds}', flush=True)
+
+    loaded += 1
+
+print(f'[start.sh] Loaded {loaded} per-tenant FHIR config(s) from s3://{bucket}/{prefix}/', flush=True)
+
+# ── Write merged datasource dropin ───────────────────────────────────────────
+dropin_ds = os.path.join(server_dir, 'configDropins', 'overrides', 'datasource-tenants.xml')
+os.makedirs(os.path.dirname(dropin_ds), exist_ok=True)
+with open(dropin_ds, 'w') as fh:
+    fh.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+    fh.write('<!-- Auto-generated by start.sh — per-tenant datasources -->\n')
+    fh.write('<server>\n')
+    for frag in datasource_fragments:
+        fh.write(f'  {frag}\n')
+    fh.write('</server>\n')
+print(f'[start.sh] Wrote {len(datasource_fragments)} datasource fragment(s) -> {dropin_ds}', flush=True)
+PYEOF
+fi
 
 # ── Render fhir-server-config.json ───────────────────────────────────────────
 envsubst < "${CONFIG_TMPL}" > "${CONFIG_OUT}"
