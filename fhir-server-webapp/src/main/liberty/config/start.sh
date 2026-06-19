@@ -1,8 +1,8 @@
 #!/bin/sh
 # Entrypoint for the ClinicalVault FHIR Server container.
-# 1. Optionally downloads the tenant registry from S3.
-# 2. Generates configDropins/overrides/mpJwt-tenants.xml (one <mpJwt> per realm).
-# 3. Downloads per-tenant fhir-server-config.json and datasource.xml from S3.
+# 1. Optionally downloads the tenant registry from object storage (Cloudflare R2 or S3).
+# 2. Downloads or generates configDropins/overrides/mpJwt-tenants.xml.
+# 3. Downloads per-tenant fhir-server-config.json and datasource.xml from object storage.
 # 4. Renders fhir-server-config.json from its template via envsubst.
 # 5. Starts Open Liberty.
 
@@ -26,24 +26,51 @@ export KC_JWKS_URI="${KC_JWKS_URI:-${KC_ISSUER}/protocol/openid-connect/certs}"
 # ── Terminology / FHIR-MCP defaults ──────────────────────────────────────────
 export FHIR_MCP_INTERNAL_URL="${FHIR_MCP_INTERNAL_URL:-}"
 
+# ── Tenant config storage ─────────────────────────────────────────────────────
+export CLINIVAULT_TENANT_CONFIG_STORAGE_PROVIDER="${CLINIVAULT_TENANT_CONFIG_STORAGE_PROVIDER:-s3}"
+export CLINIVAULT_TENANT_CONFIG_R2_ENDPOINT="${CLINIVAULT_TENANT_CONFIG_R2_ENDPOINT:-}"
+if [ -z "${CLINIVAULT_TENANT_CONFIG_R2_ENDPOINT}" ] && [ "${CLINIVAULT_TENANT_CONFIG_STORAGE_PROVIDER}" = "r2" ] && [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
+    export CLINIVAULT_TENANT_CONFIG_R2_ENDPOINT="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
+fi
+
+storage_aws() {
+    if [ "${CLINIVAULT_TENANT_CONFIG_STORAGE_PROVIDER}" = "r2" ]; then
+        if [ -z "${CLINIVAULT_TENANT_CONFIG_R2_ENDPOINT:-}" ]; then
+            echo "[start.sh] R2 storage selected but CLINIVAULT_TENANT_CONFIG_R2_ENDPOINT/CLOUDFLARE_ACCOUNT_ID is missing" >&2
+            return 1
+        fi
+        aws --endpoint-url "${CLINIVAULT_TENANT_CONFIG_R2_ENDPOINT}" "$@"
+        return $?
+    fi
+    aws "$@"
+}
+
 # ── Tenant registry (shared-SaaS mode) ───────────────────────────────────────
-# In shared-SaaS mode, CLINIVAULT_TENANT_REGISTRY_URL points at the S3 object
+# In shared-SaaS mode, CLINIVAULT_TENANT_REGISTRY_URL points at the registry
 # that lists all registered realms. start.sh downloads it before generating the
 # mpJwt dropin so that every realm's JWKS URI is trusted on first request.
 REGISTRY_FILE="/opt/clinivault/tenant-registry.json"
 if [ -n "${CLINIVAULT_TENANT_REGISTRY_URL:-}" ]; then
     mkdir -p "$(dirname "${REGISTRY_FILE}")"
-    aws s3 cp "${CLINIVAULT_TENANT_REGISTRY_URL}" "${REGISTRY_FILE}" \
-        2>&1 | sed 's/^/[start.sh] s3-cp: /' || true
+    storage_aws s3 cp "${CLINIVAULT_TENANT_REGISTRY_URL}" "${REGISTRY_FILE}" \
+        2>&1 | sed 's/^/[start.sh] storage-cp: /' || true
 fi
 
 # ── Per-realm mpJwt dropin generation (Option C) ─────────────────────────────
-# Generates configDropins/overrides/mpJwt-tenants.xml so Open Liberty trusts
-# every registered realm's JWKS without image rebuilds.
+# Uses the object-store copy when present so rollout state is deterministic
+# across tasks. Falls back to generating the dropin from tenant-registry.json.
 # - Shared-SaaS mode: one <mpJwt> per tenant entry in the registry.
 # - Dedicated mode:   one <mpJwt id="jwtDedicated"> from KC_ISSUER/KC_JWKS_URI.
 DROPIN_DIR="${SERVER_DIR}/configDropins/overrides"
 mkdir -p "${DROPIN_DIR}"
+MPJWT_DROPIN="${DROPIN_DIR}/mpJwt-tenants.xml"
+if [ -n "${CLINIVAULT_TENANT_REGISTRY_URL:-}" ]; then
+    MPJWT_STORAGE_URL="${CLINIVAULT_TENANT_REGISTRY_URL%/*}/mpJwt-tenants.xml"
+    storage_aws s3 cp "${MPJWT_STORAGE_URL}" "${MPJWT_DROPIN}" \
+        2>&1 | sed 's/^/[start.sh] mpjwt-cp: /' || true
+fi
+
+if [ ! -s "${MPJWT_DROPIN}" ]; then
 python3 - << 'PYEOF'
 import json, os, sys
 
@@ -108,9 +135,12 @@ if count == 0:
         file=sys.stderr, flush=True,
     )
 PYEOF
+else
+    echo "[start.sh] Using object-store mpJwt dropin at ${MPJWT_DROPIN}"
+fi
 
 # ── Per-tenant fhir-server-config.json and datasource.xml (shared-SaaS mode) ─
-# For each tenant in the registry, download their fhir-server-config.json from S3
+# For each tenant in the registry, download their fhir-server-config.json from object storage
 # into ${SERVER_DIR}/config/${tenantId}/ and merge their datasource.xml entries
 # into a single configDropins dropin so Liberty registers all JNDI datasources.
 # This enables zero-image-rebuild tenant onboarding.
@@ -129,9 +159,14 @@ prefix        = (
     or 'fhir-tenant-configs'
 )
 registry_url  = os.environ.get('CLINIVAULT_TENANT_REGISTRY_URL', '').strip()
+storage_provider = os.environ.get('CLINIVAULT_TENANT_CONFIG_STORAGE_PROVIDER', 's3').strip().lower()
+r2_endpoint = os.environ.get('CLINIVAULT_TENANT_CONFIG_R2_ENDPOINT', '').strip()
+account_id = os.environ.get('CLOUDFLARE_ACCOUNT_ID', '').strip()
+if not r2_endpoint and storage_provider == 'r2' and account_id:
+    r2_endpoint = f'https://{account_id}.r2.cloudflarestorage.com'
 
-if not bucket and registry_url.startswith('s3://'):
-    without_scheme = registry_url[5:]
+if not bucket and (registry_url.startswith('s3://') or registry_url.startswith('r2://')):
+    without_scheme = registry_url.split('://', 1)[1]
     slash = without_scheme.find('/')
     bucket = without_scheme if slash < 0 else without_scheme[:slash]
     print(f'[start.sh] Derived tenant-config bucket from registry URL: {bucket}', flush=True)
@@ -165,7 +200,14 @@ def _candidate_keys(tenant_id: str, file_name: str):
 def _s3_copy_first(bucket_name: str, keys, dst_path: str):
     for key in keys:
         s3_uri = f's3://{bucket_name}/{key}'
-        res = subprocess.run(['aws', 's3', 'cp', s3_uri, dst_path], capture_output=True, text=True)
+        cmd = ['aws']
+        if storage_provider == 'r2':
+            if not r2_endpoint:
+                print('[start.sh] R2 storage selected but endpoint is missing', flush=True)
+                return ''
+            cmd += ['--endpoint-url', r2_endpoint]
+        cmd += ['s3', 'cp', s3_uri, dst_path]
+        res = subprocess.run(cmd, capture_output=True, text=True)
         if res.returncode == 0:
             return key
     return ''
@@ -204,7 +246,7 @@ for t in tenants:
 
     loaded += 1
 
-print(f'[start.sh] Loaded {loaded} per-tenant FHIR config(s) from s3://{bucket}/{prefix}/', flush=True)
+print(f'[start.sh] Loaded {loaded} per-tenant FHIR config(s) from {storage_provider}://{bucket}/{prefix}/', flush=True)
 
 # ── Write merged datasource dropin ───────────────────────────────────────────
 dropin_ds = os.path.join(server_dir, 'configDropins', 'overrides', 'datasource-tenants.xml')
@@ -224,4 +266,3 @@ fi
 envsubst < "${CONFIG_TMPL}" > "${CONFIG_OUT}"
 
 exec /opt/ibm/wlp/bin/server run defaultServer
-

@@ -16,6 +16,8 @@
 !fhir-server-webapp/src/main/liberty/config/config/default/fhir-server-config.json
 !fhir-server-webapp/src/main/liberty/config/config/default/fhir-server-config.json.tmpl
 !fhir-server-webapp/src/main/liberty/config/start.sh
+!fhir-server-webapp/src/main/liberty/config/configDropins/
+!fhir-server-webapp/src/main/liberty/config/configDropins/**
 
 # Schema CLI jar (for DB migrations)
 !fhir-persistence-schema/target/fhir-persistence-schema-*-cli.jar
