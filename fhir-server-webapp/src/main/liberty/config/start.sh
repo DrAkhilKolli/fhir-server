@@ -285,6 +285,40 @@ else
     fi
 fi
 
+# ── Patch mpJwt config: disable static localhost consumer, wire tenant elements ──
+# jwtRS.xml (baked into the image for local dev) has authFilterRef="filter" which makes
+# it take priority over ALL tenant mpJwt elements for every request. Since its issuer is
+# http://localhost:8080, it ALWAYS fails in production, blocking all JWT auth.
+# Fix: (1) replace jwtRS.xml with an empty server config, (2) patch mpJwt-tenants.xml
+# to add authFilterRef="fhirAuthFilter" (excludes /metadata + /smart-config) and
+# allowFailOverToBasicAuth="true" so Basic auth fallback works via Liberty basicRegistry.
+echo "[start.sh] Disabling jwtRS.xml localhost consumer ..."
+printf '<?xml version="1.0" encoding="UTF-8"?>\n<server description="jwt-rs-disabled"/>\n' \
+    > "${SERVER_DIR}/configDropins/overrides/jwtRS.xml"
+
+if [ -s "${MPJWT_DROPIN}" ]; then
+    echo "[start.sh] Patching mpJwt-tenants.xml with authFilterRef and allowFailOverToBasicAuth ..."
+    python3 - << 'MPJWT_PATCH_EOF'
+import re, os
+server_dir = os.environ.get('SERVER_DIR', '/opt/ibm/wlp/usr/servers/defaultServer')
+path = os.path.join(server_dir, 'configDropins', 'overrides', 'mpJwt-tenants.xml')
+if os.path.exists(path):
+    with open(path) as f:
+        content = f.read()
+    def patch_mpjwt(m):
+        tag = m.group(0)
+        if 'authFilterRef' not in tag:
+            tag = re.sub(r'^(<mpJwt\s)', r'\1authFilterRef="fhirAuthFilter" allowFailOverToBasicAuth="true" ', tag)
+        return tag
+    content = re.sub(r'<mpJwt\s[^/].*?(?:/>|>)', patch_mpjwt, content, flags=re.DOTALL)
+    with open(path, 'w') as f:
+        f.write(content)
+    print('[start.sh] mpJwt-tenants.xml patched OK', flush=True)
+else:
+    print(f'[start.sh] WARNING: {path} not found, skipping patch', flush=True)
+MPJWT_PATCH_EOF
+fi
+
 # ── Per-tenant fhir-server-config.json and datasource.xml (shared-SaaS mode) ─
 # For each tenant in the registry, download their fhir-server-config.json from object storage
 # into ${SERVER_DIR}/config/${tenantId}/ and merge their datasource.xml entries
