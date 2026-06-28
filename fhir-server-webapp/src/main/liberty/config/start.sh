@@ -514,4 +514,30 @@ fi
 # ── Render fhir-server-config.json ───────────────────────────────────────────
 envsubst < "${CONFIG_TMPL}" > "${CONFIG_OUT}"
 
+# ── Merge JVM CA certificates into Liberty truststore ────────────────────────
+# Liberty's fhirTrustStore.p12 ships with only the application self-signed cert.
+# For outbound HTTPS (JWKS fetch from Keycloak on Render/Cloudflare), Liberty
+# must trust public CAs such as Let's Encrypt ISRG Root X1. Merge the JVM's
+# default cacerts (which includes all standard public CAs) into the Liberty
+# truststore once at container start so JWT validation succeeds.
+FHIR_TRUSTSTORE="${SERVER_DIR}/resources/security/fhirTrustStore.p12"
+JVM_CACERTS=""
+for _f in \
+    "$(dirname "$(dirname "$(readlink -f "$(command -v java)" 2>/dev/null || true)")")/lib/security/cacerts" \
+    "/opt/java/openjdk/lib/security/cacerts" \
+    "${JAVA_HOME:-/opt/java/openjdk}/lib/security/cacerts"; do
+  if [ -f "$_f" ]; then JVM_CACERTS="$_f"; break; fi
+done
+
+if [ -n "${JVM_CACERTS}" ] && [ -f "${FHIR_TRUSTSTORE}" ]; then
+    echo "[start.sh] Merging JVM trusted CAs into Liberty truststore for HTTPS outbound (JWKS fetch)..."
+    keytool -importkeystore -noprompt \
+        -srckeystore "${JVM_CACERTS}" -srcstorepass "changeit" -srcstoretype JKS \
+        -destkeystore "${FHIR_TRUSTSTORE}" -deststorepass "change-password" -deststoretype PKCS12 \
+        2>&1 | grep -E '[Ee]rror|[Ii]mporting|already exists' | head -10 || true
+    echo "[start.sh] Truststore merge complete — Liberty can now validate tokens from public-CA HTTPS issuers"
+else
+    echo "[start.sh] WARNING: Could not merge JVM CAs (jvm_cacerts='${JVM_CACERTS}' truststore_exists=$(test -f "${FHIR_TRUSTSTORE}" && echo yes || echo no)) — JWT validation may fail for external issuers"
+fi
+
 exec /opt/ibm/wlp/bin/server run defaultServer
