@@ -196,14 +196,12 @@ public class DefinitionalResourceVisitor extends DefaultVisitor {
         return false;
     }
     
-    @Override
     public boolean visit(String elementName, int elementIndex, ResearchDefinition researchDefinition) {
         url = getUrl(researchDefinition.getUrl());
         version = getVersion(researchDefinition.getVersion());
         return false;
     }
     
-    @Override
     public boolean visit(String elementName, int elementIndex, ResearchElementDefinition researchElementDefinition) {
         url = getUrl(researchElementDefinition.getUrl());
         version = getVersion(researchElementDefinition.getVersion());

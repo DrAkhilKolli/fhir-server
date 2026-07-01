@@ -52,7 +52,7 @@
         <fhir-search.index>MINIMAL_JSON</fhir-search.index>
         <fhir-persistence-jdbc.index>MINIMAL_JSON</fhir-persistence-jdbc.index>
         <fhir-server-test.index>MINIMAL_JSON</fhir-server-test.index>
-        <java.version>11</java.version>
+        <java.version>21</java.version>
         <fhir-examples.version>${project.version}</fhir-examples.version>
         <fhir-tools.version>5.0.0-SNAPSHOT</fhir-tools.version>
         <maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
@@ -730,7 +730,7 @@
             <plugins>
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.10.1</version>
+                    <version>3.13.0</version>
                     <configuration>
                         <source>${java.version}</source>
                         <target>${java.version}</target>
@@ -820,14 +820,14 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.0.0-M7</version>
+                    <version>3.5.3</version>
                     <configuration>
                         <trimStackTrace>false</trimStackTrace>
                     </configuration>
                 </plugin>
                 <plugin>
                     <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>3.0.0-M7</version>
+                    <version>3.5.3</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -939,8 +939,8 @@
                         <!-- speed up the build -->
                         <isOffline>true</isOffline>
                         <!-- no matter the JDK running the javadoc, it's
-                            important this be at the minimum level we support, which is 11. -->
-                        <source>11</source>
+                            important this be at the minimum level we support, which is 21. -->
+                        <source>21</source>
                         <!-- we don't need package -->
                         <show>package</show>
                         <!-- verbose if you are debugging -->
@@ -1212,7 +1212,7 @@
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <inherited>false</inherited>
                         <configuration>
-                            <source>11</source>
+                            <source>21</source>
                             <verbose>true</verbose>
                             <doclint>none</doclint>
                             <minmemory>2g</minmemory>
@@ -1253,8 +1253,8 @@
                             <!-- speed up the build -->
                             <isOffline>true</isOffline>
                             <!-- no matter the JDK running the javadoc, it's
-                                important this be at the minimum level we support, which is 11. -->
-                            <source>11</source>
+                                important this be at the minimum level we support, which is 21. -->
+                            <source>21</source>
                             <!-- we don't need package -->
                             <show>package</show>
                             <!-- verbose if you are debugging -->
@@ -1509,8 +1509,8 @@
                     <!-- speed up the build -->
                     <isOffline>true</isOffline>
                     <!-- no matter the JDK running the javadoc, it's important
-                        this be at the minimum level we support, which is 11. -->
-                    <source>11</source>
+                        this be at the minimum level we support, which is 21. -->
+                    <source>21</source>
                     <!-- we don't need package -->
                     <show>package</show>
                     <!-- verbose if you are debugging -->
