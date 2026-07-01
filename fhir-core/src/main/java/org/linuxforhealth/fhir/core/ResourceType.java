@@ -183,7 +183,7 @@ public enum ResourceType {
      *
      * <p>Catalog entries are wrappers that contextualize items included in a catalog.
      */
-    CATALOG_ENTRY("CatalogEntry", VERSION_40),
+    CATALOG_ENTRY("CatalogEntry", VERSION_40, VERSION_43),
 
     /**
      * ChargeItem
@@ -418,7 +418,7 @@ public enum ResourceType {
      * <p>A record of a device being used by a patient where the record is the result of a report from the patient or another
      * clinician.
      */
-    DEVICE_USE_STATEMENT("DeviceUseStatement", VERSION_40),
+    DEVICE_USE_STATEMENT("DeviceUseStatement", VERSION_40, VERSION_43),
 
     /**
      * DiagnosticReport
@@ -435,7 +435,7 @@ public enum ResourceType {
      *
      * <p>A collection of documents compiled for a purpose together with metadata that applies to the collection.
      */
-    DOCUMENT_MANIFEST("DocumentManifest", VERSION_40),
+    DOCUMENT_MANIFEST("DocumentManifest", VERSION_40, VERSION_43),
 
     /**
      * DocumentReference
@@ -759,7 +759,7 @@ public enum ResourceType {
      * <p>A photo, video, or audio recording acquired or used in healthcare. The actual content may be inline or provided by
      * direct reference.
      */
-    MEDIA("Media", VERSION_40),
+    MEDIA("Media", VERSION_40, VERSION_43),
 
     /**
      * Medication
@@ -1140,7 +1140,7 @@ public enum ResourceType {
      * <p>A group of related requests that can be used to capture intended activities that have inter-dependencies such as
      * "give this medication after that one".
      */
-    REQUEST_GROUP("RequestGroup", VERSION_40),
+    REQUEST_GROUP("RequestGroup", VERSION_40, VERSION_43),
 
     /**
      * RequestOrchestration
@@ -1164,7 +1164,7 @@ public enum ResourceType {
      * <p>The ResearchDefinition resource describes the conditional state (population and any exposures being compared within
      * the population) and outcome (if specified) that the knowledge (evidence, assertion, recommendation) is about.
      */
-    RESEARCH_DEFINITION("ResearchDefinition", VERSION_40),
+    RESEARCH_DEFINITION("ResearchDefinition", VERSION_40, VERSION_43),
 
     /**
      * ResearchElementDefinition
@@ -1172,7 +1172,7 @@ public enum ResourceType {
      * <p>The ResearchElementDefinition resource describes a "PICO" element that knowledge (evidence, assertion,
      * recommendation) is about.
      */
-    RESEARCH_ELEMENT_DEFINITION("ResearchElementDefinition", VERSION_40),
+    RESEARCH_ELEMENT_DEFINITION("ResearchElementDefinition", VERSION_40, VERSION_43),
 
     /**
      * ResearchStudy

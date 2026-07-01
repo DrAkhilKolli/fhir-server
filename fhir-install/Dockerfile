@@ -5,10 +5,10 @@
 # ----------------------------------------------------------------------------
 # Stage: Base
 
-FROM openliberty/open-liberty:24.0.0.12-kernel-slim-java21-openj9-ubi as base
+FROM openliberty/open-liberty:24.0.0.12-kernel-slim-java21-openj9-ubi-minimal AS base
 
 USER root
-RUN yum install -y unzip
+RUN microdnf install -y unzip
 RUN install -d -o 1001 /opt/fhir-server
 USER 1001
 
@@ -21,7 +21,7 @@ COPY src/main/docker/fhir-server/bootstrap.sh /opt/fhir-server/
 # ----------------------------------------------------------------------------
 # Stage: Runnable
 
-FROM openliberty/open-liberty:24.0.0.12-kernel-slim-java21-openj9-ubi
+FROM openliberty/open-liberty:24.0.0.12-kernel-slim-java21-openj9-ubi-minimal
 
 ARG VERBOSE=true
 ARG FHIR_SERVER_VERSION=5.0.0-SNAPSHOT
@@ -61,9 +61,8 @@ RUN mkdir -p /config/configDropins/overrides && \
 
 # This block ensures the latest software is picked up.
 USER root
-RUN yum update -y && \
-    yum clean all && \
-    rm -rf /var/cache/yum
+RUN microdnf update -y && \
+    microdnf clean all
 USER 1001
 
 # Set the working directory to the liberty defaultServer

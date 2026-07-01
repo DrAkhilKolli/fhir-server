@@ -245,7 +245,10 @@ public final class FHIRRegistry {
         List<SearchParameter> searchParameters = new ArrayList<>();
         for (FHIRRegistryResourceProvider provider : providers) {
             for (FHIRRegistryResource registryResource : provider.getSearchParameterResources(type)) {
-                searchParameters.add(registryResource.getResource().as(SearchParameter.class));
+                Resource resource = registryResource.getResource();
+                if (resource != null) {
+                    searchParameters.add(resource.as(SearchParameter.class));
+                }
             }
         }
         return Collections.unmodifiableList(searchParameters);
