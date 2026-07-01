@@ -152,6 +152,21 @@ The LinuxForHealth FHIR Server is modular and extensible. The following tables p
 |fhir-persistence-schema|Classes for deploying and updating the LinuxForHealth FHIR Server relational database schema|false|
 |fhir-persistence-cassandra-app|CLI utility application supporting payload storage to Cassandra *experimental* |false|
 
+### Modernization
+
+#### Java 21 Upgrade (2026-07-01)
+This branch (`appmod/java-upgrade-20260701122256`) upgrades the runtime from Java 11 to **Java 21 LTS**.
+
+**Changes made:**
+- `fhir-parent/pom.xml`: `java.version` → `21`; bumped `maven-compiler-plugin` to 3.13.0, `maven-surefire-plugin` / `maven-failsafe-plugin` to 3.5.3
+- GitHub Actions workflows (11 files): all `java: ['11']` / `java-version: '11'` references updated to `21`
+- Dockerfiles (4 files): base images updated to `openliberty/open-liberty:24.0.0.12-kernel-slim-java21-openj9-ubi` and `ibmsemeruruntime/open-21-jdk`
+- CVE remediations: `jackson-databind` → 2.21.4, `kafka-clients` → 3.9.2, `commons-io` → 2.14.0, `netty` → 4.1.135.Final
+
+**Test coverage additions (fhir-core):**
+- Added 67 new TestNG tests across 4 new test classes: `FHIRVersionParamTest`, `FHIRUtilitiesTest`, `CachedObjectHolderTest`, `FHIRPagingContextImplTest`
+- Total fhir-core test count: 19 → 86 (+353%), 0 failures
+
 ### Contributing to the LinuxForHealth FHIR Server
 The LinuxForHealth FHIR Server is under active development. To help develop the server, clone or download the project and build it using Maven.
 See [Setting up for development](https://github.com/LinuxForHealth/FHIR/wiki/Setting-up-for-development) for more information.
