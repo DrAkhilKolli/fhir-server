@@ -1,0 +1,36 @@
+{
+    "__schema": "1.0",
+    "__comment": "Tenant registry stored in Cloudflare R2 at fhir0config/fhir-tenant-configs/tenant-registry.json. config-sync.sh reads this at container startup to pull per-tenant configs.",
+    "tenants": [
+        {
+            "tenantId": "default",
+            "enabled": true,
+            "type": "clinic",
+            "__comment": "Default tenant — shared clinic realm, Supabase project yqtyrgovlmwfftpoxgux",
+            "supabaseProjectRef": "yqtyrgovlmwfftpoxgux",
+            "keycloakRealm": "clinic",
+            "keycloakRealmUrl": "https://<KEYCLOAK_HOST>/realms/clinic",
+            "organizationId": "org-default"
+        },
+        {
+            "tenantId": "clinic-acme",
+            "enabled": true,
+            "type": "clinic",
+            "__comment": "Acme Clinic — also uses the shared clinic Keycloak realm",
+            "supabaseProjectRef": "<acme_supabase_project_ref>",
+            "keycloakRealm": "clinic",
+            "keycloakRealmUrl": "https://<KEYCLOAK_HOST>/realms/clinic",
+            "organizationId": "org-acme"
+        },
+        {
+            "tenantId": "hospital-general",
+            "enabled": true,
+            "type": "hospital",
+            "__comment": "General Hospital — dedicated Keycloak realm, own Supabase project",
+            "supabaseProjectRef": "<hospital_supabase_project_ref>",
+            "keycloakRealm": "hospital-general",
+            "keycloakRealmUrl": "https://<KEYCLOAK_HOST>/realms/hospital-general",
+            "organizationId": "org-general-hospital"
+        }
+    ]
+}

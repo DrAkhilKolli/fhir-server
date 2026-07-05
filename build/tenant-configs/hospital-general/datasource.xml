@@ -1,14 +1,17 @@
 <server>
     <!-- ============================================================== -->
-    <!-- TENANT: default; DSID: default; TYPE: read-write               -->
-    <!-- Supabase PostgreSQL project: yqtyrgovlmwfftpoxgux              -->
+    <!-- TENANT: hospital-general; DSID: default; TYPE: read-write      -->
+    <!-- Supabase project: <hospital_supabase_project_ref>              -->
     <!--                                                                 -->
-    <!-- Required environment variables:                                 -->
-    <!--   SUPABASE_DEFAULT_DB_USER     - database user (postgres)       -->
-    <!--   SUPABASE_DEFAULT_DB_PASSWORD - database password              -->
+    <!-- Environment variables required at runtime:                     -->
+    <!--   SUPABASE_HOSPITAL_GENERAL_DB_USER                            -->
+    <!--   SUPABASE_HOSPITAL_GENERAL_DB_PASSWORD                        -->
+    <!--                                                                 -->
+    <!-- Upload to R2:                                                   -->
+    <!--   fhir-tenant-configs/hospital-general/datasource.xml          -->
     <!-- ============================================================== -->
-    <dataSource id="fhirDefaultDefault"
-                jndiName="jdbc/fhir_default_default"
+    <dataSource id="fhirHospitalGeneralDefault"
+                jndiName="jdbc/fhir_hospital-general_default"
                 type="javax.sql.XADataSource"
                 statementCacheSize="200"
                 syncQueryTimeoutWithTransactionTimeout="true"
@@ -16,11 +19,11 @@
         <jdbcDriver javax.sql.XADataSource="org.postgresql.xa.PGXADataSource"
                     libraryRef="sharedLibPostgres"/>
         <properties.postgresql
-             serverName="db.yqtyrgovlmwfftpoxgux.supabase.co"
+             serverName="db.<hospital_supabase_project_ref>.supabase.co"
              portNumber="5432"
              databaseName="postgres"
-             user="${env.SUPABASE_DEFAULT_DB_USER}"
-             password="${env.SUPABASE_DEFAULT_DB_PASSWORD}"
+             user="${env.SUPABASE_HOSPITAL_GENERAL_DB_USER}"
+             password="${env.SUPABASE_HOSPITAL_GENERAL_DB_PASSWORD}"
              currentSchema="fhirdata"
              ssl="true"
              sslmode="require"/>

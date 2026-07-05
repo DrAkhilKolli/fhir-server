@@ -1,0 +1,48 @@
+<server>
+    <!--
+        Production mpJwt-tenants.xml — stored in Cloudflare R2 at
+        fhir0config/fhir-tenant-configs/mpJwt-tenants.xml
+
+        config-sync.sh downloads this file to:
+          configDropins/overrides/mpJwt-tenants.xml
+        where Liberty hot-loads it, overriding the defaults/mpJwt-keycloak.xml
+        baseline with the full production realm list.
+
+        Add one <mpJwt> element per Keycloak realm.
+        Liberty tries each element in turn and uses the first whose `issuer`
+        matches the JWT `iss` claim (mpJwt-2.1 behaviour).
+
+        The FHIRTenantKeycloakInterceptor additionally validates that the JWT
+        issuer matches the expected realm for the X-FHIR-TENANT-ID header
+        using tenant-registry.json.
+    -->
+
+    <authFilter id="fhirPublicFilter">
+        <requestUrl id="excludeMetadata"   urlPattern="/fhir-server/api/v4/metadata" matchType="contains"/>
+        <requestUrl id="excludeWellKnown"  urlPattern="/.well-known/"                matchType="contains"/>
+    </authFilter>
+
+    <!-- ===== Shared clinic realm ===== -->
+    <mpJwt id="jwtClinic"
+           jwksUri="https://auth.example.com/realms/clinic/protocol/openid-connect/certs"
+           issuer="https://auth.example.com/realms/clinic"
+           audiences="fhir-server"
+           userNameAttribute="sub"
+           groupNameAttribute="groups"
+           ssoFallback="false"
+           ignoreApplicationAuthMethod="false"
+           authFilterRef="fhirPublicFilter"/>
+
+    <!-- ===== General Hospital (dedicated realm) ===== -->
+    <mpJwt id="jwtHospitalGeneral"
+           jwksUri="https://auth.example.com/realms/hospital-general/protocol/openid-connect/certs"
+           issuer="https://auth.example.com/realms/hospital-general"
+           audiences="fhir-server"
+           userNameAttribute="sub"
+           groupNameAttribute="groups"
+           ssoFallback="false"
+           ignoreApplicationAuthMethod="false"
+           authFilterRef="fhirPublicFilter"/>
+
+    <!-- Add further hospital realms here -->
+</server>

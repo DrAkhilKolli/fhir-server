@@ -3,9 +3,9 @@
     <!-- TENANT: default; DSID: default; TYPE: read-write               -->
     <!-- Supabase PostgreSQL project: yqtyrgovlmwfftpoxgux              -->
     <!--                                                                 -->
-    <!-- Required environment variables:                                 -->
-    <!--   SUPABASE_DEFAULT_DB_USER     - database user (postgres)       -->
-    <!--   SUPABASE_DEFAULT_DB_PASSWORD - database password              -->
+    <!-- Environment variables required at runtime:                     -->
+    <!--   SUPABASE_DEFAULT_DB_USER     (e.g. postgres)                 -->
+    <!--   SUPABASE_DEFAULT_DB_PASSWORD                                  -->
     <!-- ============================================================== -->
     <dataSource id="fhirDefaultDefault"
                 jndiName="jdbc/fhir_default_default"

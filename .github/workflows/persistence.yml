@@ -15,7 +15,7 @@ jobs:
     if: "!contains(github.event.pull_request.labels.*.name, 'ci-skip')"
     strategy:
       matrix:
-        java: [ '11' ]
+        java: [ '21' ]
         persistence: [ 'postgres' ]
       fail-fast: false
     steps:

@@ -152,6 +152,21 @@ The LinuxForHealth FHIR Server is modular and extensible. The following tables p
 |fhir-persistence-schema|Classes for deploying and updating the LinuxForHealth FHIR Server relational database schema|false|
 |fhir-persistence-cassandra-app|CLI utility application supporting payload storage to Cassandra *experimental* |false|
 
+### Modernization
+
+#### Java 21 Upgrade (2026-07-01)
+This branch (`appmod/java-upgrade-20260701122256`) upgrades the runtime from Java 11 to **Java 21 LTS**.
+
+**Changes made:**
+- `fhir-parent/pom.xml`: `java.version` → `21`; bumped `maven-compiler-plugin` to 3.13.0, `maven-surefire-plugin` / `maven-failsafe-plugin` to 3.5.3
+- GitHub Actions workflows (11 files): all `java: ['11']` / `java-version: '11'` references updated to `21`
+- Dockerfiles (4 files): base images updated to `openliberty/open-liberty:24.0.0.12-kernel-slim-java21-openj9-ubi` and `ibmsemeruruntime/open-21-jdk`
+- CVE remediations: `jackson-databind` → 2.21.4, `kafka-clients` → 3.9.2, `commons-io` → 2.14.0, `netty` → 4.1.135.Final
+
+**Test coverage additions (fhir-core):**
+- Added 67 new TestNG tests across 4 new test classes: `FHIRVersionParamTest`, `FHIRUtilitiesTest`, `CachedObjectHolderTest`, `FHIRPagingContextImplTest`
+- Total fhir-core test count: 19 → 86 (+353%), 0 failures
+
 ### Contributing to the LinuxForHealth FHIR Server
 The LinuxForHealth FHIR Server is under active development. To help develop the server, clone or download the project and build it using Maven.
 See [Setting up for development](https://github.com/LinuxForHealth/FHIR/wiki/Setting-up-for-development) for more information.
@@ -166,3 +181,72 @@ The full license text is available at [LICENSE](LICENSE).
 
 FHIR® is the registered trademark of HL7 and is used with the permission of HL7. Use of the FHIR trademark does not constitute endorsement of this product by HL7.
 IBM and the IBM logo are trademarks of International Business Machines Corporation, registered in many jurisdictions worldwide. Other product and service names might be trademarks of IBM or other companies. A current list of IBM trademarks is available at [https://ibm.com/trademark](https://ibm.com/trademark).
+
+### Deployment steps:
+Set runtime env vars: SUPABASE_DEFAULT_DB_USER, SUPABASE_DEFAULT_DB_PASSWORD, KEYCLOAK_HOST, KEYCLOAK_FHIR_AUDIENCE, R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY
+Upload tenant-configs tree to R2 bucket fhir0config under prefix fhir-tenant-configs/
+Build fhir-keycloak-interceptor jar and copy to userlib/ in the Liberty server
+Replace <KEYCLOAK_HOST> placeholders in R2 configs with actual hostname
+
+Summary
+The full Supabase + Cloudflare R2 + Keycloak multi-tenant architecture has been implemented across these files:
+
+Configuration files
+## File:
+fhir-server-webapp/…/configDropins/defaults/datasource.xml	
+## Change: 
+Replaced Derby with Supabase PostgreSQL (db.yqtyrgovlmwfftpoxgux.supabase.co, SSL required, env-var credentials)
+
+## File:
+fhir-server-webapp/…/config/default/fhir-server-config.json
+## Change: 
+Basic auth disabled, OAuth enabled, Keycloak clinic realm URLs, PostgreSQL datasourc
+
+## File:
+fhir-server-webapp/…/configDropins/defaults/mpJwt-keycloak.xml
+## Change: 
+NEW — mpJwt-2.1 config for shared clinic realm + hospital template; KEYCLOAK_HOST / KEYCLOAK_FHIR_AUDIENCE env vars
+## File:
+fhir-server-webapp/…/server.xml
+## Change:
+mpJwt-1.2 → mpJwt-2.1 (multi-realm support
+
+Startup / Docker
+
+config-sync.sh
+## Change
+	NEW — downloads tenant-registry.json, mpJwt-tenants.xml, and per-tenant fhir-server-config.json + datasource.xml from Cloudflare R2 before Liberty starts
+bootstrap.sh	
+## Change
+Calls config-sync.sh before Derby bootstrap
+Dockerfile	
+## Change
+Installs AWS CLI v2 (arch-aware) + Python3 for R2 download; documents runtime env vars
+
+### Tenant config templates (upload to R2)
+
+## tenant-registry.json	
+# Purpose
+Registry schema — tenant→Supabase project→Keycloak realm mapping
+default	
+
+## Default 
+tenant config + datasource
+
+## hospital-general	
+# Purpose 
+Hospital dedicated-realm example
+
+## mpJwt-tenants.xml	
+# Purpose
+Production mpJwt config with all realms (overrides defaults)
+
+
+## Custom interceptor — fhir-keycloak-interceptor
+pom.xml:	Maven module, depends on fhir-smart + fhir-search
+
+fhir-keycloak-interceptor/src/main/java/…/FHIRTenantKeycloakInterceptor.java: Validates iss ↔ tenant binding, enforces fhirUser + organization_id claims, RBAC group checks, ABAC Patient compartment scoping
+
+META-INF/services/…FHIRPersistenceInterceptor: ServiceLoader registration
+
+pom.xml: Module added after fhir-smart

@@ -114,7 +114,9 @@ public class DocumentOperation extends AbstractOperation {
         Map<String, Resource> resources = new HashMap<String, Resource>();
 
         // Composition.subject
-        addBundleEntry(operationContext, documentBuilder, composition.getSubject(), resourceHelper, resources);
+        for (Reference subject : composition.getSubject()) {
+            addBundleEntry(operationContext, documentBuilder, subject, resourceHelper, resources);
+        }
 
         // Composition.author
         for (Reference author : composition.getAuthor()) {
@@ -131,8 +133,10 @@ public class DocumentOperation extends AbstractOperation {
 
         // Composition.event.detail
         for (Composition.Event event : composition.getEvent()) {
-            for (Reference detail : event.getDetail()) {
-                addBundleEntry(operationContext, documentBuilder, detail, resourceHelper, resources);
+            for (org.linuxforhealth.fhir.model.type.CodeableReference detail : event.getDetail()) {
+                if (detail.getReference() != null) {
+                    addBundleEntry(operationContext, documentBuilder, detail.getReference(), resourceHelper, resources);
+                }
             }
         }
 

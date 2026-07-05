@@ -18,7 +18,6 @@ import org.linuxforhealth.fhir.core.FHIRConstants;
 import org.linuxforhealth.fhir.exception.FHIROperationException;
 import org.linuxforhealth.fhir.model.resource.ActivityDefinition;
 import org.linuxforhealth.fhir.model.resource.CarePlan;
-import org.linuxforhealth.fhir.model.resource.CarePlan.Activity.Detail;
 import org.linuxforhealth.fhir.model.resource.OperationDefinition;
 import org.linuxforhealth.fhir.model.resource.OperationOutcome.Issue;
 import org.linuxforhealth.fhir.model.resource.Parameters;
@@ -30,16 +29,10 @@ import org.linuxforhealth.fhir.model.type.Annotation;
 import org.linuxforhealth.fhir.model.type.Canonical;
 import org.linuxforhealth.fhir.model.type.Code;
 import org.linuxforhealth.fhir.model.type.CodeableConcept;
-import org.linuxforhealth.fhir.model.type.Dosage;
-import org.linuxforhealth.fhir.model.type.Dosage.DoseAndRate;
 import org.linuxforhealth.fhir.model.type.Element;
 import org.linuxforhealth.fhir.model.type.Extension;
-import org.linuxforhealth.fhir.model.type.Quantity;
 import org.linuxforhealth.fhir.model.type.Reference;
-import org.linuxforhealth.fhir.model.type.SimpleQuantity;
 import org.linuxforhealth.fhir.model.type.Uri;
-import org.linuxforhealth.fhir.model.type.code.CarePlanActivityKind;
-import org.linuxforhealth.fhir.model.type.code.CarePlanActivityStatus;
 import org.linuxforhealth.fhir.model.type.code.CarePlanIntent;
 import org.linuxforhealth.fhir.model.type.code.CarePlanStatus;
 import org.linuxforhealth.fhir.model.type.code.IssueSeverity;
@@ -331,50 +324,19 @@ public class ApplyOperation extends AbstractOperation {
                 activityDefinition = FHIRRegistry.getInstance().getResource(definition.as(Uri.class).getValue(), ActivityDefinition.class);
             }
 
-            if (activityDefinition != null) {
-                CarePlan.Activity.Detail.Builder cadb = CarePlan.Activity.Detail.builder();
-                cadb.kind(CarePlanActivityKind.of(activityDefinition.getKind().getValue()));
-                cadb.status(CarePlanActivityStatus.NOT_STARTED);
-                cadb.code(activityDefinition.getCode());
-                cadb.description(activityDefinition.getDescription());
-                cadb.quantity(activityDefinition.getQuantity());
-                cadb.scheduled(activityDefinition.getTiming());
-                if (!activityDefinition.getDosage().isEmpty()) {
-                    Dosage dosage = activityDefinition.getDosage().get(0);
-                    if (!dosage.getDoseAndRate().isEmpty()) {
-                        DoseAndRate doseAndRate = dosage.getDoseAndRate().get(0);
-                        Element dose = doseAndRate.getDose();
-                        if (dose.is(Quantity.class)) {
-                            SimpleQuantity quantity = SimpleQuantity.builder()
-                                    .value(dose.as(Quantity.class).getValue())
-                                    .system(dose.as(Quantity.class).getSystem())
-                                    .code(dose.as(Quantity.class).getCode())
-                                    .unit(dose.as(Quantity.class).getUnit())
-                                    .build();
-                            cadb.dailyAmount(quantity);
-                        }
-                    }
-                }
+            if (activityDefinition != null && definition != null) {
+                // In R4B/R5, inline Detail was replaced by plannedActivityReference
+                Reference ref;
                 if (definition.is(Canonical.class)) {
-                    cadb.instantiatesCanonical(definition.as(Canonical.class));
+                    ref = Reference.builder().reference(org.linuxforhealth.fhir.model.type.String.of(definition.as(Canonical.class).getValue())).build();
                 } else {
-                    cadb.instantiatesUri(definition.as(Uri.class));
+                    ref = Reference.builder().reference(org.linuxforhealth.fhir.model.type.String.of(definition.as(Uri.class).getValue())).build();
                 }
-                cab.detail(cadb.build());
+                cab.plannedActivityReference(ref);
             }
 
             List<Annotation> progress = Collections.emptyList();
             cab.progress(progress);
-
-            List<CodeableConcept> outcomeCodeableConcept = Collections.emptyList();
-            cab.outcomeCodeableConcept(outcomeCodeableConcept);
-
-            List<Reference> outcomeReference = Collections.emptyList();
-            cab.outcomeReference(outcomeReference);
-            Detail.Builder detailBuilder = Detail.builder();
-            detailBuilder.description(action.getDescription());
-            detailBuilder.status(CarePlanActivityStatus.NOT_STARTED);
-            cab.detail(detailBuilder.build());
             activities.add(cab.build());
 
         }

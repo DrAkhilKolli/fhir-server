@@ -1,0 +1,63 @@
+{
+    "__comment": "FHIR Server configuration — hospital-general tenant (dedicated Keycloak realm). Upload to R2: fhir-tenant-configs/hospital-general/fhir-server-config.json",
+    "fhirServer": {
+        "core": {
+            "tenantIdHeaderName": "X-FHIR-TENANT-ID",
+            "datastoreIdHeaderName": "X-FHIR-DSID",
+            "checkReferenceTypes": true,
+            "serverRegistryResourceProviderEnabled": false,
+            "disabledOperations": ""
+        },
+        "security": {
+            "cors": true,
+            "basic": { "enabled": false },
+            "certificates": { "enabled": false },
+            "oauth": {
+                "enabled": true,
+                "regUrl":   "https://auth.example.com/realms/hospital-general/clients-registrations/openid-connect",
+                "authUrl":  "https://auth.example.com/realms/hospital-general/protocol/openid-connect/auth",
+                "tokenUrl": "https://auth.example.com/realms/hospital-general/protocol/openid-connect/token",
+                "smart": {
+                    "enabled": true,
+                    "scopes": ["openid", "profile", "fhirUser", "launch/patient", "patient/*.*", "offline_access"],
+                    "capabilities": [
+                        "sso-openid-connect", "launch-standalone", "client-public",
+                        "client-confidential-symmetric", "permission-offline",
+                        "context-standalone-patient", "permission-patient"
+                    ]
+                }
+            },
+            "validateBinarySecurityContext": true
+        },
+        "audit": {
+            "serviceClassName": "org.linuxforhealth.fhir.audit.impl.NopService",
+            "serviceProperties": {}
+        },
+        "persistence": {
+            "factoryClassname": "org.linuxforhealth.fhir.persistence.jdbc.FHIRPersistenceJDBCFactory",
+            "common": { "updateCreateEnabled": true },
+            "jdbc": {
+                "enableCodeSystemsCache": true,
+                "enableParameterNamesCache": true,
+                "enableResourceTypesCache": true
+            },
+            "datasources": {
+                "default": {
+                    "type": "postgresql",
+                    "currentSchema": "fhirdata",
+                    "searchOptimizerOptions": {
+                        "from_collapse_limit": 12,
+                        "join_collapse_limit": 12
+                    }
+                }
+            }
+        },
+        "bulkdata": { "enabled": false },
+        "operations": {
+            "erase": {
+                "enabled": true,
+                "allowedRoles": ["FHIROperationAdmin", "FHIRUsers"]
+            }
+        }
+    }
+}

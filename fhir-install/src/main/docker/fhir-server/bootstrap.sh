@@ -62,6 +62,10 @@ function _bootstrap_db {
 # Script logic:
 
 info "Current directory: $CUR_DIR"
+
+# Download tenant configs from Cloudflare R2 before Liberty starts
+"${CUR_DIR}/config-sync.sh"
+
 _bootstrap_db
 
 # Pass it on to the Liberty entrypoint
