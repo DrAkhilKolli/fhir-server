@@ -55,14 +55,35 @@ RUN configure.sh && \
 
 COPY --chown=1001:0 --from=base /opt/fhir-server /opt/fhir-server
 
+# Install AWS CLI v2 for Cloudflare R2 config sync at startup.
+# Architecture is detected at build time so the image works on amd64 and arm64.
+USER root
+RUN ARCH=$(uname -m) && \
+    microdnf install -y curl unzip python3 && \
+    curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-${ARCH}.zip" -o /tmp/awscliv2.zip && \
+    unzip -q /tmp/awscliv2.zip -d /tmp && \
+    /tmp/aws/install && \
+    rm -rf /tmp/aws /tmp/awscliv2.zip && \
+    microdnf update -y && \
+    microdnf clean all
+USER 1001
+
 RUN mkdir -p /config/configDropins/overrides && \
     chmod -R 775 /config/configDropins/overrides && \
     chmod -R 775 /opt/ol/wlp/usr/servers/defaultServer/configDropins/defaults
 
-# This block ensures the latest software is picked up.
+# Cloudflare R2 config-sync variables (set at runtime via -e or compose env):
+#   R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY
+#   R2_BUCKET (default: fhir0config), R2_PREFIX (default: fhir-tenant-configs)
+# Supabase credentials (set at runtime):
+#   SUPABASE_DEFAULT_DB_USER, SUPABASE_DEFAULT_DB_PASSWORD
+# Keycloak variables (resolved by mpJwt-keycloak.xml):
+#   KEYCLOAK_HOST, KEYCLOAK_FHIR_AUDIENCE
+
+# This block ensures the latest OS packages are current.
+# (AWS CLI and Python3 already installed above.)
 USER root
-RUN microdnf update -y && \
-    microdnf clean all
+RUN microdnf clean all
 USER 1001
 
 # Set the working directory to the liberty defaultServer

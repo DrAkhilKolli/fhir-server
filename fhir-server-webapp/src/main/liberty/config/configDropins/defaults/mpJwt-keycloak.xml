@@ -1,0 +1,70 @@
+<server>
+    <!--
+        Keycloak JWT (mpJwt-2.1) Configuration — Multi-Realm Support
+        =============================================================
+        Two tiers of Keycloak realm:
+
+          1. Shared clinic realm  — small clinics share one Keycloak realm
+                                    (mpJwt id="jwtClinic")
+          2. Dedicated hospital realm — each hospital gets its own realm.
+                                    Add one <mpJwt> element per hospital.
+                                    The runtime tries each element in turn
+                                    and picks the one whose `issuer` matches
+                                    the JWT `iss` claim.
+
+        Required environment variables:
+          KEYCLOAK_HOST          - hostname[:port] of Keycloak, e.g. auth.example.com
+          KEYCLOAK_FHIR_AUDIENCE - OAuth2 audience for this FHIR server, e.g. fhir-server
+
+        Additional hospital mpJwt elements are downloaded from Cloudflare R2 at
+        startup and placed in configDropins/overrides/mpJwt-tenants.xml, which
+        Liberty hot-loads and merges at runtime.
+
+        Role mapping:
+          Keycloak `groups` claim → Liberty security group → JEE security role
+            /fhir-users   →  FHIRUsers   (standard FHIR access)
+            /fhir-admins  →  FHIRAdmins  (administrative operations)
+    -->
+
+    <!-- ===================================================================
+         Auth filter: public endpoints do not require a JWT.
+         All other /fhir-server/api/v4/* requests must carry a valid token.
+         =================================================================== -->
+    <authFilter id="fhirPublicFilter">
+        <requestUrl id="excludeMetadata"
+                    urlPattern="/fhir-server/api/v4/metadata"
+                    matchType="contains"/>
+        <requestUrl id="excludeWellKnown"
+                    urlPattern="/.well-known/"
+                    matchType="contains"/>
+    </authFilter>
+
+    <!-- ===================================================================
+         Shared clinic realm
+         =================================================================== -->
+    <mpJwt id="jwtClinic"
+           jwksUri="https://${env.KEYCLOAK_HOST}/realms/clinic/protocol/openid-connect/certs"
+           issuer="https://${env.KEYCLOAK_HOST}/realms/clinic"
+           audiences="${env.KEYCLOAK_FHIR_AUDIENCE}"
+           userNameAttribute="sub"
+           groupNameAttribute="groups"
+           ssoFallback="false"
+           ignoreApplicationAuthMethod="false"
+           authFilterRef="fhirPublicFilter"/>
+
+    <!--
+        Hospital dedicated-realm template (uncomment and repeat per hospital).
+        Production values are managed in Cloudflare R2 as mpJwt-tenants.xml
+        and overwrite this defaults entry at container startup.
+
+    <mpJwt id="jwtHospital_TENANT_ID"
+           jwksUri="https://${env.KEYCLOAK_HOST}/realms/TENANT_ID/protocol/openid-connect/certs"
+           issuer="https://${env.KEYCLOAK_HOST}/realms/TENANT_ID"
+           audiences="${env.KEYCLOAK_FHIR_AUDIENCE}"
+           userNameAttribute="sub"
+           groupNameAttribute="groups"
+           ssoFallback="false"
+           ignoreApplicationAuthMethod="false"
+           authFilterRef="fhirPublicFilter"/>
+    -->
+</server>
