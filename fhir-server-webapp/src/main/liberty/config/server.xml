@@ -60,8 +60,14 @@
         Note: on Linux, the server must be running with root priviledges in order to
         listen on ports <= 1024.
      -->
+<<<<<<< HEAD
     <!-- httpPort enabled on 9080 for local development. Set httpPort="-1" for production. -->
     <httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="9080" httpsPort="9443" onError="FAIL"/>
+=======
+    <!-- Bind to the PORT environment variable injected by Render (defaults to 9080 for local dev). -->
+    <variable name="httpPort" defaultValue="9080"/>
+    <httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="${httpPort}" httpsPort="9443" onError="FAIL"/>
+>>>>>>> 4e235ae1e (fix(runtime): 30s S3 download timeout + dynamic PORT for Liberty httpEndpoint)
 
     <!-- Prevent the HTTP channel from throwing an I/O exception when an inbound connection is closed while still in use. -->
     <httpOptions id="defaultHttpOptions" ThrowIOEForInboundConnections="false"/>

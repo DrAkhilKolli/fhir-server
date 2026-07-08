@@ -92,6 +92,10 @@ def s3_get(s3_url, dest, endpoint=None, region="us-east-1", key_id="", secret=""
         "Authorization": auth,
     })
     os.makedirs(os.path.dirname(dest) if os.path.dirname(dest) else ".", exist_ok=True)
+<<<<<<< HEAD
+=======
+    # 30-second timeout prevents indefinite hang when the R2/S3 endpoint is unreachable
+>>>>>>> 4e235ae1e (fix(runtime): 30s S3 download timeout + dynamic PORT for Liberty httpEndpoint)
     with urllib.request.urlopen(req, timeout=30) as resp, open(dest, "wb") as f:
         f.write(resp.read())
 
@@ -416,7 +420,11 @@ def _s3_get(bucket_name, obj_key, dst_path, endpoint, region, key_id, secret):
         'x-amz-content-sha256': empty, 'Authorization': auth,
     })
     os.makedirs(os.path.dirname(dst_path) if os.path.dirname(dst_path) else '.', exist_ok=True)
+<<<<<<< HEAD
     with urllib.request.urlopen(req, timeout=30) as resp, open(dst_path, 'wb') as fh:
+=======
+    with urllib.request.urlopen(req) as resp, open(dst_path, 'wb') as fh:
+>>>>>>> 4e235ae1e (fix(runtime): 30s S3 download timeout + dynamic PORT for Liberty httpEndpoint)
         fh.write(resp.read())
 
 _r2_ep  = r2_endpoint or os.environ.get('AWS_ENDPOINT_URL_S3', '')
