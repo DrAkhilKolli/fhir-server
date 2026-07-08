@@ -1,0 +1,223 @@
+{
+    "__comment": "FHIR Server configuration",
+    "fhirServer": {
+        "core": {
+            "tenantIdHeaderName": "X-FHIR-TENANT-ID",
+            "datastoreIdHeaderName": "X-FHIR-DSID",
+            "originalRequestUriHeaderName": "X-FHIR-FORWARDED-URL",
+            "checkReferenceTypes": true,
+            "conditionalDeleteMaxNumber": 10,
+            "__comment": "The Server Registry Resource Provider is a server-wide setting. Enabled so that CodeSystem resources POSTed to the server (content=not-present) are available to the term service for remote delegation to FHIR-MCP.",
+            "serverRegistryResourceProviderEnabled": true,
+            "disabledOperations": "",
+            "defaultFhirVersion": "4.0"
+        },
+        "security": {
+            "cors": true,
+            "__comment_cors": "Set cors to a specific origin list (string array) for production instead of the boolean true.",
+            "basic": {
+                "enabled": false
+            },
+            "certificates": {
+                "enabled": true
+            },
+            "oauth": {
+                "enabled": true,
+                "__comment": "Cloud Keycloak endpoints — values injected via KC_ISSUER env var (e.g. https://auth.fhirvault.com/realms/smart-fhir).",
+                "regUrl": "${KC_ISSUER}/clients-registrations/openid-connect",
+                "authUrl": "${KC_ISSUER}/protocol/openid-connect/auth",
+                "tokenUrl": "${KC_ISSUER}/protocol/openid-connect/token",
+                "smart": {
+                    "enabled": true,
+                    "scopes": ["openid", "profile", "fhirUser", "launch/patient", "patient/*.*", "offline_access"],
+                    "capabilities": [
+                        "sso-openid-connect",
+                        "launch-standalone",
+                        "client-public",
+                        "client-confidential-symmetric",
+                        "permission-offline",
+                        "context-standalone-patient",
+                        "permission-patient"
+                    ]
+                },
+                "abac": {
+                    "enabled": ${ABAC_ENABLED},
+                    "requireTenantClaim": ${ABAC_REQUIRE_TENANT},
+                    "requireOrgClaim": ${ABAC_REQUIRE_ORG},
+                    "allowedPurposes": "${ABAC_ALLOWED_PURPOSES}",
+                    "resourceTenantSystem": "${ABAC_RESOURCE_TENANT_SYSTEM}",
+                    "resourceOrgSystem": "${ABAC_RESOURCE_ORG_SYSTEM}"
+                }
+            },
+            "validateBinarySecurityContext" : true
+        },
+        "notifications": {
+            "common": {
+                "__comment_includeResourceTypes": [
+                    "QuestionnaireResponse",
+                    "CarePlan",
+                    "MedicationAdministration",
+                    "Device",
+                    "DeviceComponent",
+                    "DeviceMetric",
+                    "MedicationOrder",
+                    "Observation"
+                ]
+            },
+            "websocket": {
+                "__comment": "only enable this for single-tenant, single-server deployments",
+                "enabled": false
+            },
+            "kafka": {
+                "enabled": false,
+                "topicName": "fhirNotifications",
+                "connectionProperties": {
+                    "group.id": "fhir-server-group",
+                    "bootstrap.servers": "kafka:9092",
+                    "acks": "all",
+                    "retries": "60",
+                    "request.timeout.ms": "10000",
+                    "max.block.ms": "60000",
+                    "max.in.flight.requests.per.connection": "5"
+                }
+            },
+            "nats": {
+                "enabled": false,
+                "cluster": "nats-streaming",
+                "channel": "fhirNotifications",
+                "clientId": "fhir-server",
+                "servers": "nats://nats-node1:4222,nats://nats-node2:4222,nats://nats-node3:4222",
+                "useTLS": false,
+                "truststoreLocation": "resources/security/nats.client.truststore.jks",
+                "truststorePassword": "change-password",
+                "keystoreLocation": "resources/security/nats.client.keystore.jks",
+                "keystorePassword": "change-password"
+            }
+        },
+        "audit": {
+            "serviceClassName" : "org.linuxforhealth.fhir.audit.impl.NopService",
+            "serviceProperties" : {
+            }
+        },
+        "persistence": {
+            "factoryClassname": "org.linuxforhealth.fhir.persistence.jdbc.FHIRPersistenceJDBCFactory",
+            "common": {
+                "__comment": "Configuration properties common to all persistence layer implementations",
+                "updateCreateEnabled": true
+            },
+            "jdbc": {
+                "__comment": "Configuration properties for the JDBC persistence implementation",
+                "enableCodeSystemsCache": true,
+                "enableParameterNamesCache": true,
+                "enableResourceTypesCache": true
+            },
+            "interceptors": [
+                "org.linuxforhealth.fhir.smart.AuthzPolicyEnforcementPersistenceInterceptor"
+            ],
+            "datasources": {
+                "default": {
+                    "__comment": "Default Supabase (PostgreSQL) datasource. JNDI name must match server.xml.",
+                    "jndiName": "jdbc/fhir-default_default",
+                    "type": "postgresql",
+                    "currentSchema": "fhirdata",
+                    "searchOptimizerOptions": {
+                        "from_collapse_limit": 12,
+                        "join_collapse_limit": 12
+                    }
+                }
+            }
+        },
+        "bulkdata": {
+            "enabled": true,
+            "core": {
+                "api": {
+                    "url": "https://localhost:9443/ibm/api/batch",
+                    "user": "fhiradmin",
+                    "password": "change-password",
+                    "truststore": "resources/security/fhirTrustStore.p12",
+                    "truststorePassword": "change-password",
+                    "trustAll": true
+                },
+                "cos" : {
+                    "partUploadTriggerSizeMB": 10,
+                    "objectSizeThresholdMB": 200,
+                    "objectResourceCountThreshold": 200000,
+                    "useServerTruststore": true,
+                    "presignedExpiry": 86400
+                },
+                "file" : {
+                    "writeTriggerSizeMB": 1,
+                    "sizeThresholdMB": 200,
+                    "resourceCountThreshold": 200000
+                },
+                "pageSize": 100,
+                "batchIdEncodingKey": "change-password",
+                "maxPartitions": 5,
+                "maxInputs": 5,
+                "maxChunkReadTime": "90000",
+                "systemExportImpl": "fast",
+                "defaultExportProvider": "default",
+                "defaultImportProvider": "default"
+            },
+            "storageProviders": {
+                "default" : {
+                    "type": "file",
+                    "_type": "ibm-cos|aws-s3|file|https|azure-blob",
+                    "validBaseUrls": [],
+                    "fileBase": "/output/bulkdata",
+                    "bucketName": "fhir-performance",
+                    "location": "us",
+                    "endpointInternal": "https://s3.us-east.cloud-object-storage.appdomain.cloud",
+                    "endpointExternal": "https://s3.us-east.cloud-object-storage.appdomain.cloud",
+                    "auth" : {
+                        "type": "hmac",
+                        "accessKeyId": "key",
+                        "secretAccessKey": "secret"
+                    },
+                    "_iam_auth" : {
+                        "type": "iam",
+                        "iamApiKey": "apiKey",
+                        "iamResourceInstanceId": "resourceId"
+                    },
+                    "enableParquet": false,
+                    "disableBaseUrlValidation": true,
+                    "disableOperationOutcomes": true,
+                    "duplicationCheck": false,
+                    "validateResources": false,
+                    "create": false,
+                    "presigned": true
+                }
+            }
+        },
+        "operations": {
+            "erase": {
+                "enabled": true,
+                "allowedRoles": [
+                    "FHIROperationAdmin",
+                    "FHIRUsers"
+                ]
+            }
+        },
+        "term": {
+            "__comment": "Disable built-in JanusGraph graph term provider (requires Cassandra/JanusGraph infrastructure not present in this deployment). Delegate all terminology operations to FHIR-MCP, which is backed by UMLS/Supabase.",
+            "graphTermServiceProviders": [
+                { "enabled": false }
+            ],
+            "remoteTermServiceProviders": [
+                {
+                    "enabled": true,
+                    "base": "${FHIR_MCP_INTERNAL_URL}/fhir/r4",
+                    "httpTimeout": 180000,
+                    "supports": [
+                        { "system": "http://snomed.info/sct" },
+                        { "system": "http://loinc.org" },
+                        { "system": "http://www.ama-assn.org/go/cpt" },
+                        { "system": "http://www.nlm.nih.gov/research/umls/rxnorm" },
+                        { "system": "http://hl7.org/fhir/sid/icd-10-cm" },
+                        { "system": "http://snomed.info/sct/in/drug-extension" }
+                    ]
+                }
+            ]
+        }
+    }
+}
