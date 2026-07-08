@@ -10,10 +10,29 @@
         <feature>jdbc-4.1</feature>
         <feature>websocket-1.1</feature>
         <feature>localConnector-1.0</feature>
-        <!-- mpJwt-2.1 is used for Keycloak multi-realm JWT validation.
-             Multiple <mpJwt> elements (one per Keycloak realm) are supported. -->
-        <feature>mpJwt-2.1</feature>
+        <!-- mpJwt-1.2 isn't used by default,
+             but we include it here to avoid NoClassDefFound in our classes that *can* use it -->
+        <feature>mpJwt-1.2</feature>
     </featureManager>
+
+    <mpJwt
+        id="jwtConsumer"
+        jwksUri="${env.KC_JWKS_URI}"
+        issuer="${env.KC_ISSUER}"
+        audiences="${env.SMART_CLIENT_ID}"
+        userNameAttribute="sub"
+        groupNameAttribute="groups"
+        mapToUserRegistry="false"
+        authFilterRef="fhirAuthFilter" />
+
+    <authFilter id="fhirAuthFilter">
+        <!-- At least one 'contains' rule is required so Liberty's findAppropriateGenericConfig
+             can positively match this mpJwt config to incoming requests. A notContain-only
+             filter causes the mpJwt TAI to be skipped entirely (Liberty bug/behavior). -->
+        <requestUrl id="include-api-paths"         matchType="contains"    urlPattern="/fhir-server/api/v4/" />
+        <requestUrl id="excluded-metadata"         matchType="notContain" urlPattern="/fhir-server/api/v4/metadata" />
+        <requestUrl id="excluded-smart-config"     matchType="notContain" urlPattern="/fhir-server/api/v4/.well-known/smart-configuration" />
+    </authFilter>
 
     <!-- Disable welcome page so that internal server info won't be revealed in responses
          to requests with an invalid context root.
@@ -28,7 +47,10 @@
         deferServletLoad="false"/>
 
     <!-- LinuxForHealth FHIR Server's keystore and truststore configuration -->
-    <ssl id="defaultSSLConfig" keyStoreRef="defaultKeyStore" trustStoreRef="defaultTrustStore" clientAuthenticationSupported="true" sslProtocol="TLSv1.2"/>
+    <!-- trustDefaultCerts="true" ensures Liberty trusts JDK cacerts (Google Trust Services, ISRG Root X1) -->
+    <!-- for outbound HTTPS calls such as mpJwt JWKS fetch from clinivault-keycloak.onrender.com.    -->
+    <!-- Without this, only fhirTrustStore.p12 is used which does not include public CAs.           -->
+    <ssl id="defaultSSLConfig" keyStoreRef="defaultKeyStore" trustStoreRef="defaultTrustStore" clientAuthenticationSupported="true" sslProtocol="TLSv1.2" trustDefaultCerts="true"/>
     <keyStore id="defaultKeyStore" location="${server.config.dir}/resources/security/fhirKeyStore.p12" password="change-password"/>
     <keyStore id="defaultTrustStore" location="${server.config.dir}/resources/security/fhirTrustStore.p12" password="change-password"/>
 
@@ -38,7 +60,8 @@
         Note: on Linux, the server must be running with root priviledges in order to
         listen on ports <= 1024.
      -->
-    <httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="-1" httpsPort="9443" onError="FAIL"/>
+    <!-- httpPort enabled on 9080 for local development. Set httpPort="-1" for production. -->
+    <httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="9080" httpsPort="9443" onError="FAIL"/>
 
     <!-- Prevent the HTTP channel from throwing an I/O exception when an inbound connection is closed while still in use. -->
     <httpOptions id="defaultHttpOptions" ThrowIOEForInboundConnections="false"/>
@@ -70,7 +93,7 @@
         <!-- Include id attributes to make it easier to override this via dropinConfig -->
         <application-bnd id="bind">
             <security-role id="users" name="FHIRUsers">
-                <group id="usersGroup" name="FHIRUsers"/>
+                <special-subject type="ALL_AUTHENTICATED_USERS"/>
             </security-role>
             <security-role id="admin" name="FHIRAdmins">
                 <group id="operationAdminGroup" name="FHIRAdmins"/>
@@ -94,6 +117,27 @@
     <library id="sharedLibPostgres">
         <fileset dir="${shared.resource.dir}/lib/postgresql" includes="*.jar"/>
     </library>
+
+    <!--
+        Default tenant / default datastore — points at Supabase.
+        JNDI name follows the LFH convention: jdbc/fhir-<tenantId>_<datastoreId>.
+        Override FHIR_DB_* in your .env file to change the target database.
+        To add a new tenant (clinic), define an additional dataSource here with the
+        JNDI name jdbc/fhir-<clinicId>_default and add a matching tenant config directory.
+    -->
+    <dataSource id="fhir-default-default" jndiName="jdbc/fhir-default_default" transactional="true">
+        <jdbcDriver libraryRef="sharedLibPostgres"/>
+        <properties.postgresql
+            serverName="${env.FHIR_DB_HOST}"
+            portNumber="${env.FHIR_DB_PORT}"
+            databaseName="${env.FHIR_DB_NAME}"
+            currentSchema="${env.FHIR_DB_SCHEMA}"
+            user="${env.FHIR_DB_USER}"
+            password="${env.FHIR_DB_PASS}"
+            ssl="true"
+            sslmode="${env.FHIR_DB_SSL_MODE}"/>
+        <connectionManager maxPoolSize="20" minPoolSize="5"/>
+    </dataSource>
 
     <webAppSecurity allowFailOverToBasicAuth="true" singleSignonEnabled="false"/>
     
