@@ -308,6 +308,17 @@ public class SearchHelper {
             if (!COMPARTMENT_PARM_DEF.equals(inclusionParamName) && !parameters.containsKey(inclusionParamName)) {
                 String tenantId = FHIRRequestContext.get().getTenantId();
                 ParametersMap parametersMap = parametersHelper.getTenantSPs(tenantId).get(resourceType.getSimpleName());
+                // parametersMap may be null when SearchParameter registry resources failed to
+                // load (e.g. R4B package files containing 'xpath' rejected by the strict parser).
+                // In that case skip the inclusion-param; compartment membership tracking will be
+                // degraded but the create/update operation must not crash.
+                if (parametersMap == null) {
+                    if (log.isLoggable(java.util.logging.Level.FINE)) {
+                        log.fine("No ParametersMap for resourceType '" + resourceType.getSimpleName()
+                                + "' tenant '" + tenantId + "'; skipping inclusion param '" + inclusionParamName + "'");
+                    }
+                    continue;
+                }
                 SearchParameter inclusionParam = parametersMap.getInclusionParam(inclusionParamName);
                 inclusionParam = FHIRUtil.addTag(inclusionParam, SearchConstants.TAG_DO_NOT_STORE);
                 parameters.put(inclusionParamName, inclusionParam);

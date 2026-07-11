@@ -15,16 +15,6 @@
         <feature>mpJwt-1.2</feature>
     </featureManager>
 
-    <mpJwt
-        id="jwtConsumer"
-        jwksUri="${env.KC_JWKS_URI}"
-        issuer="${env.KC_ISSUER}"
-        audiences="${env.SMART_CLIENT_ID}"
-        userNameAttribute="sub"
-        groupNameAttribute="groups"
-        mapToUserRegistry="false"
-        authFilterRef="fhirAuthFilter" />
-
     <authFilter id="fhirAuthFilter">
         <!-- At least one 'contains' rule is required so Liberty's findAppropriateGenericConfig
              can positively match this mpJwt config to incoming requests. A notContain-only
@@ -60,14 +50,7 @@
         Note: on Linux, the server must be running with root priviledges in order to
         listen on ports <= 1024.
      -->
-<<<<<<< HEAD
-    <!-- httpPort enabled on 9080 for local development. Set httpPort="-1" for production. -->
-    <httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="9080" httpsPort="9443" onError="FAIL"/>
-=======
-    <!-- Bind to the PORT environment variable injected by Render (defaults to 9080 for local dev). -->
-    <variable name="httpPort" defaultValue="9080"/>
-    <httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="${httpPort}" httpsPort="9443" onError="FAIL"/>
->>>>>>> 4e235ae1e (fix(runtime): 30s S3 download timeout + dynamic PORT for Liberty httpEndpoint)
+    <httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="${env.PORT}" httpsPort="${env.FHIR_HTTPS_PORT}" onError="FAIL"/>
 
     <!-- Prevent the HTTP channel from throwing an I/O exception when an inbound connection is closed while still in use. -->
     <httpOptions id="defaultHttpOptions" ThrowIOEForInboundConnections="false"/>

@@ -18,6 +18,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.linuxforhealth.fhir.model.format.Format;
+import org.linuxforhealth.fhir.model.parser.FHIRAbstractParser;
 import org.linuxforhealth.fhir.model.parser.FHIRParser;
 import org.linuxforhealth.fhir.model.resource.ActivityDefinition;
 import org.linuxforhealth.fhir.model.resource.CapabilityStatement;
@@ -135,7 +136,14 @@ public final class FHIRRegistryUtil {
                 log.log(Level.WARNING, "Resource at '" + path + "' was not found");
                 return null;
             }
-            return FHIRParser.parser(Format.JSON).parse(in);
+            // Use a non-validating parser so bundled definition packages that contain
+            // elements removed in later FHIR versions (e.g. 'xpath' in R4B SearchParameter)
+            // are tolerated rather than causing the whole registry load to fail.
+            FHIRParser p = FHIRParser.parser(Format.JSON);
+            if (p instanceof FHIRAbstractParser) {
+                ((FHIRAbstractParser) p).setValidating(false);
+            }
+            return p.parse(in);
         } catch (Exception e) {
             log.log(Level.WARNING, "Unable to load resource: " + path, e);
         }

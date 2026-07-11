@@ -92,10 +92,7 @@ def s3_get(s3_url, dest, endpoint=None, region="us-east-1", key_id="", secret=""
         "Authorization": auth,
     })
     os.makedirs(os.path.dirname(dest) if os.path.dirname(dest) else ".", exist_ok=True)
-<<<<<<< HEAD
-=======
-    # 30-second timeout prevents indefinite hang when the R2/S3 endpoint is unreachable
->>>>>>> 4e235ae1e (fix(runtime): 30s S3 download timeout + dynamic PORT for Liberty httpEndpoint)
+    # 30-second timeout prevents indefinite hangs when the storage endpoint is unreachable.
     with urllib.request.urlopen(req, timeout=30) as resp, open(dest, "wb") as f:
         f.write(resp.read())
 
@@ -223,6 +220,11 @@ import json, os, sys
 registry_file = '/opt/clinivault/tenant-registry.json'
 server_dir    = os.environ.get('SERVER_DIR', '/opt/ibm/wlp/usr/servers/defaultServer')
 dropin_out    = os.path.join(server_dir, 'configDropins', 'overrides', 'mpJwt-tenants.xml')
+smart_client  = os.environ.get('SMART_CLIENT_ID', '').strip()
+if smart_client:
+    auds = f'account,{smart_client}'
+else:
+    auds = 'account,fhir-server'
 os.makedirs(os.path.dirname(dropin_out), exist_ok=True)
 
 elements = []
@@ -240,7 +242,7 @@ if os.path.exists(registry_file):
                 f'    <mpJwt id="jwt_{safe_id}"\n'
                 f'        issuer="{issuer}"\n'
                 f'        jwksUri="{jwks_uri}"\n'
-                f'        audiences="fhir-server"\n'
+                f'        audiences="{auds}"\n'
                 f'        userNameAttribute="preferred_username"\n'
                 f'        groupNameAttribute="groups"\n'
                 f'        authFilterRef="fhirAuthFilter" />'
@@ -255,7 +257,7 @@ if not elements:
             f'    <mpJwt id="jwtDedicated"\n'
             f'        issuer="{kc_issuer}"\n'
             f'        jwksUri="{kc_jwks}"\n'
-            f'        audiences="fhir-server"\n'
+            f'        audiences="{auds}"\n'
             f'        userNameAttribute="preferred_username"\n'
             f'        groupNameAttribute="groups"\n'
             f'        authFilterRef="fhirAuthFilter" />'
@@ -305,6 +307,8 @@ if [ -s "${MPJWT_DROPIN}" ]; then
 import re, os
 server_dir = os.environ.get('SERVER_DIR', '/opt/ibm/wlp/usr/servers/defaultServer')
 path = os.path.join(server_dir, 'configDropins', 'overrides', 'mpJwt-tenants.xml')
+smart_client = (os.environ.get('SMART_CLIENT_ID') or '').strip()
+trusted_audiences = f'account,{smart_client}' if smart_client else 'account,fhir-server'
 if os.path.exists(path):
     with open(path) as f:
         content = f.read()
@@ -321,7 +325,9 @@ if os.path.exists(path):
         # Normalize attributes so every tenant entry gets the same auth behavior.
         tag = re.sub(r'\s+authFilterRef="[^"]*"', '', tag)
         tag = re.sub(r'\s+allowFailOverToBasicAuth="[^"]*"', '', tag)
+        tag = re.sub(r'\s+audiences="[^"]*"', '', tag)
         tag = re.sub(r'^(<mpJwt\s)', r'\1authFilterRef="fhirAuthFilter" allowFailOverToBasicAuth="true" ', tag)
+        tag = re.sub(r'^(<mpJwt\s)', fr'\1audiences="{trusted_audiences}" ', tag)
         return tag
 
     content = re.sub(r'<mpJwt\s[^/].*?(?:/>|>)', patch_mpjwt, content, flags=re.DOTALL)
@@ -420,11 +426,7 @@ def _s3_get(bucket_name, obj_key, dst_path, endpoint, region, key_id, secret):
         'x-amz-content-sha256': empty, 'Authorization': auth,
     })
     os.makedirs(os.path.dirname(dst_path) if os.path.dirname(dst_path) else '.', exist_ok=True)
-<<<<<<< HEAD
     with urllib.request.urlopen(req, timeout=30) as resp, open(dst_path, 'wb') as fh:
-=======
-    with urllib.request.urlopen(req) as resp, open(dst_path, 'wb') as fh:
->>>>>>> 4e235ae1e (fix(runtime): 30s S3 download timeout + dynamic PORT for Liberty httpEndpoint)
         fh.write(resp.read())
 
 _r2_ep  = r2_endpoint or os.environ.get('AWS_ENDPOINT_URL_S3', '')
@@ -566,5 +568,10 @@ fi
 
 # ── Render fhir-server-config.json ───────────────────────────────────────────
 envsubst < "${CONFIG_TMPL}" > "${CONFIG_OUT}"
+
+# Render runtime expects a deterministic listener; default to 9080/9443 when not provided.
+export PORT="${PORT:-9080}"
+export FHIR_HTTPS_PORT="${FHIR_HTTPS_PORT:-9443}"
+echo "[start.sh] Liberty ports: http=${PORT} https=${FHIR_HTTPS_PORT}"
 
 exec /opt/ibm/wlp/bin/server run defaultServer
