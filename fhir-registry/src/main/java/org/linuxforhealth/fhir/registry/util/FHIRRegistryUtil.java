@@ -6,7 +6,9 @@
 
 package org.linuxforhealth.fhir.registry.util;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import org.linuxforhealth.fhir.model.format.Format;
 import org.linuxforhealth.fhir.model.parser.FHIRAbstractParser;
@@ -55,6 +58,9 @@ import org.linuxforhealth.fhir.registry.util.Index.Entry;
 
 public final class FHIRRegistryUtil {
     private static final Logger log = Logger.getLogger(FHIRRegistryUtil.class.getName());
+    // Matches "xpath" and "xpathUsage" JSON keys anywhere in a SearchParameter payload.
+    private static final Pattern LEGACY_XPATH_PATTERN = Pattern.compile(
+        "\"(?:xpath|xpathUsage)\"\\s*:\\s*(?:\"[^\"]*\"|null)(\\s*,)?");
 
     private static final Set<Class<? extends Resource>> DEFINITIONAL_RESOURCE_TYPES = new HashSet<>(Arrays.asList(
         ActivityDefinition.class,
@@ -136,18 +142,52 @@ public final class FHIRRegistryUtil {
                 log.log(Level.WARNING, "Resource at '" + path + "' was not found");
                 return null;
             }
+            byte[] payload = in.readAllBytes();
             // Use a non-validating parser so bundled definition packages that contain
             // elements removed in later FHIR versions (e.g. 'xpath' in R4B SearchParameter)
             // are tolerated rather than causing the whole registry load to fail.
-            FHIRParser p = FHIRParser.parser(Format.JSON);
-            if (p instanceof FHIRAbstractParser) {
-                ((FHIRAbstractParser) p).setValidating(false);
-            }
-            return p.parse(in);
+            return parseResource(payload, path);
         } catch (Exception e) {
             log.log(Level.WARNING, "Unable to load resource: " + path, e);
         }
         return null;
+    }
+
+    private static Resource parseResource(byte[] payload, String path) throws Exception {
+        try {
+            return parseWithNonValidatingParser(payload);
+        } catch (Exception e) {
+            if (path.contains("SearchParameter") && containsLegacyXpath(payload)) {
+                log.log(Level.INFO, "Retrying resource load without legacy SearchParameter xpath fields: " + path);
+                return parseWithNonValidatingParser(stripLegacyXpathFields(payload));
+            }
+            throw e;
+        }
+    }
+
+    private static Resource parseWithNonValidatingParser(byte[] payload) throws Exception {
+        FHIRParser p = FHIRParser.parser(Format.JSON);
+        if (p instanceof FHIRAbstractParser) {
+            ((FHIRAbstractParser) p).setValidating(false);
+        }
+        return p.parse(new ByteArrayInputStream(payload));
+    }
+
+    private static boolean containsLegacyXpath(byte[] payload) {
+        String json = new String(payload, StandardCharsets.UTF_8);
+        return json.contains("\"xpath\"") || json.contains("\"xpathUsage\"");
+    }
+
+    private static byte[] stripLegacyXpathFields(byte[] payload) {
+        String json = new String(payload, StandardCharsets.UTF_8);
+        // Remove legacy xpath/xpathUsage key-value pairs.
+        // The pattern handles optional trailing comma so we don't leave syntax errors.
+        String stripped = LEGACY_XPATH_PATTERN.matcher(json).replaceAll("");
+        return stripped.getBytes(StandardCharsets.UTF_8);
+    }
+
+    private static void removeLegacyXpathFields(String unused) {
+        // Intentionally empty — replaced by regex-based stripLegacyXpathFields; kept to avoid unused-method warnings during transition.
     }
 
     public static Collection<FHIRRegistryResource> getRegistryResources(String packageId) {
