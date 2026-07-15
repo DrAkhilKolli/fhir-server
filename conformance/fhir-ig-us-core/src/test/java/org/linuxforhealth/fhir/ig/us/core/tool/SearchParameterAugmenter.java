@@ -28,7 +28,7 @@ import org.linuxforhealth.fhir.model.type.Extension;
 import org.linuxforhealth.fhir.model.type.Uri;
 import org.linuxforhealth.fhir.model.type.code.BindingStrength;
 import org.linuxforhealth.fhir.model.type.code.FHIRDefinedType;
-import org.linuxforhealth.fhir.model.type.code.ResourceTypeCode;
+import org.linuxforhealth.fhir.model.type.code.FHIRTypes;
 import org.linuxforhealth.fhir.profile.ProfileSupport;
 import org.linuxforhealth.fhir.registry.FHIRRegistry;
 
@@ -65,8 +65,8 @@ public class SearchParameterAugmenter {
                 continue; // handle a single version at a time
             }
 
-            List<ResourceTypeCode> base = searchParameter.getBase();
-            if (base.size() != 1 || base.get(0).getValueAsEnum() == ResourceType.RESOURCE) {
+            List<FHIRTypes> base = searchParameter.getBase();
+            if (base.size() != 1 || base.get(0).getValueAsEnum() == FHIRTypes.Value.RESOURCE) {
                 continue; // too complicated to handle this case right now
             }
 
