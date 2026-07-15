@@ -1,6 +1,9 @@
 /*
- * SPDX-License-Identifier: Apache-2.0
+ * (C) Copyright IBM Corp. 2026
  *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
  * FHIRTenantKeycloakInterceptor
  * ==============================
  * A FHIRPersistenceInterceptor that enforces the following for every request:
