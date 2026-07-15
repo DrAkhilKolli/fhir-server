@@ -157,8 +157,8 @@ public final class FHIRRegistryUtil {
         try {
             return parseWithNonValidatingParser(payload);
         } catch (Exception e) {
-            if (path.contains("SearchParameter") && containsLegacyXpath(payload)) {
-                log.log(Level.INFO, "Retrying resource load without legacy SearchParameter xpath fields: " + path);
+            if (containsLegacyXpath(payload)) {
+                log.log(Level.INFO, "Retrying resource load without legacy xpath fields: " + path);
                 return parseWithNonValidatingParser(stripLegacyXpathFields(payload));
             }
             throw e;
