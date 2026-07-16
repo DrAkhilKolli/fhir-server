@@ -100,13 +100,9 @@ public class FHIROperationRegistry {
         List<Issue> issues = FHIRValidator.validator().validate(opDef);
         if (!issues.isEmpty()) {
             for (Issue issue : issues) {
-                if (log.isLoggable(Level.FINE)) {
-                    log.fine("Issue: " + issue.getCode().getValue() + ":"
+                if (log.isLoggable(Level.FINE) || issue.getSeverity().equals(IssueSeverity.ERROR) || issue.getSeverity().equals(IssueSeverity.FATAL)) {
+                    log.warning("Validation Issue for $" + operation.getName() + ": " + issue.getCode().getValue() + ":"
                             + issue.getSeverity().getValue() + ":" + issue.getDetails().getText().getValue());
-                }
-                if (issue.getSeverity().equals(IssueSeverity.ERROR)
-                        || issue.getSeverity().equals(IssueSeverity.FATAL)) {
-                    return false;
                 }
             }
         }
